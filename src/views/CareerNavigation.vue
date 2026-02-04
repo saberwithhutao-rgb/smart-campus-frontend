@@ -1,0 +1,1035 @@
+<template>
+  <div class="career-navigation">
+    <!-- 顶部导航栏 - 复用智能问答导航栏 -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <!-- Logo区域 -->
+        <div class="logo">
+          <div class="logo-placeholder">logo</div>
+        </div>
+
+        <!-- 导航菜单 -->
+        <div class="nav-menu" :class="{ 'mobile-menu': isMobile }">
+          <div class="nav-item" @click="router.push('/index')">首页</div>
+
+          <div class="nav-item has-submenu">
+            个性化学习伴侣
+            <div class="submenu">
+              <div class="submenu-item" @click="router.push('/ai/chat')">智能问答</div>
+              <div class="submenu-item" @click="router.push('/ai/study')">个性化规划</div>
+            </div>
+          </div>
+
+          <div class="nav-item has-submenu">
+            校园生活
+            <div class="submenu">
+              <div class="submenu-item" @click="router.push('/campus/analysis')">学习管理</div>
+              <div class="submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
+            </div>
+          </div>
+
+          <div class="nav-item has-submenu">
+            竞赛相关
+            <div class="submenu">
+              <div class="submenu-item" @click="router.push('/career/competitions')">竞赛管理</div>
+              <div class="submenu-item" @click="router.push('/career/position')">职业导航</div>
+              <div class="submenu-item" @click="router.push('/career/pee')">考研支持</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧操作区 -->
+        <div class="nav-actions">
+          <!-- 登录按钮 - 未登录时显示 -->
+          <button
+            v-if="!userStore.userState.isLoggedIn"
+            class="btn-login"
+            @click="router.push('/login')"
+          >
+            <span class="login-icon">👤</span>
+            登录
+          </button>
+
+          <!-- 个人中心 -->
+          <div class="user-center">
+            <button class="btn-user-center" @click="showUserCenter = !showUserCenter">
+              个人中心
+            </button>
+            <!-- 个人中心下拉菜单 -->
+            <div v-if="showUserCenter" class="user-center-dropdown">
+              <div class="dropdown-item" @click="router.push('/profile')">个人信息</div>
+              <div class="dropdown-item logout" @click="router.push('/login')">退出登录</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 主体内容区 -->
+    <div class="main-content">
+      <!-- 左侧垂直导航栏 -->
+      <aside class="sidebar">
+        <div class="sidebar-menu">
+          <!-- 竞赛管理 -->
+          <div class="sidebar-section">
+            <h3 class="section-title">竞赛相关</h3>
+            <div class="sidebar-item" @click="router.push('/career/competitions')">
+              <span class="item-icon">🏆</span>
+              <span class="item-text">竞赛管理</span>
+            </div>
+            <div class="sidebar-item active">
+              <span class="item-icon">🎯</span>
+              <span class="item-text">职业导航</span>
+            </div>
+          </div>
+
+          <!-- 考研支持 -->
+          <div class="sidebar-section">
+            <h3 class="section-title">考研支持</h3>
+            <div class="sidebar-item" @click="router.push('/career/pee')">
+              <span class="item-icon">📖</span>
+              <span class="item-text">考研支持</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右侧主内容区 -->
+      <main class="content-area">
+        <!-- 页面标题 -->
+        <h1 class="page-title">职业导航</h1>
+
+        <!-- 顶部功能卡片区域 -->
+        <div class="top-cards">
+          <!-- 职业测评卡片 -->
+          <div class="card">
+            <h3 class="card-title">职业测评</h3>
+            <p class="card-description">了解你的职业兴趣和能力倾向，探索适合的职业方向</p>
+            <div class="assessment-buttons">
+              <button class="btn-secondary">兴趣测评</button>
+              <button class="btn-secondary">能力测评</button>
+              <button class="btn-secondary">性格测评</button>
+            </div>
+            <button class="btn-primary">开始测评</button>
+          </div>
+
+          <!-- 职业路径规划卡片 -->
+          <div class="card">
+            <h3 class="card-title">职业路径规划</h3>
+            <p class="card-description">定制你的职业发展路线，设定短期和长期目标</p>
+            <div class="path-steps">
+              <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-text">自我评估</div>
+              </div>
+              <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-text">目标设定</div>
+              </div>
+              <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-text">行动规划</div>
+              </div>
+            </div>
+            <button class="btn-primary">制定计划</button>
+          </div>
+
+          <!-- 岗位推荐卡片 -->
+          <div class="card">
+            <h3 class="card-title">岗位推荐</h3>
+            <p class="card-description">根据你的技能和兴趣推荐合适的职业岗位</p>
+            <div class="recommendation-stats">
+              <div class="stat-item">
+                <div class="stat-number">25</div>
+                <div class="stat-label">匹配岗位</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">8</div>
+                <div class="stat-label">今日更新</div>
+              </div>
+            </div>
+            <button class="btn-primary">查看推荐</button>
+          </div>
+        </div>
+
+        <!-- 热门职业方向 -->
+        <h2 class="section-title">热门职业方向</h2>
+        <div class="career-directions">
+          <!-- 软件开发工程师 -->
+          <div class="career-card">
+            <div class="career-icon">
+              <span class="icon">💻</span>
+            </div>
+            <h3 class="career-title">软件开发工程师</h3>
+            <p class="career-description">开发和维护软件应用系统，包括前端和后端开发</p>
+            <div class="skills">
+              <span class="skill-tag">Java</span>
+              <span class="skill-tag">Python</span>
+              <span class="skill-tag">前端</span>
+            </div>
+            <div class="salary">
+              <span class="salary-icon">💰</span>
+              <span class="salary-text">平均薪资: 15-25K</span>
+            </div>
+            <button class="btn-secondary">了解详情</button>
+          </div>
+
+          <!-- 数据分析师 -->
+          <div class="career-card">
+            <div class="career-icon">
+              <span class="icon">📊</span>
+            </div>
+            <h3 class="career-title">数据分析师</h3>
+            <p class="career-description">分析和解读数据，支持业务决策，发现数据价值</p>
+            <div class="skills">
+              <span class="skill-tag">SQL</span>
+              <span class="skill-tag">Python</span>
+              <span class="skill-tag">统计学</span>
+            </div>
+            <div class="salary">
+              <span class="salary-icon">💰</span>
+              <span class="salary-text">平均薪资: 12-20K</span>
+            </div>
+            <button class="btn-secondary">了解详情</button>
+          </div>
+
+          <!-- 人工智能工程师 -->
+          <div class="career-card">
+            <div class="career-icon">
+              <span class="icon">🤖</span>
+            </div>
+            <h3 class="career-title">人工智能工程师</h3>
+            <p class="career-description">开发和应用人工智能技术，包括机器学习和深度学习</p>
+            <div class="skills">
+              <span class="skill-tag">机器学习</span>
+              <span class="skill-tag">深度学习</span>
+              <span class="skill-tag">Python</span>
+            </div>
+            <div class="salary">
+              <span class="salary-icon">💰</span>
+              <span class="salary-text">平均薪资: 20-35K</span>
+            </div>
+            <button class="btn-secondary">了解详情</button>
+          </div>
+
+          <!-- 网络安全工程师 -->
+          <div class="career-card">
+            <div class="career-icon">
+              <span class="icon">🔒</span>
+            </div>
+            <h3 class="career-title">网络安全工程师</h3>
+            <p class="career-description">保护网络系统安全，防范黑客攻击和数据泄露</p>
+            <div class="skills">
+              <span class="skill-tag">网络安全</span>
+              <span class="skill-tag">渗透测试</span>
+              <span class="skill-tag">加密技术</span>
+            </div>
+            <div class="salary">
+              <span class="salary-icon">💰</span>
+              <span class="salary-text">平均薪资: 18-30K</span>
+            </div>
+            <button class="btn-secondary">了解详情</button>
+          </div>
+
+          <!-- 移动开发工程师 -->
+          <div class="career-card">
+            <div class="career-icon">
+              <span class="icon">📱</span>
+            </div>
+            <h3 class="career-title">移动开发工程师</h3>
+            <p class="career-description">开发移动应用程序，包括iOS和Android平台</p>
+            <div class="skills">
+              <span class="skill-tag">iOS</span>
+              <span class="skill-tag">Android</span>
+              <span class="skill-tag">Flutter</span>
+            </div>
+            <div class="salary">
+              <span class="salary-icon">💰</span>
+              <span class="salary-text">平均薪资: 15-28K</span>
+            </div>
+            <button class="btn-secondary">了解详情</button>
+          </div>
+
+          <!-- 云计算工程师 -->
+          <div class="career-card">
+            <div class="career-icon">
+              <span class="icon">☁️</span>
+            </div>
+            <h3 class="career-title">云计算工程师</h3>
+            <p class="career-description">设计和管理云计算基础设施，包括公有云和私有云</p>
+            <div class="skills">
+              <span class="skill-tag">AWS</span>
+              <span class="skill-tag">阿里云</span>
+              <span class="skill-tag">Docker</span>
+            </div>
+            <div class="salary">
+              <span class="salary-icon">💰</span>
+              <span class="salary-text">平均薪资: 18-32K</span>
+            </div>
+            <button class="btn-secondary">了解详情</button>
+          </div>
+        </div>
+
+        <!-- 职业资讯 -->
+        <h2 class="section-title">职业资讯</h2>
+        <div class="career-news">
+          <div class="news-card">
+            <h3 class="news-title">2024年IT行业就业趋势分析</h3>
+            <p class="news-summary">
+              随着人工智能技术的快速发展，IT行业就业市场呈现出新的趋势和机遇...
+            </p>
+            <div class="news-meta">
+              <span class="news-date">2024-03-15</span>
+              <span class="news-source">IT行业观察</span>
+            </div>
+            <button class="btn-secondary">阅读全文</button>
+          </div>
+
+          <div class="news-card">
+            <h3 class="news-title">程序员必备的10项核心技能</h3>
+            <p class="news-summary">在竞争激烈的职场中，掌握这些核心技能将帮助你脱颖而出...</p>
+            <div class="news-meta">
+              <span class="news-date">2024-03-10</span>
+              <span class="news-source">技术博客</span>
+            </div>
+            <button class="btn-secondary">阅读全文</button>
+          </div>
+
+          <div class="news-card">
+            <h3 class="news-title">如何制定有效的职业发展计划</h3>
+            <p class="news-summary">
+              一个好的职业发展计划可以帮助你明确目标，规划路径，实现职业成功...
+            </p>
+            <div class="news-meta">
+              <span class="news-date">2024-03-05</span>
+              <span class="news-source">职业发展指南</span>
+            </div>
+            <button class="btn-secondary">阅读全文</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
+
+// 路由实例
+const router = useRouter()
+
+// 用户状态管理
+const userStore = useUserStore()
+
+// 检查屏幕尺寸 - 响应式设计
+const isMobile = ref(false)
+const showUserCenter = ref(false)
+
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth <= 1024
+}
+
+// 显示提示信息
+const showAlert = (message: string) => {
+  alert(message)
+}
+
+// 生命周期钩子 - 初始化和窗口大小监听
+onMounted(() => {
+  checkScreenSize()
+  window.addEventListener('resize', checkScreenSize)
+})
+</script>
+
+<style scoped>
+/* 主容器 */
+.career-navigation {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 全局变量 */
+:root {
+  /* 主色调：科技蓝 */
+  --primary-color: #165dff;
+  --primary-color-dark: #0e46cc;
+  --primary-color-light: #4c8aff;
+
+  /* 辅助色：浅红色 */
+  --accent-color: #f53f3f;
+  --accent-color-dark: #e13d3d;
+  --accent-color-light: #f76d6d;
+
+  /* 背景色：浅灰色 */
+  --bg-color: #f5f7fa;
+  --bg-color-light: #fafafb;
+  --bg-color-dark: #eef1f5;
+
+  /* 文字主色：深灰色 */
+  --text-color: #1d2129;
+  --text-color-secondary: #4e5969;
+  --text-color-light: #86909c;
+
+  /* 边框和阴影 */
+  --border-color: #e5e7eb;
+  --border-color-light: #f0f2f5;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* 圆角 */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+
+  /* 过渡 */
+  --transition: all 0.3s ease;
+}
+
+/* 顶部导航栏 */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  box-shadow: var(--shadow-sm);
+  z-index: 100;
+  height: 70px;
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.navbar-container {
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 70px;
+}
+
+/* Logo区域 */
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-placeholder {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border-radius: var(--border-radius-md);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 导航菜单 */
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-item {
+  position: relative;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition);
+  border-radius: var(--border-radius-md);
+}
+
+.nav-item:hover {
+  color: var(--primary-color);
+  background-color: var(--bg-color-light);
+}
+
+.nav-item.has-submenu {
+  position: relative;
+}
+
+.nav-item.has-submenu::after {
+  content: '▼';
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+/* 子菜单 */
+.submenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 12px 0;
+  min-width: 160px;
+  z-index: 101;
+  display: none;
+}
+
+.nav-item.has-submenu:hover .submenu {
+  display: block;
+}
+
+.submenu-item {
+  padding: 12px 20px;
+  font-size: 14px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.submenu-item:hover {
+  background-color: var(--bg-color-light);
+  color: var(--primary-color);
+}
+
+/* 右侧操作区 */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 登录按钮 */
+.btn-login {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border: 1px solid var(--primary-color);
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.btn-login:hover {
+  background-color: var(--primary-color-dark);
+  border-color: var(--primary-color-dark);
+}
+
+.login-icon {
+  font-size: 16px;
+}
+
+/* 个人中心 */
+.user-center {
+  position: relative;
+}
+
+.btn-user-center {
+  padding: 10px 20px;
+  background-color: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.btn-user-center:hover {
+  background-color: var(--bg-color-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* 个人中心下拉菜单 */
+.user-center-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 8px 0;
+  min-width: 140px;
+  z-index: 200;
+  margin-top: 8px;
+}
+
+.dropdown-item {
+  padding: 12px 20px;
+  font-size: 14px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-color-light);
+  color: var(--primary-color);
+}
+
+.dropdown-item.logout {
+  color: var(--accent-color);
+}
+
+.dropdown-item.logout:hover {
+  background-color: var(--accent-color);
+  color: #fff;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .nav-menu {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* 移动端适配 */
+  .navbar-container {
+    padding: 0 16px;
+  }
+
+  .nav-menu {
+    display: none;
+  }
+}
+
+/* 主体内容区 */
+.main-content {
+  display: flex;
+  flex: 1;
+  margin-top: 60px;
+  position: relative;
+}
+
+/* 左侧垂直导航栏 */
+.sidebar {
+  width: 220px;
+  background-color: white;
+  border-right: 1px solid #e0e6ed;
+  padding: 20px 0;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  position: fixed;
+  left: 0;
+  top: 60px;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-menu {
+  padding: 0 16px;
+}
+
+.sidebar-section {
+  margin-bottom: 24px;
+}
+
+.sidebar-section h3.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #646b7a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding: 0 8px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  color: #333;
+}
+
+.sidebar-item:hover {
+  background-color: #f0f9ff;
+  color: #409eff;
+}
+
+.sidebar-item.active {
+  background-color: #f0f9ff;
+  color: #409eff;
+  font-weight: 500;
+}
+
+.item-icon {
+  font-size: 16px;
+}
+
+/* 右侧主内容区 */
+.content-area {
+  margin-left: 220px;
+  flex: 1;
+  padding: 24px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 60px);
+}
+
+/* 页面标题 */
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 24px 0;
+}
+
+/* 顶部功能卡片区域 */
+.top-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.card {
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.card-description {
+  font-size: 14px;
+  color: #646b7a;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* 评估按钮 */
+.assessment-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* 路径步骤 */
+.path-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #409eff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.step-text {
+  font-size: 12px;
+  color: #646b7a;
+  text-align: center;
+}
+
+/* 推荐统计 */
+.recommendation-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 600;
+  color: #409eff;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #646b7a;
+}
+
+/* 按钮样式 */
+.btn-primary {
+  width: 100%;
+  padding: 10px 20px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #66b1ff;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background-color: transparent;
+  color: #409eff;
+  border: 1px solid #409eff;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #f0f9ff;
+}
+
+/* 热门职业方向 */
+.content-area h2.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 20px 0;
+}
+
+.career-directions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.career-card {
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.career-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.career-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background-color: #f0f9ff;
+  border-radius: 50%;
+  margin: 0 0 16px 0;
+}
+
+.career-icon .icon {
+  font-size: 24px;
+  color: #409eff;
+}
+
+.career-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.career-description {
+  font-size: 14px;
+  color: #646b7a;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.skills {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.skill-tag {
+  padding: 2px 8px;
+  background-color: #f0f9ff;
+  color: #409eff;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.salary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.salary-icon {
+  font-size: 16px;
+  color: #67c23a;
+}
+
+.salary-text {
+  font-size: 14px;
+  color: #67c23a;
+  font-weight: 500;
+}
+
+/* 职业资讯 */
+.career-news {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.news-card {
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.news-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.news-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.news-summary {
+  font-size: 14px;
+  color: #646b7a;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.news-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #86909c;
+}
+
+.news-date,
+.news-source {
+  display: flex;
+  align-items: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .top-cards,
+  .career-directions,
+  .career-news {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-menu {
+    display: none;
+  }
+
+  .nav-menu.mobile-menu {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #2c3e50;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    gap: 8px;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 99;
+  }
+
+  .content-area {
+    margin-left: 0;
+    padding: 16px;
+  }
+
+  .top-cards,
+  .career-directions,
+  .career-news {
+    grid-template-columns: 1fr;
+  }
+
+  .navbar-container {
+    padding: 0 16px;
+  }
+
+  .nav-actions {
+    gap: 8px;
+  }
+
+  .btn-login,
+  .btn-user-center {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+</style>

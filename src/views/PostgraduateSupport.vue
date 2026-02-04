@@ -1,0 +1,1322 @@
+<template>
+  <div class="postgraduate-support">
+    <!-- 顶部导航栏 - 复用智能问答导航栏 -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <!-- Logo区域 -->
+        <div class="logo">
+          <div class="logo-placeholder">logo</div>
+        </div>
+
+        <!-- 导航菜单 -->
+        <div class="nav-menu" :class="{ 'mobile-menu': isMobile }">
+          <div class="nav-item" @click="router.push('/index')">首页</div>
+
+          <div class="nav-item has-submenu">
+            个性化学习伴侣
+            <div class="submenu">
+              <div class="submenu-item" @click="router.push('/ai/chat')">智能问答</div>
+              <div class="submenu-item" @click="router.push('/ai/study')">个性化规划</div>
+            </div>
+          </div>
+
+          <div class="nav-item has-submenu">
+            校园生活
+            <div class="submenu">
+              <div class="submenu-item" @click="router.push('/campus/analysis')">学习管理</div>
+              <div class="submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
+            </div>
+          </div>
+
+          <div class="nav-item has-submenu">
+            竞赛相关
+            <div class="submenu">
+              <div class="submenu-item" @click="router.push('/career/competitions')">竞赛管理</div>
+              <div class="submenu-item" @click="router.push('/career/position')">职业导航</div>
+              <div class="submenu-item" @click="router.push('/career/pee')">考研支持</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧操作区 -->
+        <div class="nav-actions">
+          <!-- 登录按钮 - 未登录时显示 -->
+          <button
+            v-if="!userStore.userState.isLoggedIn"
+            class="btn-login"
+            @click="router.push('/login')"
+          >
+            <span class="login-icon">👤</span>
+            登录
+          </button>
+
+          <!-- 个人中心 -->
+          <div class="user-center">
+            <button class="btn-user-center" @click="showUserCenter = !showUserCenter">
+              个人中心
+            </button>
+            <!-- 个人中心下拉菜单 -->
+            <div v-if="showUserCenter" class="user-center-dropdown">
+              <div class="dropdown-item" @click="router.push('/profile')">个人信息</div>
+              <div class="dropdown-item logout" @click="router.push('/login')">退出登录</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+      <!-- 左侧功能栏 -->
+      <aside class="sidebar">
+        <div class="sidebar-menu">
+          <!-- 竞赛管理 -->
+          <div class="sidebar-section">
+            <h3 class="section-title">竞赛相关</h3>
+            <div class="sidebar-item" @click="router.push('/career/competitions')">
+              <span class="item-icon">🏆</span>
+              <span class="item-text">竞赛管理</span>
+            </div>
+            <div class="sidebar-item" @click="router.push('/career/position')">
+              <span class="item-icon">🎯</span>
+              <span class="item-text">职业导航</span>
+            </div>
+          </div>
+
+          <!-- 考研支持 -->
+          <div class="sidebar-section">
+            <h3 class="section-title">考研支持</h3>
+            <div class="sidebar-item active">
+              <span class="item-icon">📖</span>
+              <span class="item-text">考研支持</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右侧主内容区 -->
+      <main class="content-area">
+        <!-- 页面标题 -->
+        <h1 class="page-title">考研支持</h1>
+
+        <!-- 顶部统计卡片 -->
+        <div class="top-cards">
+          <!-- 考试时间卡片 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">📅</span>
+              <span class="card-title">考试时间</span>
+            </div>
+            <div class="card-content">
+              <p class="exam-name">2024年全国硕士研究生招生考试</p>
+              <p class="exam-date">2023-12-23 至 2023-12-24</p>
+              <p class="countdown">倒计时：<span class="countdown-days">35天</span></p>
+            </div>
+          </div>
+
+          <!-- 院校选择卡片 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">🏫</span>
+              <span class="card-title">院校选择</span>
+            </div>
+            <div class="card-content">
+              <p class="selected-schools">已收藏的院校</p>
+              <p class="school-count">5所 <button class="view-btn">查看收藏</button></p>
+            </div>
+          </div>
+
+          <!-- 学习进度卡片 -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">📊</span>
+              <span class="card-title">学习进度</span>
+            </div>
+            <div class="card-content">
+              <p class="current-progress">当前学习进度</p>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 65%"></div>
+              </div>
+              <div class="subject-progress">
+                <div class="subject">
+                  <span class="subject-name">政治:</span>
+                  <span class="subject-value">65%</span>
+                </div>
+                <div class="subject">
+                  <span class="subject-name">英语:</span>
+                  <span class="subject-value">70%</span>
+                </div>
+                <div class="subject">
+                  <span class="subject-name">数学:</span>
+                  <span class="subject-value">65%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 院校选择区域 -->
+        <div class="school-selection">
+          <h2 class="section-title">院校选择</h2>
+
+          <!-- 筛选条件 -->
+          <div class="filter-section">
+            <div class="filter-row">
+              <div class="filter-item">
+                <label>地区：</label>
+                <select class="filter-select">
+                  <option>全部地区</option>
+                  <option>北京</option>
+                  <option>上海</option>
+                  <option>广州</option>
+                  <option>深圳</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>学科：</label>
+                <select class="filter-select">
+                  <option>全部学科</option>
+                  <option>计算机科学与技术</option>
+                  <option>电子信息</option>
+                  <option>数学</option>
+                  <option>经济学</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>学校类型：</label>
+                <select class="filter-select">
+                  <option>全部类型</option>
+                  <option>985工程</option>
+                  <option>211工程</option>
+                  <option>双一流</option>
+                </select>
+              </div>
+            </div>
+            <div class="filter-row">
+              <div class="filter-item">
+                <label>分数线：</label>
+                <select class="filter-select">
+                  <option>全部</option>
+                  <option>300分以下</option>
+                  <option>300-350分</option>
+                  <option>350-400分</option>
+                  <option>400分以上</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>培养类型：</label>
+                <select class="filter-select">
+                  <option>全部</option>
+                  <option>学术型硕士</option>
+                  <option>专业型硕士</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>专业：</label>
+                <input type="text" class="filter-input" placeholder="输入专业名称..." />
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button class="filter-btn">搜索院校</button>
+              <button class="reset-btn">重置筛选</button>
+            </div>
+          </div>
+
+          <!-- 院校列表 -->
+          <div class="school-list">
+            <!-- 院校项 -->
+            <div class="school-item" v-for="school in schools" :key="school.id">
+              <div class="school-header">
+                <div class="school-info">
+                  <div class="school-name">
+                    <span class="school-icon">🏫</span>
+                    <span class="school-title">{{ school.name }}</span>
+                  </div>
+                  <div class="school-tags">
+                    <span class="tag" v-for="tag in school.tags" :key="tag">{{ tag }}</span>
+                    <span class="tag location">{{ school.location }}</span>
+                  </div>
+                </div>
+                <div class="school-actions">
+                  <button class="compare-btn">添加对比</button>
+                  <button class="collect-btn">收藏</button>
+                </div>
+              </div>
+              <div class="school-details">
+                <div class="detail-item">
+                  <span class="detail-label">学科排名：</span>
+                  <span class="detail-value">{{ school.subjectRank }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">分数线：</span>
+                  <span class="detail-value">{{ school.scoreLine }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">招生人数：</span>
+                  <span class="detail-value">{{ school.enrollment }}</span>
+                </div>
+              </div>
+              <div class="school-specialties">
+                <span
+                  class="specialty-tag"
+                  v-for="specialty in school.specialties"
+                  :key="specialty"
+                  >{{ specialty }}</span
+                >
+              </div>
+              <div class="school-footer">
+                <button class="view-details-btn">查看详情</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 考研资源区域 -->
+        <div class="resources-section">
+          <h2 class="section-title">考研资源</h2>
+
+          <!-- 资源标签页 -->
+          <div class="resource-tabs">
+            <button class="tab-btn active">公共课</button>
+            <button class="tab-btn">专业课</button>
+            <button class="tab-btn">真题</button>
+            <button class="tab-btn">资料下载</button>
+          </div>
+
+          <!-- 资源列表 -->
+          <div class="resource-list">
+            <!-- 资源项 -->
+            <div class="resource-item" v-for="resource in resources" :key="resource.id">
+              <div class="resource-info">
+                <div class="resource-header">
+                  <span class="resource-icon">📚</span>
+                  <span class="resource-title">{{ resource.title }}</span>
+                </div>
+                <p class="resource-description">{{ resource.description }}</p>
+                <div class="resource-meta">
+                  <span class="author">作者: {{ resource.author }}</span>
+                  <span class="publisher">出版社: {{ resource.publisher }}</span>
+                  <span class="rating">评分: {{ resource.rating }}</span>
+                </div>
+              </div>
+              <div class="resource-actions">
+                <button class="download-btn">下载</button>
+                <button class="collect-btn">收藏</button>
+                <button class="share-btn">分享</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
+
+// 路由实例
+const router = useRouter()
+
+// 用户状态管理
+const userStore = useUserStore()
+
+// 检查屏幕尺寸 - 响应式设计
+const isMobile = ref(false)
+const showUserCenter = ref(false)
+
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth <= 1024
+}
+
+// 显示提示信息
+const showAlert = (message: string) => {
+  alert(message)
+}
+
+// 生命周期钩子 - 初始化和窗口大小监听
+onMounted(() => {
+  checkScreenSize()
+  window.addEventListener('resize', checkScreenSize)
+})
+
+// 模拟院校数据
+const schools = ref([
+  {
+    id: 1,
+    name: '北京大学',
+    tags: ['985工程', '211工程', '双一流'],
+    location: '北京',
+    subjectRank: '全部学科',
+    scoreLine: '380分',
+    enrollment: '1500人',
+    specialties: ['计算机科学与技术', '软件工程', '人工智能', '电子信息'],
+  },
+  {
+    id: 2,
+    name: '清华大学',
+    tags: ['985工程', '211工程', '双一流'],
+    location: '北京',
+    subjectRank: '全部学科',
+    scoreLine: '385分',
+    enrollment: '1600人',
+    specialties: ['计算机科学与技术', '软件工程', '人工智能', '电子信息'],
+  },
+])
+
+// 模拟资源数据
+const resources = ref([
+  {
+    id: 1,
+    title: '考研数学复习指南',
+    description: '涵盖高等数学、线性代数、概率论与数理统计，适合基础阶段复习',
+    author: '李永乐',
+    publisher: '西安交通大学出版社',
+    rating: '4.9/5',
+  },
+  {
+    id: 2,
+    title: '考研英语历年真题解析',
+    description: '近10年考研英语真题详细解析，包含阅读理解、翻译、写作等各题型',
+    author: '张剑',
+    publisher: '高等教育出版社',
+    rating: '4.8/5',
+  },
+  {
+    id: 3,
+    title: '思想政治理论知识点梳理',
+    description: '考研政治核心知识点汇总，重点突出，易于记忆',
+    author: '徐涛',
+    publisher: '中国原子能出版社',
+    rating: '4.7/5',
+  },
+])
+</script>
+
+<style scoped>
+/* 全局变量 */
+:root {
+  /* 主色调：科技蓝 */
+  --primary-color: #165dff;
+  --primary-color-dark: #0e46cc;
+  --primary-color-light: #4c8aff;
+
+  /* 辅助色：浅红色 */
+  --accent-color: #f53f3f;
+  --accent-color-dark: #e13d3d;
+  --accent-color-light: #f76d6d;
+
+  /* 背景色：浅灰色 */
+  --bg-color: #f5f7fa;
+  --bg-color-light: #fafafb;
+  --bg-color-dark: #eef1f5;
+
+  /* 文字主色：深灰色 */
+  --text-color: #1d2129;
+  --text-color-secondary: #4e5969;
+  --text-color-light: #86909c;
+
+  /* 边框和阴影 */
+  --border-color: #e5e7eb;
+  --border-color-light: #f0f2f5;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* 圆角 */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+
+  /* 过渡 */
+  --transition: all 0.3s ease;
+}
+
+/* 主容器 */
+.postgraduate-support {
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 顶部导航栏 */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  box-shadow: var(--shadow-sm);
+  z-index: 100;
+  height: 70px;
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.navbar-container {
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 100%;
+}
+
+/* Logo区域 */
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-placeholder {
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border-radius: var(--border-radius-md);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 导航菜单 */
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-item {
+  position: relative;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition);
+  border-radius: var(--border-radius-md);
+}
+
+.nav-item:hover {
+  color: var(--primary-color);
+  background-color: var(--bg-color-light);
+}
+
+.nav-item.has-submenu {
+  position: relative;
+}
+
+.nav-item.has-submenu::after {
+  content: '▼';
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+/* 子菜单 */
+.submenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 12px 0;
+  min-width: 160px;
+  z-index: 101;
+  display: none;
+}
+
+.nav-item.has-submenu:hover .submenu {
+  display: block;
+}
+
+.submenu-item {
+  padding: 12px 20px;
+  font-size: 14px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.submenu-item:hover {
+  background-color: var(--bg-color-light);
+  color: var(--primary-color);
+}
+
+/* 右侧操作区 */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 登录按钮 */
+.btn-login {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border: 1px solid var(--primary-color);
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.btn-login:hover {
+  background-color: var(--primary-color-dark);
+  border-color: var(--primary-color-dark);
+}
+
+.login-icon {
+  font-size: 16px;
+}
+
+/* 个人中心 */
+.user-center {
+  position: relative;
+}
+
+.btn-user-center {
+  padding: 10px 20px;
+  background-color: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.btn-user-center:hover {
+  background-color: var(--bg-color-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* 个人中心下拉菜单 */
+.user-center-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 8px 0;
+  min-width: 140px;
+  z-index: 200;
+  margin-top: 8px;
+}
+
+.dropdown-item {
+  padding: 12px 20px;
+  font-size: 14px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-color-light);
+  color: var(--primary-color);
+}
+
+.dropdown-item.logout {
+  color: var(--accent-color);
+}
+
+.dropdown-item.logout:hover {
+  background-color: var(--accent-color);
+  color: #fff;
+}
+
+/* 主体内容区 */
+.main-content {
+  display: flex;
+  flex: 1;
+  margin-top: 70px;
+  position: relative;
+}
+
+/* 左侧垂直导航栏 */
+.sidebar {
+  width: 220px;
+  background-color: white;
+  border-right: 1px solid #e0e6ed;
+  padding: 20px 0;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  position: fixed;
+  left: 0;
+  top: 60px;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-menu {
+  padding: 0 16px;
+}
+
+.sidebar-section {
+  margin-bottom: 24px;
+}
+
+.sidebar-section h3.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #646b7a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding: 0 8px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  color: #333;
+}
+
+.sidebar-item:hover {
+  background-color: #f0f9ff;
+  color: #409eff;
+}
+
+.sidebar-item.active {
+  background-color: #f0f9ff;
+  color: #409eff;
+  font-weight: 500;
+}
+
+.item-icon {
+  font-size: 16px;
+}
+
+/* 右侧主内容区 */
+.content-area {
+  margin-left: 220px;
+  flex: 1;
+  padding: 24px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 60px);
+}
+
+/* 页面标题 */
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 24px 0;
+}
+
+/* 顶部统计卡片 */
+.top-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.card {
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-icon {
+  font-size: 20px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 考试时间卡片 */
+.exam-name {
+  font-size: 14px;
+  color: #646b7a;
+  margin: 0;
+}
+
+.exam-date {
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+}
+
+.countdown {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.countdown-days {
+  color: #f53f3f;
+  font-size: 18px;
+}
+
+/* 院校选择卡片 */
+.selected-schools {
+  font-size: 14px;
+  color: #646b7a;
+  margin: 0;
+}
+
+.school-count {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-btn {
+  padding: 4px 12px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* 学习进度卡片 */
+.current-progress {
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #ecf5ff;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #409eff;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.subject-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subject {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #333;
+}
+
+/* 院校选择区域 */
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 20px 0;
+}
+
+/* 筛选区域 */
+.filter-section {
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filter-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-item label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.filter-select {
+  padding: 6px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-select:hover {
+  border-color: #409eff;
+}
+
+.filter-input {
+  padding: 6px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  width: 200px;
+  transition: all 0.3s ease;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #409eff;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.filter-btn {
+  padding: 8px 20px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  background-color: #66b1ff;
+}
+
+.reset-btn {
+  padding: 8px 20px;
+  background-color: transparent;
+  color: #646b7a;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.reset-btn:hover {
+  background-color: #f0f9ff;
+  border-color: #409eff;
+  color: #409eff;
+}
+
+/* 院校列表 */
+.school-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.school-item {
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.school-item:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-color: #409eff;
+}
+
+.school-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.school-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.school-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.school-icon {
+  font-size: 18px;
+}
+
+.school-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.school-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #ecf5ff;
+  color: #409eff;
+}
+
+.tag.location {
+  background-color: #f0f9eb;
+  color: #67c23a;
+}
+
+.school-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.compare-btn,
+.collect-btn {
+  padding: 6px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: transparent;
+  color: #646b7a;
+}
+
+.compare-btn:hover,
+.collect-btn:hover {
+  background-color: #f0f9ff;
+  border-color: #409eff;
+  color: #409eff;
+}
+
+.school-details {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.detail-item {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  color: #646b7a;
+}
+
+.detail-label {
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #333;
+}
+
+.school-specialties {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.specialty-tag {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  background-color: #f5f7fa;
+  color: #646b7a;
+}
+
+.school-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.view-details-btn {
+  padding: 8px 16px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.view-details-btn:hover {
+  background-color: #66b1ff;
+}
+
+/* 考研资源区域 */
+.resources-section {
+  margin-top: 40px;
+}
+
+.resource-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e0e6ed;
+  padding-bottom: 12px;
+}
+
+.tab-btn {
+  padding: 8px 20px;
+  background-color: transparent;
+  color: #646b7a;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+  background-color: #409eff;
+  color: white;
+}
+
+.tab-btn:hover:not(.active) {
+  background-color: #f0f9ff;
+  color: #409eff;
+}
+
+.resource-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resource-item {
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.resource-item:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-color: #409eff;
+}
+
+.resource-info {
+  flex: 1;
+  min-width: 0;
+  margin-right: 20px;
+}
+
+.resource-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.resource-icon {
+  font-size: 18px;
+}
+
+.resource-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.resource-description {
+  font-size: 14px;
+  color: #646b7a;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.resource-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #86909c;
+  flex-wrap: wrap;
+}
+
+.resource-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.download-btn,
+.collect-btn,
+.share-btn {
+  padding: 8px 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: transparent;
+  color: #646b7a;
+}
+
+.download-btn:hover,
+.collect-btn:hover,
+.share-btn:hover {
+  background-color: #f0f9ff;
+  border-color: #409eff;
+  color: #409eff;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .top-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 99;
+  }
+
+  .content-area {
+    margin-left: 0;
+    padding: 16px;
+  }
+
+  .top-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-menu {
+    display: none;
+  }
+
+  .nav-menu.mobile-menu {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #2c3e50;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    gap: 8px;
+  }
+
+  .navbar-container {
+    padding: 0 16px;
+  }
+
+  .nav-actions {
+    gap: 8px;
+  }
+
+  .btn-login,
+  .btn-user-center {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .school-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .school-actions {
+    align-self: flex-end;
+  }
+
+  .resource-item {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .resource-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+</style>
