@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api/index'
 
@@ -13,6 +13,11 @@ const form = reactive({
   email: '',
   verifyCode: '',
   captcha: '',
+  studentId: '',
+  major: '',
+  college: '',
+  grade: '',
+  gender: 1,
 })
 
 // 图形验证码相关数据
@@ -34,6 +39,17 @@ const isSendingVerifyCode = ref(false)
 // 错误提示信息
 const errorMessage = ref('')
 
+// 字段级别的错误信息
+const fieldErrors = reactive({
+  username: '',
+  password: '',
+  confirmPassword: '',
+  email: '',
+  captcha: '',
+  verifyCode: '',
+  studentId: '',
+})
+
 // 判断是否是错误消息
 const isError = computed(() => {
   const msg = errorMessage.value
@@ -48,22 +64,154 @@ const togglePasswordVisibility = () => {
   isPasswordVisible.value = !isPasswordVisible.value
 }
 
-// ========== 修正：获取图形验证码 ==========
+// ==================== 验证函数 ====================
+
+// 验证用户名格式
+const validateUsername = (username: string): string => {
+  if (!username.trim()) return '用户名不能为空'
+  if (username.length < 3 || username.length > 20) return '用户名长度应为3-20位'
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) return '用户名只能包含字母、数字和下划线'
+  return ''
+}
+
+// 验证密码强度
+const validatePassword = (password: string): string => {
+  if (!password) return '密码不能为空'
+  if (password.length < 6) return '密码长度不能少于6位'
+  if (!/[a-zA-Z]/.test(password)) return '密码必须包含字母'
+  if (!/\d/.test(password)) return '密码必须包含数字'
+  return ''
+}
+
+// 验证确认密码
+const validateConfirmPassword = (password: string, confirmPassword: string): string => {
+  if (!confirmPassword) return '请确认密码'
+  if (password !== confirmPassword) return '两次输入的密码不一致'
+  return ''
+}
+
+// 验证邮箱格式（加强QQ邮箱验证）
+const validateEmail = (email: string): string => {
+  if (!email.trim()) return '邮箱不能为空'
+
+  // 基础邮箱格式验证
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) return '邮箱格式不正确'
+
+  // QQ邮箱特定验证
+  const qqEmailRegex = /^[1-9]\d{4,10}@qq\.com$/i
+  if (!qqEmailRegex.test(email)) return '请输入正确的QQ邮箱（如：12345@qq.com）'
+
+  return ''
+}
+
+// 验证图形验证码
+const validateCaptcha = (captcha: string): string => {
+  if (!captcha.trim()) return '请输入图形验证码'
+  if (captcha.length !== 4) return '验证码应为4位字符'
+  return ''
+}
+
+// 验证邮箱验证码
+const validateVerifyCode = (verifyCode: string): string => {
+  if (!verifyCode.trim()) return '请输入邮箱验证码'
+  if (!/^\d{6}$/.test(verifyCode)) return '验证码应为6位数字'
+  return ''
+}
+
+// 验证学号
+const validateStudentId = (studentId: string): string => {
+  if (studentId && !/^\d{8,12}$/.test(studentId)) return '学号应为8-12位数字'
+  return ''
+}
+
+// 实时字段验证
+watch(
+  () => form.username,
+  (value) => {
+    fieldErrors.username = validateUsername(value)
+  },
+)
+
+watch(
+  () => form.password,
+  (value) => {
+    fieldErrors.password = validatePassword(value)
+    // 如果确认密码已输入，重新验证
+    if (form.confirmPassword) {
+      fieldErrors.confirmPassword = validateConfirmPassword(value, form.confirmPassword)
+    }
+  },
+)
+
+watch(
+  () => form.confirmPassword,
+  (value) => {
+    fieldErrors.confirmPassword = validateConfirmPassword(form.password, value)
+  },
+)
+
+watch(
+  () => form.email,
+  (value) => {
+    fieldErrors.email = validateEmail(value)
+  },
+)
+
+watch(
+  () => form.captcha,
+  (value) => {
+    fieldErrors.captcha = validateCaptcha(value)
+  },
+)
+
+watch(
+  () => form.verifyCode,
+  (value) => {
+    fieldErrors.verifyCode = validateVerifyCode(value)
+  },
+)
+
+watch(
+  () => form.studentId,
+  (value) => {
+    fieldErrors.studentId = validateStudentId(value)
+  },
+)
+
+// 表单整体验证状态
+const isFormValid = computed(() => {
+  return (
+    !fieldErrors.username &&
+    !fieldErrors.password &&
+    !fieldErrors.confirmPassword &&
+    !fieldErrors.email &&
+    !fieldErrors.captcha &&
+    !fieldErrors.verifyCode &&
+    !fieldErrors.studentId &&
+    form.username.trim() &&
+    form.password.trim() &&
+    form.confirmPassword.trim() &&
+    form.email.trim() &&
+    form.captcha.trim() &&
+    form.verifyCode.trim()
+  )
+})
+
+// ========== 获取图形验证码 ==========
 const getCaptcha = async () => {
   isGettingCaptcha.value = true
   try {
     console.log('开始获取图形验证码...')
 
-    // 修正：加上括号调用函数
     const response = await api.getCaptcha()
     console.log('图形验证码响应:', response)
 
     if (response.code === 200) {
-      // 修正：按照后端返回结构赋值
       captchaData.captchaId = response.captchaId
-      captchaData.captchaText = response.data // 验证码文本在data字段
-      captchaData.captchaBase64 = response.captchaBase64 // 图片base64
-      form.captcha = '' // 清空输入框
+      captchaData.captchaText = response.data
+      captchaData.captchaBase64 = response.captchaBase64
+      form.captcha = ''
 
       console.log('验证码获取成功:', {
         captchaId: captchaData.captchaId,
@@ -96,21 +244,31 @@ const getCaptcha = async () => {
   }
 }
 
-// ========== 修正：发送邮箱验证码 ==========
+// ========== 发送邮箱验证码 ==========
 const sendVerifyCode = async () => {
-  // 验证邮箱是否为空
-  if (!form.email || !form.email.trim()) {
-    errorMessage.value = '请输入邮箱地址'
+  // 验证所有必要字段
+  const usernameError = validateUsername(form.username)
+  const emailError = validateEmail(form.email)
+  const captchaError = validateCaptcha(form.captcha)
+
+  if (usernameError) {
+    fieldErrors.username = usernameError
+    errorMessage.value = '请先填写正确的用户名'
     return
   }
 
-  // 验证图形验证码是否为空
-  if (!form.captcha || !form.captcha.trim()) {
-    errorMessage.value = '请输入图形验证码'
+  if (emailError) {
+    fieldErrors.email = emailError
+    errorMessage.value = '请先填写正确的邮箱'
     return
   }
 
-  // 验证是否已获取图形验证码
+  if (captchaError) {
+    fieldErrors.captcha = captchaError
+    errorMessage.value = '请先填写正确的图形验证码'
+    return
+  }
+
   if (!captchaData.captchaId) {
     errorMessage.value = '请先获取图形验证码'
     return
@@ -122,7 +280,6 @@ const sendVerifyCode = async () => {
 
     console.log('邮箱验证码响应:', response)
 
-    // 检查响应状态
     if (response.code === 200) {
       errorMessage.value = response.message || '验证码已发送，请查收邮件'
 
@@ -133,9 +290,21 @@ const sendVerifyCode = async () => {
         }
       }, 3000)
     } else {
-      errorMessage.value = response.message || '发送验证码失败'
+      // 处理特定的后端错误
+      if (response.message.includes('已被注册')) {
+        fieldErrors.email = response.message
+        errorMessage.value = '该邮箱已被注册'
+      } else if (response.message.includes('过于频繁')) {
+        errorMessage.value = response.message
+      } else if (response.message.includes('图形验证码')) {
+        errorMessage.value = '图形验证码错误或已过期，请刷新重试'
+        getCaptcha() // 自动刷新验证码
+      } else {
+        errorMessage.value = response.message || '发送验证码失败'
+      }
     }
   } catch (error: unknown) {
+    console.error('发送验证码失败:', error)
     const getErrorMessage = (err: unknown): string => {
       if (err instanceof Error) return err.message
       if (typeof err === 'string') return err
@@ -147,67 +316,81 @@ const sendVerifyCode = async () => {
   }
 }
 
-// ========== 修正：注册函数 ==========
+// ========== 注册函数 ==========
 const handleRegister = async () => {
   // 清除之前的错误提示
   errorMessage.value = ''
 
-  // 表单验证
-  if (!form.username || !form.username.trim()) {
-    errorMessage.value = '请输入用户名'
+  // 验证所有字段
+  const errors = {
+    username: validateUsername(form.username),
+    password: validatePassword(form.password),
+    confirmPassword: validateConfirmPassword(form.password, form.confirmPassword),
+    email: validateEmail(form.email),
+    captcha: validateCaptcha(form.captcha),
+    verifyCode: validateVerifyCode(form.verifyCode),
+    studentId: validateStudentId(form.studentId),
+  }
+
+  // 更新字段错误
+  Object.assign(fieldErrors, errors)
+
+  // 检查是否有错误
+  const hasErrors = Object.values(errors).some((error) => error)
+  if (hasErrors) {
+    // 找到第一个错误显示
+    const firstError = Object.values(errors).find((error) => error)
+    errorMessage.value = firstError || '请检查表单填写'
     return
   }
 
-  if (!form.password || form.password.length < 6) {
-    errorMessage.value = '密码长度不能少于6位'
-    return
-  }
-
-  if (!form.confirmPassword || !form.confirmPassword.trim()) {
-    errorMessage.value = '请确认密码'
-    return
-  }
-
-  if (form.password !== form.confirmPassword) {
-    errorMessage.value = '两次输入的密码不一致'
-    return
-  }
-
-  if (!form.email || !form.email.trim()) {
-    errorMessage.value = '请输入邮箱地址'
-    return
-  }
-
-  if (!form.verifyCode || !form.verifyCode.trim()) {
-    errorMessage.value = '请输入邮箱验证码'
+  if (!captchaData.captchaId) {
+    errorMessage.value = '请先获取图形验证码'
     return
   }
 
   try {
-    // 修正：使用api.register接口而不是直接api.post
     const response = await api.register({
       username: form.username,
       password: form.password,
       email: form.email,
       verifyCode: form.verifyCode,
-      // 可选的其他字段
-      studentId: '20240001',
-      major: '计算机科学',
-      college: '信息学院',
-      grade: '2024',
-      gender: 1,
+      studentId: form.studentId || '20240001',
+      major: form.major || '计算机科学',
+      college: form.college || '信息学院',
+      grade: form.grade || '2024',
+      gender: form.gender,
     })
 
-    // 检查响应状态
     if (response.code === 200) {
       // 注册成功
       alert('注册成功！请登录')
       router.push('/login')
     } else {
-      // 注册失败
-      errorMessage.value = response.message || '注册失败'
+      // 处理特定的后端错误
+      if (response.message.includes('用户名已存在')) {
+        fieldErrors.username = response.message
+        errorMessage.value = '用户名已存在'
+      } else if (response.message.includes('邮箱已被注册')) {
+        fieldErrors.email = response.message
+        errorMessage.value = '邮箱已被注册'
+      } else if (response.message.includes('学号已注册')) {
+        fieldErrors.studentId = response.message
+        errorMessage.value = '学号已被注册'
+      } else if (response.message.includes('验证码错误') || response.message.includes('已过期')) {
+        errorMessage.value = response.message
+        // 如果验证码问题，刷新验证码
+        if (response.message.includes('图形验证码')) {
+          getCaptcha()
+        }
+      } else if (response.message.includes('过于频繁')) {
+        errorMessage.value = response.message
+      } else {
+        errorMessage.value = response.message || '注册失败'
+      }
     }
   } catch (error: unknown) {
+    console.error('注册请求失败:', error)
     const getErrorMessage = (err: unknown): string => {
       if (err instanceof Error) return err.message
       if (typeof err === 'string') return err
@@ -240,82 +423,136 @@ onMounted(() => {
 
       <!-- 用户名 -->
       <div class="form-group">
-        <label for="username">用户名</label>
+        <label for="username">用户名 <span class="required">*</span></label>
         <input
           id="username"
           v-model="form.username"
           type="text"
-          placeholder="请输入用户名"
-          class="form-control"
+          placeholder="3-20位字母、数字、下划线"
+          :class="['form-control', { error: fieldErrors.username }]"
+          maxlength="20"
         />
+        <div v-if="fieldErrors.username" class="field-error">
+          {{ fieldErrors.username }}
+        </div>
+        <div v-else class="field-hint">用户名将用于登录，注册后不可修改</div>
       </div>
 
       <!-- 密码 -->
       <div class="form-group">
-        <label for="password">密码</label>
+        <label for="password">密码 <span class="required">*</span></label>
         <div class="password-input">
           <input
             id="password"
             v-model="form.password"
             :type="isPasswordVisible ? 'text' : 'password'"
-            placeholder="请输入密码（至少6位）"
-            class="form-control"
+            placeholder="至少6位，需包含字母和数字"
+            :class="['form-control', { error: fieldErrors.password }]"
           />
           <button
             type="button"
             @click="togglePasswordVisibility"
             class="password-toggle"
-            title="切换密码可见性"
+            :title="isPasswordVisible ? '隐藏密码' : '显示密码'"
           >
             {{ isPasswordVisible ? '👁️' : '👁️‍🗨️' }}
           </button>
+        </div>
+        <div v-if="fieldErrors.password" class="field-error">
+          {{ fieldErrors.password }}
+        </div>
+        <div v-else class="field-hint">
+          密码强度：<span
+            :class="{
+              weak: form.password.length < 6,
+              medium:
+                form.password.length >= 6 &&
+                (!/[a-zA-Z]/.test(form.password) || !/\d/.test(form.password)),
+              strong:
+                form.password.length >= 6 &&
+                /[a-zA-Z]/.test(form.password) &&
+                /\d/.test(form.password),
+            }"
+          >
+            {{
+              form.password.length < 6
+                ? '弱'
+                : !/[a-zA-Z]/.test(form.password) || !/\d/.test(form.password)
+                  ? '中'
+                  : '强'
+            }}
+          </span>
         </div>
       </div>
 
       <!-- 确认密码 -->
       <div class="form-group">
-        <label for="confirmPassword">确认密码</label>
+        <label for="confirmPassword">确认密码 <span class="required">*</span></label>
         <div class="password-input">
           <input
             id="confirmPassword"
             v-model="form.confirmPassword"
             :type="isPasswordVisible ? 'text' : 'password'"
             placeholder="请再次输入密码"
-            class="form-control"
+            :class="['form-control', { error: fieldErrors.confirmPassword }]"
           />
           <button
             type="button"
             @click="togglePasswordVisibility"
             class="password-toggle"
-            title="切换密码可见性"
+            :title="isPasswordVisible ? '隐藏密码' : '显示密码'"
           >
             {{ isPasswordVisible ? '👁️' : '👁️‍🗨️' }}
           </button>
+        </div>
+        <div v-if="fieldErrors.confirmPassword" class="field-error">
+          {{ fieldErrors.confirmPassword }}
         </div>
       </div>
 
       <!-- 邮箱 -->
       <div class="form-group">
-        <label for="email">QQ邮箱</label>
+        <label for="email">QQ邮箱 <span class="required">*</span></label>
         <input
           id="email"
           v-model="form.email"
           type="email"
-          placeholder="请输入QQ邮箱"
-          class="form-control"
+          placeholder="请输入QQ邮箱（如：12345@qq.com）"
+          :class="['form-control', { error: fieldErrors.email }]"
         />
+        <div v-if="fieldErrors.email" class="field-error">
+          {{ fieldErrors.email }}
+        </div>
+        <div v-else class="field-hint">请使用QQ邮箱注册，验证码将发送到此邮箱</div>
+      </div>
+
+      <!-- 学号（可选） -->
+      <div class="form-group">
+        <label for="studentId">学号</label>
+        <input
+          id="studentId"
+          v-model="form.studentId"
+          type="text"
+          placeholder="8-12位数字（可选）"
+          :class="['form-control', { error: fieldErrors.studentId }]"
+          maxlength="12"
+        />
+        <div v-if="fieldErrors.studentId" class="field-error">
+          {{ fieldErrors.studentId }}
+        </div>
+        <div v-else class="field-hint">学号可用于找回密码等操作</div>
       </div>
 
       <!-- 图形验证码 -->
       <div class="form-group">
-        <label for="captcha">图形验证码</label>
+        <label for="captcha">图形验证码 <span class="required">*</span></label>
         <div class="captcha-input">
           <input
             id="captcha"
             v-model="form.captcha"
             type="text"
-            placeholder="请输入图形验证码"
-            class="form-control"
+            placeholder="请输入4位验证码"
+            :class="['form-control', { error: fieldErrors.captcha }]"
             :disabled="!captchaData.captchaText"
             maxlength="4"
             style="text-transform: uppercase"
@@ -324,10 +561,12 @@ onMounted(() => {
             {{ isGettingCaptcha ? '获取中...' : '刷新验证码' }}
           </button>
         </div>
+        <div v-if="fieldErrors.captcha" class="field-error">
+          {{ fieldErrors.captcha }}
+        </div>
 
         <!-- 验证码显示区域 -->
         <div v-if="captchaData.captchaText" class="captcha-display">
-          <!-- 如果有图片则显示图片，否则显示文本 -->
           <div v-if="captchaData.captchaBase64" class="captcha-image-container">
             <img
               :src="captchaData.captchaBase64"
@@ -350,27 +589,40 @@ onMounted(() => {
 
       <!-- 邮箱验证码 -->
       <div class="form-group">
-        <label for="verifyCode">邮箱验证码</label>
+        <label for="verifyCode">邮箱验证码 <span class="required">*</span></label>
         <div class="captcha-input">
           <input
             id="verifyCode"
             v-model="form.verifyCode"
             type="text"
-            placeholder="请输入邮箱验证码"
-            class="form-control"
+            placeholder="请输入6位数字验证码"
+            :class="['form-control', { error: fieldErrors.verifyCode }]"
+            maxlength="6"
           />
           <button
             @click="sendVerifyCode"
             class="send-captcha-btn"
             :disabled="isSendingVerifyCode || !form.captcha"
+            :title="!form.captcha ? '请先填写图形验证码' : ''"
           >
             {{ isSendingVerifyCode ? '发送中...' : '发送验证码' }}
           </button>
         </div>
+        <div v-if="fieldErrors.verifyCode" class="field-error">
+          {{ fieldErrors.verifyCode }}
+        </div>
+        <div v-else class="field-hint">验证码10分钟内有效</div>
       </div>
 
       <!-- 注册按钮 -->
-      <button @click="handleRegister" class="register-button">注册</button>
+      <button
+        @click="handleRegister"
+        class="register-button"
+        :disabled="!isFormValid || !captchaData.captchaId"
+        :title="!isFormValid ? '请填写完整的表单信息' : ''"
+      >
+        注册
+      </button>
 
       <!-- 登录链接 -->
       <div class="login-link">已有账号？<a href="#" @click.prevent="goToLogin">立即登录</a></div>
@@ -378,7 +630,6 @@ onMounted(() => {
   </div>
 </template>
 
-<!-- 样式保持不变 -->
 <style scoped>
 .register-container {
   display: flex;
@@ -650,5 +901,79 @@ onMounted(() => {
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.required {
+  color: #f56c6c;
+}
+
+.field-error {
+  color: #f56c6c;
+  font-size: 12px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background-color: #fef0f0;
+  border-radius: 4px;
+  border-left: 3px solid #f56c6c;
+}
+
+.field-hint {
+  color: #909399;
+  font-size: 12px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.form-control.error {
+  border-color: #f56c6c;
+  background-color: #fef0f0;
+}
+
+.form-control.error:focus {
+  border-color: #f56c6c;
+  box-shadow: 0 0 0 3px rgba(245, 108, 108, 0.1);
+}
+
+/* 密码强度指示 */
+.weak {
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+.medium {
+  color: #e6a23c;
+  font-weight: bold;
+}
+
+.strong {
+  color: #67c23a;
+  font-weight: bold;
+}
+
+/* 禁用状态的按钮 */
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.register-button:disabled {
+  background: linear-gradient(135deg, #cccccc 0%, #999999 100%);
+  transform: none;
+  box-shadow: none;
+}
+
+.register-button:disabled:hover {
+  background: linear-gradient(135deg, #cccccc 0%, #999999 100%);
+  transform: none;
+  box-shadow: none;
+}
+
+/* 验证码按钮的禁用状态 */
+.send-captcha-btn:disabled {
+  background: linear-gradient(135deg, #cccccc 0%, #999999 100%);
+  transform: none;
+  box-shadow: none;
 }
 </style>
