@@ -52,18 +52,29 @@ const togglePasswordVisibility = () => {
 const getCaptcha = async () => {
   isGettingCaptcha.value = true
   try {
+    console.log('开始获取图形验证码...')
+
     const response = await api.get('/captcha')
     console.log('图形验证码响应:', response)
 
     if (response.code === 200) {
       captchaData.captchaId = response.captchaId
-      captchaData.captchaText = response.data // 验证码文本，如 "V6C2"
+      captchaData.captchaText = response.data
+      captchaData.captchaBase64 = response.captchaBase64 || '' // 保存Base64图片
       form.captcha = '' // 清空输入框
-      errorMessage.value = '图形验证码已更新'
+
+      console.log('验证码获取成功:', {
+        captchaId: captchaData.captchaId,
+        captchaText: captchaData.captchaText,
+        hasImage: !!captchaData.captchaBase64,
+      })
+
+      // 显示成功提示
+      errorMessage.value = '验证码已更新'
 
       // 3秒后清除成功提示
       setTimeout(() => {
-        if (errorMessage.value === '图形验证码已更新') {
+        if (errorMessage.value === '验证码已更新') {
           errorMessage.value = ''
         }
       }, 3000)
@@ -71,6 +82,7 @@ const getCaptcha = async () => {
       errorMessage.value = response.message || '获取验证码失败'
     }
   } catch (error: unknown) {
+    console.error('获取验证码失败:', error)
     const getErrorMessage = (err: unknown): string => {
       if (err instanceof Error) return err.message
       if (typeof err === 'string') return err
@@ -292,7 +304,7 @@ onMounted(() => {
         />
       </div>
 
-      <!-- 新增：图形验证码 -->
+      <!-- 修改验证码显示部分 -->
       <div class="form-group">
         <label for="captcha">图形验证码</label>
         <div class="captcha-input">
@@ -303,15 +315,34 @@ onMounted(() => {
             placeholder="请输入图形验证码"
             class="form-control"
             :disabled="!captchaData.captchaText"
+            maxlength="4"
+            style="text-transform: uppercase"
           />
           <button @click="getCaptcha" class="send-captcha-btn" :disabled="isGettingCaptcha">
-            {{ isGettingCaptcha ? '获取中...' : '获取验证码' }}
+            {{ isGettingCaptcha ? '获取中...' : '刷新验证码' }}
           </button>
         </div>
-        <!-- 显示验证码文本 -->
-        <div v-if="captchaData.captchaText" class="captcha-hint">
-          验证码：<strong>{{ captchaData.captchaText }}</strong>
-          （请输入上方验证码）
+
+        <!-- 验证码显示区域 -->
+        <div v-if="captchaData.captchaText" class="captcha-display">
+          <!-- 如果有图片则显示图片，否则显示文本 -->
+          <div v-if="captchaData.captchaBase64" class="captcha-image-container">
+            <img
+              :src="captchaData.captchaBase64"
+              alt="验证码"
+              @click="getCaptcha"
+              class="captcha-image"
+              title="点击刷新验证码"
+            />
+            <div class="captcha-hint">点击图片刷新验证码</div>
+          </div>
+          <div v-else class="captcha-text-container">
+            <div class="captcha-text-display">
+              <span class="captcha-label">验证码：</span>
+              <strong class="captcha-value">{{ captchaData.captchaText }}</strong>
+            </div>
+            <div class="captcha-hint">（请输入上方4位验证码，不区分大小写）</div>
+          </div>
         </div>
       </div>
 
@@ -539,15 +570,77 @@ onMounted(() => {
   transform: translateY(-1px);
 }
 
-.captcha-hint {
-  margin-top: 5px;
-  font-size: 12px;
+.captcha-display {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.captcha-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.captcha-image {
+  width: 120px;
+  height: 40px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.captcha-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.captcha-text-container {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.captcha-text-display {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.captcha-label {
   color: #666;
 }
 
-.captcha-hint strong {
-  color: #667eea;
-  font-size: 14px;
+.captcha-value {
+  color: #1890ff;
+  font-size: 18px;
+  letter-spacing: 3px;
+  background-color: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+}
+
+.captcha-hint {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* 修改邮箱验证码按钮样式 */
+.send-captcha-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.send-captcha-btn:not(:disabled) {
+  background-color: #52c41a;
+  color: white;
+}
+
+.send-captcha-btn:not(:disabled):hover {
+  background-color: #40a51f;
 }
 
 /* 禁用按钮样式 */
