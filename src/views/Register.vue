@@ -12,14 +12,14 @@ const form = reactive({
   confirmPassword: '',
   email: '',
   verifyCode: '',
-  captcha: '', // 新增：图形验证码
+  captcha: '',
 })
 
-// 新增：图形验证码相关数据
+// 图形验证码相关数据
 const captchaData = reactive({
-  captchaId: '', // 图形验证码ID
-  captchaText: '', // 图形验证码文本
-  captchaBase64: '', // 图形验证码图片（可选）
+  captchaId: '',
+  captchaText: '',
+  captchaBase64: '',
 })
 
 // 密码是否可见
@@ -48,19 +48,21 @@ const togglePasswordVisibility = () => {
   isPasswordVisible.value = !isPasswordVisible.value
 }
 
-// ========== 新增：获取图形验证码 ==========
+// ========== 修正：获取图形验证码 ==========
 const getCaptcha = async () => {
   isGettingCaptcha.value = true
   try {
     console.log('开始获取图形验证码...')
 
-    const response = await api.get('/captcha')
+    // 修正：加上括号调用函数
+    const response = await api.getCaptcha()
     console.log('图形验证码响应:', response)
 
     if (response.code === 200) {
+      // 修正：按照后端返回结构赋值
       captchaData.captchaId = response.captchaId
-      captchaData.captchaText = response.data
-      captchaData.captchaBase64 = response.captchaBase64 || '' // 保存Base64图片
+      captchaData.captchaText = response.data // 验证码文本在data字段
+      captchaData.captchaBase64 = response.captchaBase64 // 图片base64
       form.captcha = '' // 清空输入框
 
       console.log('验证码获取成功:', {
@@ -94,7 +96,7 @@ const getCaptcha = async () => {
   }
 }
 
-// ========== 修改：发送邮箱验证码 ==========
+// ========== 修正：发送邮箱验证码 ==========
 const sendVerifyCode = async () => {
   // 验证邮箱是否为空
   if (!form.email || !form.email.trim()) {
@@ -145,7 +147,7 @@ const sendVerifyCode = async () => {
   }
 }
 
-// ========== 修改：注册函数 ==========
+// ========== 修正：注册函数 ==========
 const handleRegister = async () => {
   // 清除之前的错误提示
   errorMessage.value = ''
@@ -182,14 +184,14 @@ const handleRegister = async () => {
   }
 
   try {
-    // 注意：注册不需要图形验证码，只需要邮箱验证码
-    const response = await api.post('/api/register', {
+    // 修正：使用api.register接口而不是直接api.post
+    const response = await api.register({
       username: form.username,
       password: form.password,
       email: form.email,
       verifyCode: form.verifyCode,
       // 可选的其他字段
-      studentId: '20240001', // 你可以改为从表单获取
+      studentId: '20240001',
       major: '计算机科学',
       college: '信息学院',
       grade: '2024',
@@ -304,7 +306,7 @@ onMounted(() => {
         />
       </div>
 
-      <!-- 修改验证码显示部分 -->
+      <!-- 图形验证码 -->
       <div class="form-group">
         <label for="captcha">图形验证码</label>
         <div class="captcha-input">
@@ -376,6 +378,7 @@ onMounted(() => {
   </div>
 </template>
 
+<!-- 样式保持不变 -->
 <style scoped>
 .register-container {
   display: flex;

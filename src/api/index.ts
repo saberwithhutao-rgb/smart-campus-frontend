@@ -8,7 +8,7 @@ import type {
   LearningProgress,
   LoginResponse,
   ApiResponse,
-  CaptchaResponse,
+  CaptchaResponse, // 这个是联合类型，需要具体化
 } from '../types/user'
 
 // 创建 axios 实例
@@ -18,31 +18,19 @@ const service: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json;charset=utf-8',
   },
-  withCredentials: true, // 添加这行，确保发送cookie
+  withCredentials: true,
 })
 
 // 请求拦截器
 service.interceptors.request.use(
   (config) => {
-    // 从localStorage获取token
     const token = localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-
-    // 添加调试日志
-    console.log('%c[API Request]', 'color: #4CAF50; font-weight: bold;', {
-      url: config.url,
-      method: config.method,
-      baseURL: config.baseURL,
-      headers: config.headers,
-      data: config.data,
-    })
-
     return config
   },
   (error) => {
-    console.error('%c[Request Error]', 'color: #F44336; font-weight: bold;', error)
     return Promise.reject(error)
   },
 )
@@ -50,24 +38,9 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log('%c[API Response]', 'color: #2196F3; font-weight: bold;', {
-      status: response.status,
-      data: response.data,
-      url: response.config.url,
-    })
-
-    // 直接返回完整的响应数据，由request函数处理
     return response
   },
   (error) => {
-    console.error('%c[Response Error]', 'color: #F44336; font-weight: bold;', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url,
-    })
-
-    // 处理HTTP错误
     let message = '请求失败'
     if (error.response) {
       const { status } = error.response
@@ -77,7 +50,6 @@ service.interceptors.response.use(
           break
         case 401:
           message = '未授权，请登录'
-          // 可以在这里实现token刷新或跳转到登录页
           localStorage.removeItem('token')
           break
         case 403:
@@ -100,9 +72,18 @@ service.interceptors.response.use(
 // 通用请求函数
 const request = <T>(config: AxiosRequestConfig): Promise<T> => {
   return service(config).then((res) => {
-    console.log('Response data:', res.data)
     return res.data
   })
+}
+
+// 根据后端返回结构定义具体的验证码响应类型
+interface CaptchaDataResponse {
+  code: number
+  data: string // 验证码文本
+  message: string
+  captchaId: string
+  expiresIn: number
+  captchaBase64: string // 图片base64
 }
 
 // API 接口定义
@@ -111,21 +92,33 @@ export const api = {
   login: (data: { username: string; password: string; captcha: string; captchaId?: string }) =>
     request<LoginResponse>({ method: 'POST', url: '/login', data }),
 
-  register: (data: { username: string; password: string; email: string; verifyCode: string }) =>
-    request<ApiResponse<null>>({ method: 'POST', url: '/register', data }),
+  register: (data: {
+    username: string
+    password: string
+    email: string
+    verifyCode: string
+    studentId?: string
+    major?: string
+    college?: string
+    grade?: string
+    gender?: number
+  }) => request<ApiResponse<null>>({ method: 'POST', url: '/register', data }),
 
   logout: () => request<ApiResponse<null>>({ method: 'POST', url: '/logout' }),
 
   refreshToken: () => request<ApiResponse<null>>({ method: 'POST', url: '/token/refresh' }),
 
+  // 发送邮箱验证码
   sendVerifyCode: (email: string, captcha: string, captchaId: string) =>
     request<ApiResponse<null>>({
       method: 'POST',
       url: '/verify/email',
-      data: { email, captcha, captchaId }, // 需要三个参数
+      data: { email, captcha, captchaId },
     }),
 
-  getCaptcha: () => request<CaptchaResponse>({ method: 'GET', url: '/captcha' }),
+  // 获取图形验证码 - 使用具体的CaptchaDataResponse类型
+  getCaptcha: () => request<CaptchaDataResponse>({ method: 'GET', url: '/captcha' }),
+
   // 学习计划模块
   getStudyPlans: () => request<ApiResponse<StudyPlan[]>>({ method: 'GET', url: '/study-plans' }),
 
@@ -179,5 +172,4 @@ export const api = {
     }),
 }
 
-// 导出axios实例供其他地方使用
 export default service
