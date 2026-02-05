@@ -104,22 +104,13 @@ const sendVerifyCode = async () => {
 
   isSendingVerifyCode.value = true
   try {
-    const response = await api.post('/api/verify/email', {
-      email: form.email,
-      captcha: form.captcha, // 图形验证码文本
-      captchaId: captchaData.captchaId, // 图形验证码ID
-    })
+    const response = await api.sendVerifyCode(form.email, form.captcha, captchaData.captchaId)
 
     console.log('邮箱验证码响应:', response)
 
     // 检查响应状态
     if (response.code === 200) {
       errorMessage.value = response.message || '验证码已发送，请查收邮件'
-
-      // 发送成功后，清空图形验证码，需要重新获取
-      form.captcha = ''
-      captchaData.captchaId = ''
-      captchaData.captchaText = ''
 
       // 3秒后清除成功提示
       setTimeout(() => {
