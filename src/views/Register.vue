@@ -52,7 +52,7 @@ const togglePasswordVisibility = () => {
 const getCaptcha = async () => {
   isGettingCaptcha.value = true
   try {
-    const response = await api.get('/api/captcha')
+    const response = await api.get('/captcha')
     console.log('图形验证码响应:', response)
 
     if (response.code === 200) {
