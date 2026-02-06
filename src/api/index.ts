@@ -21,17 +21,44 @@ const service: AxiosInstance = axios.create({
   withCredentials: true,
 })
 
-// 请求拦截器
-service.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
+// 响应拦截器 - 修改错误处理
+service.interceptors.response.use(
+  (response: AxiosResponse) => {
+    return response
   },
   (error) => {
-    return Promise.reject(error)
+    // ✅ 不要覆盖后端的具体错误信息
+    if (error.response && error.response.data && error.response.data.message) {
+      // 如果后端有返回具体错误信息，直接使用它
+      return Promise.reject(new Error(error.response.data.message))
+    }
+
+    // 只有网络错误或后端没有返回具体信息时，才使用通用错误
+    let message = '请求失败'
+    if (error.response) {
+      const { status } = error.response
+      switch (status) {
+        case 400:
+          message = '请求参数错误'
+          break
+        case 401:
+          message = '未授权，请登录'
+          localStorage.removeItem('token')
+          break
+        case 403:
+          message = '拒绝访问'
+          break
+        case 404:
+          message = '请求资源不存在'
+          break
+        case 500:
+          message = '服务器内部错误'
+          break
+        default:
+          message = `连接错误: ${status}`
+      }
+    }
+    return Promise.reject(new Error(message))
   },
 )
 

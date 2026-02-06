@@ -175,20 +175,29 @@ const sendVerifyCode = async () => {
         }
       }, 3000)
     } else {
-      // 处理错误
+      errorMessage.value = response.message || '发送验证码失败'
+
+      // 如果是邮箱已被注册，可以高亮显示邮箱输入框
       if (response.message.includes('已被注册')) {
-        fieldErrors.email = response.message
-        errorMessage.value = '该邮箱已被注册'
-      } else if (response.message.includes('过于频繁')) {
-        errorMessage.value = response.message
-      } else {
-        errorMessage.value = response.message || '发送验证码失败'
+        // 可以添加一些UI反馈
+        const emailInput = document.getElementById('email')
+        if (emailInput) {
+          emailInput.style.borderColor = '#f56c6c'
+          emailInput.focus()
+        }
       }
     }
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('发送验证码失败:', error)
-    errorMessage.value =
-      '发送验证码失败: ' + (error instanceof Error ? error.message : String(error))
+    if (error.response?.data?.message) {
+      // 如果有后端的具体错误信息，使用它
+      errorMessage.value = error.response.data.message
+    } else if (error.message) {
+      // 否则使用错误对象的消息
+      errorMessage.value = error.message
+    } else {
+      errorMessage.value = '发送验证码失败'
+    }
   } finally {
     isSendingVerifyCode.value = false
   }
@@ -358,7 +367,7 @@ const goToLogin = () => {
         </div>
       </div>
 
-      <!-- 邮箱 -->
+      <!-- 在邮箱输入框下方添加 -->
       <div class="form-group">
         <label for="email">QQ邮箱 <span class="required">*</span></label>
         <input
@@ -366,12 +375,23 @@ const goToLogin = () => {
           v-model="form.email"
           type="email"
           placeholder="请输入QQ邮箱（如：12345@qq.com）"
-          :class="['form-control', { error: fieldErrors.email }]"
+          :class="[
+            'form-control',
+            { error: fieldErrors.email || errorMessage.includes('邮箱已被注册') },
+          ]"
         />
         <div v-if="fieldErrors.email" class="field-error">
           {{ fieldErrors.email }}
         </div>
-        <div v-else class="field-hint">请使用QQ邮箱注册，验证码将发送到此邮箱</div>
+        <!-- 专门显示邮箱相关的后端错误 -->
+        <div v-if="errorMessage.includes('邮箱已被注册')" class="field-error">
+          <span style="color: #f56c6c">⚠️</span> {{ errorMessage }}
+          <br />
+          <small>请使用其他邮箱或<a href="#" @click.prevent="goToLogin">直接登录</a></small>
+        </div>
+        <div v-else-if="!fieldErrors.email" class="field-hint">
+          请使用QQ邮箱注册，验证码将发送到此邮箱
+        </div>
       </div>
 
       <!-- 邮箱验证码 -->
@@ -762,5 +782,47 @@ button:disabled {
   background: linear-gradient(135deg, #cccccc 0%, #999999 100%);
   transform: none;
   box-shadow: none;
+}
+
+/* 错误状态样式 */
+.form-control.error {
+  border-color: #f56c6c;
+  background-color: #fef0f0;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.field-error {
+  color: #f56c6c;
+  font-size: 14px;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background-color: #fef0f0;
+  border-radius: 4px;
+  border-left: 3px solid #f56c6c;
+}
+
+.field-error a {
+  color: #409eff;
+  text-decoration: underline;
 }
 </style>
