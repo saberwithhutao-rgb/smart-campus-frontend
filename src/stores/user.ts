@@ -1,7 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '@/api'
-import type { UserState, LoginResponse } from '@/types/user'
+import type { UserState, UserInfo } from '@/types/user'
+
+// 定义LoginResponse类型，匹配项目文档
+interface ProjectLoginResponse {
+  code: number
+  message: string
+  data: {
+    token: string
+    role: string
+    username: string
+    refreshToken?: string
+  }
+}
 
 export const useUserStore = defineStore('user', () => {
   const userState = ref<UserState>({
@@ -26,6 +38,7 @@ export const useUserStore = defineStore('user', () => {
           },
         }
       } catch (e) {
+        console.error('恢复用户状态失败:', e)
         clearStorage()
       }
     }
@@ -41,38 +54,38 @@ export const useUserStore = defineStore('user', () => {
     username: string,
     password: string,
     captcha: string,
-    captchaId?: string,
-  ): Promise<any> {
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const response = (await api.login({
         username,
         password,
         captcha,
-        captchaId,
-      })) as LoginResponse
+      })) as ProjectLoginResponse
 
       if (response.code !== 200) {
         throw new Error(response.message || '登录失败')
       }
 
       const data = response.data
-      const userInfo = data.user
+
+      // 创建完整的userInfo对象
+      const userInfo: UserInfo = {
+        token: data.token,
+        refreshToken: data.refreshToken || undefined,
+        role: data.role || 'user',
+        username: data.username,
+        userId: 0,
+        email: '',
+        avatar: '',
+        studentId: '',
+        major: '',
+        college: '',
+      }
 
       // 更新状态
       userState.value = {
         isLoggedIn: true,
-        userInfo: {
-          token: data.token,
-          refreshToken: data.refreshToken,
-          role: userInfo.role || 'user',
-          username: userInfo.username,
-          userId: userInfo.id,
-          email: userInfo.email,
-          avatar: userInfo.avatar || userInfo.avatarUrl,
-          studentId: userInfo.studentId,
-          major: userInfo.major,
-          college: userInfo.college,
-        },
+        userInfo,
       }
 
       // 保存到 localStorage
@@ -80,14 +93,14 @@ export const useUserStore = defineStore('user', () => {
       localStorage.setItem(
         'userInfo',
         JSON.stringify({
-          role: userInfo.role,
-          username: userInfo.username,
-          userId: userInfo.id,
-          email: userInfo.email,
-          avatar: userInfo.avatar,
-          studentId: userInfo.studentId,
-          major: userInfo.major,
-          college: userInfo.college,
+          role: data.role,
+          username: data.username,
+          userId: 0,
+          email: '',
+          avatar: '',
+          studentId: '',
+          major: '',
+          college: '',
         }),
       )
 
@@ -95,8 +108,9 @@ export const useUserStore = defineStore('user', () => {
         localStorage.setItem('refreshToken', data.refreshToken)
       }
 
-      return { success: true, data: response.data }
+      return { success: true }
     } catch (error: any) {
+      console.error('登录错误:', error)
       return {
         success: false,
         error: error.message || '登录失败',
@@ -104,7 +118,12 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  async function register(data: any): Promise<any> {
+  async function register(data: {
+    username: string
+    password: string
+    email: string
+    verifyCode: string
+  }): Promise<{ success: boolean; error?: string }> {
     try {
       const response = await api.register(data)
 
@@ -129,27 +148,38 @@ export const useUserStore = defineStore('user', () => {
     clearStorage()
   }
 
-  function setUserInfo(info: Partial<UserState['userInfo']>) {
-    if (userState.value.userInfo) {
-      userState.value.userInfo = {
-        ...userState.value.userInfo,
+  function setUserInfo(info: Partial<UserInfo>) {
+    const currentUserInfo = userState.value.userInfo
+    if (!currentUserInfo) {
+      console.warn('setUserInfo: 无法更新，用户未登录')
+      return
+    }
+
+    try {
+      // 合并信息
+      const updatedUserInfo: UserInfo = {
+        ...currentUserInfo,
         ...info,
       }
 
-      // 更新 localStorage
-      localStorage.setItem(
-        'userInfo',
-        JSON.stringify({
-          role: userState.value.userInfo.role,
-          username: userState.value.userInfo.username,
-          userId: userState.value.userInfo.userId,
-          email: userState.value.userInfo.email,
-          avatar: userState.value.userInfo.avatar,
-          studentId: userState.value.userInfo.studentId,
-          major: userState.value.userInfo.major,
-          college: userState.value.userInfo.college,
-        }),
-      )
+      // 更新状态
+      userState.value.userInfo = updatedUserInfo
+
+      // 分离token和其他信息（使用不同的变量名）
+      const { token: _newToken, refreshToken: _newRefreshToken, ...otherInfo } = updatedUserInfo
+
+      // 更新localStorage
+      localStorage.setItem('userInfo', JSON.stringify(otherInfo))
+
+      // 单独处理token
+      if (info.token !== undefined) {
+        localStorage.setItem('userToken', info.token)
+      }
+      if (info.refreshToken !== undefined) {
+        localStorage.setItem('refreshToken', info.refreshToken)
+      }
+    } catch (error) {
+      console.error('更新用户信息失败:', error)
     }
   }
 

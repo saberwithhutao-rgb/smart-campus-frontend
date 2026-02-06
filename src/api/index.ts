@@ -86,34 +86,38 @@ interface CaptchaDataResponse {
   captchaBase64: string // 图片base64
 }
 
+// 定义LoginData类型匹配项目文档
+interface LoginData {
+  token: string
+  role: string
+  username: string
+  refreshToken?: string
+}
+
 // API 接口定义
 export const api = {
   // 认证模块
-  login: (data: { username: string; password: string; captcha: string; captchaId?: string }) =>
-    request<LoginResponse>({ method: 'POST', url: '/login', data }),
+  login: (data: { username: string; password: string; captcha: string }) =>
+    request<ApiResponse<LoginData>>({
+      method: 'POST',
+      url: '/login',
+      data,
+    }),
 
-  register: (data: {
-    username: string
-    password: string
-    email: string
-    verifyCode: string
-    studentId?: string
-    major?: string
-    college?: string
-    grade?: string
-    gender?: number
-  }) => request<ApiResponse<null>>({ method: 'POST', url: '/register', data }),
+  // 修改register接口（只需要4个字段）
+  register: (data: { username: string; password: string; email: string; verifyCode: string }) =>
+    request<ApiResponse<null>>({ method: 'POST', url: '/register', data }),
 
   logout: () => request<ApiResponse<null>>({ method: 'POST', url: '/logout' }),
 
   refreshToken: () => request<ApiResponse<null>>({ method: 'POST', url: '/token/refresh' }),
 
   // 发送邮箱验证码
-  sendVerifyCode: (email: string, captcha: string, captchaId: string) =>
+  sendVerifyCode: (email: string) =>
     request<ApiResponse<null>>({
       method: 'POST',
       url: '/verify/email',
-      data: { email, captcha, captchaId },
+      data: { email },
     }),
 
   // 获取图形验证码 - 使用具体的CaptchaDataResponse类型

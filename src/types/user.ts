@@ -20,23 +20,16 @@ export interface User {
 }
 
 export interface UserInfo {
-  id: number
-  username: string
-  email: string
-  gender: number
-  genderText?: string
-  avatarUrl?: string
-  avatar?: string
-  status: number
-  statusText?: string
-  role: string
-  studentId?: string
-  major?: string
-  college?: string
-  grade?: string
-  createdAt: string
-  lastLoginAt?: string
-  metadata?: Record<string, any>
+  token: string // 必须
+  refreshToken?: string // 可选
+  role: string // 必须
+  username: string // 必须
+  userId?: number // 可选
+  email?: string // 可选
+  avatar?: string // 可选
+  studentId?: string // 可选
+  major?: string // 可选
+  college?: string // 可选
 }
 
 // 扩展的用户类型，包含更多属性
@@ -56,18 +49,7 @@ export interface ExtendedUser {
 // 前端存储的用户状态
 export interface UserState {
   isLoggedIn: boolean
-  userInfo: {
-    token: string
-    refreshToken?: string
-    role: string
-    username: string
-    userId: number
-    email?: string
-    avatar?: string
-    studentId?: string
-    major?: string
-    college?: string
-  } | null
+  userInfo: UserInfo | null
 }
 
 // 登录表单类型
@@ -101,14 +83,24 @@ export type CaptchaResponse =
 
 // 登录响应类型
 // 后端返回的用户数据结构
+// 修改LoginResponse类型，匹配项目文档
 export interface LoginResponse {
   code: number
   message: string
   data: {
     token: string
-    refreshToken?: string
-    user: UserInfo
+    role: 'student' | 'admin' | 'user' // 根据实际情况调整
+    username: string
+    refreshToken?: string // 可选
+    // 如果有其他字段可以在这里添加
   }
+}
+
+export interface LoginData {
+  token: string
+  role: string
+  username: string
+  refreshToken?: string
 }
 
 // 认证相关类型

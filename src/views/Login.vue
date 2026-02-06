@@ -1,21 +1,33 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '../api/index' // 直接使用api，不用store
+import { api } from '../api/index'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
+
 // 表单数据
 const form = reactive({
   username: '',
   password: '',
-  captcha: '123456', // 暂时写死验证码
-  captchaId: 'test',
+  captcha: '',
+})
+
+// 图形验证码相关数据
+const captchaData = reactive({
+  captchaText: '',
+  captchaBase64: '',
 })
 
 // 密码是否可见
 const isPasswordVisible = ref(false)
+
+// 是否正在获取验证码
+const isGettingCaptcha = ref(false)
+
+// 是否正在登录
+const isLoggingIn = ref(false)
 
 // 错误提示信息
 const errorMessage = ref('')
@@ -25,6 +37,35 @@ const togglePasswordVisibility = () => {
   isPasswordVisible.value = !isPasswordVisible.value
 }
 
+// 获取图形验证码
+const getCaptcha = async () => {
+  isGettingCaptcha.value = true
+  try {
+    const response = await api.getCaptcha()
+    console.log('登录验证码响应:', response)
+
+    if (response.code === 200) {
+      captchaData.captchaText = response.data
+      captchaData.captchaBase64 = response.captchaBase64 || ''
+      form.captcha = '' // 清空输入框
+
+      // 显示成功提示
+      errorMessage.value = '验证码已更新'
+      setTimeout(() => {
+        if (errorMessage.value === '验证码已更新') {
+          errorMessage.value = ''
+        }
+      }, 3000)
+    } else {
+      errorMessage.value = response.message || '获取验证码失败'
+    }
+  } catch (error: unknown) {
+    console.error('获取验证码失败:', error)
+    errorMessage.value = '获取验证码失败'
+  } finally {
+    isGettingCaptcha.value = false
+  }
+}
 // 登录
 const handleLogin = async () => {
   // 清除之前的错误提示
@@ -40,23 +81,29 @@ const handleLogin = async () => {
     errorMessage.value = '请输入密码'
     return
   }
+  if (!form.captcha || !form.captcha.trim()) {
+    errorMessage.value = '请输入验证码'
+    return
+  }
 
+  isLoggingIn.value = true
   try {
-    // 🟢 只调用 userStore.login()，它会内部处理API调用
-    const result = await userStore.login(form.username, form.password, form.captcha, form.captchaId)
-
-    console.log('登录结果:', result)
+    // 最佳实践：直接使用userStore.login
+    const result = await userStore.login(form.username, form.password, form.captcha)
 
     if (result.success) {
-      // 登录成功后跳转到首页
       alert('登录成功！')
       router.push('/')
     } else {
-      errorMessage.value = result.message || '登录失败'
+      errorMessage.value = result.error || '登录失败'
+      getCaptcha() // 刷新验证码
     }
   } catch (error: any) {
     console.error('登录出错:', error)
     errorMessage.value = error.message || '登录失败'
+    getCaptcha()
+  } finally {
+    isLoggingIn.value = false
   }
 }
 
@@ -64,6 +111,11 @@ const handleLogin = async () => {
 const goToRegister = () => {
   router.push('/register')
 }
+
+// 组件挂载时获取验证码
+onMounted(() => {
+  getCaptcha()
+})
 </script>
 
 <template>
@@ -110,12 +162,50 @@ const goToRegister = () => {
         </div>
       </div>
 
-      <!-- 暂时移除验证码组件，用隐藏字段 -->
-      <input type="hidden" v-model="form.captcha" />
-      <input type="hidden" v-model="form.captchaId" />
+      <!-- 图形验证码 -->
+      <div class="form-group">
+        <label for="captcha">图形验证码</label>
+        <div class="captcha-input">
+          <input
+            id="captcha"
+            v-model="form.captcha"
+            type="text"
+            placeholder="请输入验证码"
+            class="form-control"
+            maxlength="4"
+            style="text-transform: uppercase"
+          />
+          <button @click="getCaptcha" class="send-captcha-btn" :disabled="isGettingCaptcha">
+            {{ isGettingCaptcha ? '获取中...' : '刷新验证码' }}
+          </button>
+        </div>
+
+        <!-- 验证码显示区域 -->
+        <div v-if="captchaData.captchaText" class="captcha-display">
+          <div v-if="captchaData.captchaBase64" class="captcha-image-container">
+            <img
+              :src="captchaData.captchaBase64"
+              alt="验证码"
+              @click="getCaptcha"
+              class="captcha-image"
+              title="点击刷新验证码"
+            />
+            <div class="captcha-hint">点击图片刷新验证码</div>
+          </div>
+          <div v-else class="captcha-text-container">
+            <div class="captcha-text-display">
+              <span class="captcha-label">验证码：</span>
+              <strong class="captcha-value">{{ captchaData.captchaText }}</strong>
+            </div>
+            <div class="captcha-hint">（请输入上方4位验证码，不区分大小写）</div>
+          </div>
+        </div>
+      </div>
 
       <!-- 登录按钮 -->
-      <button @click="handleLogin" class="login-button">登录</button>
+      <button @click="handleLogin" class="login-button" :disabled="isLoggingIn">
+        {{ isLoggingIn ? '登录中...' : '登录' }}
+      </button>
 
       <!-- 注册链接 -->
       <div class="register-link">
@@ -287,5 +377,98 @@ const goToRegister = () => {
 .register-link a:hover {
   color: #5a6fd8;
   text-decoration: underline;
+}
+
+.captcha-input {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.captcha-input .form-control {
+  flex: 1;
+}
+
+.send-captcha-btn {
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  min-width: 110px;
+}
+
+.send-captcha-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4091 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transform: translateY(-1px);
+}
+
+.send-captcha-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.captcha-display {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.captcha-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.captcha-image {
+  width: 120px;
+  height: 40px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.captcha-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.captcha-text-container {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.captcha-text-display {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.captcha-label {
+  color: #666;
+}
+
+.captcha-value {
+  color: #1890ff;
+  font-size: 18px;
+  letter-spacing: 3px;
+  background-color: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+}
+
+.captcha-hint {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
 }
 </style>

@@ -1,37 +1,21 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api/index'
 
 const router = useRouter()
 
-// 表单数据
+// 表单数据 - 只需要4个必填字段
 const form = reactive({
   username: '',
   password: '',
   confirmPassword: '',
   email: '',
   verifyCode: '',
-  captcha: '',
-  studentId: '',
-  major: '',
-  college: '',
-  grade: '',
-  gender: 1,
-})
-
-// 图形验证码相关数据
-const captchaData = reactive({
-  captchaId: '',
-  captchaText: '',
-  captchaBase64: '',
 })
 
 // 密码是否可见
 const isPasswordVisible = ref(false)
-
-// 是否正在获取图形验证码
-const isGettingCaptcha = ref(false)
 
 // 是否正在发送邮箱验证码
 const isSendingVerifyCode = ref(false)
@@ -45,9 +29,7 @@ const fieldErrors = reactive({
   password: '',
   confirmPassword: '',
   email: '',
-  captcha: '',
   verifyCode: '',
-  studentId: '',
 })
 
 // 判断是否是错误消息
@@ -105,23 +87,10 @@ const validateEmail = (email: string): string => {
   return ''
 }
 
-// 验证图形验证码
-const validateCaptcha = (captcha: string): string => {
-  if (!captcha.trim()) return '请输入图形验证码'
-  if (captcha.length !== 4) return '验证码应为4位字符'
-  return ''
-}
-
 // 验证邮箱验证码
 const validateVerifyCode = (verifyCode: string): string => {
   if (!verifyCode.trim()) return '请输入邮箱验证码'
   if (!/^\d{6}$/.test(verifyCode)) return '验证码应为6位数字'
-  return ''
-}
-
-// 验证学号
-const validateStudentId = (studentId: string): string => {
-  if (studentId && !/^\d{8,12}$/.test(studentId)) return '学号应为8-12位数字'
   return ''
 }
 
@@ -159,23 +128,9 @@ watch(
 )
 
 watch(
-  () => form.captcha,
-  (value) => {
-    fieldErrors.captcha = validateCaptcha(value)
-  },
-)
-
-watch(
   () => form.verifyCode,
   (value) => {
     fieldErrors.verifyCode = validateVerifyCode(value)
-  },
-)
-
-watch(
-  () => form.studentId,
-  (value) => {
-    fieldErrors.studentId = validateStudentId(value)
   },
 )
 
@@ -186,97 +141,27 @@ const isFormValid = computed(() => {
     !fieldErrors.password &&
     !fieldErrors.confirmPassword &&
     !fieldErrors.email &&
-    !fieldErrors.captcha &&
     !fieldErrors.verifyCode &&
-    !fieldErrors.studentId &&
     form.username.trim() &&
     form.password.trim() &&
     form.confirmPassword.trim() &&
     form.email.trim() &&
-    form.captcha.trim() &&
     form.verifyCode.trim()
   )
 })
-
-// ========== 获取图形验证码 ==========
-const getCaptcha = async () => {
-  isGettingCaptcha.value = true
-  try {
-    console.log('开始获取图形验证码...')
-
-    const response = await api.getCaptcha()
-    console.log('图形验证码响应:', response)
-
-    if (response.code === 200) {
-      captchaData.captchaId = response.captchaId
-      captchaData.captchaText = response.data
-      captchaData.captchaBase64 = response.captchaBase64
-      form.captcha = ''
-
-      console.log('验证码获取成功:', {
-        captchaId: captchaData.captchaId,
-        captchaText: captchaData.captchaText,
-        hasImage: !!captchaData.captchaBase64,
-      })
-
-      // 显示成功提示
-      errorMessage.value = '验证码已更新'
-
-      // 3秒后清除成功提示
-      setTimeout(() => {
-        if (errorMessage.value === '验证码已更新') {
-          errorMessage.value = ''
-        }
-      }, 3000)
-    } else {
-      errorMessage.value = response.message || '获取验证码失败'
-    }
-  } catch (error: unknown) {
-    console.error('获取验证码失败:', error)
-    const getErrorMessage = (err: unknown): string => {
-      if (err instanceof Error) return err.message
-      if (typeof err === 'string') return err
-      return '获取验证码失败'
-    }
-    errorMessage.value = getErrorMessage(error)
-  } finally {
-    isGettingCaptcha.value = false
-  }
-}
-
-// ========== 发送邮箱验证码 ==========
 const sendVerifyCode = async () => {
-  // 验证所有必要字段
-  const usernameError = validateUsername(form.username)
+  // 验证邮箱是否为空
   const emailError = validateEmail(form.email)
-  const captchaError = validateCaptcha(form.captcha)
-
-  if (usernameError) {
-    fieldErrors.username = usernameError
-    errorMessage.value = '请先填写正确的用户名'
-    return
-  }
-
   if (emailError) {
     fieldErrors.email = emailError
-    errorMessage.value = '请先填写正确的邮箱'
-    return
-  }
-
-  if (captchaError) {
-    fieldErrors.captcha = captchaError
-    errorMessage.value = '请先填写正确的图形验证码'
-    return
-  }
-
-  if (!captchaData.captchaId) {
-    errorMessage.value = '请先获取图形验证码'
+    errorMessage.value = '请先填写正确的邮箱地址'
     return
   }
 
   isSendingVerifyCode.value = true
   try {
-    const response = await api.sendVerifyCode(form.email, form.captcha, captchaData.captchaId)
+    // 修改：只需要email参数
+    const response = await api.sendVerifyCode(form.email)
 
     console.log('邮箱验证码响应:', response)
 
@@ -290,33 +175,26 @@ const sendVerifyCode = async () => {
         }
       }, 3000)
     } else {
-      // 处理特定的后端错误
+      // 处理错误
       if (response.message.includes('已被注册')) {
         fieldErrors.email = response.message
         errorMessage.value = '该邮箱已被注册'
       } else if (response.message.includes('过于频繁')) {
         errorMessage.value = response.message
-      } else if (response.message.includes('图形验证码')) {
-        errorMessage.value = '图形验证码错误或已过期，请刷新重试'
-        getCaptcha() // 自动刷新验证码
       } else {
         errorMessage.value = response.message || '发送验证码失败'
       }
     }
   } catch (error: unknown) {
     console.error('发送验证码失败:', error)
-    const getErrorMessage = (err: unknown): string => {
-      if (err instanceof Error) return err.message
-      if (typeof err === 'string') return err
-      return '发送验证码失败'
-    }
-    errorMessage.value = getErrorMessage(error)
+    errorMessage.value =
+      '发送验证码失败: ' + (error instanceof Error ? error.message : String(error))
   } finally {
     isSendingVerifyCode.value = false
   }
 }
 
-// ========== 注册函数 ==========
+// ========== 注册函数（简化） ==========
 const handleRegister = async () => {
   // 清除之前的错误提示
   errorMessage.value = ''
@@ -327,9 +205,7 @@ const handleRegister = async () => {
     password: validatePassword(form.password),
     confirmPassword: validateConfirmPassword(form.password, form.confirmPassword),
     email: validateEmail(form.email),
-    captcha: validateCaptcha(form.captcha),
     verifyCode: validateVerifyCode(form.verifyCode),
-    studentId: validateStudentId(form.studentId),
   }
 
   // 更新字段错误
@@ -338,28 +214,18 @@ const handleRegister = async () => {
   // 检查是否有错误
   const hasErrors = Object.values(errors).some((error) => error)
   if (hasErrors) {
-    // 找到第一个错误显示
     const firstError = Object.values(errors).find((error) => error)
     errorMessage.value = firstError || '请检查表单填写'
     return
   }
 
-  if (!captchaData.captchaId) {
-    errorMessage.value = '请先获取图形验证码'
-    return
-  }
-
   try {
+    // 修改：只需要4个字段
     const response = await api.register({
       username: form.username,
       password: form.password,
       email: form.email,
       verifyCode: form.verifyCode,
-      studentId: form.studentId || '20240001',
-      major: form.major || '计算机科学',
-      college: form.college || '信息学院',
-      grade: form.grade || '2024',
-      gender: form.gender,
     })
 
     if (response.code === 200) {
@@ -374,29 +240,16 @@ const handleRegister = async () => {
       } else if (response.message.includes('邮箱已被注册')) {
         fieldErrors.email = response.message
         errorMessage.value = '邮箱已被注册'
-      } else if (response.message.includes('学号已注册')) {
-        fieldErrors.studentId = response.message
-        errorMessage.value = '学号已被注册'
       } else if (response.message.includes('验证码错误') || response.message.includes('已过期')) {
-        errorMessage.value = response.message
-        // 如果验证码问题，刷新验证码
-        if (response.message.includes('图形验证码')) {
-          getCaptcha()
-        }
-      } else if (response.message.includes('过于频繁')) {
-        errorMessage.value = response.message
+        fieldErrors.verifyCode = response.message
+        errorMessage.value = '验证码错误或已过期'
       } else {
         errorMessage.value = response.message || '注册失败'
       }
     }
   } catch (error: unknown) {
     console.error('注册请求失败:', error)
-    const getErrorMessage = (err: unknown): string => {
-      if (err instanceof Error) return err.message
-      if (typeof err === 'string') return err
-      return '注册失败'
-    }
-    errorMessage.value = getErrorMessage(error)
+    errorMessage.value = '注册失败: ' + (error instanceof Error ? error.message : String(error))
   }
 }
 
@@ -404,11 +257,6 @@ const handleRegister = async () => {
 const goToLogin = () => {
   router.push('/login')
 }
-
-// 组件挂载时自动获取图形验证码
-onMounted(() => {
-  getCaptcha()
-})
 </script>
 
 <template>
@@ -526,67 +374,6 @@ onMounted(() => {
         <div v-else class="field-hint">请使用QQ邮箱注册，验证码将发送到此邮箱</div>
       </div>
 
-      <!-- 学号（可选） -->
-      <div class="form-group">
-        <label for="studentId">学号</label>
-        <input
-          id="studentId"
-          v-model="form.studentId"
-          type="text"
-          placeholder="8-12位数字（可选）"
-          :class="['form-control', { error: fieldErrors.studentId }]"
-          maxlength="12"
-        />
-        <div v-if="fieldErrors.studentId" class="field-error">
-          {{ fieldErrors.studentId }}
-        </div>
-        <div v-else class="field-hint">学号可用于找回密码等操作</div>
-      </div>
-
-      <!-- 图形验证码 -->
-      <div class="form-group">
-        <label for="captcha">图形验证码 <span class="required">*</span></label>
-        <div class="captcha-input">
-          <input
-            id="captcha"
-            v-model="form.captcha"
-            type="text"
-            placeholder="请输入4位验证码"
-            :class="['form-control', { error: fieldErrors.captcha }]"
-            :disabled="!captchaData.captchaText"
-            maxlength="4"
-            style="text-transform: uppercase"
-          />
-          <button @click="getCaptcha" class="send-captcha-btn" :disabled="isGettingCaptcha">
-            {{ isGettingCaptcha ? '获取中...' : '刷新验证码' }}
-          </button>
-        </div>
-        <div v-if="fieldErrors.captcha" class="field-error">
-          {{ fieldErrors.captcha }}
-        </div>
-
-        <!-- 验证码显示区域 -->
-        <div v-if="captchaData.captchaText" class="captcha-display">
-          <div v-if="captchaData.captchaBase64" class="captcha-image-container">
-            <img
-              :src="captchaData.captchaBase64"
-              alt="验证码"
-              @click="getCaptcha"
-              class="captcha-image"
-              title="点击刷新验证码"
-            />
-            <div class="captcha-hint">点击图片刷新验证码</div>
-          </div>
-          <div v-else class="captcha-text-container">
-            <div class="captcha-text-display">
-              <span class="captcha-label">验证码：</span>
-              <strong class="captcha-value">{{ captchaData.captchaText }}</strong>
-            </div>
-            <div class="captcha-hint">（请输入上方4位验证码，不区分大小写）</div>
-          </div>
-        </div>
-      </div>
-
       <!-- 邮箱验证码 -->
       <div class="form-group">
         <label for="verifyCode">邮箱验证码 <span class="required">*</span></label>
@@ -602,8 +389,8 @@ onMounted(() => {
           <button
             @click="sendVerifyCode"
             class="send-captcha-btn"
-            :disabled="isSendingVerifyCode || !form.captcha"
-            :title="!form.captcha ? '请先填写图形验证码' : ''"
+            :disabled="isSendingVerifyCode || !form.email"
+            :title="!form.email ? '请先填写邮箱' : ''"
           >
             {{ isSendingVerifyCode ? '发送中...' : '发送验证码' }}
           </button>
@@ -618,7 +405,7 @@ onMounted(() => {
       <button
         @click="handleRegister"
         class="register-button"
-        :disabled="!isFormValid || !captchaData.captchaId"
+        :disabled="!isFormValid"
         :title="!isFormValid ? '请填写完整的表单信息' : ''"
       >
         注册
