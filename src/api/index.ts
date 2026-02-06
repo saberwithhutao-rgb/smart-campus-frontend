@@ -61,41 +61,6 @@ service.interceptors.response.use(
     return Promise.reject(new Error(message))
   },
 )
-
-// 响应拦截器
-service.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response
-  },
-  (error) => {
-    let message = '请求失败'
-    if (error.response) {
-      const { status } = error.response
-      switch (status) {
-        case 400:
-          message = '请求参数错误'
-          break
-        case 401:
-          message = '未授权，请登录'
-          localStorage.removeItem('token')
-          break
-        case 403:
-          message = '拒绝访问'
-          break
-        case 404:
-          message = '请求资源不存在'
-          break
-        case 500:
-          message = '服务器内部错误'
-          break
-        default:
-          message = `连接错误: ${status}`
-      }
-    }
-    return Promise.reject(new Error(message))
-  },
-)
-
 // 通用请求函数
 const request = <T>(config: AxiosRequestConfig): Promise<T> => {
   return service(config).then((res) => {
