@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { api } from '../api/index'
 
 // 路由实例
 const router = useRouter()
@@ -53,7 +54,7 @@ const selectMenu = (menu: string) => {
 }
 
 // 发送消息
-const sendMessage = () => {
+const sendMessage = async () => {
   if (!inputMessage.value.trim()) return
 
   // 添加用户消息
@@ -66,18 +67,34 @@ const sendMessage = () => {
   messages.value.push(userMessage)
 
   // 清空输入框
+  const question = inputMessage.value
   inputMessage.value = ''
 
-  // 模拟AI回复
-  setTimeout(() => {
-    const aiMessage = {
-      id: Date.now() + 1,
-      content: '这是AI的回复内容。',
-      sender: 'ai',
-      timestamp: new Date().toLocaleTimeString(),
+  try {
+    // 调用后端API
+    const response = await api.askQuestion({
+      question: question,
+      sessionId: currentSessionId.value,
+      stream: false, // 暂时不用流式
+    })
+
+    if (response.code === 202) {
+      // 文件上传，异步处理
+      const taskId = response.data.taskId
+      pollTaskStatus(taskId)
+    } else if (response.code === 200) {
+      // 直接返回答案
+      const aiMessage = {
+        id: Date.now() + 1,
+        content: response.data.answer,
+        sender: 'ai',
+        timestamp: new Date().toLocaleTimeString(),
+      }
+      messages.value.push(aiMessage)
     }
-    messages.value.push(aiMessage)
-  }, 1000)
+  } catch (error) {
+    console.error('发送消息失败:', error)
+  }
 }
 
 // 处理键盘事件
@@ -98,7 +115,7 @@ const handleFileChange = (event: Event) => {
 }
 
 // 上传文件
-const uploadFile = () => {
+const uploadFile = async () => {
   if (!selectedFile.value) return
 
   // 添加文件上传消息
@@ -110,18 +127,21 @@ const uploadFile = () => {
   }
   messages.value.push(fileMessage)
 
-  // 模拟AI回复
-  setTimeout(() => {
-    const aiMessage = {
-      id: Date.now() + 1,
-      content: '文件上传成功，正在处理中...',
-      sender: 'ai',
-      timestamp: new Date().toLocaleTimeString(),
-    }
-    messages.value.push(aiMessage)
-  }, 1000)
+  try {
+    const response = await api.askQuestion({
+      question: inputMessage.value || '请分析这个文件',
+      file: selectedFile.value,
+      sessionId: currentSessionId.value,
+    })
 
-  // 重置上传状态
+    if (response.code === 202) {
+      const taskId = response.data.taskId
+      pollTaskStatus(taskId)
+    }
+  } catch (error) {
+    console.error('文件上传失败:', error)
+  }
+
   cancelUpload()
 }
 
@@ -136,6 +156,40 @@ const cancelUpload = () => {
   }
 }
 
+// 轮询任务状态
+const pollTaskStatus = async (taskId: string) => {
+  const interval = setInterval(async () => {
+    try {
+      const response = await api.getTaskStatus(taskId)
+
+      if (response.data.status === 'completed') {
+        clearInterval(interval)
+
+        const aiMessage = {
+          id: Date.now(),
+          content: response.data.answer,
+          sender: 'ai',
+          timestamp: new Date().toLocaleTimeString(),
+        }
+        messages.value.push(aiMessage)
+      } else if (response.data.status === 'failed') {
+        clearInterval(interval)
+
+        const errorMessage = {
+          id: Date.now(),
+          content: `处理失败: ${response.data.error}`,
+          sender: 'system',
+          timestamp: new Date().toLocaleTimeString(),
+        }
+        messages.value.push(errorMessage)
+      }
+      // 否则继续轮询...
+    } catch (error) {
+      console.error('轮询失败:', error)
+      clearInterval(interval)
+    }
+  }, 2000) // 每2秒轮询一次
+}
 // 切换侧边栏显示
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value

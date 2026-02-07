@@ -130,16 +130,51 @@ export const api = {
   deleteStudyPlan: (id: string) =>
     request<ApiResponse<null>>({ method: 'DELETE', url: `/study-plans/${id}` }),
 
-  // 智能问答模块
-  askQuestion: (question: string) =>
-    request<ApiResponse<{ question: string; answer: string }>>({
+  // 智能问答 - 匹配文档规范
+  askQuestion: (data: { question: string; file?: File; sessionId?: string; stream?: boolean }) => {
+    const formData = new FormData()
+    formData.append('question', data.question)
+    if (data.file) {
+      formData.append('file', data.file)
+    }
+    if (data.sessionId) {
+      formData.append('sessionId', data.sessionId)
+    }
+    if (data.stream) {
+      formData.append('stream', 'true')
+    }
+
+    return request<ApiResponse<ChatResponse>>({
       method: 'POST',
-      url: '/qa/ask',
-      data: { question },
+      url: '/ai/chat',
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    })
+  },
+
+  // 查询任务状态
+  getTaskStatus: (taskId: string) =>
+    request<ApiResponse<TaskStatusResponse>>({
+      method: 'GET',
+      url: `/ai/chat/task/${taskId}`,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
     }),
 
-  getQaHistory: () => request<ApiResponse<QaMessage[]>>({ method: 'GET', url: '/qa/history' }),
-
+  // 获取历史对话
+  getChatHistory: (sessionId?: string, limit?: number) =>
+    request<ApiResponse<ChatHistoryItem[]>>({
+      method: 'GET',
+      url: '/ai/chat/history',
+      params: { sessionId, limit },
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }),
   // 文件处理模块
   uploadFile: (file: File, type: string) => {
     const formData = new FormData()
@@ -169,3 +204,47 @@ export const api = {
 }
 
 export default service
+
+// 新增类型定义
+interface QaResponse {
+  answer: string
+  fromCache: boolean
+  contexts: string[]
+  sourceDocuments: string[]
+  modelUsed: string
+  responseTime: number
+  queryId: string
+}
+
+interface QaHistoryItem {
+  id: number
+  question: string
+  answer: string
+  askTime: string
+  responseTime: number
+}
+
+// 新增类型定义
+interface ChatResponse {
+  answer?: string
+  sessionId: string
+  taskId?: string // 文件上传时返回
+  status?: string // 文件上传时返回
+}
+
+interface TaskStatusResponse {
+  taskId: string
+  status: 'processing' | 'completed' | 'failed'
+  answer?: string
+  error?: string
+}
+
+interface ChatHistoryItem {
+  id: number
+  sessionId: string
+  question: string
+  answer: string
+  createdAt: string
+  title?: string
+  fileId?: number
+}
