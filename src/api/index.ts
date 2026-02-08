@@ -8,32 +8,51 @@ import type {
   LearningProgress,
   LoginResponse,
   ApiResponse,
-  CaptchaResponse, // 这个是联合类型，需要具体化
+  CaptchaResponse,
 } from '../types/user'
 
-// 创建 axios 实例
+// 创建 axios 实例 - 修改baseURL
 const service: AxiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: '', // 改为空字符串，使用相对路径
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json;charset=utf-8',
   },
-  withCredentials: true,
+  withCredentials: false, // 改为false，避免CORS问题
 })
 
-// 响应拦截器 - 修改错误处理
+// 请求拦截器：添加Token
+service.interceptors.request.use(
+  (config) => {
+    // 从localStorage获取token，注意键名是userToken
+    const token = localStorage.getItem('userToken')
+
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
+    // 如果是FormData，不设置Content-Type，让浏览器自动设置
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+    }
+
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  },
+)
+
+// 响应拦截器
 service.interceptors.response.use(
   (response: AxiosResponse) => {
     return response
   },
   (error) => {
-    // ✅ 不要覆盖后端的具体错误信息
     if (error.response && error.response.data && error.response.data.message) {
-      // 如果后端有返回具体错误信息，直接使用它
       return Promise.reject(new Error(error.response.data.message))
     }
 
-    // 只有网络错误或后端没有返回具体信息时，才使用通用错误
     let message = '请求失败'
     if (error.response) {
       const { status } = error.response
@@ -43,7 +62,10 @@ service.interceptors.response.use(
           break
         case 401:
           message = '未授权，请登录'
-          localStorage.removeItem('token')
+          localStorage.removeItem('userToken')
+          localStorage.removeItem('userInfo')
+          localStorage.removeItem('refreshToken')
+          window.location.href = '/login'
           break
         case 403:
           message = '拒绝访问'
@@ -61,6 +83,7 @@ service.interceptors.response.use(
     return Promise.reject(new Error(message))
   },
 )
+
 // 通用请求函数
 const request = <T>(config: AxiosRequestConfig): Promise<T> => {
   return service(config).then((res) => {
@@ -68,17 +91,16 @@ const request = <T>(config: AxiosRequestConfig): Promise<T> => {
   })
 }
 
-// 根据后端返回结构定义具体的验证码响应类型
+// 类型定义
 interface CaptchaDataResponse {
   code: number
-  data: string // 验证码文本
+  data: string
   message: string
   captchaId: string
   expiresIn: number
-  captchaBase64: string // 图片base64
+  captchaBase64: string
 }
 
-// 定义LoginData类型匹配项目文档
 interface LoginData {
   token: string
   role: string
@@ -86,150 +108,11 @@ interface LoginData {
   refreshToken?: string
 }
 
-// API 接口定义
-export const api = {
-  // 认证模块
-  login: (data: { username: string; password: string; captcha: string }) =>
-    request<ApiResponse<LoginData>>({
-      method: 'POST',
-      url: '/login',
-      data,
-    }),
-
-  // 修改register接口（只需要4个字段）
-  register: (data: { username: string; password: string; email: string; verifyCode: string }) =>
-    request<ApiResponse<null>>({ method: 'POST', url: '/register', data }),
-
-  logout: () => request<ApiResponse<null>>({ method: 'POST', url: '/logout' }),
-
-  refreshToken: () => request<ApiResponse<null>>({ method: 'POST', url: '/token/refresh' }),
-
-  // 发送邮箱验证码
-  sendVerifyCode: (email: string) =>
-    request<ApiResponse<null>>({
-      method: 'POST',
-      url: '/verify/email',
-      data: { email },
-    }),
-
-  // 获取图形验证码 - 使用具体的CaptchaDataResponse类型
-  getCaptcha: () => request<CaptchaDataResponse>({ method: 'GET', url: '/captcha' }),
-
-  // 学习计划模块
-  getStudyPlans: () => request<ApiResponse<StudyPlan[]>>({ method: 'GET', url: '/study-plans' }),
-
-  getStudyPlan: (id: string) =>
-    request<ApiResponse<StudyPlan>>({ method: 'GET', url: `/study-plans/${id}` }),
-
-  createStudyPlan: (data: Omit<StudyPlan, 'id'>) =>
-    request<ApiResponse<StudyPlan>>({ method: 'POST', url: '/study-plans', data }),
-
-  updateStudyPlan: (id: string, data: Partial<StudyPlan>) =>
-    request<ApiResponse<StudyPlan>>({ method: 'PUT', url: `/study-plans/${id}`, data }),
-
-  deleteStudyPlan: (id: string) =>
-    request<ApiResponse<null>>({ method: 'DELETE', url: `/study-plans/${id}` }),
-
-  // 智能问答 - 匹配文档规范
-  askQuestion: (data: { question: string; file?: File; sessionId?: string; stream?: boolean }) => {
-    const formData = new FormData()
-    formData.append('question', data.question)
-    if (data.file) {
-      formData.append('file', data.file)
-    }
-    if (data.sessionId) {
-      formData.append('sessionId', data.sessionId)
-    }
-    if (data.stream) {
-      formData.append('stream', 'true')
-    }
-
-    return request<ApiResponse<ChatResponse>>({
-      method: 'POST',
-      url: '/ai/chat',
-      data: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    })
-  },
-
-  // 查询任务状态
-  getTaskStatus: (taskId: string) =>
-    request<ApiResponse<TaskStatusResponse>>({
-      method: 'GET',
-      url: `/ai/chat/task/${taskId}`,
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    }),
-
-  // 获取历史对话
-  getChatHistory: (sessionId?: string, limit?: number) =>
-    request<ApiResponse<ChatHistoryItem[]>>({
-      method: 'GET',
-      url: '/ai/chat/history',
-      params: { sessionId, limit },
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    }),
-  // 文件处理模块
-  uploadFile: (file: File, type: string) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('type', type)
-    return request<ApiResponse<FileItem>>({
-      method: 'POST',
-      url: '/files/upload',
-      data: formData,
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  },
-
-  getFileList: (type?: string) =>
-    request<ApiResponse<FileItem[]>>({ method: 'GET', url: '/files', params: { type } }),
-
-  // 学习进度模块
-  getLearningProgress: () =>
-    request<ApiResponse<LearningProgress[]>>({ method: 'GET', url: '/learning-progress' }),
-
-  updateProgress: (data: Partial<LearningProgress>) =>
-    request<ApiResponse<LearningProgress>>({
-      method: 'POST',
-      url: '/learning-progress/update',
-      data,
-    }),
-}
-
-export default service
-
-// 新增类型定义
-interface QaResponse {
-  answer: string
-  fromCache: boolean
-  contexts: string[]
-  sourceDocuments: string[]
-  modelUsed: string
-  responseTime: number
-  queryId: string
-}
-
-interface QaHistoryItem {
-  id: number
-  question: string
-  answer: string
-  askTime: string
-  responseTime: number
-}
-
-// 新增类型定义
 interface ChatResponse {
   answer?: string
   sessionId: string
-  taskId?: string // 文件上传时返回
-  status?: string // 文件上传时返回
+  taskId?: string
+  status?: string
 }
 
 interface TaskStatusResponse {
@@ -248,3 +131,97 @@ interface ChatHistoryItem {
   title?: string
   fileId?: number
 }
+
+// API 接口定义
+export const api = {
+  // 认证模块
+  login: (data: { username: string; password: string; captcha: string }) =>
+    request<ApiResponse<LoginData>>({
+      method: 'POST',
+      url: '/api/login', // 注意这里用/api前缀
+      data,
+    }),
+
+  register: (data: { username: string; password: string; email: string; verifyCode: string }) =>
+    request<ApiResponse<null>>({ method: 'POST', url: '/api/register', data }),
+
+  logout: () => request<ApiResponse<null>>({ method: 'POST', url: '/api/logout' }),
+
+  refreshToken: () => request<ApiResponse<null>>({ method: 'POST', url: '/api/token/refresh' }),
+
+  sendVerifyCode: (email: string) =>
+    request<ApiResponse<null>>({
+      method: 'POST',
+      url: '/api/verify/email',
+      data: { email },
+    }),
+
+  getCaptcha: () => request<CaptchaDataResponse>({ method: 'GET', url: '/api/captcha' }),
+
+  // 学习计划模块
+  getStudyPlans: () =>
+    request<ApiResponse<StudyPlan[]>>({ method: 'GET', url: '/api/study-plans' }),
+
+  getStudyPlan: (id: string) =>
+    request<ApiResponse<StudyPlan>>({ method: 'GET', url: `/api/study-plans/${id}` }),
+
+  createStudyPlan: (data: Omit<StudyPlan, 'id'>) =>
+    request<ApiResponse<StudyPlan>>({ method: 'POST', url: '/api/study-plans', data }),
+
+  // 智能问答 - 关键修复：直接使用/ai/路径，不要加/api前缀
+  askQuestion: (data: { question: string; file?: File; sessionId?: string; stream?: boolean }) => {
+    const formData = new FormData()
+    formData.append('question', data.question)
+    if (data.file) {
+      formData.append('file', data.file)
+    }
+    if (data.sessionId) {
+      formData.append('sessionId', data.sessionId)
+    }
+    if (data.stream) {
+      formData.append('stream', 'true')
+    }
+
+    return request<ApiResponse<ChatResponse>>({
+      method: 'POST',
+      url: '/ai/chat', // 关键：直接使用/ai/chat，Nginx会代理到后端
+      data: formData,
+    })
+  },
+
+  // 查询任务状态
+  getTaskStatus: (taskId: string) =>
+    request<ApiResponse<TaskStatusResponse>>({
+      method: 'GET',
+      url: `/ai/chat/task/${taskId}`,
+    }),
+
+  // 获取历史对话
+  getChatHistory: (sessionId?: string, limit?: number) =>
+    request<ApiResponse<ChatHistoryItem[]>>({
+      method: 'GET',
+      url: '/ai/chat/history',
+      params: { sessionId, limit },
+    }),
+
+  // 文件处理模块
+  uploadFile: (file: File, type: string) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', type)
+    return request<ApiResponse<FileItem>>({
+      method: 'POST',
+      url: '/api/files/upload',
+      data: formData,
+    })
+  },
+
+  getFileList: (type?: string) =>
+    request<ApiResponse<FileItem[]>>({ method: 'GET', url: '/api/files', params: { type } }),
+
+  // 学习进度模块
+  getLearningProgress: () =>
+    request<ApiResponse<LearningProgress[]>>({ method: 'GET', url: '/api/learning-progress' }),
+}
+
+export default service
