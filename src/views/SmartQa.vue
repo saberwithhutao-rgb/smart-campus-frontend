@@ -22,6 +22,7 @@ const isMobile = ref(false) // 是否为移动端
 const showSidebar = ref(true) // 是否显示侧边栏
 const isUploadMode = ref(false) // 是否为上传模式
 const selectedFile = ref<File | null>(null) // 选中的文件
+const currentSessionId = ref<string>('') // ✅ 新增：当前会话ID
 
 // 用户状态管理
 const userStore = useUserStore()
@@ -50,6 +51,7 @@ const selectMenu = (menu: string) => {
         timestamp: new Date().toLocaleTimeString(),
       },
     ]
+    currentSessionId.value = '' // ✅ 新对话时清空sessionId
   }
 }
 
@@ -74,26 +76,47 @@ const sendMessage = async () => {
     // 调用后端API
     const response = await api.askQuestion({
       question: question,
-      sessionId: currentSessionId.value,
+      sessionId: currentSessionId.value || undefined, // ✅ 修正：传入sessionId或undefined
       stream: false, // 暂时不用流式
     })
 
+    console.log('AI响应:', response)
+
     if (response.code === 202) {
       // 文件上传，异步处理
-      const taskId = response.data.taskId
+      const taskId = response.data.taskId || ''
       pollTaskStatus(taskId)
+
+      // 更新sessionId
+      if (response.data.sessionId) {
+        currentSessionId.value = response.data.sessionId
+      }
     } else if (response.code === 200) {
       // 直接返回答案
       const aiMessage = {
         id: Date.now() + 1,
-        content: response.data.answer,
+        // 确保 content 始终是 string
+        content: response.data.answer || 'AI未返回具体答案',
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString(),
       }
       messages.value.push(aiMessage)
+
+      // 更新sessionId
+      if (response.data.sessionId) {
+        currentSessionId.value = response.data.sessionId
+      }
     }
   } catch (error) {
-    console.error('发送消息失败:', error)
+    console.error('请求失败:', error)
+    const errorMessage = {
+      id: Date.now(),
+      // 使用可选链和空值合并运算符安全地获取错误信息
+      content: `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      sender: 'system',
+      timestamp: new Date().toLocaleTimeString(),
+    }
+    messages.value.push(errorMessage)
   }
 }
 
@@ -131,15 +154,45 @@ const uploadFile = async () => {
     const response = await api.askQuestion({
       question: inputMessage.value || '请分析这个文件',
       file: selectedFile.value,
-      sessionId: currentSessionId.value,
+      sessionId: currentSessionId.value || undefined, // ✅ 修正
     })
 
+    console.log('文件上传响应:', response)
+
     if (response.code === 202) {
-      const taskId = response.data.taskId
+      const taskId = response.data.taskId || ''
       pollTaskStatus(taskId)
+
+      // 更新sessionId
+      if (response.data.sessionId) {
+        currentSessionId.value = response.data.sessionId
+      }
+    } else if (response.code === 200) {
+      // 如果直接返回答案（比如小文件）
+      const aiMessage = {
+        id: Date.now() + 1,
+        // 确保 content 始终是 string
+        content: response.data.answer || 'AI未返回具体答案',
+        sender: 'ai',
+        timestamp: new Date().toLocaleTimeString(),
+      }
+      messages.value.push(aiMessage)
+
+      // 更新sessionId
+      if (response.data.sessionId) {
+        currentSessionId.value = response.data.sessionId
+      }
     }
   } catch (error) {
-    console.error('文件上传失败:', error)
+    console.error('请求失败:', error)
+    const errorMessage = {
+      id: Date.now(),
+      // 使用可选链和空值合并运算符安全地获取错误信息
+      content: `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      sender: 'system',
+      timestamp: new Date().toLocaleTimeString(),
+    }
+    messages.value.push(errorMessage)
   }
 
   cancelUpload()
@@ -161,13 +214,14 @@ const pollTaskStatus = async (taskId: string) => {
   const interval = setInterval(async () => {
     try {
       const response = await api.getTaskStatus(taskId)
+      console.log('任务状态轮询:', response)
 
       if (response.data.status === 'completed') {
         clearInterval(interval)
 
         const aiMessage = {
           id: Date.now(),
-          content: response.data.answer,
+          content: response.data.answer || '文件处理完成',
           sender: 'ai',
           timestamp: new Date().toLocaleTimeString(),
         }
@@ -177,7 +231,7 @@ const pollTaskStatus = async (taskId: string) => {
 
         const errorMessage = {
           id: Date.now(),
-          content: `处理失败: ${response.data.error}`,
+          content: `处理失败: ${response.data.error || '未知错误'}`,
           sender: 'system',
           timestamp: new Date().toLocaleTimeString(),
         }
