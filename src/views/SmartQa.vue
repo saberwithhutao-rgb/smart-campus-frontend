@@ -220,35 +220,64 @@ const processSSEResponse = async (response: Response, aiMessageIndex: number) =>
       }
 
       const text = decoder.decode(value)
-      console.log('📦 收到原始文本:', text)
+      console.log('📦 收到原始文本，长度:', text.length)
 
-      // 尝试直接查找JSON数据
-      const dataMatch = text.match(/data:\s*({[^}]+})/g)
-      if (dataMatch) {
-        for (const match of dataMatch) {
-          try {
-            // 提取JSON部分
-            const jsonStr = match.substring(5).trim() // 去掉 "data: "
-            console.log('📦 提取JSON:', jsonStr)
+      // 🔧 修复：使用正确的正则匹配完整JSON
+      // 匹配格式：data: {...} （支持嵌套花括号）
+      const dataRegex = /data:\s*(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})/g
+      let match
 
-            const data = JSON.parse(jsonStr)
-            console.log('✅ 解析成功，chunk存在:', !!data.chunk)
+      while ((match = dataRegex.exec(text)) !== null) {
+        try {
+          // 检查 match[1] 是否存在
+          if (!match[1]) {
+            console.warn('⚠️ 匹配结果为空，跳过当前块')
+            continue
+          }
 
-            if (data.chunk) {
-              accumulatedText += data.chunk
-              console.log('📝 累积文本:', accumulatedText)
+          const jsonStr = match[1]
+          console.log('📦 提取完整JSON字符串，长度:', jsonStr.length)
 
-              safeUpdateMessage(aiMessageIndex, accumulatedText, !data.done)
+          const data = JSON.parse(jsonStr)
+          console.log('✅ JSON解析成功，chunk长度:', data.chunk?.length || 0)
 
-              if (data.done && data.sessionId) {
+          if (data.chunk && typeof data.chunk === 'string') {
+            accumulatedText += data.chunk
+            console.log('📝 添加chunk内容:', data.chunk)
+            console.log('📊 累积文本长度:', accumulatedText.length)
+
+            // 更新UI
+            safeUpdateMessage(aiMessageIndex, accumulatedText, !data.done)
+
+            // 处理完成状态
+            if (data.done === true) {
+              console.log('🎉 流式完成')
+              safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+
+              if (data.sessionId) {
                 currentSessionId.value = data.sessionId
                 console.log('🆔 更新sessionId:', data.sessionId)
-                safeUpdateMessage(aiMessageIndex, accumulatedText, false)
-                return
               }
+
+              reader.releaseLock()
+              return
             }
-          } catch (error) {
-            console.error('❌ JSON解析失败:', error)
+          }
+        } catch (error) {
+          console.error('❌ 解析JSON失败:', error)
+          console.error('❌ 失败数据（前100字符）:', match[1]?.substring(0, 100))
+          // 添加调试：查看实际收到的数据
+          try {
+            console.log('🔍 原始匹配数据:', match[0])
+            console.log(
+              '🔍 原始文本上下文:',
+              text.substring(
+                Math.max(0, match.index - 50),
+                Math.min(text.length, match.index + match[0].length + 50),
+              ),
+            )
+          } catch {
+            console.error('调试输出失败')
           }
         }
       }
