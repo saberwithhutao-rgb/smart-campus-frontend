@@ -71,15 +71,32 @@ const scrollToBottom = () => {
 }
 
 // 安全更新消息的函数
+// 安全更新消息的函数
 const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) => {
-  // 使用非空断言操作符 !
-  const message = messages.value[index]!
+  // 边界检查
+  if (index < 0 || index >= messages.value.length) {
+    console.error('❌ 消息不存在，索引:', index)
+    return
+  }
 
+  const message = messages.value[index]
+  if (!message) {
+    console.error('❌ 消息不存在')
+    return
+  }
+
+  console.log(`🔄 更新消息 ${index}:`, content.substring(0, 50) + '...', 'loading:', isLoading)
+
+  // 使用Object.assign确保响应式更新
   Object.assign(message, {
     content,
     ...(isLoading !== undefined && { isLoading }),
   })
 
+  // 强制触发响应式更新
+  messages.value = [...messages.value]
+
+  // 滚动到底部
   scrollToBottom()
 }
 
@@ -135,17 +152,15 @@ const handleStreamChat = async (question: string, aiMessageIndex: number) => {
     const token = localStorage.getItem('userToken')
     if (!token) throw new Error('未找到认证token')
 
-    // 构建FormData
     const formData = new FormData()
     formData.append('question', question)
     if (currentSessionId.value) {
       formData.append('sessionId', currentSessionId.value)
     }
-    formData.append('stream', 'true') // 设置为流式输出
+    formData.append('stream', 'true')
 
     console.log('🚀 发送流式请求...')
 
-    // 使用统一的 /ai/chat 接口，带stream=true参数
     const response = await fetch('/ai/chat', {
       method: 'POST',
       headers: {
@@ -159,6 +174,8 @@ const handleStreamChat = async (question: string, aiMessageIndex: number) => {
     console.log('📄 Content-Type:', response.headers.get('content-type'))
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ HTTP错误详情:', errorText)
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
@@ -176,7 +193,6 @@ const handleStreamChat = async (question: string, aiMessageIndex: number) => {
     throw error
   }
 }
-
 // 处理SSE响应
 const processSSEResponse = async (response: Response, aiMessageIndex: number) => {
   const reader = response.body?.getReader()
@@ -188,11 +204,13 @@ const processSSEResponse = async (response: Response, aiMessageIndex: number) =>
   let accumulatedText = ''
   let buffer = ''
 
+  console.log('🎯 开始处理SSE响应')
+
   try {
     while (true) {
       const { done, value } = await reader.read()
       if (done) {
-        console.log('✅ 流式读取完成')
+        console.log('✅ SSE流读取完成')
         safeUpdateMessage(aiMessageIndex, accumulatedText, false)
         break
       }
@@ -213,22 +231,29 @@ const processSSEResponse = async (response: Response, aiMessageIndex: number) =>
         // 处理SSE格式: data: {...}
         if (trimmedLine.startsWith('data: ')) {
           const dataStr = trimmedLine.substring(6).trim()
+          console.log('📦 提取数据字符串:', dataStr)
+
           if (!dataStr) continue
 
           try {
             const data = JSON.parse(dataStr)
-            console.log('📦 解析SSE数据:', data)
+            console.log('✅ 解析JSON成功:', data)
 
             if (data.chunk) {
               accumulatedText += data.chunk
-              console.log('📝 累积文本长度:', accumulatedText.length)
+              console.log('📝 更新文本:', accumulatedText.substring(0, 50) + '...')
 
               // 更新消息内容
               safeUpdateMessage(aiMessageIndex, accumulatedText, true)
+
+              // 特别检查是否应该显示loading
+              if (data.done === true) {
+                safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+              }
             }
 
             if (data.done === true) {
-              console.log('🎉 流式完成')
+              console.log('🎉 SSE流完成')
               safeUpdateMessage(aiMessageIndex, accumulatedText, false)
 
               if (data.sessionId) {
@@ -240,13 +265,14 @@ const processSSEResponse = async (response: Response, aiMessageIndex: number) =>
               return
             }
           } catch (parseError) {
-            console.warn('⚠️ 解析SSE JSON失败:', parseError, '数据:', dataStr)
+            console.error('❌ 解析JSON失败:', parseError)
+            console.error('失败的数据:', dataStr)
           }
         }
       }
     }
   } catch (error) {
-    console.error('❌ 读取流式数据失败:', error)
+    console.error('❌ 读取SSE数据失败:', error)
     throw error
   } finally {
     reader.releaseLock()
@@ -277,60 +303,6 @@ const processJSONResponse = async (response: Response, aiMessageIndex: number) =
     safeUpdateMessage(
       aiMessageIndex,
       `解析响应失败: ${error instanceof Error ? error.message : '未知错误'}`,
-      false,
-    )
-  }
-}
-
-// 备用方案：使用普通模式
-const sendMessageNormal = async () => {
-  if (!inputMessage.value.trim()) return
-
-  // 添加用户消息
-  const userMessage: ChatMessage = {
-    id: Date.now(),
-    content: inputMessage.value,
-    sender: 'user',
-    timestamp: new Date().toLocaleTimeString(),
-  }
-  messages.value.push(userMessage)
-  scrollToBottom()
-
-  const question = inputMessage.value
-  inputMessage.value = ''
-
-  // 创建AI消息占位符
-  const aiMessage: ChatMessage = {
-    id: Date.now() + 1,
-    content: '思考中...',
-    sender: 'ai',
-    timestamp: new Date().toLocaleTimeString(),
-    isLoading: true,
-  }
-
-  const aiMessageIndex = messages.value.length
-  messages.value.push(aiMessage)
-  scrollToBottom()
-
-  try {
-    const response = await api.askQuestion({
-      question: question,
-      sessionId: currentSessionId.value || undefined,
-      stream: false,
-    })
-
-    if (response.code === 200) {
-      safeUpdateMessage(aiMessageIndex, response.data.answer || 'AI未返回具体答案', false)
-
-      if (response.data.sessionId) {
-        currentSessionId.value = response.data.sessionId
-      }
-    }
-  } catch (error) {
-    console.error('请求失败:', error)
-    safeUpdateMessage(
-      aiMessageIndex,
-      `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
       false,
     )
   }
