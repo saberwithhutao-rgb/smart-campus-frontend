@@ -104,134 +104,8 @@ const scrollToBottom = () => {
     }
   })
 }
-
-// 发送消息 - 方案A
-// const sendMessage = async () => {
-//   if (!inputMessage.value.trim()) return
-
-//   // 添加用户消息
-//   const userMessage: ChatMessage = {
-//     id: Date.now(),
-//     content: inputMessage.value,
-//     sender: 'user',
-//     timestamp: new Date().toLocaleTimeString(),
-//   }
-//   messages.value.push(userMessage)
-//   scrollToBottom()
-
-//   // 清空输入框
-//   const question = inputMessage.value
-//   inputMessage.value = ''
-
-//   // 创建AI消息占位符
-//   const aiMessageId = Date.now() + 1
-//   const aiMessage: ChatMessage = {
-//     id: aiMessageId,
-//     content: '思考中...',
-//     sender: 'ai',
-//     timestamp: new Date().toLocaleTimeString(),
-//     isLoading: true,
-//   }
-
-//   // 添加到消息列表并记住索引
-//   messages.value.push(aiMessage)
-//   const aiMessageIndex = messages.value.length - 1
-//   scrollToBottom()
-
-//   const useStream = true
-
-//   try {
-//     if (useStream) {
-//       await handleStreamResponseA(question, aiMessageId, aiMessageIndex)
-//     } else {
-//       // 普通模式
-//       const response = await api.askQuestion({
-//         question: question,
-//         sessionId: currentSessionId.value || undefined,
-//         stream: false,
-//       })
-
-//       if (response.code === 200) {
-//         // 更新消息内容
-//         messages.value[aiMessageIndex] = {
-//           ...messages.value[aiMessageIndex],
-//           content: response.data.answer || 'AI未返回具体答案',
-//           isLoading: false,
-//         }
-
-//         if (response.data.sessionId) {
-//           currentSessionId.value = response.data.sessionId
-//         }
-//       }
-//     }
-//   } catch (error) {
-//     console.error('请求失败:', error)
-//     messages.value[aiMessageIndex] = {
-//       ...messages.value[aiMessageIndex],
-//       content: `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
-//       isLoading: false,
-//     }
-//   }
-// }
-
-const sendMessageEmergency = async () => {
-  if (!inputMessage.value.trim()) return
-
-  // 添加用户消息
-  const userMessage: ChatMessage = {
-    id: Date.now(),
-    content: inputMessage.value,
-    sender: 'user',
-    timestamp: new Date().toLocaleTimeString(),
-  }
-  messages.value.push(userMessage)
-  scrollToBottom()
-
-  const question = inputMessage.value
-  inputMessage.value = ''
-
-  // 先测试普通模式
-  try {
-    console.log('🔄 测试普通模式')
-    const response = await api.askQuestion({
-      question: question,
-      sessionId: currentSessionId.value || undefined,
-      stream: false,
-    })
-
-    console.log('📨 响应:', response)
-
-    if (response.code === 200) {
-      const aiMessage: ChatMessage = {
-        id: Date.now() + 1,
-        content: response.data.answer || 'AI未返回具体答案',
-        sender: 'ai',
-        timestamp: new Date().toLocaleTimeString(),
-      }
-      messages.value.push(aiMessage)
-      scrollToBottom()
-
-      if (response.data.sessionId) {
-        currentSessionId.value = response.data.sessionId
-      }
-    }
-  } catch (error) {
-    console.error('❌ 请求失败:', error)
-    const errorMessage: ChatMessage = {
-      id: Date.now(),
-      content: `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
-      sender: 'system',
-      timestamp: new Date().toLocaleTimeString(),
-    }
-    messages.value.push(errorMessage)
-    scrollToBottom()
-  }
-}
-
-// 临时修改sendMessage函数
-const sendMessage = sendMessageEmergency // 先用普通模式测试
-// 方案A：优化的流式处理
-const handleStreamResponseA = async (
+// 智能流式处理函数
+const handleStreamResponseSmart = async (
   question: string,
   aiMessageId: number,
   aiMessageIndex: number,
@@ -247,7 +121,7 @@ const handleStreamResponseA = async (
     }
     formData.append('stream', 'true')
 
-    console.log('🚀 发送请求到:', '/ai/chat?stream=true')
+    console.log('🚀 发送流式请求...')
 
     const response = await fetch('/ai/chat?stream=true', {
       method: 'POST',
@@ -255,93 +129,79 @@ const handleStreamResponseA = async (
       body: formData,
     })
 
+    console.log('📊 响应状态:', response.status, response.statusText)
+    console.log('📄 Content-Type:', response.headers.get('content-type'))
+
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ HTTP错误:', response.status, errorText)
-      throw new Error(`HTTP ${response.status}`)
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
-    // 使用简化版本
-    await processStreamResponseSimple(response, aiMessageIndex)
-  } catch (error) {
-    console.error('❌ 流式响应失败:', error)
-    messages.value[aiMessageIndex] = {
-      ...messages.value[aiMessageIndex],
-      content: `流式输出失败: ${error instanceof Error ? error.message : '未知错误'}`,
-      isLoading: false,
+    const contentType = response.headers.get('content-type') || ''
+
+    if (contentType.includes('text/event-stream')) {
+      console.log('✅ 后端返回真正的流式数据！')
+      await processRealStreamResponse(response, aiMessageIndex)
+    } else {
+      console.log('⚠️ 后端返回非流式格式，降级为普通处理')
+      await processAsJson(response, aiMessageIndex)
     }
+  } catch (error) {
+    console.error('❌ 处理失败:', error)
+    safeUpdateMessage(
+      aiMessageIndex,
+      `请求失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      false,
+    )
   }
 }
 
-// 独立的流式处理函数
-const processStreamResponseA = async (response: Response, aiMessageIndex: number) => {
+// 安全更新消息的函数（解决TypeScript类型问题）
+const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) => {
+  const message = messages.value[index]
+  if (!message) {
+    console.error('❌ 消息不存在，索引:', index)
+    return
+  }
+
+  // 创建新的消息对象，确保所有字段都有值
+  const newMessage: ChatMessage = {
+    id: message.id,
+    content: content,
+    sender: message.sender,
+    timestamp: message.timestamp,
+    isLoading: isLoading !== undefined ? isLoading : message.isLoading,
+  }
+
+  messages.value[index] = newMessage
+  scrollToBottom()
+}
+const processRealStreamResponse = async (response: Response, aiMessageIndex: number) => {
   const reader = response.body?.getReader()
   if (!reader) {
-    throw new Error('无法读取响应流')
+    safeUpdateMessage(aiMessageIndex, '无法读取响应流', false)
+    return
   }
 
   const decoder = new TextDecoder('utf-8')
   let accumulatedText = ''
   let buffer = ''
 
-  // 性能优化：减少更新频率
-  let lastUpdateTime = 0
-  const UPDATE_INTERVAL = 50 // 50ms更新一次
-  let updateScheduled = false
-
-  // 更新消息内容的函数
-  const updateMessageContent = (content: string, force = false) => {
-    const now = Date.now()
-
-    if (force || now - lastUpdateTime >= UPDATE_INTERVAL) {
-      // 创建新对象触发响应式更新
-      messages.value[aiMessageIndex] = {
-        ...messages.value[aiMessageIndex],
-        content: content,
-      }
-      lastUpdateTime = now
-      updateScheduled = false
-
-      // 滚动到底部
-      scrollToBottom()
-    } else if (!updateScheduled) {
-      // 延迟更新
-      updateScheduled = true
-      setTimeout(() => {
-        if (messages.value[aiMessageIndex]) {
-          messages.value[aiMessageIndex] = {
-            ...messages.value[aiMessageIndex],
-            content: accumulatedText,
-          }
-          scrollToBottom()
-        }
-        updateScheduled = false
-      }, UPDATE_INTERVAL)
-    }
-  }
-
   try {
     while (true) {
       const { done, value } = await reader.read()
       if (done) {
         console.log('✅ 流式读取完成')
+        safeUpdateMessage(aiMessageIndex, accumulatedText, false)
         break
       }
 
-      // 解码数据
       buffer += decoder.decode(value, { stream: true })
-
-      // 按行分割（处理SSE格式）
       const lines = buffer.split('\n')
-      buffer = lines.pop() || '' // 保存未完成的半行
-
-      let hasNewContent = false
+      buffer = lines.pop() || ''
 
       for (const line of lines) {
         const trimmedLine = line.trim()
         if (!trimmedLine) continue
-
-        console.log('📥 收到行:', trimmedLine)
 
         // 处理SSE格式: data: {...}
         if (trimmedLine.startsWith('data: ')) {
@@ -350,82 +210,384 @@ const processStreamResponseA = async (response: Response, aiMessageIndex: number
 
           try {
             const data = JSON.parse(dataStr)
-            console.log('📊 解析数据:', data)
+            console.log('📦 流式数据:', data)
 
             if (data.chunk) {
               accumulatedText += data.chunk
-              console.log('📝 累积文本长度:', accumulatedText.length)
-              hasNewContent = true
+              console.log('📝 累积文本:', accumulatedText.substring(0, 50) + '...')
+
+              // 更新消息内容
+              safeUpdateMessage(aiMessageIndex, accumulatedText, true)
             }
 
             if (data.done === true) {
-              console.log('🎉 流式输出完成')
-
-              // 强制更新最终内容
-              updateMessageContent(accumulatedText, true)
-
-              // 更新加载状态
-              messages.value[aiMessageIndex] = {
-                ...messages.value[aiMessageIndex],
-                isLoading: false,
-              }
-
-              if (data.sessionId) {
-                currentSessionId.value = data.sessionId
-                console.log('🆔 更新sessionId:', data.sessionId)
-              }
-
-              return // 流式完成，直接返回
-            }
-          } catch (parseError) {
-            console.warn('⚠️ 解析JSON失败:', parseError, '数据:', dataStr)
-          }
-        }
-        // 处理普通JSON响应（非SSE格式）
-        else if (trimmedLine.startsWith('{') && trimmedLine.endsWith('}')) {
-          try {
-            const data = JSON.parse(trimmedLine)
-            console.log('📄 普通JSON响应:', data)
-
-            if (data.answer) {
-              accumulatedText = data.answer
-              updateMessageContent(accumulatedText, true)
-
-              messages.value[aiMessageIndex] = {
-                ...messages.value[aiMessageIndex],
-                isLoading: false,
-              }
+              console.log('🎉 流式完成')
+              safeUpdateMessage(aiMessageIndex, accumulatedText, false)
 
               if (data.sessionId) {
                 currentSessionId.value = data.sessionId
               }
               return
             }
-          } catch (e) {
-            console.warn('⚠️ 解析普通JSON失败:', e)
+          } catch (parseError) {
+            console.warn('⚠️ 解析流式JSON失败:', parseError)
           }
         }
       }
-
-      // 如果有新内容，更新消息
-      if (hasNewContent) {
-        updateMessageContent(accumulatedText)
-      }
-    }
-
-    // 流式读取完成，确保最终状态
-    updateMessageContent(accumulatedText, true)
-    messages.value[aiMessageIndex] = {
-      ...messages.value[aiMessageIndex],
-      isLoading: false,
     }
   } catch (error) {
     console.error('❌ 读取流式数据失败:', error)
-    throw error
+    safeUpdateMessage(
+      aiMessageIndex,
+      `流式处理失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      false,
+    )
   } finally {
     reader.releaseLock()
   }
 }
+
+const processAsJson = async (response: Response, aiMessageIndex: number) => {
+  try {
+    const data = await response.json()
+    console.log('📄 JSON响应:', data)
+
+    if (data.code === 200 && data.data && data.data.answer) {
+      safeUpdateMessage(aiMessageIndex, data.data.answer, false)
+
+      if (data.data.sessionId) {
+        currentSessionId.value = data.data.sessionId
+      }
+    } else {
+      safeUpdateMessage(
+        aiMessageIndex,
+        `API返回错误: ${data.code || '未知'} - ${data.message || '无消息'}`,
+        false,
+      )
+    }
+  } catch (error) {
+    console.error('❌ 解析JSON失败:', error)
+    safeUpdateMessage(
+      aiMessageIndex,
+      `解析响应失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      false,
+    )
+  }
+}
+
+const sendMessage = async () => {
+  if (!inputMessage.value.trim()) return
+
+  // 添加用户消息
+  const userMessage: ChatMessage = {
+    id: Date.now(),
+    content: inputMessage.value,
+    sender: 'user',
+    timestamp: new Date().toLocaleTimeString(),
+  }
+  messages.value.push(userMessage)
+  scrollToBottom()
+
+  // 清空输入框
+  const question = inputMessage.value
+  inputMessage.value = ''
+
+  // 创建AI消息占位符
+  const aiMessageId = Date.now() + 1
+  const aiMessage: ChatMessage = {
+    id: aiMessageId,
+    content: '思考中...',
+    sender: 'ai',
+    timestamp: new Date().toLocaleTimeString(),
+    isLoading: true,
+  }
+
+  // 添加到消息列表并记住索引
+  messages.value.push(aiMessage)
+  const aiMessageIndex = messages.value.length - 1
+  scrollToBottom()
+
+  // 使用智能流式处理
+  const useStream = true
+
+  try {
+    if (useStream) {
+      await handleStreamResponseSmart(question, aiMessageId, aiMessageIndex)
+    } else {
+      // 普通模式（备用）
+      const response = await api.askQuestion({
+        question: question,
+        sessionId: currentSessionId.value || undefined,
+        stream: false,
+      })
+
+      if (response.code === 200) {
+        safeUpdateMessage(aiMessageIndex, response.data.answer || 'AI未返回具体答案', false)
+
+        if (response.data.sessionId) {
+          currentSessionId.value = response.data.sessionId
+        }
+      }
+    }
+  } catch (error) {
+    console.error('请求失败:', error)
+    safeUpdateMessage(
+      aiMessageIndex,
+      `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      false,
+    )
+  }
+}
+
+// const sendMessageEmergency = async () => {
+// //   if (!inputMessage.value.trim()) return
+
+// //   // 添加用户消息
+// //   const userMessage: ChatMessage = {
+// //     id: Date.now(),
+// //     content: inputMessage.value,
+// //     sender: 'user',
+// //     timestamp: new Date().toLocaleTimeString(),
+// //   }
+// //   messages.value.push(userMessage)
+// //   scrollToBottom()
+
+// //   const question = inputMessage.value
+// //   inputMessage.value = ''
+
+// //   // 先测试普通模式
+// //   try {
+// //     console.log('🔄 测试普通模式')
+// //     const response = await api.askQuestion({
+// //       question: question,
+// //       sessionId: currentSessionId.value || undefined,
+// //       stream: false,
+// //     })
+
+// //     console.log('📨 响应:', response)
+
+// //     if (response.code === 200) {
+// //       const aiMessage: ChatMessage = {
+// //         id: Date.now() + 1,
+// //         content: response.data.answer || 'AI未返回具体答案',
+// //         sender: 'ai',
+// //         timestamp: new Date().toLocaleTimeString(),
+// //       }
+// //       messages.value.push(aiMessage)
+// //       scrollToBottom()
+
+// //       if (response.data.sessionId) {
+// //         currentSessionId.value = response.data.sessionId
+// //       }
+// //     }
+// //   } catch (error) {
+// //     console.error('❌ 请求失败:', error)
+// //     const errorMessage: ChatMessage = {
+// //       id: Date.now(),
+// //       content: `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
+// //       sender: 'system',
+// //       timestamp: new Date().toLocaleTimeString(),
+// //     }
+// //     messages.value.push(errorMessage)
+// //     scrollToBottom()
+// //   }
+// // }
+// // 方案A：优化的流式处理
+// const handleStreamResponseA = async (
+//   question: string,
+//   aiMessageId: number,
+//   aiMessageIndex: number,
+// ) => {
+//   try {
+//     const token = localStorage.getItem('userToken')
+//     if (!token) throw new Error('未找到认证token')
+
+//     const formData = new FormData()
+//     formData.append('question', question)
+//     if (currentSessionId.value) {
+//       formData.append('sessionId', currentSessionId.value)
+//     }
+//     formData.append('stream', 'true')
+
+//     console.log('🚀 发送请求到:', '/ai/chat?stream=true')
+
+//     const response = await fetch('/ai/chat?stream=true', {
+//       method: 'POST',
+//       headers: { Authorization: `Bearer ${token}` },
+//       body: formData,
+//     })
+
+//     if (!response.ok) {
+//       const errorText = await response.text()
+//       console.error('❌ HTTP错误:', response.status, errorText)
+//       throw new Error(`HTTP ${response.status}`)
+//     }
+
+//     // 使用简化版本
+//     await processStreamResponseSimple(response, aiMessageIndex)
+//   } catch (error) {
+//     console.error('❌ 流式响应失败:', error)
+//     messages.value[aiMessageIndex] = {
+//       ...messages.value[aiMessageIndex],
+//       content: `流式输出失败: ${error instanceof Error ? error.message : '未知错误'}`,
+//       isLoading: false,
+//     }
+//   }
+// }
+
+// 独立的流式处理函数
+// const processStreamResponseA = async (response: Response, aiMessageIndex: number) => {
+//   const reader = response.body?.getReader()
+//   if (!reader) {
+//     throw new Error('无法读取响应流')
+//   }
+
+//   const decoder = new TextDecoder('utf-8')
+//   let accumulatedText = ''
+//   let buffer = ''
+
+//   // 性能优化：减少更新频率
+//   let lastUpdateTime = 0
+//   const UPDATE_INTERVAL = 50 // 50ms更新一次
+//   let updateScheduled = false
+
+//   // 更新消息内容的函数
+//   const updateMessageContent = (content: string, force = false) => {
+//     const now = Date.now()
+
+//     if (force || now - lastUpdateTime >= UPDATE_INTERVAL) {
+//       // 创建新对象触发响应式更新
+//       messages.value[aiMessageIndex] = {
+//         ...messages.value[aiMessageIndex],
+//         content: content,
+//       }
+//       lastUpdateTime = now
+//       updateScheduled = false
+
+//       // 滚动到底部
+//       scrollToBottom()
+//     } else if (!updateScheduled) {
+//       // 延迟更新
+//       updateScheduled = true
+//       setTimeout(() => {
+//         if (messages.value[aiMessageIndex]) {
+//           messages.value[aiMessageIndex] = {
+//             ...messages.value[aiMessageIndex],
+//             content: accumulatedText,
+//           }
+//           scrollToBottom()
+//         }
+//         updateScheduled = false
+//       }, UPDATE_INTERVAL)
+//     }
+//   }
+
+//   try {
+//     while (true) {
+//       const { done, value } = await reader.read()
+//       if (done) {
+//         console.log('✅ 流式读取完成')
+//         break
+//       }
+
+//       // 解码数据
+//       buffer += decoder.decode(value, { stream: true })
+
+//       // 按行分割（处理SSE格式）
+//       const lines = buffer.split('\n')
+//       buffer = lines.pop() || '' // 保存未完成的半行
+
+//       let hasNewContent = false
+
+//       for (const line of lines) {
+//         const trimmedLine = line.trim()
+//         if (!trimmedLine) continue
+
+//         console.log('📥 收到行:', trimmedLine)
+
+//         // 处理SSE格式: data: {...}
+//         if (trimmedLine.startsWith('data: ')) {
+//           const dataStr = trimmedLine.substring(6).trim()
+//           if (!dataStr) continue
+
+//           try {
+//             const data = JSON.parse(dataStr)
+//             console.log('📊 解析数据:', data)
+
+//             if (data.chunk) {
+//               accumulatedText += data.chunk
+//               console.log('📝 累积文本长度:', accumulatedText.length)
+//               hasNewContent = true
+//             }
+
+//             if (data.done === true) {
+//               console.log('🎉 流式输出完成')
+
+//               // 强制更新最终内容
+//               updateMessageContent(accumulatedText, true)
+
+//               // 更新加载状态
+//               messages.value[aiMessageIndex] = {
+//                 ...messages.value[aiMessageIndex],
+//                 isLoading: false,
+//               }
+
+//               if (data.sessionId) {
+//                 currentSessionId.value = data.sessionId
+//                 console.log('🆔 更新sessionId:', data.sessionId)
+//               }
+
+//               return // 流式完成，直接返回
+//             }
+//           } catch (parseError) {
+//             console.warn('⚠️ 解析JSON失败:', parseError, '数据:', dataStr)
+//           }
+//         }
+//         // 处理普通JSON响应（非SSE格式）
+//         else if (trimmedLine.startsWith('{') && trimmedLine.endsWith('}')) {
+//           try {
+//             const data = JSON.parse(trimmedLine)
+//             console.log('📄 普通JSON响应:', data)
+
+//             if (data.answer) {
+//               accumulatedText = data.answer
+//               updateMessageContent(accumulatedText, true)
+
+//               messages.value[aiMessageIndex] = {
+//                 ...messages.value[aiMessageIndex],
+//                 isLoading: false,
+//               }
+
+//               if (data.sessionId) {
+//                 currentSessionId.value = data.sessionId
+//               }
+//               return
+//             }
+//           } catch (e) {
+//             console.warn('⚠️ 解析普通JSON失败:', e)
+//           }
+//         }
+//       }
+
+//       // 如果有新内容，更新消息
+//       if (hasNewContent) {
+//         updateMessageContent(accumulatedText)
+//       }
+//     }
+
+//     // 流式读取完成，确保最终状态
+//     updateMessageContent(accumulatedText, true)
+//     messages.value[aiMessageIndex] = {
+//       ...messages.value[aiMessageIndex],
+//       isLoading: false,
+//     }
+//   } catch (error) {
+//     console.error('❌ 读取流式数据失败:', error)
+//     throw error
+//   } finally {
+//     reader.releaseLock()
+//   }
+// }
 
 // 处理键盘事件
 const handleKeyDown = (event: KeyboardEvent) => {
@@ -439,7 +601,10 @@ const handleKeyDown = (event: KeyboardEvent) => {
 const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
-    selectedFile.value = input.files[0]
+    const file = input.files[0]
+    if (file) {
+      selectedFile.value = file
+    }
   }
 }
 
@@ -545,134 +710,134 @@ const pollTaskStatus = async (taskId: string) => {
   }, 2000)
 }
 
-const processStreamResponseSimple = async (response: Response, aiMessageIndex: number) => {
-  const reader = response.body?.getReader()
-  if (!reader) throw new Error('无法读取响应流')
+// const processStreamResponseSimple = async (response: Response, aiMessageIndex: number) => {
+//   const reader = response.body?.getReader()
+//   if (!reader) throw new Error('无法读取响应流')
 
-  const decoder = new TextDecoder('utf-8')
-  let accumulatedText = ''
-  let buffer = ''
+//   const decoder = new TextDecoder('utf-8')
+//   let accumulatedText = ''
+//   let buffer = ''
 
-  console.log('🚀 开始处理流式响应')
+//   console.log('🚀 开始处理流式响应')
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) {
-        console.log('✅ 流式读取完成')
-        break
-      }
+//   try {
+//     while (true) {
+//       const { done, value } = await reader.read()
+//       if (done) {
+//         console.log('✅ 流式读取完成')
+//         break
+//       }
 
-      // 解码并累加到缓冲区
-      buffer += decoder.decode(value, { stream: true })
-      console.log('📦 缓冲区长度:', buffer.length)
+//       // 解码并累加到缓冲区
+//       buffer += decoder.decode(value, { stream: true })
+//       console.log('📦 缓冲区长度:', buffer.length)
 
-      // 按行分割处理
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || '' // 保存未完成的半行
+//       // 按行分割处理
+//       const lines = buffer.split('\n')
+//       buffer = lines.pop() || '' // 保存未完成的半行
 
-      for (const line of lines) {
-        const trimmedLine = line.trim()
-        if (!trimmedLine) continue
+//       for (const line of lines) {
+//         const trimmedLine = line.trim()
+//         if (!trimmedLine) continue
 
-        console.log('📥 原始行:', JSON.stringify(trimmedLine))
+//         console.log('📥 原始行:', JSON.stringify(trimmedLine))
 
-        // 情况1：SSE格式 "data: {...}"
-        if (trimmedLine.startsWith('data:')) {
-          const dataStr = trimmedLine.substring(5).trim() // 去掉 "data:"
-          if (!dataStr) continue
+//         // 情况1：SSE格式 "data: {...}"
+//         if (trimmedLine.startsWith('data:')) {
+//           const dataStr = trimmedLine.substring(5).trim() // 去掉 "data:"
+//           if (!dataStr) continue
 
-          console.log('📊 解析SSE数据:', dataStr)
+//           console.log('📊 解析SSE数据:', dataStr)
 
-          try {
-            const data = JSON.parse(dataStr)
-            console.log('✅ 解析成功:', data)
+//           try {
+//             const data = JSON.parse(dataStr)
+//             console.log('✅ 解析成功:', data)
 
-            if (data.chunk) {
-              accumulatedText += data.chunk
-              console.log(`📝 添加chunk: "${data.chunk}"，累计长度: ${accumulatedText.length}`)
+//             if (data.chunk) {
+//               accumulatedText += data.chunk
+//               console.log(`📝 添加chunk: "${data.chunk}"，累计长度: ${accumulatedText.length}`)
 
-              // 立即更新UI
-              messages.value[aiMessageIndex] = {
-                ...messages.value[aiMessageIndex],
-                content: accumulatedText,
-              }
-              scrollToBottom()
-            }
+//               // 立即更新UI
+//               messages.value[aiMessageIndex] = {
+//                 ...messages.value[aiMessageIndex],
+//                 content: accumulatedText,
+//               }
+//               scrollToBottom()
+//             }
 
-            if (data.done === true) {
-              console.log('🎉 流式完成')
-              messages.value[aiMessageIndex] = {
-                ...messages.value[aiMessageIndex],
-                isLoading: false,
-              }
+//             if (data.done === true) {
+//               console.log('🎉 流式完成')
+//               messages.value[aiMessageIndex] = {
+//                 ...messages.value[aiMessageIndex],
+//                 isLoading: false,
+//               }
 
-              if (data.sessionId) {
-                currentSessionId.value = data.sessionId
-              }
+//               if (data.sessionId) {
+//                 currentSessionId.value = data.sessionId
+//               }
 
-              reader.releaseLock()
-              return
-            }
-          } catch (parseError) {
-            console.warn('❌ 解析JSON失败:', parseError, '数据:', dataStr)
-          }
-        }
-        // 情况2：直接JSON格式
-        else if (trimmedLine.startsWith('{')) {
-          try {
-            const data = JSON.parse(trimmedLine)
-            console.log('📄 直接JSON:', data)
+//               reader.releaseLock()
+//               return
+//             }
+//           } catch (parseError) {
+//             console.warn('❌ 解析JSON失败:', parseError, '数据:', dataStr)
+//           }
+//         }
+//         // 情况2：直接JSON格式
+//         else if (trimmedLine.startsWith('{')) {
+//           try {
+//             const data = JSON.parse(trimmedLine)
+//             console.log('📄 直接JSON:', data)
 
-            // 可能是普通的API响应
-            if (data.code === 200 && data.data && data.data.answer) {
-              accumulatedText = data.data.answer
-              messages.value[aiMessageIndex] = {
-                ...messages.value[aiMessageIndex],
-                content: accumulatedText,
-                isLoading: false,
-              }
-              scrollToBottom()
+//             // 可能是普通的API响应
+//             if (data.code === 200 && data.data && data.data.answer) {
+//               accumulatedText = data.data.answer
+//               messages.value[aiMessageIndex] = {
+//                 ...messages.value[aiMessageIndex],
+//                 content: accumulatedText,
+//                 isLoading: false,
+//               }
+//               scrollToBottom()
 
-              if (data.data.sessionId) {
-                currentSessionId.value = data.data.sessionId
-              }
+//               if (data.data.sessionId) {
+//                 currentSessionId.value = data.data.sessionId
+//               }
 
-              reader.releaseLock()
-              return
-            }
-          } catch (e) {
-            console.warn('⚠️ 解析直接JSON失败:', e)
-          }
-        }
-        // 情况3：纯文本（可能是chunk直接返回）
-        else {
-          console.log('📄 纯文本内容:', trimmedLine)
-          accumulatedText += trimmedLine + '\n'
-          messages.value[aiMessageIndex] = {
-            ...messages.value[aiMessageIndex],
-            content: accumulatedText,
-          }
-          scrollToBottom()
-        }
-      }
-    }
+//               reader.releaseLock()
+//               return
+//             }
+//           } catch (e) {
+//             console.warn('⚠️ 解析直接JSON失败:', e)
+//           }
+//         }
+//         // 情况3：纯文本（可能是chunk直接返回）
+//         else {
+//           console.log('📄 纯文本内容:', trimmedLine)
+//           accumulatedText += trimmedLine + '\n'
+//           messages.value[aiMessageIndex] = {
+//             ...messages.value[aiMessageIndex],
+//             content: accumulatedText,
+//           }
+//           scrollToBottom()
+//         }
+//       }
+//     }
 
-    // 循环结束后的处理
-    console.log('🏁 流式处理结束，最终文本:', accumulatedText)
-    messages.value[aiMessageIndex] = {
-      ...messages.value[aiMessageIndex],
-      content: accumulatedText,
-      isLoading: false,
-    }
-    scrollToBottom()
-  } catch (error) {
-    console.error('❌ 处理流式数据时出错:', error)
-    throw error
-  } finally {
-    reader.releaseLock()
-  }
-}
+//     // 循环结束后的处理
+//     console.log('🏁 流式处理结束，最终文本:', accumulatedText)
+//     messages.value[aiMessageIndex] = {
+//       ...messages.value[aiMessageIndex],
+//       content: accumulatedText,
+//       isLoading: false,
+//     }
+//     scrollToBottom()
+//   } catch (error) {
+//     console.error('❌ 处理流式数据时出错:', error)
+//     throw error
+//   } finally {
+//     reader.releaseLock()
+//   }
+// }
 
 // 切换侧边栏显示
 const toggleSidebar = () => {
