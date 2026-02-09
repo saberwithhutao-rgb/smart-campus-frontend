@@ -186,6 +186,7 @@ export const api = {
     request<ApiResponse<null>>({ method: 'DELETE', url: `/api/study-plans/${id}` }),
 
   // 智能问答 - 关键修复：移除手动设置的Authorization头，依赖请求拦截器
+  // 智能问答 - 修正URL路径
   askQuestion: (data: { question: string; file?: File; sessionId?: string; stream?: boolean }) => {
     const formData = new FormData()
     formData.append('question', data.question)
@@ -201,27 +202,24 @@ export const api = {
 
     return request<ApiResponse<ChatResponse>>({
       method: 'POST',
-      url: '/ai/chat',
+      url: '/ai/chat', // ✅ 修改这里：/ai/chat 而不是原来的路径
       data: formData,
-      // 注意：这里不设置headers，由请求拦截器自动添加Authorization
     })
   },
 
-  // 查询任务状态 - 移除手动设置的Authorization头
+  // 查询任务状态 - 修正URL路径
   getTaskStatus: (taskId: string) =>
     request<ApiResponse<TaskStatusResponse>>({
       method: 'GET',
-      url: `/ai/chat/task/${taskId}`,
-      // 注意：这里不设置headers，由请求拦截器自动添加Authorization
+      url: `/ai/chat/task/${taskId}`, // ✅ 修改这里
     }),
 
-  // 获取历史对话 - 移除手动设置的Authorization头
+  // 获取历史对话 - 修正URL路径
   getChatHistory: (sessionId?: string, limit?: number) =>
     request<ApiResponse<ChatHistoryItem[]>>({
       method: 'GET',
-      url: '/ai/chat/history',
+      url: '/ai/chat/history', // ✅ 修改这里
       params: { sessionId, limit },
-      // 注意：这里不设置headers，由请求拦截器自动添加Authorization
     }),
 
   // 文件处理模块
@@ -251,7 +249,7 @@ export const api = {
     }),
 }
 
-// 添加流式请求方法
+// 添加流式请求方法 - 修正URL路径
 export const askQuestionStream = async (params: {
   question: string
   file?: File
@@ -270,7 +268,8 @@ export const askQuestionStream = async (params: {
   formData.append('stream', 'true')
 
   try {
-    const response = await fetch('/api/ai/chat', {
+    const response = await fetch('/ai/chat', {
+      // ✅ 修改这里：/ai/chat
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

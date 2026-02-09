@@ -128,7 +128,7 @@ const sendMessage = async () => {
   }
 }
 
-// 处理流式响应 - 简化版本
+// 处理流式响应 - 修复URL路径
 const handleStreamResponse = async (question: string, aiMessageId: number) => {
   try {
     // 获取token
@@ -145,8 +145,12 @@ const handleStreamResponse = async (question: string, aiMessageId: number) => {
     }
     formData.append('stream', 'true')
 
-    // 发送请求
-    const response = await fetch('/api/ai/chat?stream=true', {
+    // ✅ 修改这里：使用正确的路径 /ai/chat
+    const url = '/ai/chat?stream=true'
+
+    console.log('发送流式请求，URL:', url, '问题长度:', question.length)
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
