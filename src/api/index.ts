@@ -115,6 +115,31 @@ interface LoginData {
   refreshToken?: string
 }
 
+// 新增类型定义
+interface ChatResponse {
+  answer?: string
+  sessionId: string
+  taskId?: string // 文件上传时返回
+  status?: string // 文件上传时返回
+}
+
+interface TaskStatusResponse {
+  taskId: string
+  status: 'processing' | 'completed' | 'failed'
+  answer?: string
+  error?: string
+}
+
+interface ChatHistoryItem {
+  id: number
+  sessionId: string
+  question: string
+  answer: string
+  createdAt: string
+  title?: string
+  fileId?: number
+}
+
 // API 接口定义 - 保持所有原有功能
 export const api = {
   // 认证模块
@@ -226,9 +251,45 @@ export const api = {
     }),
 }
 
-export default service
+// 添加流式请求方法
+export const askQuestionStream = async (params: {
+  question: string
+  file?: File
+  sessionId?: string
+}): Promise<ReadableStream<Uint8Array> | null> => {
+  const token = localStorage.getItem('userToken') || ''
 
-// 新增类型定义
+  const formData = new FormData()
+  formData.append('question', params.question)
+  if (params.sessionId) {
+    formData.append('sessionId', params.sessionId)
+  }
+  if (params.file) {
+    formData.append('file', params.file)
+  }
+  formData.append('stream', 'true')
+
+  try {
+    const response = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    return response.body
+  } catch (error) {
+    console.error('流式请求失败:', error)
+    throw error
+  }
+}
+
+// 新增类型定义（补充）
 interface QaResponse {
   answer: string
   fromCache: boolean
@@ -247,27 +308,4 @@ interface QaHistoryItem {
   responseTime: number
 }
 
-// 新增类型定义
-interface ChatResponse {
-  answer?: string
-  sessionId: string
-  taskId?: string // 文件上传时返回
-  status?: string // 文件上传时返回
-}
-
-interface TaskStatusResponse {
-  taskId: string
-  status: 'processing' | 'completed' | 'failed'
-  answer?: string
-  error?: string
-}
-
-interface ChatHistoryItem {
-  id: number
-  sessionId: string
-  question: string
-  answer: string
-  createdAt: string
-  title?: string
-  fileId?: number
-}
+export default service

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { api } from '../api/index'
@@ -7,28 +7,34 @@ import { api } from '../api/index'
 // 路由实例
 const router = useRouter()
 
+interface ChatMessage {
+  id: number
+  content: string
+  sender: 'user' | 'ai' | 'system'
+  timestamp: string
+  isLoading?: boolean
+}
+
 // 响应式数据
-const messages = ref([
+const messages = ref<ChatMessage[]>([
   {
     id: 1,
-    content: '您好！',
+    content: '您好！我是您的智能学习助手，有什么可以帮助您的吗？',
     sender: 'ai',
     timestamp: new Date().toLocaleTimeString(),
   },
-]) // 对话消息列表
-const inputMessage = ref('') // 输入框内容
-const selectedMenu = ref('new') // 当前选中的菜单
-const isMobile = ref(false) // 是否为移动端
-const showSidebar = ref(true) // 是否显示侧边栏
-const isUploadMode = ref(false) // 是否为上传模式
-const selectedFile = ref<File | null>(null) // 选中的文件
-const currentSessionId = ref<string>('') // ✅ 新增：当前会话ID
+])
+const inputMessage = ref('')
+const selectedMenu = ref('new')
+const isMobile = ref(false)
+const showSidebar = ref(true)
+const isUploadMode = ref(false)
+const selectedFile = ref<File | null>(null)
+const currentSessionId = ref<string>('')
 
 // 用户状态管理
 const userStore = useUserStore()
-
-// 导航栏相关响应式数据
-const showUserCenter = ref(false) // 显示个人中心菜单
+const showUserCenter = ref(false)
 
 // 检查屏幕尺寸
 const checkScreenSize = () => {
@@ -41,17 +47,16 @@ const checkScreenSize = () => {
 // 切换菜单选中状态
 const selectMenu = (menu: string) => {
   selectedMenu.value = menu
-  // 新对话逻辑
   if (menu === 'new') {
     messages.value = [
       {
         id: 1,
-        content: '您好！',
+        content: '您好！我是您的智能学习助手，有什么可以帮助您的吗？',
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString(),
       },
     ]
-    currentSessionId.value = '' // ✅ 新对话时清空sessionId
+    currentSessionId.value = ''
   }
 }
 
@@ -60,7 +65,7 @@ const sendMessage = async () => {
   if (!inputMessage.value.trim()) return
 
   // 添加用户消息
-  const userMessage = {
+  const userMessage: ChatMessage = {
     id: Date.now(),
     content: inputMessage.value,
     sender: 'user',
@@ -72,57 +77,207 @@ const sendMessage = async () => {
   const question = inputMessage.value
   inputMessage.value = ''
 
+  // 创建AI消息占位符
+  const aiMessageId = Date.now() + 1
+  const aiMessage: ChatMessage = {
+    id: aiMessageId,
+    content: '',
+    sender: 'ai',
+    timestamp: new Date().toLocaleTimeString(),
+    isLoading: true,
+  }
+  messages.value.push(aiMessage)
+
+  const useStream = true
+
   try {
-    // 调用后端API
-    const response = await api.askQuestion({
-      question: question,
-      sessionId: currentSessionId.value || undefined, // ✅ 修正：传入sessionId或undefined
-      stream: false, // 暂时不用流式
-    })
+    if (useStream) {
+      await handleStreamResponse(question, aiMessageId)
+    } else {
+      const response = await api.askQuestion({
+        question: question,
+        sessionId: currentSessionId.value || undefined,
+        stream: false,
+      })
 
-    console.log('AI响应:', response)
+      if (response.code === 200) {
+        const messageIndex = messages.value.findIndex((m) => m.id === aiMessageId)
+        if (messageIndex !== -1) {
+          const message = messages.value[messageIndex]
+          if (message) {
+            message.content = response.data.answer || 'AI未返回具体答案'
+            message.isLoading = false
+          }
+        }
 
-    if (response.code === 202) {
-      // 文件上传，异步处理
-      const taskId = response.data.taskId || ''
-      pollTaskStatus(taskId)
-
-      // 更新sessionId
-      if (response.data.sessionId) {
-        currentSessionId.value = response.data.sessionId
-      }
-    } else if (response.code === 200) {
-      // 直接返回答案
-      const aiMessage = {
-        id: Date.now() + 1,
-        // 确保 content 始终是 string
-        content: response.data.answer || 'AI未返回具体答案',
-        sender: 'ai',
-        timestamp: new Date().toLocaleTimeString(),
-      }
-      messages.value.push(aiMessage)
-
-      // 更新sessionId
-      if (response.data.sessionId) {
-        currentSessionId.value = response.data.sessionId
+        if (response.data.sessionId) {
+          currentSessionId.value = response.data.sessionId
+        }
       }
     }
   } catch (error) {
     console.error('请求失败:', error)
-    const errorMessage = {
-      id: Date.now(),
-      // 使用可选链和空值合并运算符安全地获取错误信息
-      content: `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
-      sender: 'system',
-      timestamp: new Date().toLocaleTimeString(),
+    const messageIndex = messages.value.findIndex((m) => m.id === aiMessageId)
+    if (messageIndex !== -1) {
+      const message = messages.value[messageIndex]
+      if (message) {
+        message.content = `操作失败: ${error instanceof Error ? error.message : '未知错误'}`
+        message.isLoading = false
+      }
     }
-    messages.value.push(errorMessage)
+  }
+}
+
+// 处理流式响应 - 简化版本
+const handleStreamResponse = async (question: string, aiMessageId: number) => {
+  try {
+    // 获取token
+    const token = localStorage.getItem('userToken')
+    if (!token) {
+      throw new Error('未找到认证token，请重新登录')
+    }
+
+    // 构建FormData
+    const formData = new FormData()
+    formData.append('question', question)
+    if (currentSessionId.value) {
+      formData.append('sessionId', currentSessionId.value)
+    }
+    formData.append('stream', 'true')
+
+    // 发送请求
+    const response = await fetch('/api/ai/chat?stream=true', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    // 读取流式数据
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('无法读取响应流')
+    }
+
+    const decoder = new TextDecoder('utf-8')
+    let accumulatedText = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        console.log('收到chunk:', chunk)
+
+        // 尝试解析为JSON
+        try {
+          const data = JSON.parse(chunk)
+          if (data.chunk) {
+            accumulatedText += data.chunk
+
+            // 更新消息内容
+            const messageIndex = messages.value.findIndex((m) => m.id === aiMessageId)
+            if (messageIndex !== -1) {
+              const message = messages.value[messageIndex]
+              if (message) {
+                message.content = accumulatedText
+              }
+            }
+          }
+
+          if (data.done) {
+            // 流式完成
+            const messageIndex = messages.value.findIndex((m) => m.id === aiMessageId)
+            if (messageIndex !== -1) {
+              const message = messages.value[messageIndex]
+              if (message) {
+                message.isLoading = false
+              }
+            }
+
+            if (data.sessionId) {
+              currentSessionId.value = data.sessionId
+            }
+            break
+          }
+        } catch (parseError) {
+          console.warn('解析JSON失败，可能是SSE格式:', parseError)
+          // 如果是SSE格式，尝试处理
+          if (chunk.includes('data:')) {
+            const lines = chunk.split('\n')
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.substring(6).trim()
+                if (dataStr) {
+                  try {
+                    const data = JSON.parse(dataStr)
+                    if (data.chunk) {
+                      accumulatedText += data.chunk
+
+                      const messageIndex = messages.value.findIndex((m) => m.id === aiMessageId)
+                      if (messageIndex !== -1) {
+                        const message = messages.value[messageIndex]
+                        if (message) {
+                          message.content = accumulatedText
+                        }
+                      }
+                    }
+
+                    if (data.done) {
+                      const messageIndex = messages.value.findIndex((m) => m.id === aiMessageId)
+                      if (messageIndex !== -1) {
+                        const message = messages.value[messageIndex]
+                        if (message) {
+                          message.isLoading = false
+                        }
+                      }
+
+                      if (data.sessionId) {
+                        currentSessionId.value = data.sessionId
+                      }
+                    }
+                  } catch (e) {
+                    console.warn('解析SSE数据失败:', e)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+
+      // 确保消息状态正确
+      const messageIndex = messages.value.findIndex((m) => m.id === aiMessageId)
+      if (messageIndex !== -1) {
+        const message = messages.value[messageIndex]
+        if (message && message.isLoading) {
+          message.isLoading = false
+        }
+      }
+    }
+  } catch (error) {
+    console.error('流式响应失败:', error)
+    const messageIndex = messages.value.findIndex((m) => m.id === aiMessageId)
+    if (messageIndex !== -1) {
+      const message = messages.value[messageIndex]
+      if (message) {
+        message.content = `流式输出失败: ${error instanceof Error ? error.message : '未知错误'}`
+        message.isLoading = false
+      }
+    }
   }
 }
 
 // 处理键盘事件
 const handleKeyDown = (event: KeyboardEvent) => {
-  // Enter键发送，Shift+Enter换行
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault()
     sendMessage()
@@ -133,7 +288,10 @@ const handleKeyDown = (event: KeyboardEvent) => {
 const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
-    selectedFile.value = input.files[0] as File
+    const file = input.files[0]
+    if (file) {
+      selectedFile.value = file // 确保 file 不为 undefined
+    }
   }
 }
 
@@ -141,8 +299,7 @@ const handleFileChange = (event: Event) => {
 const uploadFile = async () => {
   if (!selectedFile.value) return
 
-  // 添加文件上传消息
-  const fileMessage = {
+  const fileMessage: ChatMessage = {
     id: Date.now(),
     content: `上传了文件: ${selectedFile.value.name}`,
     sender: 'user',
@@ -154,40 +311,33 @@ const uploadFile = async () => {
     const response = await api.askQuestion({
       question: inputMessage.value || '请分析这个文件',
       file: selectedFile.value,
-      sessionId: currentSessionId.value || undefined, // ✅ 修正
+      sessionId: currentSessionId.value || undefined,
     })
-
-    console.log('文件上传响应:', response)
 
     if (response.code === 202) {
       const taskId = response.data.taskId || ''
       pollTaskStatus(taskId)
 
-      // 更新sessionId
       if (response.data.sessionId) {
         currentSessionId.value = response.data.sessionId
       }
     } else if (response.code === 200) {
-      // 如果直接返回答案（比如小文件）
-      const aiMessage = {
+      const aiMessage: ChatMessage = {
         id: Date.now() + 1,
-        // 确保 content 始终是 string
         content: response.data.answer || 'AI未返回具体答案',
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString(),
       }
       messages.value.push(aiMessage)
 
-      // 更新sessionId
       if (response.data.sessionId) {
         currentSessionId.value = response.data.sessionId
       }
     }
   } catch (error) {
     console.error('请求失败:', error)
-    const errorMessage = {
+    const errorMessage: ChatMessage = {
       id: Date.now(),
-      // 使用可选链和空值合并运算符安全地获取错误信息
       content: `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
       sender: 'system',
       timestamp: new Date().toLocaleTimeString(),
@@ -202,7 +352,6 @@ const uploadFile = async () => {
 const cancelUpload = () => {
   selectedFile.value = null
   isUploadMode.value = false
-  // 重置文件输入
   const input = document.getElementById('file-upload') as HTMLInputElement
   if (input) {
     input.value = ''
@@ -214,12 +363,11 @@ const pollTaskStatus = async (taskId: string) => {
   const interval = setInterval(async () => {
     try {
       const response = await api.getTaskStatus(taskId)
-      console.log('任务状态轮询:', response)
 
       if (response.data.status === 'completed') {
         clearInterval(interval)
 
-        const aiMessage = {
+        const aiMessage: ChatMessage = {
           id: Date.now(),
           content: response.data.answer || '文件处理完成',
           sender: 'ai',
@@ -229,7 +377,7 @@ const pollTaskStatus = async (taskId: string) => {
       } else if (response.data.status === 'failed') {
         clearInterval(interval)
 
-        const errorMessage = {
+        const errorMessage: ChatMessage = {
           id: Date.now(),
           content: `处理失败: ${response.data.error || '未知错误'}`,
           sender: 'system',
@@ -237,13 +385,13 @@ const pollTaskStatus = async (taskId: string) => {
         }
         messages.value.push(errorMessage)
       }
-      // 否则继续轮询...
     } catch (error) {
       console.error('轮询失败:', error)
       clearInterval(interval)
     }
-  }, 2000) // 每2秒轮询一次
+  }, 2000)
 }
+
 // 切换侧边栏显示
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value
@@ -258,7 +406,7 @@ onMounted(() => {
 
 <template>
   <div class="smart-qa-container">
-    <!-- 顶部导航栏 - 复用首页导航栏 -->
+    <!-- 顶部导航栏 -->
     <nav class="navbar">
       <div class="navbar-container">
         <!-- Logo区域 -->
@@ -313,7 +461,6 @@ onMounted(() => {
             <button class="btn-user-center" @click="showUserCenter = !showUserCenter">
               个人中心
             </button>
-            <!-- 个人中心下拉菜单 -->
             <div v-if="showUserCenter" class="user-center-dropdown">
               <div class="dropdown-item" @click="router.push('/profile')">个人信息</div>
               <div class="dropdown-item logout" @click="router.push('/login')">退出登录</div>
@@ -337,7 +484,6 @@ onMounted(() => {
         </div>
 
         <div class="sidebar-menu">
-          <!-- 新对话选项 -->
           <div
             class="sidebar-item"
             :class="{ 'sidebar-item-active': selectedMenu === 'new' }"
@@ -346,7 +492,6 @@ onMounted(() => {
             新对话
           </div>
 
-          <!-- 历史对话选项 -->
           <div
             class="sidebar-item"
             :class="{ 'sidebar-item-active': selectedMenu === 'history' }"
@@ -379,7 +524,7 @@ onMounted(() => {
               {{ message.sender === 'ai' ? '🤖' : '👤' }}
             </div>
             <div class="message-content">
-              <div class="message-bubble">
+              <div class="message-bubble" :class="{ loading: message.isLoading }">
                 {{ message.content }}
               </div>
               <div class="message-time">{{ message.timestamp }}</div>
@@ -452,71 +597,30 @@ onMounted(() => {
 
     <!-- 页脚 -->
     <footer class="footer">
-      <div class="footer-content">页脚</div>
+      <div class="footer-content">智慧校园平台 © 2024</div>
     </footer>
   </div>
 </template>
 
 <style scoped>
-/* 全局变量 */
-:root {
-  /* 主色调：科技蓝 */
-  --primary-color: #165dff;
-  --primary-color-dark: #0e46cc;
-  --primary-color-light: #4c8aff;
-
-  /* 辅助色：浅红色 */
-  --accent-color: #f53f3f;
-  --accent-color-dark: #e13d3d;
-  --accent-color-light: #f76d6d;
-
-  /* 背景色：浅灰色 */
-  --bg-color: #f5f7fa;
-  --bg-color-light: #fafafb;
-  --bg-color-dark: #eef1f5;
-
-  /* 文字主色：深灰色 */
-  --text-color: #1d2129;
-  --text-color-secondary: #4e5969;
-  --text-color-light: #86909c;
-
-  /* 边框和阴影 */
-  --border-color: #e5e7eb;
-  --border-color-light: #f0f2f5;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-
-  /* 圆角 */
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
-
-  /* 过渡 */
-  --transition: all 0.3s ease;
-}
-
-/* 主容器 */
 .smart-qa-container {
   min-height: 100vh;
-  background-color: var(--bg-color);
+  background-color: #f5f7fa;
   font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
   display: flex;
   flex-direction: column;
 }
 
-/* 顶部导航栏 */
 .navbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   background-color: #fff;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   z-index: 100;
   height: 70px;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid #eef1f5;
 }
 
 .navbar-container {
@@ -529,22 +633,15 @@ onMounted(() => {
   height: 100%;
 }
 
-/* Logo区域 */
-.logo {
-  display: flex;
-  align-items: center;
-}
-
 .logo-placeholder {
   padding: 8px 16px;
-  background-color: var(--primary-color);
+  background-color: #165dff;
   color: #fff;
-  border-radius: var(--border-radius-md);
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
 }
 
-/* 导航菜单 */
 .nav-menu {
   display: flex;
   align-items: center;
@@ -556,19 +653,15 @@ onMounted(() => {
   padding: 12px 16px;
   font-size: 16px;
   font-weight: 500;
-  color: var(--text-color);
+  color: #1d2129;
   cursor: pointer;
-  transition: var(--transition);
-  border-radius: var(--border-radius-md);
+  transition: all 0.3s ease;
+  border-radius: 8px;
 }
 
 .nav-item:hover {
-  color: var(--primary-color);
-  background-color: var(--bg-color-light);
-}
-
-.nav-item.has-submenu {
-  position: relative;
+  color: #165dff;
+  background-color: #fafafb;
 }
 
 .nav-item.has-submenu::after {
@@ -577,15 +670,14 @@ onMounted(() => {
   font-size: 12px;
 }
 
-/* 子菜单 */
 .submenu {
   position: absolute;
   top: 100%;
   left: 0;
   background-color: #fff;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
   padding: 12px 0;
   min-width: 160px;
   z-index: 101;
@@ -599,69 +691,98 @@ onMounted(() => {
 .submenu-item {
   padding: 12px 20px;
   font-size: 14px;
-  color: var(--text-color);
+  color: #1d2129;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   white-space: nowrap;
 }
 
 .submenu-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
+  background-color: #fafafb;
+  color: #165dff;
 }
 
-/* 右侧操作区 */
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-/* 登录按钮 */
 .btn-login {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background-color: var(--primary-color);
+  background-color: #165dff;
   color: #fff;
-  border: 1px solid var(--primary-color);
-  border-radius: var(--border-radius-md);
+  border: 1px solid #165dff;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .btn-login:hover {
-  background-color: var(--primary-color-dark);
-  border-color: var(--primary-color-dark);
+  background-color: #0e46cc;
+  border-color: #0e46cc;
 }
 
 .login-icon {
   font-size: 16px;
 }
 
-/* 个人中心 */
 .btn-user-center {
   padding: 10px 20px;
   background-color: transparent;
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
+  color: #1d2129;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .btn-user-center:hover {
-  background-color: var(--bg-color-light);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background-color: #fafafb;
+  border-color: #165dff;
+  color: #165dff;
 }
 
-/* 主内容区 */
+.user-center-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+  z-index: 102;
+}
+
+.dropdown-item {
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #1d2129;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #fafafb;
+  color: #165dff;
+}
+
+.dropdown-item.logout {
+  color: #f53f3f;
+}
+
+.dropdown-item.logout:hover {
+  background-color: #fff2f2;
+}
+
 .main-content {
   display: flex;
   flex: 1;
@@ -669,41 +790,39 @@ onMounted(() => {
   min-height: calc(100vh - 120px);
 }
 
-/* 移动端侧边栏切换按钮 */
 .sidebar-toggle {
   position: fixed;
   top: 80px;
   left: 10px;
   z-index: 99;
   padding: 8px 16px;
-  background-color: var(--primary-color);
+  background-color: #165dff;
   color: #fff;
   border: none;
-  border-radius: var(--border-radius-md);
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
   display: none;
 }
 
-/* 左侧功能栏 */
 .sidebar {
   width: 280px;
   background-color: #fff;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid #e5e7eb;
   padding: 20px 0;
-  transition: var(--transition);
-  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-header {
   padding: 0 20px 20px;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid #f0f2f5;
 }
 
 .sidebar-title {
   font-size: 20px;
   font-weight: bold;
-  color: var(--text-color);
+  color: #1d2129;
   margin: 0;
 }
 
@@ -714,40 +833,38 @@ onMounted(() => {
 .sidebar-item {
   padding: 16px 20px;
   font-size: 16px;
-  color: var(--text-color);
+  color: #1d2129;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   border-left: 3px solid transparent;
 }
 
 .sidebar-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
+  background-color: #fafafb;
+  color: #165dff;
 }
 
 .sidebar-item-active {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color) !important;
-  border-left-color: var(--primary-color);
+  background-color: #fafafb;
+  color: #165dff !important;
+  border-left-color: #165dff;
   font-weight: 500;
 }
 
-/* 中间对话区 */
 .chat-main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-color);
+  background-color: #f5f7fa;
   padding: 20px;
   max-width: calc(100% - 280px);
 }
 
-/* 对话头部 */
 .chat-header {
   background-color: #fff;
   padding: 16px 20px;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   margin-bottom: 20px;
 }
 
@@ -764,15 +881,14 @@ onMounted(() => {
 .ai-name {
   font-size: 18px;
   font-weight: bold;
-  color: var(--text-color);
+  color: #1d2129;
 }
 
-/* 对话消息列表 */
 .chat-messages {
   flex: 1;
   background-color: #fff;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   padding: 20px;
   overflow-y: auto;
   margin-bottom: 20px;
@@ -781,14 +897,12 @@ onMounted(() => {
   gap: 20px;
 }
 
-/* 消息项 */
 .message-item {
   display: flex;
   gap: 12px;
   align-items: flex-start;
 }
 
-/* 用户消息样式 */
 .message-item-user {
   flex-direction: row-reverse;
 }
@@ -804,25 +918,55 @@ onMounted(() => {
 }
 
 .message-bubble {
-  background-color: var(--bg-color-light);
+  background-color: #fafafb;
   padding: 12px 16px;
-  border-radius: var(--border-radius-lg);
+  border-radius: 12px;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--text-color);
+  color: #1d2129;
   position: relative;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-/* 用户消息气泡样式 */
 .message-item-user .message-bubble {
-  background-color: var(--primary-color);
+  background-color: #165dff;
   color: #fff;
+}
+
+.message-bubble.loading {
+  background-color: #f0f2f5;
+  color: #86909c;
+  position: relative;
+  min-height: 20px;
+}
+
+.message-bubble.loading::after {
+  content: '...';
+  animation: loadingDots 1.5s infinite;
+  position: absolute;
+  right: 10px;
+  bottom: 5px;
+}
+
+@keyframes loadingDots {
+  0%,
+  20% {
+    content: '.';
+  }
+  40% {
+    content: '..';
+  }
+  60%,
+  100% {
+    content: '...';
+  }
 }
 
 .message-time {
   font-size: 12px;
-  color: var(--text-color-light);
+  color: #86909c;
   margin-top: 4px;
   text-align: right;
 }
@@ -831,40 +975,36 @@ onMounted(() => {
   text-align: left;
 }
 
-/* 输入区域 */
 .chat-input-area {
   background-color: #fff;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   padding: 20px;
 }
 
-/* 输入工具栏 */
 .input-toolbar {
   margin-bottom: 12px;
 }
 
-/* 上传按钮 */
 .upload-button {
   padding: 8px 16px;
-  background-color: var(--primary-color-light);
+  background-color: #4c8aff;
   color: #fff;
   border: none;
-  border-radius: var(--border-radius-md);
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
 
 .upload-button:hover {
-  background-color: var(--primary-color);
+  background-color: #165dff;
 }
 
 .upload-button-active {
-  background-color: var(--primary-color);
+  background-color: #165dff;
 }
 
-/* 输入模式 */
 .input-mode {
   display: flex;
   flex-direction: column;
@@ -879,49 +1019,48 @@ onMounted(() => {
 .message-input {
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   font-size: 14px;
   font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
   resize: none;
   min-height: 44px;
   max-height: 120px;
   line-height: 1.5;
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
 
 .message-input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: #165dff;
   box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1);
 }
 
 .send-button {
   padding: 0 24px;
-  background-color: var(--accent-color);
+  background-color: #f53f3f;
   color: #fff;
   border: none;
-  border-radius: var(--border-radius-lg);
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   align-self: flex-end;
   height: 44px;
 }
 
 .send-button:hover {
-  background-color: var(--accent-color-dark);
-  box-shadow: var(--shadow-md);
+  background-color: #e13d3d;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .input-tip {
   font-size: 12px;
-  color: var(--text-color-light);
+  color: #86909c;
   text-align: center;
 }
 
-/* 上传模式 */
 .upload-mode {
   display: flex;
   justify-content: center;
@@ -936,27 +1075,25 @@ onMounted(() => {
   gap: 16px;
 }
 
-/* 文件输入隐藏 */
 .file-input {
   display: none;
 }
 
-/* 上传框 */
 .upload-box {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  border: 2px dashed var(--border-color);
-  border-radius: var(--border-radius-lg);
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
   cursor: pointer;
-  transition: var(--transition);
-  background-color: var(--bg-color-light);
+  transition: all 0.3s ease;
+  background-color: #fafafb;
 }
 
 .upload-box:hover {
-  border-color: var(--primary-color);
+  border-color: #165dff;
   background-color: rgba(22, 93, 255, 0.05);
 }
 
@@ -967,18 +1104,17 @@ onMounted(() => {
 
 .upload-text {
   font-size: 16px;
-  color: var(--text-color);
+  color: #1d2129;
   margin-bottom: 8px;
   text-align: center;
 }
 
 .upload-hint {
   font-size: 14px;
-  color: var(--text-color-light);
+  color: #86909c;
   text-align: center;
 }
 
-/* 上传操作按钮 */
 .upload-actions {
   display: flex;
   gap: 12px;
@@ -987,18 +1123,18 @@ onMounted(() => {
 
 .upload-submit {
   padding: 10px 24px;
-  background-color: var(--accent-color);
+  background-color: #f53f3f;
   color: #fff;
   border: none;
-  border-radius: var(--border-radius-md);
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
 
 .upload-submit:hover:not(:disabled) {
-  background-color: var(--accent-color-dark);
-  box-shadow: var(--shadow-md);
+  background-color: #e13d3d;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .upload-submit:disabled {
@@ -1009,48 +1145,44 @@ onMounted(() => {
 .upload-cancel {
   padding: 10px 24px;
   background-color: transparent;
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
+  color: #1d2129;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
 
 .upload-cancel:hover {
-  background-color: var(--bg-color-light);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background-color: #fafafb;
+  border-color: #165dff;
+  color: #165dff;
 }
 
-/* 右侧区域 */
 .right-sidebar {
   width: 320px;
   background-color: #fff;
-  border-left: 1px solid var(--border-color);
+  border-left: 1px solid #e5e7eb;
   padding: 20px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* 页脚 */
 .footer {
   height: 50px;
   background-color: #fff;
-  border-top: 1px solid var(--border-color-light);
+  border-top: 1px solid #f0f2f5;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  color: var(--text-color-light);
+  color: #86909c;
 }
 
 .footer-content {
   text-align: center;
 }
 
-/* 响应式设计 */
 @media (max-width: 1366px) {
-  /* 笔记本端适配 */
   .sidebar {
     width: 240px;
   }
@@ -1069,7 +1201,6 @@ onMounted(() => {
 }
 
 @media (max-width: 1024px) {
-  /* 平板端适配 */
   .sidebar-toggle {
     display: block;
   }
@@ -1101,7 +1232,6 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  /* 移动端适配 */
   .navbar-container {
     padding: 0 16px;
   }
