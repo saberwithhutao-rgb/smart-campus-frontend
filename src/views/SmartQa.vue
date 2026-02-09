@@ -69,32 +69,37 @@ const scrollToBottom = () => {
     }
   })
 }
-
-// 安全更新消息的函数
 // 安全更新消息的函数
 const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) => {
+  console.log(`🔄 开始更新消息 ${index}，内容长度: ${content.length}，loading: ${isLoading}`)
+
   // 边界检查
   if (index < 0 || index >= messages.value.length) {
-    console.error('❌ 消息不存在，索引:', index)
+    console.error('❌ 消息索引超出范围:', index, '消息总数:', messages.value.length)
     return
   }
 
   const message = messages.value[index]
   if (!message) {
-    console.error('❌ 消息不存在')
+    console.error('❌ 消息不存在，索引:', index)
     return
   }
 
-  console.log(`🔄 更新消息 ${index}:`, content.substring(0, 50) + '...', 'loading:', isLoading)
+  // 显示前50个字符用于调试
+  const preview =
+    content.length > 0 ? content.substring(0, Math.min(50, content.length)) : '[空内容]'
+  console.log(`📋 更新预览: "${preview}${content.length > 50 ? '...' : ''}"`)
 
-  // 使用Object.assign确保响应式更新
-  Object.assign(message, {
-    content,
-    ...(isLoading !== undefined && { isLoading }),
-  })
+  // 使用Vue的响应式更新
+  message.content = content
+  if (isLoading !== undefined) {
+    message.isLoading = isLoading
+  }
 
-  // 强制触发响应式更新
+  // 强制触发响应式更新（如果需要）
   messages.value = [...messages.value]
+
+  console.log(`✅ 消息更新完成，新内容长度: ${message.content.length}`)
 
   // 滚动到底部
   scrollToBottom()
@@ -204,56 +209,71 @@ const processSSEResponse = async (response: Response, aiMessageIndex: number) =>
   let accumulatedText = ''
   let buffer = ''
 
-  console.log('🎯 开始处理SSE响应')
+  console.log('🎯 开始处理SSE响应，消息索引:', aiMessageIndex)
 
   try {
     while (true) {
       const { done, value } = await reader.read()
       if (done) {
-        console.log('✅ SSE流读取完成')
+        console.log('✅ SSE流读取完成，最终文本:', accumulatedText)
         safeUpdateMessage(aiMessageIndex, accumulatedText, false)
         break
       }
 
       // 解码数据
-      buffer += decoder.decode(value, { stream: true })
+      const chunkText = decoder.decode(value, { stream: true })
+      buffer += chunkText
+      console.log('📦 收到原始数据，长度:', chunkText.length, '缓冲区:', buffer)
 
       // 按行分割（处理SSE格式）
       const lines = buffer.split('\n')
       buffer = lines.pop() || '' // 保存未完成的半行
 
+      console.log('📊 分割为行数:', lines.length)
+
       for (const line of lines) {
         const trimmedLine = line.trim()
         if (!trimmedLine) continue
 
-        console.log('📥 收到SSE行:', trimmedLine)
+        console.log(
+          '📥 处理SSE行:',
+          trimmedLine.substring(0, 100) + (trimmedLine.length > 100 ? '...' : ''),
+        )
 
         // 处理SSE格式: data: {...}
         if (trimmedLine.startsWith('data: ')) {
           const dataStr = trimmedLine.substring(6).trim()
-          console.log('📦 提取数据字符串:', dataStr)
+          console.log(
+            '📦 提取JSON数据:',
+            dataStr.substring(0, 100) + (dataStr.length > 100 ? '...' : ''),
+          )
 
           if (!dataStr) continue
 
           try {
             const data = JSON.parse(dataStr)
-            console.log('✅ 解析JSON成功:', data)
+            console.log('✅ 解析JSON成功，字段:', Object.keys(data))
 
-            if (data.chunk) {
+            // 检查是否有chunk字段
+            if (data.chunk && typeof data.chunk === 'string') {
               accumulatedText += data.chunk
-              console.log('📝 更新文本:', accumulatedText.substring(0, 50) + '...')
+              console.log('📝 添加chunk:', data.chunk)
+              console.log(
+                '📊 累积文本长度:',
+                accumulatedText.length,
+                '内容:',
+                accumulatedText.substring(0, 50) + (accumulatedText.length > 50 ? '...' : ''),
+              )
 
               // 更新消息内容
               safeUpdateMessage(aiMessageIndex, accumulatedText, true)
-
-              // 特别检查是否应该显示loading
-              if (data.done === true) {
-                safeUpdateMessage(aiMessageIndex, accumulatedText, false)
-              }
+            } else {
+              console.warn('⚠️ 数据中没有chunk字段或不是字符串:', data)
             }
 
+            // 检查是否完成
             if (data.done === true) {
-              console.log('🎉 SSE流完成')
+              console.log('🎉 SSE流完成，最终文本:', accumulatedText)
               safeUpdateMessage(aiMessageIndex, accumulatedText, false)
 
               if (data.sessionId) {
@@ -268,11 +288,14 @@ const processSSEResponse = async (response: Response, aiMessageIndex: number) =>
             console.error('❌ 解析JSON失败:', parseError)
             console.error('失败的数据:', dataStr)
           }
+        } else {
+          console.log('📄 非data行:', trimmedLine.substring(0, 50))
         }
       }
     }
   } catch (error) {
     console.error('❌ 读取SSE数据失败:', error)
+    safeUpdateMessage(aiMessageIndex, accumulatedText || '处理失败', false)
     throw error
   } finally {
     reader.releaseLock()
