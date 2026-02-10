@@ -327,11 +327,36 @@
             <!-- 错误提示 -->
             <div v-if="error" class="error-message">
               {{ error }}
+              <button class="retry-btn" @click="handleGenerateSuggestion">重试</button>
+            </div>
+
+            <!-- 生成学习建议按钮 -->
+            <div
+              class="generate-suggestion-container"
+              v-if="!loading && !error && (!suggestions || suggestions.length === 0)"
+            >
+              <button
+                class="generate-suggestion-btn"
+                @click="handleGenerateSuggestion"
+                :disabled="loading"
+              >
+                <span v-if="loading">生成中...</span>
+                <span v-else>✨ 点击生成你的专属学习建议</span>
+              </button>
+            </div>
+
+            <!-- 加载状态 -->
+            <div v-if="loading" class="loading-container">
+              <div class="loading-spinner"></div>
+              <p>正在生成学习建议...</p>
             </div>
 
             <!-- 学习建议 -->
-            <div v-if="suggestions && suggestions.length > 0" class="suggestions-card">
-              <h3>学习建议</h3>
+            <div
+              v-if="suggestions && suggestions.length > 0 && !loading && !error"
+              class="suggestions-card"
+            >
+              <h3>专属学习建议</h3>
               <div class="suggestion-list">
                 <div
                   v-for="(suggestion, index) in suggestions"
@@ -344,7 +369,12 @@
             </div>
 
             <!-- 无数据提示 -->
-            <div v-else-if="!loading" class="no-data">暂无学习建议</div>
+            <div
+              v-else-if="!loading && !error && (!suggestions || suggestions.length === 0)"
+              class="no-data"
+            >
+              <p>点击上方按钮，获取你的专属学习建议</p>
+            </div>
           </div>
         </div>
       </section>
@@ -358,6 +388,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import * as echarts from 'echarts'
+import { ElMessage, ElLoading } from 'element-plus'
 
 // 路由实例
 const router = useRouter()
@@ -521,23 +552,77 @@ const selectMenu = async (menu: string) => {
     router.push('/campus/advice')
   }
   console.log('当前选中模块:', menu)
-  // 切换菜单后重新加载数据
-  await fetchData()
+  // 切换菜单后只加载统计数据
+  await fetchStatisticsData()
 }
 
 // 时间范围选择处理
 const selectTimeRange = (timeRange: string) => {
   selectedTimeRange.value = timeRange
   console.log('当前选中时间范围:', timeRange)
-  // 根据时间范围获取数据
-  fetchData()
+  // 根据时间范围只获取统计数据
+  fetchStatisticsData()
 }
 
-// 获取数据
-const fetchData = async () => {
+// 生成学习建议按钮点击处理
+const handleGenerateSuggestion = () => {
+  console.log('生成学习建议按钮被点击')
+  // 清空之前的建议和错误信息
+  suggestions.value = []
+  error.value = ''
+  // 只获取学习建议数据
+  fetchSuggestionsData()
+}
+
+// 获取统计数据
+const fetchStatisticsData = async () => {
   // 验证参数
   if (!userId.value) {
     error.value = '请输入用户ID'
+    ElMessage.error('请输入用户ID')
+    return
+  }
+
+  try {
+    // 打印请求参数
+    console.log('请求统计数据参数:', {
+      timeRange: selectedTimeRange.value,
+      userId: userId.value,
+    })
+
+    // 请求真实接口
+    console.log('开始请求统计数据...')
+    const realStatsData = await getStudyStatistics({
+      timeRange: selectedTimeRange.value,
+      userId: userId.value,
+    })
+
+    console.log('统计数据请求成功')
+    console.log('统计数据响应:', realStatsData)
+
+    // 验证响应数据
+    if (typeof realStatsData !== 'object' || realStatsData === null) {
+      throw new Error('统计数据格式错误')
+    }
+
+    // 保存数据
+    statistics.value = realStatsData
+    console.log('保存后的统计数据:', statistics.value)
+  } catch (err: any) {
+    // 处理错误
+    console.error('统计数据请求失败:', err)
+    error.value = '网络错误，请稍后重试'
+    statistics.value = null
+    ElMessage.error('统计数据加载失败，请稍后再试')
+  }
+}
+
+// 获取学习建议数据
+const fetchSuggestionsData = async () => {
+  // 验证参数
+  if (!userId.value) {
+    error.value = '请输入用户ID'
+    ElMessage.error('请输入用户ID')
     return
   }
 
@@ -546,159 +631,90 @@ const fetchData = async () => {
 
   try {
     // 打印请求参数
-    console.log('请求参数:', {
+    console.log('请求学习建议参数:', {
       timeRange: selectedTimeRange.value,
       userId: userId.value,
     })
 
-    // 模拟静态测试数据 - 覆盖三个时间维度
-    let statsData = {}
-    let suggestionsData = { suggestions: [] }
+    // 请求真实接口
+    console.log('开始请求学习建议...')
+    const realSuggestionsData = await getStudySuggestions({
+      timeRange: selectedTimeRange.value,
+      userId: userId.value,
+    })
 
-    // 根据时间范围生成对应的测试数据
-    switch (selectedTimeRange.value) {
-      case 'today':
-        statsData = {
-          totalPlanCount: 10,
-          completedPlanCount: 6,
-          completionRate: 0.6,
-          unfinishedCount: 4,
-          overduePlanCount: 1,
-          planTypeDistribution: {
-            details: [
-              { type: '学习', count: 5 },
-              { type: '工作', count: 3 },
-              { type: '生活', count: 2 },
-            ],
-          },
-          difficultyDistribution: {
-            details: [
-              { type: 'easy', count: 3 },
-              { type: 'medium', count: 5 },
-              { type: 'hard', count: 2 },
-            ],
-          },
-        }
-        suggestionsData = {
-          suggestions: [
-            '今天的学习计划完成率不错，继续保持！',
-            '建议适当增加一些困难级别的任务，挑战自己。',
-          ],
-        }
-        break
-      case 'week':
-        statsData = {
-          totalPlanCount: 35,
-          completedPlanCount: 21,
-          completionRate: 0.6,
-          unfinishedCount: 14, // 未完成总数
-          overduePlanCount: 3, // 延期数
-          planTypeDistribution: {
-            details: [
-              { type: '学习', count: 18 },
-              { type: '工作', count: 10 },
-              { type: '生活', count: 7 },
-            ],
-          },
-          difficultyDistribution: {
-            details: [
-              { type: 'easy', count: 12 },
-              { type: 'medium', count: 18 },
-              { type: 'hard', count: 5 },
-            ],
-          },
-        }
-        suggestionsData = {
-          suggestions: [
-            '本周的学习计划完成率达到了60%，继续努力！',
-            '建议平衡各类型计划的分配，保持全面发展。',
-          ],
-        }
-        break
-      case 'month':
-        statsData = {
-          totalPlanCount: 120,
-          completedPlanCount: 84,
-          completionRate: 0.7,
-          unfinishedCount: 36, // 未完成总数
-          overduePlanCount: 8, // 延期数
-          planTypeDistribution: {
-            details: [
-              { type: '学习', count: 60 },
-              { type: '工作', count: 35 },
-              { type: '生活', count: 25 },
-            ],
-          },
-          difficultyDistribution: {
-            details: [
-              { type: 'easy', count: 40 },
-              { type: 'medium', count: 60 },
-              { type: 'hard', count: 20 },
-            ],
-          },
-        }
-        suggestionsData = {
-          suggestions: [
-            '本月的学习计划完成率达到了70%，非常棒！',
-            '建议设定更高的目标，挑战自己的潜力。',
-          ],
-        }
-        break
-      default:
-        statsData = {
-          totalPlanCount: 0,
-          completedPlanCount: 0,
-          completionRate: 0,
-          unfinishedCount: 0,
-          overduePlanCount: 0,
-          planTypeDistribution: {
-            details: [],
-          },
-          difficultyDistribution: {
-            details: [],
-          },
-        }
-        suggestionsData = { suggestions: [] }
+    console.log('学习建议请求成功')
+    console.log('完整学习建议响应:', realSuggestionsData)
+
+    // 验证响应数据
+    if (typeof realSuggestionsData !== 'object' || realSuggestionsData === null) {
+      throw new Error('学习建议数据格式错误')
     }
 
-    // 尝试请求真实接口
-    try {
-      const [realStatsData, realSuggestionsData] = await Promise.all([
-        getStudyStatistics({
-          timeRange: selectedTimeRange.value,
-          userId: userId.value,
-        }),
-        getStudySuggestions({
-          timeRange: selectedTimeRange.value,
-          userId: userId.value,
-        }),
-      ])
-
-      // 使用真实数据
-      statsData = realStatsData
-      suggestionsData = realSuggestionsData
-      console.log('使用真实后端数据')
-    } catch (apiError) {
-      console.log('使用静态测试数据')
+    // 处理业务逻辑错误
+    if (realSuggestionsData.success === false) {
+      console.error('业务逻辑错误:', realSuggestionsData.message || '生成失败')
+      error.value = '生成失败'
+      suggestions.value = []
+      ElMessage.error('生成失败，请稍后再试')
+      return
     }
 
-    // 打印响应数据
-    console.log('统计数据:', statsData)
-    console.log('学习建议:', suggestionsData)
+    // 确保suggestions是数组
+    let suggestionsArray = []
+    if (realSuggestionsData && typeof realSuggestionsData === 'object') {
+      // 打印所有可能的字段路径
+      console.log('检查suggestions字段...')
+      console.log('realSuggestionsData.suggestions:', realSuggestionsData.suggestions)
+      console.log('realSuggestionsData.data:', realSuggestionsData.data)
+      console.log('realSuggestionsData.data?.suggestions:', realSuggestionsData.data?.suggestions)
 
-    // 保存数据
-    statistics.value = statsData
-    suggestions.value = suggestionsData.suggestions || suggestionsData || []
+      if (Array.isArray(realSuggestionsData.suggestions)) {
+        suggestionsArray = realSuggestionsData.suggestions
+        console.log('使用realSuggestionsData.suggestions数组')
+      } else if (Array.isArray(realSuggestionsData)) {
+        suggestionsArray = realSuggestionsData
+        console.log('使用realSuggestionsData数组')
+      } else if (realSuggestionsData.data && Array.isArray(realSuggestionsData.data.suggestions)) {
+        suggestionsArray = realSuggestionsData.data.suggestions
+        console.log('使用realSuggestionsData.data.suggestions数组')
+      } else if (realSuggestionsData.data && Array.isArray(realSuggestionsData.data)) {
+        suggestionsArray = realSuggestionsData.data
+        console.log('使用realSuggestionsData.data数组')
+      } else {
+        // 尝试提取可能的suggestions字段
+        const possibleSuggestions =
+          realSuggestionsData.suggestions || realSuggestionsData.data || []
+        if (Array.isArray(possibleSuggestions)) {
+          suggestionsArray = possibleSuggestions
+          console.log('使用可能的suggestions字段')
+        } else {
+          console.error('无法提取有效的suggestions数组')
+          throw new Error('无法提取有效的suggestions数组')
+        }
+      }
+    }
+
+    suggestions.value = suggestionsArray || []
+    console.log('最终suggestions:', suggestions.value)
 
     // 打印保存后的数据
-    console.log('保存后的统计数据:', statistics.value)
     console.log('保存后的学习建议:', suggestions.value)
   } catch (err: any) {
     // 处理错误
-    console.error('请求失败:', err)
-    error.value = err.message || '请求失败，请稍后重试'
-    statistics.value = null
-    suggestions.value = []
+    console.error('学习建议请求失败:', err)
+    error.value = '网络错误，请稍后重试'
+    // 设置默认提示项
+    suggestions.value = ['AI 服务暂时不可用，请稍后再试。']
+
+    // 优化错误提示
+    if (err.code === 'ECONNABORTED') {
+      // 请求超时
+      ElMessage.error('网络连接超时，请检查网络设置')
+    } else {
+      // 其他错误
+      ElMessage.error('AI 服务繁忙，请稍后再试')
+    }
   } finally {
     loading.value = false
   }
@@ -1020,9 +1036,21 @@ watch(
   { deep: true },
 )
 
+// 监听时间范围变化，重置建议相关状态
+watch(
+  () => selectedTimeRange.value,
+  () => {
+    console.log('时间范围变化，重置建议状态')
+    // 重置建议相关状态
+    suggestions.value = []
+    error.value = ''
+    // 这样就会重新显示生成按钮
+  },
+)
+
 // 初始加载数据
 const initData = async () => {
-  await fetchData()
+  await fetchStatisticsData()
   updateCharts()
 }
 
@@ -1677,9 +1705,58 @@ body {
 .error-message {
   background-color: #fef0f0;
   color: #f56c6c;
-  padding: 10px;
+  padding: 15px;
   border-radius: 4px;
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.retry-btn {
+  background-color: #f56c6c;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.retry-btn:hover {
+  background-color: #f78989;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  margin: 20px 0;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(64, 158, 255, 0.2);
+  border-radius: 50%;
+  border-top-color: #409eff;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-container p {
+  color: var(--text-color-medium);
+  font-size: 16px;
+  margin: 0;
 }
 
 .statistics-card,
@@ -1689,6 +1766,88 @@ body {
   border-radius: 8px;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 生成学习建议按钮容器 */
+.generate-suggestion-container {
+  text-align: center;
+  padding: 40px 20px;
+  margin-bottom: 20px;
+}
+
+/* 生成学习建议按钮 */
+.generate-suggestion-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  outline: none;
+  letter-spacing: 0.5px;
+}
+
+.generate-suggestion-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  transform: translateY(-2px);
+}
+
+.generate-suggestion-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+}
+
+.generate-suggestion-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+/* 学习建议卡片标题 */
+.suggestions-card h3 {
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-align: left;
+  border-left: 4px solid #667eea;
+  padding-left: 12px;
+}
+
+/* 学习建议列表 */
+.suggestion-list {
+  background-color: white;
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* 学习建议项 */
+.suggestion-item {
+  padding: 16px;
+  margin-bottom: 12px;
+  background-color: #f8f9ff;
+  border-left: 4px solid #667eea;
+  border-radius: 4px;
+  line-height: 1.6;
+  color: #333;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.suggestion-item:last-child {
+  margin-bottom: 0;
+}
+
+.suggestion-item:hover {
+  background-color: #eef0ff;
+  transform: translateX(4px);
 }
 
 h3 {
@@ -1750,26 +1909,6 @@ h4 {
 
 .distribution-item:last-child {
   border-bottom: none;
-}
-
-.suggestion-list {
-  background-color: white;
-  padding: 15px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.suggestion-item {
-  padding: 10px;
-  margin-bottom: 10px;
-  background-color: #f0f9eb;
-  border-left: 4px solid #67c23a;
-  border-radius: 4px;
-  line-height: 1.5;
-}
-
-.suggestion-item:last-child {
-  margin-bottom: 0;
 }
 
 /* 可视化图表模块 */

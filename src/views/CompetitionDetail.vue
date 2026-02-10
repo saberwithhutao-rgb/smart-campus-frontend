@@ -1,5 +1,5 @@
 <template>
-  <div class="competition-management">
+  <div class="competition-detail">
     <!-- 顶部导航栏 -->
     <nav class="navbar">
       <div class="navbar-container">
@@ -29,16 +29,12 @@
             个性化学习伴侣
             <!-- 子菜单悬浮层 -->
             <div v-if="showSubMenu === '个性化学习伴侣' && !isMobile" class="submenu">
-              <!-- 智能问答 - 点击跳转到智能问答页面 -->
               <div class="submenu-item" @click="goToSmartQA">智能问答</div>
-              <!-- 个性化规划 - 点击跳转到个性化规划页面 -->
               <div class="submenu-item" @click="goToPersonalStudy">个性化规划</div>
             </div>
             <!-- 移动端子菜单 -->
             <div v-if="showSubMenu === '个性化学习伴侣' && isMobile" class="mobile-submenu">
-              <!-- 智能问答 - 点击跳转到智能问答页面 -->
               <div class="mobile-submenu-item" @click="goToSmartQA">智能问答</div>
-              <!-- 个性化规划 - 点击跳转到个性化规划页面 -->
               <div class="mobile-submenu-item" @click="goToPersonalStudy">个性化规划</div>
             </div>
           </div>
@@ -117,7 +113,7 @@
           <!-- 竞赛管理 -->
           <div class="sidebar-section">
             <h3 class="section-title">竞赛相关</h3>
-            <div class="sidebar-item active">
+            <div class="sidebar-item" @click="goToCompetitionManagement">
               <span class="item-icon">🏆</span>
               <span class="item-text">竞赛管理</span>
             </div>
@@ -140,70 +136,9 @@
 
       <!-- 右侧主内容区 -->
       <main class="content-area">
-        <!-- 页面标题 -->
-        <h1 class="page-title">竞赛管理</h1>
-
-        <!-- 筛选和搜索区 -->
-        <div class="filter-section">
-          <div class="filter-row">
-            <!-- 竞赛类型筛选 -->
-            <div class="filter-item">
-              <span class="filter-label">竞赛类型:</span>
-              <select
-                class="filter-select"
-                v-model="filterParams.type"
-                @change="handleFilterChange"
-              >
-                <option value="">全部</option>
-                <option value="programming">程序设计</option>
-                <option value="math">数学建模</option>
-                <option value="design">创意设计</option>
-                <option value="other">其他</option>
-              </select>
-            </div>
-
-            <!-- 状态筛选 -->
-            <div class="filter-item">
-              <span class="filter-label">状态:</span>
-              <select
-                class="filter-select"
-                v-model="filterParams.status"
-                @change="handleFilterChange"
-              >
-                <option value="">全部</option>
-                <option value="ongoing">进行中</option>
-                <option value="upcoming">即将开始</option>
-                <option value="completed">已结束</option>
-              </select>
-            </div>
-
-            <!-- 级别筛选 -->
-            <div class="filter-item">
-              <span class="filter-label">级别:</span>
-              <select
-                class="filter-select"
-                v-model="filterParams.level"
-                @change="handleFilterChange"
-              >
-                <option value="">全部</option>
-                <option value="national">国家级</option>
-                <option value="provincial">省级</option>
-                <option value="school">校级</option>
-              </select>
-            </div>
-
-            <!-- 搜索框 -->
-            <div class="search-box">
-              <input
-                type="text"
-                placeholder="搜索竞赛名称..."
-                class="search-input"
-                v-model="filterParams.name"
-                @keyup.enter="handleSearch"
-              />
-              <button class="search-btn" @click="handleSearch">🔍</button>
-            </div>
-          </div>
+        <!-- 返回按钮 -->
+        <div class="back-button" @click="goToCompetitionManagement">
+          <span>← 返回竞赛列表</span>
         </div>
 
         <!-- 加载状态 -->
@@ -215,67 +150,113 @@
         <!-- 错误提示 -->
         <div v-if="error" class="error-container">
           <p>{{ error }}</p>
-          <button class="retry-btn" @click="fetchCompetitions">重试</button>
+          <button class="retry-btn" @click="fetchCompetitionDetail">重试</button>
         </div>
 
-        <!-- 竞赛列表 -->
-        <div v-if="!loading && !error" class="competition-list">
-          <!-- 竞赛项 -->
-          <div
-            class="competition-item"
-            v-for="competition in filteredCompetitions"
-            :key="competition.id"
-          >
-            <div class="competition-header">
-              <div class="competition-info">
-                <div class="competition-name">
-                  <span class="competition-title">{{ competition.name }}</span>
+        <!-- 竞赛详情内容 -->
+        <div v-if="!loading && !error && competition" class="detail-container">
+          <!-- 竞赛基本信息 -->
+          <div class="competition-header">
+            <h1 class="competition-title">{{ competition.name }}</h1>
+            <div class="competition-badges">
+              <span class="badge type">{{ getTypeText(competition.type) }}</span>
+              <span class="badge level">{{ getLevelText(competition.level) }}</span>
+              <span class="badge" :class="competition.status">{{
+                getStatusText(competition.status)
+              }}</span>
+            </div>
+          </div>
+
+          <!-- 竞赛描述 -->
+          <div class="section">
+            <h2 class="section-title">竞赛简介</h2>
+            <p class="description">{{ competition.description }}</p>
+          </div>
+
+          <!-- 竞赛信息 -->
+          <div class="section">
+            <h2 class="section-title">竞赛信息</h2>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">竞赛时间</span>
+                <span class="info-value">{{ competition.competitionTime }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">竞赛时长</span>
+                <span class="info-value">{{ competition.duration }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">竞赛地点</span>
+                <span class="info-value">{{ competition.location }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">报名截止</span>
+                <span class="info-value">{{ competition.registrationDeadline }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">主办方</span>
+                <span class="info-value">{{ competition.organizer }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">联系方式</span>
+                <span class="info-value">{{ competition.contact }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 竞赛标签 -->
+          <div class="section">
+            <h2 class="section-title">竞赛标签</h2>
+            <div class="tags-container">
+              <span class="tag" v-for="tag in competition.tags" :key="tag">{{ tag }}</span>
+            </div>
+          </div>
+
+          <!-- 参赛要求 -->
+          <div class="section">
+            <h2 class="section-title">参赛要求</h2>
+            <p class="requirements">{{ competition.requirements }}</p>
+          </div>
+
+          <!-- 竞赛规则 -->
+          <div class="section">
+            <h2 class="section-title">竞赛规则</h2>
+            <div v-if="rules.length > 0" class="rules-container">
+              <div
+                v-for="rule in rules"
+                :key="rule.id"
+                class="rule-item"
+                :class="{ required: rule.required }"
+              >
+                <div class="rule-header">
+                  <span class="rule-category">{{ getCategoryText(rule.category) }}</span>
+                  <span v-if="rule.required" class="rule-required">必读</span>
                 </div>
-                <p class="competition-description">{{ competition.description }}</p>
-              </div>
-              <div class="competition-actions">
-                <button
-                  class="btn-action primary"
-                  :disabled="competition.status === 'completed'"
-                  @click="joinCompetition(competition)"
-                >
-                  {{
-                    competition.status === 'completed'
-                      ? '已结束'
-                      : competition.status === 'active' || competition.status === 'ongoing'
-                        ? '前往官网'
-                        : '立即报名'
-                  }}
-                </button>
-                <button class="btn-action secondary" @click="viewCompetitionDetail(competition.id)">
-                  {{ competition.status === 'completed' ? '查看结果' : '查看详情' }}
-                </button>
+                <h3 class="rule-title">{{ rule.title }}</h3>
+                <div class="rule-content">{{ rule.content }}</div>
               </div>
             </div>
-            <div class="competition-meta">
-              <div class="meta-item">
-                <span class="meta-label">时间:</span>
-                <span class="meta-value">{{ competition.competitionTime }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">时长:</span>
-                <span class="meta-value">{{ competition.duration }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">地点:</span>
-                <span class="meta-value">{{ competition.location }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">级别:</span>
-                <span class="meta-value">{{ getLevelText(competition.level) }}</span>
-              </div>
-              <div class="meta-tags">
-                <span class="tag" v-for="tag in competition.tags" :key="tag">{{ tag }}</span>
-                <span class="tag" :class="competition.status">{{
-                  getStatusText(competition.status)
-                }}</span>
-              </div>
+            <div v-else class="no-rules">
+              <p>暂无规则信息</p>
             </div>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="action-buttons">
+            <button
+              class="btn-primary"
+              :disabled="competition.status === 'completed'"
+              @click="joinCompetition"
+            >
+              {{
+                competition.status === 'completed'
+                  ? '已结束'
+                  : competition.status === 'active' || competition.status === 'ongoing'
+                    ? '前往官网'
+                    : '立即报名'
+              }}
+            </button>
+            <button class="btn-secondary" @click="goToCompetitionManagement">返回列表</button>
           </div>
         </div>
       </main>
@@ -284,38 +265,73 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { api } from '../api'
-import type { Competition, CompetitionListParams } from '../types/competition'
+import type { Competition, CompetitionRule } from '../types/competition'
 
-// 路由实例
 const router = useRouter()
-
-// 用户状态管理
+const route = useRoute()
 const userStore = useUserStore()
 
-// 响应式数据 - 导航栏相关
 const showUserCenter = ref(false)
 const activeMenu = ref('')
 const showSubMenu = ref('')
 const isMobile = ref(false)
 
-// 竞赛数据
-const competitions = ref<Competition[]>([])
+const competition = ref<Competition | null>(null)
+const rules = ref<CompetitionRule[]>([])
 const loading = ref(false)
 const error = ref('')
 
-// 筛选参数
-const filterParams = ref({
-  name: '',
-  type: '',
-  status: '',
-  level: '',
-})
+const competitionId = ref<number>(Number(route.params.id))
 
-// 映射函数 - 将英文值映射为中文显示
+const fetchCompetitionDetail = async () => {
+  loading.value = true
+  error.value = ''
+  try {
+    const [competitionsResponse, rulesResponse] = await Promise.all([
+      api.getCompetitions(),
+      api.getCompetitionDetail(competitionId.value),
+    ])
+
+    if (competitionsResponse.code === 1) {
+      const foundCompetition = competitionsResponse.data.find((c) => c.id === competitionId.value)
+      if (foundCompetition) {
+        competition.value = foundCompetition
+      } else {
+        error.value = '未找到该竞赛信息'
+      }
+    } else {
+      error.value = competitionsResponse.msg || '获取竞赛信息失败'
+    }
+
+    if (rulesResponse.code === 1) {
+      rules.value = rulesResponse.data
+    } else {
+      error.value = rulesResponse.message || '获取竞赛规则失败'
+    }
+  } catch (err) {
+    error.value = '网络错误，请稍后重试'
+    console.error('获取竞赛详情失败:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const getCategoryText = (category: string) => {
+  const categoryMap: Record<string, string> = {
+    eligibility: '参赛资格',
+    team: '团队规则',
+    schedule: '赛程安排',
+    scoring: '评分标准',
+    award: '奖项设置',
+    other: '其他',
+  }
+  return categoryMap[category] || category
+}
+
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
     ongoing: '进行中',
@@ -355,129 +371,10 @@ const getLevelText = (level: string) => {
   return levelMap[level] || level
 }
 
-// 映射函数 - 将中文值映射为英文参数
-const getStatusValue = (status: string) => {
-  const statusMap: Record<string, string> = {
-    进行中: 'ongoing',
-    即将开始: 'upcoming',
-    已结束: 'completed',
-    ongoing: 'ongoing',
-    upcoming: 'upcoming',
-    completed: 'completed',
-  }
-  return statusMap[status] || status
-}
-
-const getTypeValue = (type: string) => {
-  const typeMap: Record<string, string> = {
-    程序设计: 'programming',
-    数学建模: 'math',
-    创意设计: 'design',
-    学术竞赛: 'other',
-    programming: 'programming',
-    math: 'math',
-    design: 'design',
-    other: 'other',
-  }
-  return typeMap[type] || type
-}
-
-const getLevelValue = (level: string) => {
-  const levelMap: Record<string, string> = {
-    国家级: 'national',
-    省级: 'provincial',
-    校级: 'school',
-    national: 'national',
-    provincial: 'provincial',
-    school: 'school',
-  }
-  return levelMap[level] || level
-}
-
-// 计算属性 - 根据筛选参数过滤竞赛
-const filteredCompetitions = computed(() => {
-  return competitions.value.filter((comp) => {
-    const matchName = !filterParams.value.name || comp.name.includes(filterParams.value.name)
-    const matchType =
-      !filterParams.value.type ||
-      comp.type === getTypeText(filterParams.value.type) ||
-      comp.type === filterParams.value.type
-    const matchStatus =
-      !filterParams.value.status ||
-      comp.status === getStatusText(filterParams.value.status) ||
-      comp.status === filterParams.value.status
-    const matchLevel =
-      !filterParams.value.level ||
-      comp.level === getLevelText(filterParams.value.level) ||
-      comp.level === filterParams.value.level
-    return matchName && matchType && matchStatus && matchLevel
-  })
-})
-
-// 获取竞赛列表
-const fetchCompetitions = async () => {
-  loading.value = true
-  error.value = ''
-  try {
-    const params: CompetitionListParams = {}
-
-    if (filterParams.value.name) {
-      params.name = filterParams.value.name
-    }
-    if (filterParams.value.type) {
-      params.type = getTypeValue(filterParams.value.type)
-    }
-    if (filterParams.value.status) {
-      params.status = getStatusValue(filterParams.value.status)
-    }
-    if (filterParams.value.level) {
-      params.level = getLevelValue(filterParams.value.level)
-    }
-
-    const response = await api.getCompetitions(Object.keys(params).length > 0 ? params : undefined)
-    if (response.code === 1) {
-      competitions.value = response.data
-    } else {
-      error.value = response.msg || '获取竞赛列表失败'
-    }
-  } catch (err) {
-    error.value = '网络错误，请稍后重试'
-    console.error('获取竞赛列表失败:', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-// 处理搜索
-const handleSearch = () => {
-  fetchCompetitions()
-}
-
-// 处理筛选变化
-const handleFilterChange = () => {
-  fetchCompetitions()
-}
-
-// 查看竞赛详情
-const viewCompetitionDetail = (id: number) => {
-  router.push(`/career/competitions/${id}`)
-}
-
-// 加入竞赛
-const joinCompetition = (competition: Competition) => {
-  if (competition.officialWebsite) {
-    window.open(competition.officialWebsite, '_blank')
-  } else {
-    alert('该竞赛暂无官方网站')
-  }
-}
-
-// 检查屏幕尺寸 - 响应式设计
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
 }
 
-// 导航栏菜单处理
 const goToIndex = () => {
   router.push('/index')
 }
@@ -502,12 +399,10 @@ const goToCompetitionManagement = () => {
   router.push('/career/competitions')
 }
 
-// 跳转到职业导航页面
 const goToCareerNavigation = () => {
   router.push('/career/position')
 }
 
-// 跳转到考研支持页面
 const goToExamSupport = () => {
   router.push('/career/pee')
 }
@@ -563,17 +458,23 @@ const handleUserMenuClick = (item: string) => {
   closeUserCenter()
 }
 
-// 生命周期钩子 - 初始化和窗口大小监听
+const joinCompetition = () => {
+  if (competition.value && competition.value.officialWebsite) {
+    window.open(competition.value.officialWebsite, '_blank')
+  } else {
+    alert('该竞赛暂无官方网站')
+  }
+}
+
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
-  fetchCompetitions()
+  fetchCompetitionDetail()
 })
 </script>
 
 <style scoped>
-/* 主容器 */
-.competition-management {
+.competition-detail {
   min-height: 100vh;
   background-color: #f5f7fa;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -581,7 +482,6 @@ onMounted(() => {
   flex-direction: column;
 }
 
-/* 顶部导航栏 */
 .navbar {
   position: fixed;
   top: 0;
@@ -603,7 +503,6 @@ onMounted(() => {
   height: 70px;
 }
 
-/* Logo区域 */
 .logo {
   display: flex;
   align-items: center;
@@ -619,7 +518,6 @@ onMounted(() => {
   font-weight: 600;
 }
 
-/* 导航菜单 */
 .nav-menu {
   display: flex;
   align-items: center;
@@ -658,7 +556,6 @@ onMounted(() => {
   transition: var(--transition);
 }
 
-/* 子菜单悬浮层 */
 .submenu {
   position: absolute;
   top: 100%;
@@ -687,7 +584,6 @@ onMounted(() => {
   color: var(--primary-color);
 }
 
-/* 移动端子菜单 */
 .mobile-submenu {
   background-color: var(--bg-color-light);
   border-radius: var(--border-radius-md);
@@ -708,14 +604,12 @@ onMounted(() => {
   color: var(--white);
 }
 
-/* 右侧操作区 */
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-/* 登录按钮 */
 .btn-login {
   display: flex;
   align-items: center;
@@ -739,7 +633,6 @@ onMounted(() => {
   font-size: 16px;
 }
 
-/* 个人中心 */
 .user-center {
   position: relative;
 }
@@ -761,7 +654,6 @@ onMounted(() => {
   color: var(--primary-color);
 }
 
-/* 个人中心下拉菜单 */
 .user-center-dropdown {
   position: absolute;
   top: 100%;
@@ -789,18 +681,6 @@ onMounted(() => {
   color: var(--primary-color);
 }
 
-.dropdown-item.register {
-  color: var(--primary-color);
-  border-bottom: 1px solid var(--border-color-light);
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-}
-
-.dropdown-item.register:hover {
-  background-color: var(--primary-color);
-  color: var(--white);
-}
-
 .dropdown-item.logout {
   color: var(--accent-color);
 }
@@ -810,7 +690,6 @@ onMounted(() => {
   color: var(--white);
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .nav-menu {
     display: none;
@@ -837,7 +716,6 @@ onMounted(() => {
   }
 }
 
-/* 动画 */
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -849,7 +727,6 @@ onMounted(() => {
   }
 }
 
-/* 主体内容区 */
 .main-content {
   display: flex;
   flex: 1;
@@ -857,7 +734,6 @@ onMounted(() => {
   position: relative;
 }
 
-/* 左侧垂直导航栏 */
 .sidebar {
   width: 220px;
   background-color: white;
@@ -916,7 +792,6 @@ onMounted(() => {
   font-size: 16px;
 }
 
-/* 右侧主内容区 */
 .content-area {
   margin-left: 220px;
   flex: 1;
@@ -925,232 +800,27 @@ onMounted(() => {
   min-height: calc(100vh - 60px);
 }
 
-/* 页面标题 */
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 24px 0;
-}
-
-/* 筛选和搜索区 */
-.filter-section {
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
   background-color: white;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #606266;
+  font-size: 14px;
   margin-bottom: 24px;
 }
 
-.filter-row {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.filter-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.filter-label {
-  font-size: 14px;
-  color: #646b7a;
-  font-weight: 500;
-}
-
-.filter-select {
-  padding: 6px 12px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #333;
-  background-color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.filter-select:hover {
-  border-color: #409eff;
-}
-
-/* 搜索框 */
-.search-box {
-  display: flex;
-  gap: 0;
-  margin-left: auto;
-}
-
-.search-input {
-  padding: 6px 12px;
-  border: 1px solid #dcdfe6;
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-  font-size: 14px;
-  color: #333;
-  width: 200px;
-  transition: all 0.3s ease;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #409eff;
-}
-
-.search-btn {
-  padding: 6px 12px;
-  background-color: #409eff;
-  color: white;
-  border: 1px solid #409eff;
-  border-radius: 0 4px 4px 0;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
-}
-
-.search-btn:hover {
-  background-color: #66b1ff;
-  border-color: #66b1ff;
-}
-
-/* 竞赛列表 */
-.competition-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.competition-item {
-  background-color: white;
-  border: 1px solid #e0e6ed;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.competition-item:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #409eff;
-}
-
-.competition-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
-}
-
-.competition-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.competition-name {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.competition-icon {
-  font-size: 18px;
-  font-weight: bold;
-  color: #409eff;
-}
-
-.competition-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
-.competition-description {
-  font-size: 14px;
-  color: #646b7a;
-  margin: 0;
-  line-height: 1.5;
-}
-
-.competition-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.btn-action {
-  padding: 6px 16px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 100px;
-}
-
-.btn-action.primary {
-  background-color: #409eff;
-  color: white;
-  border-color: #409eff;
-}
-
-.btn-action.primary:hover:not(:disabled) {
-  background-color: #66b1ff;
-  border-color: #66b1ff;
-}
-
-.btn-action.primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background-color: #c0c4cc;
-  border-color: #c0c4cc;
-  color: white;
-}
-
-.btn-action.secondary {
-  background-color: transparent;
-  color: #646b7a;
-  border-color: #dcdfe6;
-}
-
-.btn-action.secondary:hover {
+.back-button:hover {
   background-color: #f0f9ff;
   border-color: #409eff;
   color: #409eff;
 }
 
-/* 竞赛元信息 */
-.competition-meta {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-  font-size: 12px;
-  color: #646b7a;
-  padding-top: 12px;
-  border-top: 1px solid #f0f2f5;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.meta-label {
-  font-size: 12px;
-  color: #909399;
-}
-
-.meta-value {
-  color: #646b7a;
-}
-
-/* 加载状态 */
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -1179,7 +849,6 @@ onMounted(() => {
   }
 }
 
-/* 错误状态 */
 .error-container {
   display: flex;
   flex-direction: column;
@@ -1204,14 +873,33 @@ onMounted(() => {
   background-color: #66b1ff;
 }
 
-.meta-tags {
-  display: flex;
-  gap: 8px;
-  margin-left: auto;
+.detail-container {
+  max-width: 900px;
 }
 
-.tag {
-  padding: 2px 8px;
+.competition-header {
+  background-color: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+}
+
+.competition-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.competition-badges {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
@@ -1219,22 +907,210 @@ onMounted(() => {
   color: #409eff;
 }
 
-.tag.ongoing {
+.badge.type {
   background-color: #f0f9eb;
   color: #67c23a;
 }
 
-.tag.upcoming {
-  background-color: #ecf5ff;
-  color: #409eff;
+.badge.level {
+  background-color: #fdf6ec;
+  color: #e6a23c;
 }
 
-.tag.completed {
+.badge.active {
+  background-color: #f0f9eb;
+  color: #67c23a;
+}
+
+.badge.completed {
   background-color: #f5f7fa;
   color: #909399;
 }
 
-/* 响应式设计 */
+.section {
+  background-color: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+}
+
+.section .section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+  padding: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.description {
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #909399;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.tags-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #ecf5ff;
+  color: #409eff;
+}
+
+.requirements {
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.rules-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rule-item {
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.rule-item.required {
+  border-color: #e6a23c;
+  background-color: #fdf6ec;
+}
+
+.rule-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rule-category {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #ecf5ff;
+  color: #409eff;
+}
+
+.rule-required {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #e6a23c;
+  color: white;
+}
+
+.rule-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.rule-content {
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.no-rules {
+  text-align: center;
+  padding: 40px;
+  color: #909399;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 24px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.btn-primary {
+  padding: 10px 32px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #66b1ff;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #c0c4cc;
+}
+
+.btn-secondary {
+  padding: 10px 32px;
+  background-color: transparent;
+  color: #606266;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #f0f9ff;
+  border-color: #409eff;
+  color: #409eff;
+}
+
 @media (max-width: 1024px) {
   .sidebar {
     width: 200px;
@@ -1257,33 +1133,17 @@ onMounted(() => {
     padding: 16px;
   }
 
-  .filter-row {
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
     flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
   }
 
-  .search-box {
-    margin-left: 0;
-  }
-
-  .competition-header {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .competition-actions {
-    flex-direction: row;
-  }
-
-  .competition-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .meta-tags {
-    margin-left: 0;
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
   }
 }
 </style>

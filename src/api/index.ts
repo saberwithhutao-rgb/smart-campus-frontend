@@ -1,7 +1,6 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios'
 import type {
-  User,
   StudyPlan,
   QaMessage,
   FileItem,
@@ -10,25 +9,100 @@ import type {
   ApiResponse,
   CaptchaResponse,
 } from '../types/user'
+import type {
+  CompetitionRule,
+  CompetitionListParams,
+  CompetitionListResponse,
+} from '../types/competition'
+import type {
+  UniversityListResponse,
+  UniversityCheckResponse,
+  UniversityIdsResponse,
+  UniversityListDetailResponse,
+  UniversityCountResponse,
+} from '../types/university'
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
-  baseURL: '', // 使用相对路径，由Nginx处理代理
-  timeout: 30000,
+  baseURL: import.meta.env.PROD ? '' : '/api', // 生产环境空路径，开发环境用/api
+  timeout: import.meta.env.PROD ? 30000 : 600000, // 生产30秒，开发10分钟
   headers: {
     'Content-Type': 'application/json;charset=utf-8',
   },
   withCredentials: true,
 })
 
-// 请求拦截器：自动添加Token到所有请求
+// 新增类型定义
+interface CaptchaDataResponse {
+  code: number
+  data: string
+  message: string
+  captchaId: string
+  expiresIn: number
+  captchaBase64: string
+}
+
+interface LoginData {
+  token: string
+  role: string
+  username: string
+  refreshToken?: string
+}
+
+interface ChatResponse {
+  answer?: string
+  sessionId: string
+  taskId?: string
+  status?: string
+}
+
+interface TaskStatusResponse {
+  taskId: string
+  status: 'processing' | 'completed' | 'failed'
+  answer?: string
+  error?: string
+}
+
+interface ChatHistoryItem {
+  id: number
+  sessionId: string
+  question: string
+  answer: string
+  createdAt: string
+  title?: string
+  fileId?: number
+}
+
+// 请求拦截器
 service.interceptors.request.use(
   (config) => {
-    // 从localStorage获取Token（键名是userToken）
-    const token = localStorage.getItem('userToken')
-
+    // 使用userToken作为主token
+    const token = localStorage.getItem('userToken') || localStorage.getItem('token')
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+
+    // 开发环境下生成随机userId用于测试
+    if (import.meta.env.DEV && !localStorage.getItem('userId')) {
+      const userId = Math.floor(Math.random() * 1000000).toString()
+      localStorage.setItem('userId', userId)
+      console.log(
+        '%c[Test Mode]',
+        'color: #FF9800; font-weight: bold;',
+        `Generated random userId: ${userId}`,
+      )
+      config.headers['X-User-Id'] = userId
+    }
+
+    // 开发环境下添加调试日志
+    if (import.meta.env.DEV) {
+      console.log('%c[API Request]', 'color: #4CAF50; font-weight: bold;', {
+        url: config.url,
+        method: config.method,
+        baseURL: config.baseURL,
+        headers: config.headers,
+        data: config.data,
+      })
     }
 
     // 如果是FormData，删除Content-Type让浏览器自动设置
@@ -39,23 +113,36 @@ service.interceptors.request.use(
     return config
   },
   (error) => {
+    console.error('%c[Request Error]', 'color: #F44336; font-weight: bold;', error)
     return Promise.reject(error)
   },
 )
 
-// 响应拦截器 - 修改错误处理
+// 响应拦截器
 service.interceptors.response.use(
   (response: AxiosResponse) => {
+    // 开发环境下添加调试日志
+    if (import.meta.env.DEV) {
+      console.log('%c[API Response]', 'color: #2196F3; font-weight: bold;', {
+        status: response.status,
+        data: response.data,
+        url: response.config.url,
+      })
+    }
     return response
   },
   (error) => {
-    // ✅ 不要覆盖后端的具体错误信息
+    // 优先使用后端返回的具体错误信息
     if (error.response && error.response.data && error.response.data.message) {
-      // 如果后端有返回具体错误信息，直接使用它
+      console.error('%c[Response Error]', 'color: #F44336; font-weight: bold;', {
+        message: error.response.data.message,
+        status: error.response.status,
+        url: error.config?.url,
+      })
       return Promise.reject(new Error(error.response.data.message))
     }
 
-    // 只有网络错误或后端没有返回具体信息时，才使用通用错误
+    // 网络错误或后端没有返回具体信息时，使用通用错误
     let message = '请求失败'
     if (error.response) {
       const { status } = error.response
@@ -65,7 +152,9 @@ service.interceptors.response.use(
           break
         case 401:
           message = '未授权，请登录'
+          // 清除所有用户相关存储
           localStorage.removeItem('userToken')
+          localStorage.removeItem('token')
           localStorage.removeItem('userInfo')
           localStorage.removeItem('refreshToken')
           // 跳转到登录页
@@ -86,6 +175,14 @@ service.interceptors.response.use(
           message = `连接错误: ${status}`
       }
     }
+
+    console.error('%c[Response Error]', 'color: #F44336; font-weight: bold;', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+    })
+
     return Promise.reject(new Error(message))
   },
 )
@@ -97,60 +194,12 @@ const request = <T>(config: AxiosRequestConfig): Promise<T> => {
   })
 }
 
-// 根据后端返回结构定义具体的验证码响应类型
-interface CaptchaDataResponse {
-  code: number
-  data: string // 验证码文本
-  message: string
-  captchaId: string
-  expiresIn: number
-  captchaBase64: string // 图片base64
-}
-
-// 定义LoginData类型匹配项目文档
-interface LoginData {
-  token: string
-  role: string
-  username: string
-  refreshToken?: string
-}
-
-// 新增类型定义
-interface ChatResponse {
-  answer?: string
-  sessionId: string
-  taskId?: string // 文件上传时返回
-  status?: string // 文件上传时返回
-}
-
-interface TaskStatusResponse {
-  taskId: string
-  status: 'processing' | 'completed' | 'failed'
-  answer?: string
-  error?: string
-}
-
-interface ChatHistoryItem {
-  id: number
-  sessionId: string
-  question: string
-  answer: string
-  createdAt: string
-  title?: string
-  fileId?: number
-}
-
-// API 接口定义 - 保持所有原有功能
+// API 接口定义
 export const api = {
   // 认证模块
-  login: (data: { username: string; password: string; captcha: string }) =>
-    request<ApiResponse<LoginData>>({
-      method: 'POST',
-      url: '/api/login',
-      data,
-    }),
+  login: (data: { username: string; password: string; captcha: string; captchaId?: string }) =>
+    request<ApiResponse<LoginData>>({ method: 'POST', url: '/api/login', data }),
 
-  // 修改register接口（只需要4个字段）
   register: (data: { username: string; password: string; email: string; verifyCode: string }) =>
     request<ApiResponse<null>>({ method: 'POST', url: '/api/register', data }),
 
@@ -158,15 +207,9 @@ export const api = {
 
   refreshToken: () => request<ApiResponse<null>>({ method: 'POST', url: '/api/token/refresh' }),
 
-  // 发送邮箱验证码
   sendVerifyCode: (email: string) =>
-    request<ApiResponse<null>>({
-      method: 'POST',
-      url: '/api/verify/email',
-      data: { email },
-    }),
+    request<ApiResponse<null>>({ method: 'POST', url: '/api/verify/email', data: { email } }),
 
-  // 获取图形验证码 - 使用具体的CaptchaDataResponse类型
   getCaptcha: () => request<CaptchaDataResponse>({ method: 'GET', url: '/api/captcha' }),
 
   // 学习计划模块
@@ -185,8 +228,7 @@ export const api = {
   deleteStudyPlan: (id: string) =>
     request<ApiResponse<null>>({ method: 'DELETE', url: `/api/study-plans/${id}` }),
 
-  // 智能问答 - 关键修复：移除手动设置的Authorization头，依赖请求拦截器
-  // 智能问答 - 修正URL路径
+  // 智能问答模块
   askQuestion: (data: { question: string; file?: File; sessionId?: string; stream?: boolean }) => {
     const formData = new FormData()
     formData.append('question', data.question)
@@ -202,23 +244,34 @@ export const api = {
 
     return request<ApiResponse<ChatResponse>>({
       method: 'POST',
-      url: '/ai/chat', // ✅ 修改这里：/ai/chat 而不是原来的路径
+      url: '/ai/chat',
       data: formData,
     })
   },
 
-  // 查询任务状态 - 修正URL路径
+  // 简单问答接口（兼容旧版本）
+  sendAiMessage: (message: string, chanId?: string) =>
+    request<string>({
+      method: 'POST',
+      url: '/ai/chat/openai',
+      params: { message, chanId },
+    }),
+
+  // 查询任务状态
   getTaskStatus: (taskId: string) =>
     request<ApiResponse<TaskStatusResponse>>({
       method: 'GET',
-      url: `/ai/chat/task/${taskId}`, // ✅ 修改这里
+      url: `/ai/chat/task/${taskId}`,
     }),
 
-  // 获取历史对话 - 修正URL路径
+  // 获取问答历史
+  getQaHistory: () => request<ApiResponse<QaMessage[]>>({ method: 'GET', url: '/qa/history' }),
+
+  // 获取AI聊天历史
   getChatHistory: (sessionId?: string, limit?: number) =>
     request<ApiResponse<ChatHistoryItem[]>>({
       method: 'GET',
-      url: '/ai/chat/history', // ✅ 修改这里
+      url: '/ai/chat/history',
       params: { sessionId, limit },
     }),
 
@@ -247,15 +300,52 @@ export const api = {
       url: '/api/learning-progress/update',
       data,
     }),
+
+  // 竞赛管理模块
+  getCompetitions: (params?: CompetitionListParams) =>
+    request<CompetitionListResponse>({ method: 'GET', url: '/competitions', params }),
+
+  getCompetitionDetail: (id: number) =>
+    request<ApiResponse<CompetitionRule[]>>({ method: 'GET', url: `/competitions/${id}` }),
+
+  // 院校管理模块
+  getUniversities: () => request<UniversityListResponse>({ method: 'GET', url: '/universities' }),
+
+  toggleFavoriteUniversity: (universityId: number) =>
+    request<ApiResponse<null>>({
+      method: 'POST',
+      url: '/universities/toggle',
+      params: { universityId },
+    }),
+
+  checkUniversityFavorite: (universityId: number) =>
+    request<UniversityCheckResponse>({
+      method: 'GET',
+      url: '/universities/check',
+      params: { universityId },
+    }),
+
+  getFavoriteUniversityIds: () =>
+    request<UniversityIdsResponse>({ method: 'GET', url: '/universities/university-ids' }),
+
+  getFavoriteUniversities: () =>
+    request<UniversityListDetailResponse>({ method: 'GET', url: '/universities/list' }),
+
+  getUniversityFavoriteCount: (universityId: number) =>
+    request<UniversityCountResponse>({
+      method: 'GET',
+      url: '/universities/count',
+      params: { universityId },
+    }),
 }
 
-// 添加流式请求方法 - 修正URL路径
+// 流式请求方法
 export const askQuestionStream = async (params: {
   question: string
   file?: File
   sessionId?: string
 }): Promise<ReadableStream<Uint8Array> | null> => {
-  const token = localStorage.getItem('userToken') || ''
+  const token = localStorage.getItem('userToken') || localStorage.getItem('token') || ''
 
   const formData = new FormData()
   formData.append('question', params.question)
@@ -269,7 +359,6 @@ export const askQuestionStream = async (params: {
 
   try {
     const response = await fetch('/ai/chat', {
-      // ✅ 修改这里：/ai/chat
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -288,23 +377,5 @@ export const askQuestionStream = async (params: {
   }
 }
 
-// 新增类型定义（补充）
-interface QaResponse {
-  answer: string
-  fromCache: boolean
-  contexts: string[]
-  sourceDocuments: string[]
-  modelUsed: string
-  responseTime: number
-  queryId: string
-}
-
-interface QaHistoryItem {
-  id: number
-  question: string
-  answer: string
-  askTime: string
-  responseTime: number
-}
-
+// 导出axios实例供其他地方使用
 export default service

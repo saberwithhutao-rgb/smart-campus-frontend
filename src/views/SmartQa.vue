@@ -127,7 +127,7 @@ const sendMessage = async () => {
   const aiMessageId = Date.now() + 1
   const aiMessage: ChatMessage = {
     id: aiMessageId,
-    content: '思考中...',
+    content: '思考中',
     sender: 'ai',
     timestamp: new Date().toLocaleTimeString(),
     isLoading: true,

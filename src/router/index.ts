@@ -63,6 +63,11 @@ const router = createRouter({
       component: () => import('../views/CompetitionManagement.vue'),
     },
     {
+      path: '/career/competitions/:id',
+      name: 'competition-detail',
+      component: () => import('../views/CompetitionDetail.vue'),
+    },
+    {
       path: '/career/position',
       name: 'career-navigation',
       component: () => import('../views/CareerNavigation.vue'),

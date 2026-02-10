@@ -122,7 +122,8 @@
             </div>
             <div class="card-content">
               <p class="selected-schools">已收藏的院校</p>
-              <p class="school-count">5所 <button class="view-btn">查看收藏</button></p>
+              <p class="school-count">{{ favoriteCount }}所</p>
+              <button class="view-favorites-btn" @click="showFavorites = true">查看收藏</button>
             </div>
           </div>
 
@@ -164,108 +165,206 @@
             <div class="filter-row">
               <div class="filter-item">
                 <label>地区：</label>
-                <select class="filter-select">
-                  <option>全部地区</option>
-                  <option>北京</option>
-                  <option>上海</option>
-                  <option>广州</option>
-                  <option>深圳</option>
+                <select class="filter-select" v-model="filterParams.province">
+                  <option value="">全部地区</option>
+                  <option value="北京市">北京市</option>
+                  <option value="上海市">上海市</option>
+                  <option value="广东省">广东省</option>
+                  <option value="深圳市">深圳市</option>
                 </select>
               </div>
               <div class="filter-item">
                 <label>学科：</label>
-                <select class="filter-select">
-                  <option>全部学科</option>
-                  <option>计算机科学与技术</option>
-                  <option>电子信息</option>
-                  <option>数学</option>
-                  <option>经济学</option>
+                <select class="filter-select" v-model="filterParams.institutionType">
+                  <option value="">全部学科</option>
+                  <option value="综合类">综合类</option>
+                  <option value="理工类">理工类</option>
+                  <option value="文史类">文史类</option>
+                  <option value="医学类">医学类</option>
                 </select>
               </div>
               <div class="filter-item">
                 <label>学校类型：</label>
-                <select class="filter-select">
-                  <option>全部类型</option>
-                  <option>985工程</option>
-                  <option>211工程</option>
-                  <option>双一流</option>
+                <select class="filter-select" v-model="filterParams.is985">
+                  <option value="">全部类型</option>
+                  <option value="true">985工程</option>
+                  <option value="false">非985</option>
                 </select>
               </div>
             </div>
             <div class="filter-row">
               <div class="filter-item">
-                <label>分数线：</label>
-                <select class="filter-select">
-                  <option>全部</option>
-                  <option>300分以下</option>
-                  <option>300-350分</option>
-                  <option>350-400分</option>
-                  <option>400分以上</option>
+                <label>211工程：</label>
+                <select class="filter-select" v-model="filterParams.is211">
+                  <option value="">全部</option>
+                  <option value="true">211工程</option>
+                  <option value="false">非211</option>
                 </select>
               </div>
               <div class="filter-item">
-                <label>培养类型：</label>
-                <select class="filter-select">
-                  <option>全部</option>
-                  <option>学术型硕士</option>
-                  <option>专业型硕士</option>
+                <label>双一流：</label>
+                <select class="filter-select" v-model="filterParams.isDoubleFirstClass">
+                  <option value="">全部</option>
+                  <option value="true">双一流</option>
+                  <option value="false">非双一流</option>
                 </select>
               </div>
               <div class="filter-item">
                 <label>专业：</label>
-                <input type="text" class="filter-input" placeholder="输入专业名称..." />
+                <input
+                  type="text"
+                  class="filter-input"
+                  placeholder="输入专业名称..."
+                  v-model="filterParams.keyword"
+                  @keyup.enter="handleSearch"
+                />
               </div>
             </div>
             <div class="filter-actions">
-              <button class="filter-btn">搜索院校</button>
-              <button class="reset-btn">重置筛选</button>
+              <button class="filter-btn" @click="handleSearch">搜索院校</button>
+              <button class="reset-btn" @click="handleReset">重置筛选</button>
             </div>
           </div>
 
           <!-- 院校列表 -->
           <div class="school-list">
+            <!-- 加载状态 -->
+            <div v-if="loading" class="loading-container">
+              <div class="loading-spinner"></div>
+              <p>加载中...</p>
+            </div>
+
+            <!-- 错误提示 -->
+            <div v-if="error" class="error-container">
+              <p>{{ error }}</p>
+              <button class="retry-btn" @click="fetchUniversities">重试</button>
+            </div>
+
             <!-- 院校项 -->
-            <div class="school-item" v-for="school in schools" :key="school.id">
-              <div class="school-header">
-                <div class="school-info">
-                  <div class="school-name">
-                    <span class="school-icon">🏫</span>
-                    <span class="school-title">{{ school.name }}</span>
+            <template v-if="!loading && !error">
+              <div class="school-item" v-for="university in universities" :key="university.id">
+                <div class="school-header">
+                  <div class="school-info">
+                    <div class="school-name">
+                      <span class="school-icon">🏫</span>
+                      <span class="school-title">{{ university.name }}</span>
+                      <span class="school-short">({{ university.shortName }})</span>
+                    </div>
+                    <div class="school-tags">
+                      <span v-if="university.is985" class="tag">985</span>
+                      <span v-if="university.is211" class="tag">211</span>
+                      <span v-if="university.isDoubleFirstClass" class="tag">双一流</span>
+                      <span class="tag location"
+                        >{{ university.province }} {{ university.city }}</span
+                      >
+                    </div>
                   </div>
-                  <div class="school-tags">
-                    <span class="tag" v-for="tag in school.tags" :key="tag">{{ tag }}</span>
-                    <span class="tag location">{{ school.location }}</span>
+                  <div class="school-actions">
+                    <button
+                      class="collect-btn"
+                      :class="{ active: isFavorite(university.id) }"
+                      @click="toggleFavorite(university)"
+                    >
+                      {{ isFavorite(university.id) ? '已收藏' : '收藏' }}
+                    </button>
+                    <button
+                      v-if="university.officialWebsite"
+                      class="website-btn"
+                      @click="goToOfficialWebsite(university.officialWebsite)"
+                    >
+                      官网
+                    </button>
                   </div>
                 </div>
-                <div class="school-actions">
-                  <button class="compare-btn">添加对比</button>
-                  <button class="collect-btn">收藏</button>
+                <div class="school-details">
+                  <div class="detail-item">
+                    <span class="detail-label">院校代码：</span>
+                    <span class="detail-value">{{ university.code }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">院校类型：</span>
+                    <span class="detail-value">{{ university.institutionType }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">培养层次：</span>
+                    <span class="detail-value">
+                      <span v-if="university.hasDoctorate">博士点</span>
+                      <span v-if="university.hasMaster">硕士点</span>
+                    </span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">标签：</span>
+                    <span class="detail-value tags">
+                      <span class="tag" v-for="tag in parseTags(university.tags)" :key="tag">{{
+                        tag
+                      }}</span>
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div class="school-details">
-                <div class="detail-item">
-                  <span class="detail-label">学科排名：</span>
-                  <span class="detail-value">{{ school.subjectRank }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">分数线：</span>
-                  <span class="detail-value">{{ school.scoreLine }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">招生人数：</span>
-                  <span class="detail-value">{{ school.enrollment }}</span>
-                </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 收藏列表弹窗 -->
+        <div v-if="showFavorites" class="favorites-modal" @click.self="closeFavorites">
+          <div class="favorites-content" @click.stop>
+            <div class="favorites-header">
+              <h3 class="favorites-title">我的收藏院校</h3>
+              <button class="close-btn" @click="closeFavorites">×</button>
+            </div>
+            <div class="favorites-body">
+              <div v-if="loading" class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>加载中...</p>
               </div>
-              <div class="school-specialties">
-                <span
-                  class="specialty-tag"
-                  v-for="specialty in school.specialties"
-                  :key="specialty"
-                  >{{ specialty }}</span
+              <div v-if="error" class="error-container">
+                <p>{{ error }}</p>
+                <button class="retry-btn" @click="fetchFavoriteUniversities">重试</button>
+              </div>
+              <div
+                v-if="!loading && !error && favoriteUniversities.length === 0"
+                class="empty-state"
+              >
+                <p>暂无收藏院校</p>
+              </div>
+              <div
+                v-if="!loading && !error && favoriteUniversities.length > 0"
+                class="favorites-list"
+              >
+                <div
+                  class="favorite-item"
+                  v-for="university in favoriteUniversities"
+                  :key="university.id"
                 >
-              </div>
-              <div class="school-footer">
-                <button class="view-details-btn">查看详情</button>
+                  <div class="favorite-info">
+                    <div class="favorite-name">
+                      <span class="school-icon">🏫</span>
+                      <span class="name">{{ university.name }}</span>
+                      <span class="short">({{ university.shortName }})</span>
+                    </div>
+                    <div class="favorite-tags">
+                      <span v-if="university.is985" class="tag">985</span>
+                      <span v-if="university.is211" class="tag">211</span>
+                      <span v-if="university.isDoubleFirstClass" class="tag">双一流</span>
+                      <span class="tag location"
+                        >{{ university.province }} {{ university.city }}</span
+                      >
+                    </div>
+                  </div>
+                  <div class="favorite-actions">
+                    <button
+                      v-if="university.officialWebsite"
+                      class="website-btn"
+                      @click="goToOfficialWebsite(university.officialWebsite)"
+                    >
+                      官网
+                    </button>
+                    <button class="unfavorite-btn" @click="toggleFavorite(university)">
+                      取消收藏
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -285,25 +384,8 @@
 
           <!-- 资源列表 -->
           <div class="resource-list">
-            <!-- 资源项 -->
-            <div class="resource-item" v-for="resource in resources" :key="resource.id">
-              <div class="resource-info">
-                <div class="resource-header">
-                  <span class="resource-icon">📚</span>
-                  <span class="resource-title">{{ resource.title }}</span>
-                </div>
-                <p class="resource-description">{{ resource.description }}</p>
-                <div class="resource-meta">
-                  <span class="author">作者: {{ resource.author }}</span>
-                  <span class="publisher">出版社: {{ resource.publisher }}</span>
-                  <span class="rating">评分: {{ resource.rating }}</span>
-                </div>
-              </div>
-              <div class="resource-actions">
-                <button class="download-btn">下载</button>
-                <button class="collect-btn">收藏</button>
-                <button class="share-btn">分享</button>
-              </div>
+            <div class="empty-state">
+              <p>资源功能开发中...</p>
             </div>
           </div>
         </div>
@@ -313,9 +395,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { api } from '../api'
+import type { University, UniversityListDetail } from '../types/university'
 
 // 路由实例
 const router = useRouter()
@@ -327,72 +411,168 @@ const userStore = useUserStore()
 const isMobile = ref(false)
 const showUserCenter = ref(false)
 
-const checkScreenSize = () => {
-  isMobile.value = window.innerWidth <= 1024
+// 院校数据
+const universities = ref<University[]>([])
+const loading = ref(false)
+const error = ref('')
+
+// 收藏的院校ID列表
+const favoriteUniversityIds = ref<number[]>([])
+const favoriteUniversities = ref<University[]>([])
+const showFavorites = ref(false)
+
+// 筛选参数
+const filterParams = ref({
+  province: '',
+  city: '',
+  institutionType: '',
+  is985: '',
+  is211: '',
+  isDoubleFirstClass: '',
+  keyword: '',
+})
+
+// 计算属性 - 获取已收藏院校数量
+const favoriteCount = computed(() => favoriteUniversityIds.value.length)
+
+// 获取院校列表
+const fetchUniversities = async () => {
+  loading.value = true
+  error.value = ''
+  try {
+    const response = await api.getUniversities()
+    if (response.code === 1) {
+      universities.value = response.data
+    } else {
+      error.value = response.msg || '获取院校列表失败'
+    }
+  } catch (err) {
+    error.value = '网络错误，请稍后重试'
+    console.error('获取院校列表失败:', err)
+  } finally {
+    loading.value = false
+  }
 }
 
-// 显示提示信息
-const showAlert = (message: string) => {
-  alert(message)
+// 获取收藏的院校ID列表
+const fetchFavoriteIds = async () => {
+  try {
+    const response = await api.getFavoriteUniversityIds()
+    if (response.code === 1) {
+      favoriteUniversityIds.value = response.data
+    }
+  } catch (err) {
+    console.error('获取收藏列表失败:', err)
+  }
+}
+
+// 获取收藏的院校详细列表
+const fetchFavoriteUniversities = async () => {
+  loading.value = true
+  error.value = ''
+  try {
+    const response = await api.getFavoriteUniversities()
+    if (response.code === 1) {
+      favoriteUniversities.value = universities.value.filter((u) =>
+        response.data.some((f: UniversityListDetail) => f.universityId === u.id),
+      )
+    } else {
+      error.value = response.msg || '获取收藏列表失败'
+    }
+  } catch (err) {
+    error.value = '网络错误，请稍后重试'
+    console.error('获取收藏列表失败:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 切换收藏状态
+const toggleFavorite = async (university: University) => {
+  try {
+    const response = await api.toggleFavoriteUniversity(university.id)
+    if (response.code === 1) {
+      const isFavorited = favoriteUniversityIds.value.includes(university.id)
+      if (isFavorited) {
+        favoriteUniversityIds.value = favoriteUniversityIds.value.filter(
+          (id) => id !== university.id,
+        )
+      } else {
+        favoriteUniversityIds.value.push(university.id)
+      }
+    } else {
+      alert(response.message || '操作失败')
+    }
+  } catch (err) {
+    alert('操作失败，请稍后重试')
+    console.error('切换收藏状态失败:', err)
+  }
+}
+
+// 判断是否已收藏
+const isFavorite = (universityId: number) => {
+  return favoriteUniversityIds.value.includes(universityId)
+}
+
+// 解析标签字符串
+const parseTags = (tags: string) => {
+  try {
+    const parsed = JSON.parse(tags.replace(/\\/g, '"'))
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+// 处理搜索
+const handleSearch = () => {
+  fetchUniversities()
+}
+
+// 处理重置
+const handleReset = () => {
+  filterParams.value = {
+    province: '',
+    city: '',
+    institutionType: '',
+    is985: '',
+    is211: '',
+    isDoubleFirstClass: '',
+    keyword: '',
+  }
+  fetchUniversities()
+}
+
+// 跳转到官网
+const goToOfficialWebsite = (url: string) => {
+  if (url) {
+    window.open(url, '_blank')
+  }
+}
+
+// 关闭收藏列表
+const closeFavorites = () => {
+  showFavorites.value = false
+}
+
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth <= 1024
 }
 
 // 生命周期钩子 - 初始化和窗口大小监听
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
+  fetchUniversities()
+  fetchFavoriteIds()
 })
 
-// 模拟院校数据
-const schools = ref([
-  {
-    id: 1,
-    name: '北京大学',
-    tags: ['985工程', '211工程', '双一流'],
-    location: '北京',
-    subjectRank: '全部学科',
-    scoreLine: '380分',
-    enrollment: '1500人',
-    specialties: ['计算机科学与技术', '软件工程', '人工智能', '电子信息'],
-  },
-  {
-    id: 2,
-    name: '清华大学',
-    tags: ['985工程', '211工程', '双一流'],
-    location: '北京',
-    subjectRank: '全部学科',
-    scoreLine: '385分',
-    enrollment: '1600人',
-    specialties: ['计算机科学与技术', '软件工程', '人工智能', '电子信息'],
-  },
-])
-
-// 模拟资源数据
-const resources = ref([
-  {
-    id: 1,
-    title: '考研数学复习指南',
-    description: '涵盖高等数学、线性代数、概率论与数理统计，适合基础阶段复习',
-    author: '李永乐',
-    publisher: '西安交通大学出版社',
-    rating: '4.9/5',
-  },
-  {
-    id: 2,
-    title: '考研英语历年真题解析',
-    description: '近10年考研英语真题详细解析，包含阅读理解、翻译、写作等各题型',
-    author: '张剑',
-    publisher: '高等教育出版社',
-    rating: '4.8/5',
-  },
-  {
-    id: 3,
-    title: '思想政治理论知识点梳理',
-    description: '考研政治核心知识点汇总，重点突出，易于记忆',
-    author: '徐涛',
-    publisher: '中国原子能出版社',
-    rating: '4.7/5',
-  },
-])
+// 监听收藏列表显示状态
+watch(showFavorites, (newVal) => {
+  if (newVal) {
+    fetchFavoriteUniversities()
+  }
+})
 </script>
 
 <style scoped>
@@ -811,14 +991,20 @@ const resources = ref([
   gap: 8px;
 }
 
-.view-btn {
-  padding: 4px 12px;
+.view-favorites-btn {
+  padding: 6px 12px;
   background-color: #409eff;
   color: white;
   border: none;
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+}
+
+.view-favorites-btn:hover {
+  background-color: #66b1ff;
 }
 
 /* 学习进度卡片 */
@@ -971,6 +1157,60 @@ const resources = ref([
   gap: 16px;
 }
 
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #646b7a;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #409eff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 错误状态 */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #f56c6c;
+  gap: 16px;
+}
+
+.retry-btn {
+  padding: 8px 20px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-btn:hover {
+  background-color: #66b1ff;
+}
+
 .school-item {
   background-color: white;
   border: 1px solid #e0e6ed;
@@ -1002,6 +1242,12 @@ const resources = ref([
   align-items: center;
   gap: 12px;
   margin-bottom: 8px;
+}
+
+.school-short {
+  font-size: 12px;
+  color: #909399;
+  margin-left: 8px;
 }
 
 .school-icon {
@@ -1053,6 +1299,29 @@ const resources = ref([
   color: #646b7a;
 }
 
+.collect-btn.active {
+  background-color: #f53f3f;
+  border-color: #f53f3f;
+  color: white;
+}
+
+.website-btn {
+  padding: 6px 12px;
+  border: 1px solid #409eff;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: transparent;
+  color: #409eff;
+}
+
+.website-btn:hover {
+  background-color: #409eff;
+  color: white;
+}
+
 .compare-btn:hover,
 .collect-btn:hover {
   background-color: #f0f9ff;
@@ -1082,45 +1351,15 @@ const resources = ref([
   color: #333;
 }
 
-.school-specialties {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.specialty-tag {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  background-color: #f5f7fa;
-  color: #646b7a;
-}
-
-.school-footer {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.view-details-btn {
-  padding: 8px 16px;
-  background-color: #409eff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.view-details-btn:hover {
-  background-color: #66b1ff;
-}
-
 /* 考研资源区域 */
 .resources-section {
   margin-top: 40px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #909399;
 }
 
 .resource-tabs {
@@ -1248,6 +1487,142 @@ const resources = ref([
   .top-cards {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* 收藏列表弹窗 */
+.favorites-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.favorites-content {
+  background-color: white;
+  border-radius: 8px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.favorites-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e6ed;
+}
+
+.favorites-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #909399;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  color: #f53f3f;
+}
+
+.favorites-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.favorites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.favorite-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.favorite-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #409eff;
+}
+
+.favorite-info {
+  flex: 1;
+}
+
+.favorite-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.favorite-name .name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.favorite-name .short {
+  font-size: 12px;
+  color: #909399;
+}
+
+.favorite-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.favorite-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.unfavorite-btn {
+  padding: 6px 12px;
+  border: 1px solid #f53f3f;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: transparent;
+  color: #f53f3f;
+}
+
+.unfavorite-btn:hover {
+  background-color: #f53f3f;
+  color: white;
 }
 
 @media (max-width: 1024px) {

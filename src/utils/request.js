@@ -1,9 +1,10 @@
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
 // 创建axios实例
 const request = axios.create({
-  baseURL: 'http://localhost:8080', // 后端基础URL
-  timeout: 10000, // 请求超时时间
+  baseURL: '/api', // 使用代理路径，与api/index.ts保持一致
+  timeout: 60000, // 请求超时时间，改为60秒以适应大模型生成
   headers: {
     'Content-Type': 'application/json;charset=utf-8',
   },
@@ -33,12 +34,19 @@ request.interceptors.response.use(
     if (error.response) {
       // 服务器返回错误状态码
       console.error('响应错误:', error.response.status, error.response.data)
+
+      // 处理500错误
+      if (error.response.status === 500) {
+        ElMessage.error('服务器开小差了，请稍后再试')
+      }
     } else if (error.request) {
       // 请求已发出但没有收到响应
       console.error('网络错误:', error.request)
+      ElMessage.error('网络连接失败，请检查网络设置')
     } else {
       // 请求配置出错
       console.error('请求错误:', error.message)
+      ElMessage.error('请求失败，请稍后再试')
     }
     return Promise.reject(error)
   },

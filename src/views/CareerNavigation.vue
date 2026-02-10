@@ -99,8 +99,66 @@
         <!-- 页面标题 -->
         <h1 class="page-title">职业导航</h1>
 
+        <!-- AI对话区域 -->
+        <div class="ai-chat-section">
+          <div class="chat-header">
+            <h2 class="chat-title">AI 职业咨询</h2>
+            <button class="new-chat-btn" @click="startNewChat" :disabled="loading">
+              <span class="btn-icon">✨</span>
+              <span class="btn-text">新对话</span>
+            </button>
+          </div>
+          <div class="chat-messages" ref="chatMessagesRef">
+            <div
+              v-for="(msg, index) in chatMessages"
+              :key="index"
+              class="message-item"
+              :class="msg.role"
+            >
+              <div class="message-avatar">
+                <span v-if="msg.role === 'user'" class="user-avatar">👤</span>
+                <span v-else class="ai-avatar">🤖</span>
+              </div>
+              <div class="message-content">
+                <div v-if="msg.role === 'ai' && msg.isThinking" class="thinking-indicator">
+                  <div class="thinking-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <span class="thinking-text">AI 正在思考中...</span>
+                </div>
+                <div class="message-text" v-html="formatMessage(msg.content)"></div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <textarea
+              class="chat-input"
+              v-model="inputMessage"
+              placeholder="请输入您的问题..."
+              @keydown.enter.prevent="sendMessage"
+              rows="3"
+            ></textarea>
+            <button
+              class="send-btn"
+              @click="sendMessage"
+              :disabled="!inputMessage.trim() || loading"
+            >
+              <span v-if="loading" class="loading-icon"></span>
+              <span>{{ loading ? '发送中...' : '发送' }}</span>
+            </button>
+          </div>
+        </div>
+
         <!-- 顶部功能卡片区域 -->
         <div class="top-cards">
+          <!-- AI智能对话卡片 -->
+          <div class="card ai-chat-card">
+            <h3 class="card-title">AI职业咨询</h3>
+            <p class="card-description">与AI智能助手对话，获取专业的职业建议和指导</p>
+          </div>
+
           <!-- 职业测评卡片 -->
           <div class="card">
             <h3 class="card-title">职业测评</h3>
@@ -313,9 +371,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { api } from '../api'
 
 // 路由实例
 const router = useRouter()
@@ -327,19 +386,99 @@ const userStore = useUserStore()
 const isMobile = ref(false)
 const showUserCenter = ref(false)
 
-const checkScreenSize = () => {
-  isMobile.value = window.innerWidth <= 1024
+// AI对话相关
+const inputMessage = ref('')
+const chatMessages = ref<Array<{ role: string; content: string; isThinking?: boolean }>>([])
+const loading = ref(false)
+const chatMessagesRef = ref<HTMLElement | null>(null)
+const chanId = ref('')
+const streamingResponse = ref('')
+const isStreaming = ref(false)
+
+// 开始新对话
+const startNewChat = () => {
+  chatMessages.value = []
+  const timestamp = Date.now()
+  const random = Math.floor(Math.random() * 10000)
+  chanId.value = `user_${timestamp}_${random}`
+
+  chatMessages.value.push({
+    role: 'ai',
+    content: '我是职业导航智能顾问，你有任何职业上的问题都能来问我',
+  })
 }
 
-// 显示提示信息
-const showAlert = (message: string) => {
-  alert(message)
+// 发送消息（支持流式输出）
+const sendMessage = async () => {
+  const message = inputMessage.value.trim()
+  if (!message || loading.value || isStreaming.value) return
+
+  const userMsg = { role: 'user', content: message }
+  chatMessages.value.push(userMsg)
+  inputMessage.value = ''
+  loading.value = true
+  isStreaming.value = true
+  streamingResponse.value = ''
+
+  try {
+    const response = await api.sendAiMessage(message, chanId.value)
+    if (response) {
+      const aiMsg = { role: 'ai', content: '', isThinking: true }
+      chatMessages.value.push(aiMsg)
+
+      const aiMsgIndex = chatMessages.value.length - 1
+      await simulateStreaming(response, aiMsgIndex)
+    }
+  } catch (err) {
+    console.error('AI对话失败:', err)
+    const errorMsg = { role: 'ai', content: '抱歉，我遇到了一些问题，请稍后重试。' }
+    chatMessages.value.push(errorMsg)
+  } finally {
+    loading.value = false
+    isStreaming.value = false
+    scrollToBottom()
+  }
+}
+
+// 模拟流式输出效果
+const simulateStreaming = async (text: string, msgIndex: number) => {
+  const chars = text.split('')
+  for (let i = 0; i < chars.length; i++) {
+    if (chatMessages.value[msgIndex]) {
+      chatMessages.value[msgIndex].content += chars[i]
+    }
+    scrollToBottom()
+    await new Promise((resolve) => setTimeout(resolve, 30 + Math.random() * 20))
+  }
+
+  if (chatMessages.value[msgIndex]) {
+    chatMessages.value[msgIndex].isThinking = false
+  }
+}
+
+// 滚动到底部
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chatMessagesRef.value) {
+      chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
+    }
+  })
+}
+
+// 格式化消息内容（支持换行和简单格式）
+const formatMessage = (content: string) => {
+  return content.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+}
+
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth <= 1024
 }
 
 // 生命周期钩子 - 初始化和窗口大小监听
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
+  startNewChat()
 })
 </script>
 
@@ -826,7 +965,279 @@ onMounted(() => {
   background-color: #f0f9ff;
 }
 
-/* 热门职业方向 */
+/* AI对话区域 */
+.ai-chat-section {
+  background-color: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 12px;
+  padding: 0;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0e6ed;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.chat-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.new-chat-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.new-chat-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-icon {
+  font-size: 16px;
+}
+
+.btn-text {
+  font-size: 14px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: #fafafa;
+  min-height: 300px;
+  max-height: calc(100vh - 300px);
+}
+
+.message-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+
+.message-item.user {
+  justify-content: flex-end;
+}
+
+.message-item.ai {
+  justify-content: flex-start;
+}
+
+.message-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.message-item.user .message-avatar {
+  order: 2;
+}
+
+.message-item.ai .message-avatar {
+  order: 1;
+}
+
+.user-avatar {
+  background-color: #409eff;
+  color: white;
+}
+
+.ai-avatar {
+  background-color: #67c23a;
+  color: white;
+}
+
+.message-content {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-item.user .message-content {
+  order: 1;
+  align-items: flex-end;
+}
+
+.message-item.ai .message-content {
+  order: 2;
+  align-items: flex-start;
+}
+
+.message-text {
+  padding: 12px 16px;
+  border-radius: 12px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.message-item.user .message-text {
+  background-color: #409eff;
+  color: white;
+  border-bottom-right-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.message-item.ai .message-text {
+  background-color: white;
+  color: #333;
+  border: 1px solid #e0e6ed;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.thinking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf3 100%);
+  border-radius: 12px;
+  border: 1px solid #d4e4f7;
+  margin-bottom: 8px;
+}
+
+.thinking-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.thinking-dots span {
+  width: 8px;
+  height: 8px;
+  background-color: #409eff;
+  border-radius: 50%;
+  animation: thinking-bounce 1.4s infinite ease-in-out both;
+}
+
+.thinking-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.thinking-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes thinking-bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.thinking-text {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.chat-input-area {
+  padding: 16px;
+  border-top: 1px solid #e0e6ed;
+  background-color: white;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: none;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: #409eff;
+}
+
+.send-btn {
+  padding: 10px 24px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.send-btn:hover:not(:disabled) {
+  background-color: #66b1ff;
+}
+
+.send-btn:disabled {
+  background-color: #c0c4cc;
+  cursor: not-allowed;
+}
+
+.send-btn:disabled .loading-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 顶部功能卡片区域 */
 .content-area h2.section-title {
   font-size: 18px;
   font-weight: 600;
@@ -1001,35 +1412,92 @@ onMounted(() => {
     gap: 8px;
   }
 
-  .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    z-index: 99;
+  .chat-header {
+    padding: 16px 20px;
   }
 
-  .content-area {
-    margin-left: 0;
-    padding: 16px;
+  .chat-title {
+    font-size: 16px;
   }
 
-  .top-cards,
-  .career-directions,
-  .career-news {
-    grid-template-columns: 1fr;
-  }
-
-  .navbar-container {
-    padding: 0 16px;
-  }
-
-  .nav-actions {
-    gap: 8px;
-  }
-
-  .btn-login,
-  .btn-user-center {
+  .new-chat-btn {
     padding: 6px 12px;
     font-size: 13px;
   }
+
+  .btn-text {
+    display: none;
+  }
+
+  .message-item {
+    gap: 8px;
+  }
+
+  .message-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .message-content {
+    max-width: 85%;
+  }
+
+  .chat-messages {
+    max-height: calc(100vh - 250px);
+  }
+
+  .chat-input-area {
+    padding: 12px;
+  }
+
+  .chat-input {
+    font-size: 13px;
+  }
+
+  .send-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+.sidebar {
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 99;
+}
+
+.content-area {
+  margin-left: 0;
+  padding: 16px;
+}
+
+.top-cards,
+.career-directions,
+.career-news {
+  grid-template-columns: 1fr;
+}
+
+.navbar-container {
+  padding: 0 16px;
+}
+
+.nav-actions {
+  gap: 8px;
+}
+
+.btn-login,
+.btn-user-center {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.ai-chat-content {
+  max-width: 95%;
+  max-height: 90vh;
+}
+
+.chat-input {
+  width: 100%;
 }
 </style>
