@@ -33,7 +33,7 @@ export const useUserStore = defineStore('user', () => {
         isLoggedIn: false,
         userInfo: null,
       }
-      return
+      return false
     }
 
     try {
@@ -52,10 +52,20 @@ export const useUserStore = defineStore('user', () => {
           isLoggedIn: false,
           userInfo: null,
         }
-        return
+        return false
       }
 
-      userState.value = {
+      if (!userInfo.username || !userInfo.role) {
+        console.warn('用户信息不完整，清除存储')
+        clearStorage()
+        userState.value = {
+          isLoggedIn: false,
+          userInfo: null,
+        }
+        return false
+      }
+
+      const restoredState = {
         isLoggedIn: true,
         userInfo: {
           token,
@@ -63,7 +73,9 @@ export const useUserStore = defineStore('user', () => {
           ...userInfo,
         },
       }
-      console.log('从存储恢复登录状态成功')
+
+      userState.value = restoredState
+      return true
     } catch (e) {
       console.error('恢复用户状态失败:', e)
       clearStorage()
@@ -71,6 +83,40 @@ export const useUserStore = defineStore('user', () => {
         isLoggedIn: false,
         userInfo: null,
       }
+      return false
+    }
+  }
+
+  function logout(redirectToLogin: boolean = true) {
+    console.log('开始执行退出登录...')
+
+    // 1. 清除store状态
+    userState.value = {
+      isLoggedIn: false,
+      userInfo: null,
+    }
+
+    // 2. 强制同步更新
+    if (import.meta.hot) {
+      // 开发模式下确保状态更新
+      import.meta.hot.on('pinia:hot', () => {
+        userState.value = {
+          isLoggedIn: false,
+          userInfo: null,
+        }
+      })
+    }
+
+    // 3. 清除所有存储
+    clearStorage()
+
+    // 4. 跳转到登录页 - 使用硬跳转避免历史记录问题
+    if (redirectToLogin) {
+      console.log('跳转到登录页...')
+      // 强制刷新页面，确保所有状态都被重置
+      window.location.href = '/login'
+      // 或者使用replace，但有时候需要强制刷新
+      // window.location.replace('/login')
     }
   }
 
@@ -189,98 +235,6 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  function logout(redirectToLogin: boolean = true) {
-    console.log('执行退出登录...')
-
-    localStorage.removeItem('redirectAfterLogin')
-
-    // 0. 先获取当前路由信息（用于调试）
-    const currentPath = window.location.pathname
-    console.log('当前路径:', currentPath)
-
-    // 1. 清除store状态（先于存储清除）
-    userState.value = {
-      isLoggedIn: false,
-      userInfo: null,
-    }
-
-    // 2. 强制触发Pinia状态更新
-    // 通过一个中间步骤确保状态被清除
-    setTimeout(() => {
-      userState.value = {
-        isLoggedIn: false,
-        userInfo: null,
-      }
-    }, 0)
-
-    // 3. 清除所有存储 - 更彻底
-    const storageKeys = Object.keys(localStorage)
-    console.log('清除前的localStorage keys:', storageKeys)
-
-    // 清除所有可能的用户相关键
-    const userRelatedKeys = [
-      'userToken',
-      'token',
-      'refreshToken',
-      'userInfo',
-      'username',
-      'userId',
-      'user',
-      'auth',
-      'session',
-      'lastLogin',
-      'loginTime',
-      'auth_token',
-      'access_token',
-      'system_greeting_shown', // 清除问候提示状态
-    ]
-
-    // 清除所有匹配的键
-    storageKeys.forEach((key) => {
-      // 清除所有包含用户相关关键词的键
-      const shouldRemove = userRelatedKeys.some((relatedKey) =>
-        key.toLowerCase().includes(relatedKey.toLowerCase()),
-      )
-
-      if (shouldRemove) {
-        localStorage.removeItem(key)
-        console.log('已清除:', key)
-      }
-    })
-
-    // 也清除sessionStorage
-    const sessionKeys = Object.keys(sessionStorage)
-    sessionKeys.forEach((key) => {
-      sessionStorage.removeItem(key)
-    })
-
-    // 4. 清除所有cookie
-    document.cookie.split(';').forEach((cookie) => {
-      const name = cookie.trim().split('=')[0]
-      // 清除当前域下的cookie
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`
-      // 清除不带域的cookie
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
-    })
-
-    // 5. 清除API的Authorization header
-    try {
-      // 优先使用 clearAuthHeader 方法清除认证头
-      if (typeof api.clearAuthHeader === 'function') {
-        api.clearAuthHeader()
-      }
-    } catch (error) {
-      console.warn('清除Authorization header失败:', error)
-    }
-
-    console.log('退出登录完成，当前localStorage:', { ...localStorage })
-
-    // 6. 跳转到登录页 - 使用更强制的方法
-    if (redirectToLogin) {
-      window.location.replace('/login')
-    }
-  }
-
   function setUserInfo(info: Partial<UserInfo>) {
     const currentUserInfo = userState.value.userInfo
     if (!currentUserInfo) {
@@ -341,6 +295,33 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  function forceCheckLoginStatus(): boolean {
+    const token = localStorage.getItem('userToken')
+    const hasToken = !!token && token !== 'undefined' && token !== 'null'
+
+    console.log('强制检查登录状态:', {
+      token,
+      hasToken,
+      storeIsLoggedIn: userState.value.isLoggedIn,
+    })
+
+    if (!hasToken && userState.value.isLoggedIn) {
+      console.log('检测到状态不一致: store显示已登录但无token，修正状态')
+      userState.value = {
+        isLoggedIn: false,
+        userInfo: null,
+      }
+      return false
+    }
+
+    if (hasToken && !userState.value.isLoggedIn) {
+      console.log('检测到状态不一致: 有token但store显示未登录，尝试恢复')
+      return restoreFromStorage()
+    }
+
+    return userState.value.isLoggedIn
+  }
+
   // 初始化时恢复状态
   restoreFromStorage()
 
@@ -350,8 +331,8 @@ export const useUserStore = defineStore('user', () => {
     register,
     logout,
     setUserInfo,
-    validateLoginStatus, // 添加这个
     restoreFromStorage,
     clearStorage,
+    forceCheckLoginStatus,
   }
 })

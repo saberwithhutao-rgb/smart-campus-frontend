@@ -6,6 +6,19 @@ import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
 const router = useRouter()
+
+function globalAuthCheck() {
+  const token = localStorage.getItem('userToken')
+  const isLoggedIn = userStore.userState.isLoggedIn
+
+  console.log('全局状态检查:', { token, isLoggedIn })
+
+  if (!token && isLoggedIn) {
+    console.log('检测到状态异常: 无token但显示已登录，修正状态')
+    userStore.userState.isLoggedIn = false
+    userStore.userState.userInfo = null
+  }
+}
 // 页面加载的时段问候提示功能
 const showGreetingMessage = () => {
   const GREETING_KEY = 'system_greeting_shown'
@@ -71,6 +84,7 @@ const showGreetingMessage = () => {
 // 页面首次加载时触发
 onMounted(() => {
   showGreetingMessage()
+  globalAuthCheck()
 })
 
 watch(
@@ -94,6 +108,11 @@ watch(
   },
   { deep: true },
 )
+router.afterEach((to, from) => {
+  if (to.path === '/login') {
+    globalAuthCheck()
+  }
+})
 </script>
 
 <template>

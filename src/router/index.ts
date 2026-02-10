@@ -149,75 +149,73 @@ const router = createRouter({
   ],
 })
 
-// 公开页面列表（不需要登录）
 const publicPages = ['/login', '/register', '/index', '/', '/logout']
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
-  console.log('路由导航:', {
-    from: from.path,
-    to: to.path,
-    requiresAuth: to.meta?.requiresAuth,
-  })
+  console.log('=== 路由守卫开始 ===')
+  console.log('从:', from.path, '到:', to.path)
 
   // 获取用户store
   const userStore = useUserStore()
 
+  // 强制执行状态检查
+  userStore.forceCheckLoginStatus()
+
+  // 获取当前状态
+  const token = localStorage.getItem('userToken')
+  const isLoggedIn = userStore.userState.isLoggedIn
+
+  console.log('当前状态:', { token, isLoggedIn })
+
   // 检查是否是公开页面
   const isPublicPage = publicPages.includes(to.path)
 
-  // 如果是公开页面，直接放行
+  // 如果是公开页面
   if (isPublicPage) {
     // 如果已登录且访问登录/注册页面，重定向到首页
-    if ((to.path === '/login' || to.path === '/register') && userStore.userState.isLoggedIn) {
+    if ((to.path === '/login' || to.path === '/register') && isLoggedIn) {
       console.log('已登录用户访问登录/注册页面，重定向到首页')
-      next('/index')
+      // 强制跳转，不使用next()
+      window.location.href = '/index'
       return
     }
 
+    console.log('公开页面，允许访问')
     next()
     return
   }
 
   // 检查页面是否需要登录
   if (to.meta?.requiresAuth) {
-    // 获取token
-    const token = localStorage.getItem('userToken')
-    const isLoggedIn = userStore.userState.isLoggedIn
-
-    console.log('需要登录的页面检查:', {
-      token,
-      isLoggedIn,
-      hasToken: !!token,
-      userStoreState: userStore.userState,
-    })
-
-    // 如果有token但store状态不是已登录，尝试恢复
-    if (token && !isLoggedIn) {
-      console.log('有token但store未登录，尝试恢复状态...')
-      userStore.restoreFromStorage()
-
-      // 等待store状态更新
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      // 再次检查
-      if (userStore.userState.isLoggedIn) {
-        console.log('状态恢复成功，允许访问')
-        next()
-        return
-      }
-    }
+    console.log('需要登录的页面，检查登录状态...')
 
     // 如果没有登录，重定向到登录页
     if (!isLoggedIn && !token) {
       console.log('未登录，重定向到登录页')
 
       // 保存当前页面路径，登录后可以跳转回来
-      const redirectUrl = to.fullPath
-      localStorage.setItem('redirectAfterLogin', redirectUrl)
+      if (to.path !== '/login') {
+        localStorage.setItem('redirectAfterLogin', to.fullPath)
+      }
 
-      next('/login')
+      // 强制跳转到登录页
+      window.location.href = '/login'
       return
+    }
+
+    // 有token但store状态不对，尝试恢复
+    if (token && !isLoggedIn) {
+      console.log('有token但store未登录，尝试恢复...')
+      const restored = userStore.restoreFromStorage()
+
+      if (!restored) {
+        console.log('恢复失败，重定向到登录页')
+        localStorage.removeItem('userToken')
+        localStorage.removeItem('userInfo')
+        window.location.href = '/login'
+        return
+      }
     }
 
     // 检查管理员权限（如果需要）
@@ -229,44 +227,27 @@ router.beforeEach(async (to, from, next) => {
         return
       }
     }
+
+    console.log('登录检查通过，允许访问')
+    next()
+    return
   }
 
-  // 所有检查通过
+  // 其他页面直接放行
+  console.log('其他页面，允许访问')
   next()
 })
 
-// 路由后置钩子 - 用于清除缓存
+// 路由后置钩子
 router.afterEach((to, from) => {
   console.log('路由跳转完成:', to.path)
 
-  // 如果跳转到登录页，清除一些状态
+  // 清除一些状态
   if (to.path === '/login') {
-    // 清除可能存在的旧token
-    const token = localStorage.getItem('userToken')
-    if (!token) {
-      // 如果token不存在，确保store状态也是未登录
-      const userStore = useUserStore()
-      if (userStore.userState.isLoggedIn) {
-        userStore.userState.isLoggedIn = false
-        userStore.userState.userInfo = null
-      }
-    }
+    // 每次访问登录页都强制检查状态
+    const userStore = useUserStore()
+    userStore.forceCheckLoginStatus()
   }
-
-  // 处理登录后重定向
-  if (from.path === '/login' && to.path !== '/login') {
-    const redirectUrl = localStorage.getItem('redirectAfterLogin')
-    if (redirectUrl && redirectUrl !== to.fullPath) {
-      console.log('登录后重定向到之前访问的页面:', redirectUrl)
-      localStorage.removeItem('redirectAfterLogin')
-      router.replace(redirectUrl)
-    }
-  }
-})
-
-// 监听路由错误
-router.onError((error) => {
-  console.error('路由错误:', error)
 })
 
 export default router

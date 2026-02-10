@@ -1073,28 +1073,41 @@ const showAlert = (message: string) => {
 }
 
 onBeforeMount(() => {
-  // 简单的状态检查
+  console.log('StudyManagement组件挂载前检查')
+
   const token = localStorage.getItem('userToken')
   const isLoggedIn = userStore.userState.isLoggedIn
 
-  console.log('StudyManagement组件挂载前检查:', { token, isLoggedIn })
+  console.log('检查结果:', { token, isLoggedIn })
 
-  // 如果store显示未登录但有token，尝试恢复
+  // 如果没有token，直接重定向
+  if (!token) {
+    console.log('没有token，重定向到登录页')
+    router.replace('/login')
+    return
+  }
+
+  // 如果有token但store状态不对，尝试恢复
   if (token && !isLoggedIn) {
-    userStore.restoreFromStorage()
+    console.log('有token但store未登录，尝试恢复')
+    const restored = userStore.restoreFromStorage()
+
+    if (!restored) {
+      console.log('恢复失败，清除token并重定向')
+      localStorage.removeItem('userToken')
+      localStorage.removeItem('userInfo')
+      router.replace('/login')
+      return
+    }
   }
 })
 
-// 生命周期钩子 - 初始化和窗口大小监听
 onMounted(async () => {
+  console.log('StudyManagement组件挂载')
+
   // 最终检查
-  const token = localStorage.getItem('userToken')
-  const isLoggedIn = userStore.userState.isLoggedIn
-
-  console.log('StudyManagement组件挂载最终检查:', { token, isLoggedIn })
-
-  if (!isLoggedIn && !token) {
-    console.log('未登录，重定向到登录页')
+  if (!userStore.userState.isLoggedIn) {
+    console.log('最终检查未登录，重定向到登录页')
     router.replace('/login')
     return
   }
