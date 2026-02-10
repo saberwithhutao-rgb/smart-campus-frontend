@@ -26,28 +26,77 @@ export const useUserStore = defineStore('user', () => {
     const token = localStorage.getItem('userToken')
     const userInfoStr = localStorage.getItem('userInfo')
 
-    if (token && userInfoStr) {
-      try {
-        const userInfo = JSON.parse(userInfoStr)
-        userState.value = {
-          isLoggedIn: true,
-          userInfo: {
-            token,
-            refreshToken: localStorage.getItem('refreshToken') || undefined,
-            ...userInfo,
-          },
-        }
-      } catch (e) {
-        console.error('恢复用户状态失败:', e)
+    // 添加验证逻辑
+    if (!token || !userInfoStr) {
+      console.log('没有token或userInfo，不恢复登录状态')
+      userState.value = {
+        isLoggedIn: false,
+        userInfo: null,
+      }
+      return
+    }
+
+    try {
+      const userInfo = JSON.parse(userInfoStr)
+
+      // 验证token有效性
+      if (
+        typeof token !== 'string' ||
+        token.trim() === '' ||
+        token === 'undefined' ||
+        token === 'null'
+      ) {
+        console.warn('无效的token，清除存储')
         clearStorage()
+        userState.value = {
+          isLoggedIn: false,
+          userInfo: null,
+        }
+        return
+      }
+
+      userState.value = {
+        isLoggedIn: true,
+        userInfo: {
+          token,
+          refreshToken: localStorage.getItem('refreshToken') || undefined,
+          ...userInfo,
+        },
+      }
+      console.log('从存储恢复登录状态成功')
+    } catch (e) {
+      console.error('恢复用户状态失败:', e)
+      clearStorage()
+      userState.value = {
+        isLoggedIn: false,
+        userInfo: null,
       }
     }
   }
 
   function clearStorage() {
-    localStorage.removeItem('userToken')
-    localStorage.removeItem('userInfo')
-    localStorage.removeItem('refreshToken')
+    // 清除所有可能的token相关存储
+    const tokenKeys = [
+      'userToken',
+      'token',
+      'refreshToken',
+      'userInfo',
+      'username',
+      'userId',
+      'sessionId',
+      'lastLoginTime',
+    ]
+
+    tokenKeys.forEach((key) => {
+      localStorage.removeItem(key)
+      sessionStorage.removeItem(key) // 同时清除sessionStorage
+    })
+
+    // 清除所有cookie（如果有）
+    document.cookie.split(';').forEach((cookie) => {
+      const name = cookie.trim().split('=')[0]
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+    })
   }
 
   async function login(
@@ -140,12 +189,46 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  function logout() {
+  function logout(redirectToLogin: boolean = true) {
+    console.log('执行退出登录...')
+
+    // 1. 清除store状态
     userState.value = {
       isLoggedIn: false,
       userInfo: null,
     }
+
+    // 2. 清除所有存储
     clearStorage()
+
+    // 3. 清除Authorization header（通用方法）
+    try {
+      // 假设api有clearAuthHeader方法
+      if (typeof api.clearAuthHeader === 'function') {
+        api.clearAuthHeader()
+      } else {
+        // 手动清理（根据实际api实现调整）
+        Object.keys(api).forEach((key) => {
+          if (key.includes('Authorization')) {
+            delete api[key]
+          }
+        })
+      }
+    } catch (error) {
+      console.warn('清除Authorization header失败:', error)
+    }
+
+    console.log('退出登录完成，当前localStorage:', { ...localStorage })
+
+    // 4. 跳转到登录页
+    if (redirectToLogin) {
+      window.location.replace('/login')
+      setTimeout(() => {
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login'
+        }
+      }, 2000)
+    }
   }
 
   function setUserInfo(info: Partial<UserInfo>) {
@@ -166,8 +249,7 @@ export const useUserStore = defineStore('user', () => {
       userState.value.userInfo = updatedUserInfo
 
       // 分离token和其他信息（使用不同的变量名）
-      const { token: _newToken, refreshToken: _newRefreshToken, ...otherInfo } = updatedUserInfo
-
+      const { token: _token, refreshToken: _refreshToken, ...otherInfo } = updatedUserInfo
       // 更新localStorage
       localStorage.setItem('userInfo', JSON.stringify(otherInfo))
 

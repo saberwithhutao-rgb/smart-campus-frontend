@@ -1018,7 +1018,7 @@ onUnmounted(() => {
 }
 
 .message-bubble.loading::after {
-  content: '...';
+  content: '';
   animation: loadingDots 1.5s infinite;
   position: absolute;
   right: 10px;

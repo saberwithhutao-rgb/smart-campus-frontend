@@ -532,7 +532,7 @@ const handleUserMenuClick = (item: string) => {
   if (item === '个人信息') {
     router.push('/profile')
   } else if (item === '退出登录') {
-    router.push('/login')
+    router.push('/logout')
   }
   closeUserCenter()
 }

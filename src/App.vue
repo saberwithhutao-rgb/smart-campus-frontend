@@ -4,43 +4,64 @@ import { ElMessage } from 'element-plus'
 
 // 页面加载的时段问候提示功能
 const showGreetingMessage = () => {
-  // 检查是否已经显示过问候信息（使用localStorage存储状态）
-  const hasShownGreeting = localStorage.getItem('hasShownGreeting')
+  const GREETING_KEY = 'system_greeting_shown'
+  const hasShownGreeting = localStorage.getItem(GREETING_KEY)
 
   if (!hasShownGreeting) {
-    // 获取用户本地系统时间
     const now = new Date()
     const hour = now.getHours()
 
-    // 根据小时数显示不同的问候
-    if (hour <= 7) {
-      // 早安问候（7点及以前）
-      ElMessage({
-        message: '早上好呀，早起的你真棒哇~',
-        type: 'success',
-        duration: 3000,
-        showClose: true,
-      })
-    } else if (hour >= 22) {
-      // 深夜休息问候（22点及以后）
-      ElMessage({
-        message: '夜深了，注意休息，别熬太晚啦~',
-        type: 'warning',
-        duration: 3000,
-        showClose: true,
-      })
+    // 根据时段显示不同的问候
+    let message = ''
+    let type: 'success' | 'warning' | 'info' = 'info'
+
+    if (4 <= hour && hour < 6) {
+      message = '凌晨好，新的一天即将开始~'
+      type = 'info'
+    } else if (hour < 12) {
+      message = '早上好，祝您有美好的一天！'
+      type = 'success'
+    } else if (hour < 18) {
+      message = '下午好，工作学习辛苦了~'
+      type = 'info'
+    } else if (hour < 22) {
+      message = '晚上好，享受您的休闲时光~'
+      type = 'success'
+    } else {
+      message = '夜深了，注意休息哦~'
+      type = 'warning'
     }
 
-    // 标记已经显示过问候信息，当天不再重复显示
-    localStorage.setItem('hasShownGreeting', 'true')
+    // 显示问候
+    ElMessage({
+      message,
+      type,
+      duration: 3000,
+      showClose: true,
+    })
 
-    // 设置24小时后过期，第二天重新显示问候
-    setTimeout(
-      () => {
-        localStorage.removeItem('hasShownGreeting')
-      },
-      24 * 60 * 60 * 1000,
-    )
+    // 使用更安全的键名保存状态
+    localStorage.setItem(GREETING_KEY, 'true')
+
+    // 设置过期时间（当天有效）
+    const tomorrow = new Date()
+    tomorrow.setHours(24, 0, 0, 0) // 设置到明天0点
+    const expires = tomorrow.getTime()
+
+    // 保存过期时间
+    localStorage.setItem(`${GREETING_KEY}_expires`, expires.toString())
+  } else {
+    // 检查是否过期（跨天了）
+    const expiresStr = localStorage.getItem(`${GREETING_KEY}_expires`)
+    if (expiresStr) {
+      const expires = parseInt(expiresStr)
+      if (Date.now() > expires) {
+        // 已过期，清除并重新显示
+        localStorage.removeItem(GREETING_KEY)
+        localStorage.removeItem(`${GREETING_KEY}_expires`)
+        showGreetingMessage()
+      }
+    }
   }
 }
 
