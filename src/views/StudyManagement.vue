@@ -383,12 +383,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick, computed } from 'vue'
+import { ref, onMounted, watch, nextTick, computed, onBeforeMount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import * as echarts from 'echarts'
-import { ElMessage, ElLoading } from 'element-plus'
+import { ElMessage, ElLoading, ElMessageBox } from 'element-plus'
 
 // 路由实例
 const router = useRouter()
@@ -532,7 +532,20 @@ const handleUserMenuClick = (item: string) => {
   if (item === '个人信息') {
     router.push('/profile')
   } else if (item === '退出登录') {
-    router.push('/logout')
+    // 显示确认对话框
+    ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+      .then(() => {
+        // 执行退出登录
+        userStore.logout(true) // 传递true以重定向到登录页
+      })
+      .catch(() => {
+        // 用户取消
+        console.log('取消退出登录')
+      })
   }
   closeUserCenter()
 }
@@ -1059,13 +1072,37 @@ const showAlert = (message: string) => {
   alert(message)
 }
 
+onBeforeMount(() => {
+  // 简单的状态检查
+  const token = localStorage.getItem('userToken')
+  const isLoggedIn = userStore.userState.isLoggedIn
+
+  console.log('StudyManagement组件挂载前检查:', { token, isLoggedIn })
+
+  // 如果store显示未登录但有token，尝试恢复
+  if (token && !isLoggedIn) {
+    userStore.restoreFromStorage()
+  }
+})
+
 // 生命周期钩子 - 初始化和窗口大小监听
 onMounted(async () => {
+  // 最终检查
+  const token = localStorage.getItem('userToken')
+  const isLoggedIn = userStore.userState.isLoggedIn
+
+  console.log('StudyManagement组件挂载最终检查:', { token, isLoggedIn })
+
+  if (!isLoggedIn && !token) {
+    console.log('未登录，重定向到登录页')
+    router.replace('/login')
+    return
+  }
+
+  // 检查通过，继续其他初始化
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
-  // 初始加载时根据路由更新选中的菜单
   updateSelectedMenu()
-  // 初始加载数据
   await initData()
 })
 </script>

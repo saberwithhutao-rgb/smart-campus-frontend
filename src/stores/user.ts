@@ -1,3 +1,4 @@
+[file content begin]
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '@/api'
@@ -192,27 +193,84 @@ export const useUserStore = defineStore('user', () => {
   function logout(redirectToLogin: boolean = true) {
     console.log('执行退出登录...')
 
-    // 1. 清除store状态
+    localStorage.removeItem('redirectAfterLogin')
+
+    // 0. 先获取当前路由信息（用于调试）
+    const currentPath = window.location.pathname
+    console.log('当前路径:', currentPath)
+
+    // 1. 清除store状态（先于存储清除）
     userState.value = {
       isLoggedIn: false,
       userInfo: null,
     }
 
-    // 2. 清除所有存储
-    clearStorage()
+    // 2. 强制触发Pinia状态更新
+    // 通过一个中间步骤确保状态被清除
+    setTimeout(() => {
+      userState.value = {
+        isLoggedIn: false,
+        userInfo: null,
+      }
+    }, 0)
 
-    // 3. 清除Authorization header（通用方法）
+    // 3. 清除所有存储 - 更彻底
+    const storageKeys = Object.keys(localStorage)
+    console.log('清除前的localStorage keys:', storageKeys)
+
+    // 清除所有可能的用户相关键
+    const userRelatedKeys = [
+      'userToken',
+      'token',
+      'refreshToken',
+      'userInfo',
+      'username',
+      'userId',
+      'user',
+      'auth',
+      'session',
+      'lastLogin',
+      'loginTime',
+      'auth_token',
+      'access_token',
+      'system_greeting_shown', // 清除问候提示状态
+    ]
+
+
+
+    // 清除所有匹配的键
+    storageKeys.forEach((key) => {
+      // 清除所有包含用户相关关键词的键
+      const shouldRemove = userRelatedKeys.some((relatedKey) =>
+        key.toLowerCase().includes(relatedKey.toLowerCase()),
+      )
+
+      if (shouldRemove) {
+        localStorage.removeItem(key)
+        console.log('已清除:', key)
+      }
+    })
+
+    // 也清除sessionStorage
+    const sessionKeys = Object.keys(sessionStorage)
+    sessionKeys.forEach((key) => {
+      sessionStorage.removeItem(key)
+    })
+
+    // 4. 清除所有cookie
+    document.cookie.split(';').forEach((cookie) => {
+      const name = cookie.trim().split('=')[0]
+      // 清除当前域下的cookie
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`
+      // 清除不带域的cookie
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+    })
+
+    // 5. 清除API的Authorization header
     try {
-      // 假设api有clearAuthHeader方法
+      // 优先使用 clearAuthHeader 方法清除认证头
       if (typeof api.clearAuthHeader === 'function') {
         api.clearAuthHeader()
-      } else {
-        // 手动清理（根据实际api实现调整）
-        Object.keys(api).forEach((key) => {
-          if (key.includes('Authorization')) {
-            delete api[key]
-          }
-        })
       }
     } catch (error) {
       console.warn('清除Authorization header失败:', error)
@@ -220,14 +278,9 @@ export const useUserStore = defineStore('user', () => {
 
     console.log('退出登录完成，当前localStorage:', { ...localStorage })
 
-    // 4. 跳转到登录页
+    // 6. 跳转到登录页 - 使用更强制的方法
     if (redirectToLogin) {
       window.location.replace('/login')
-      setTimeout(() => {
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login'
-        }
-      }, 2000)
     }
   }
 
@@ -265,6 +318,32 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // 验证登录状态
+  function validateLoginStatus(): boolean {
+    const token = localStorage.getItem('userToken')
+    const userInfoStr = localStorage.getItem('userInfo')
+
+    // 检查token是否存在且有效
+    if (!token || token === 'undefined' || token === 'null') {
+      console.log('validateLoginStatus: 无效的token')
+      return false
+    }
+
+    // 检查userInfo是否存在
+    if (!userInfoStr) {
+      console.log('validateLoginStatus: 缺少userInfo')
+      return false
+    }
+
+    try {
+      JSON.parse(userInfoStr)
+      return true
+    } catch {
+      console.log('validateLoginStatus: userInfo解析失败')
+      return false
+    }
+  }
+
   // 初始化时恢复状态
   restoreFromStorage()
 
@@ -274,5 +353,8 @@ export const useUserStore = defineStore('user', () => {
     register,
     logout,
     setUserInfo,
+    validateLoginStatus, // 添加这个
+    restoreFromStorage,
+    clearStorage,
   }
 })

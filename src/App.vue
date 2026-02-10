@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
 
+const userStore = useUserStore()
+const router = useRouter()
 // 页面加载的时段问候提示功能
 const showGreetingMessage = () => {
   const GREETING_KEY = 'system_greeting_shown'
@@ -64,11 +68,32 @@ const showGreetingMessage = () => {
     }
   }
 }
-
 // 页面首次加载时触发
 onMounted(() => {
   showGreetingMessage()
 })
+
+watch(
+  () => userStore.userState.isLoggedIn,
+  (newVal, oldVal) => {
+    console.log('登录状态变化:', { old: oldVal, new: newVal })
+
+    if (!newVal) {
+      // 如果是false，检查当前页面是否需要登录
+      const currentPath = window.location.pathname
+      const publicPages = ['/login', '/register', '/index', '/', '/logout']
+
+      if (!publicPages.includes(currentPath)) {
+        console.log('用户退出登录，当前页面需要登录，延迟跳转')
+        // 使用setTimeout避免在路由守卫中重复跳转
+        setTimeout(() => {
+          router.replace('/login')
+        }, 100)
+      }
+    }
+  },
+  { deep: true },
+)
 </script>
 
 <template>

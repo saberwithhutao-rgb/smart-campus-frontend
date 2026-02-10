@@ -196,6 +196,15 @@ const request = <T>(config: AxiosRequestConfig): Promise<T> => {
 
 // API 接口定义
 export const api = {
+  clearAuthHeader: () => {
+    localStorage.removeItem('userToken')
+    localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
+    localStorage.removeItem('refreshToken')
+
+    // 清除 axios 实例的默认 Authorization 头
+    delete service.defaults.headers.common['Authorization']
+  },
   // 认证模块
   login: (data: { username: string; password: string; captcha: string; captchaId?: string }) =>
     request<ApiResponse<LoginData>>({ method: 'POST', url: '/api/login', data }),
