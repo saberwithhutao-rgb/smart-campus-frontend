@@ -1,4 +1,3 @@
-[file content begin]
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '@/api'
@@ -235,8 +234,6 @@ export const useUserStore = defineStore('user', () => {
       'access_token',
       'system_greeting_shown', // 清除问候提示状态
     ]
-
-
 
     // 清除所有匹配的键
     storageKeys.forEach((key) => {
