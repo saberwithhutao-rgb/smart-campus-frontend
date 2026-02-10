@@ -154,8 +154,14 @@ const sendMessage = async () => {
 // 流式聊天处理函数
 const handleStreamChat = async (question: string, aiMessageIndex: number) => {
   try {
+    // 直接从 localStorage 获取 token
     const token = localStorage.getItem('userToken')
-    if (!token) throw new Error('未找到认证token')
+    if (!token) {
+      console.error('❌ 未找到用户token')
+      safeUpdateMessage(aiMessageIndex, '请先登录', false)
+      setTimeout(() => router.push('/login'), 1500)
+      return
+    }
 
     const formData = new FormData()
     formData.append('question', question)
@@ -164,19 +170,30 @@ const handleStreamChat = async (question: string, aiMessageIndex: number) => {
     }
     formData.append('stream', 'true')
 
-    console.log('🚀 发送流式请求...')
+    console.log('🚀 直接发送流式请求（绕过api拦截器）...')
 
     const response = await fetch('/ai/chat', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
-        // 注意：不要设置 Content-Type，让浏览器自动设置
+        // 不要设置 Content-Type，让浏览器自动设置
       },
       body: formData,
     })
 
     console.log('📊 响应状态:', response.status, response.statusText)
     console.log('📄 Content-Type:', response.headers.get('content-type'))
+
+    if (response.status === 401) {
+      console.warn('❌ Token无效或已过期')
+      localStorage.removeItem('userToken')
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+
+      safeUpdateMessage(aiMessageIndex, '登录已过期，请重新登录', false)
+      setTimeout(() => router.push('/login'), 1500)
+      return
+    }
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -195,7 +212,11 @@ const handleStreamChat = async (question: string, aiMessageIndex: number) => {
     }
   } catch (error) {
     console.error('❌ 流式处理失败:', error)
-    throw error
+    safeUpdateMessage(
+      aiMessageIndex,
+      `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      false,
+    )
   }
 }
 // 简化的SSE处理（针对你的数据格式）
