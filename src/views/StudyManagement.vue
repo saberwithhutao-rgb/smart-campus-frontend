@@ -1,14 +1,11 @@
 <template>
   <div class="study-management-container">
-    <!-- 顶部导航栏 - 与首页保持一致 -->
     <nav class="navbar">
       <div class="navbar-container">
-        <!-- Logo区域 -->
         <div class="logo" @click="goToIndex">
           <div class="logo-placeholder">logo</div>
         </div>
 
-        <!-- 导航菜单 -->
         <div class="nav-menu" :class="{ 'mobile-menu': isMobile }">
           <div
             class="nav-item"
@@ -89,13 +86,13 @@
         <!-- 右侧操作区 -->
         <div class="nav-actions">
           <!-- 登录按钮 - 未登录时显示 -->
-          <button v-if="!userStore.userState.isLoggedIn" class="btn-login" @click="goToLogin">
+          <button v-if="!hasToken" class="btn-login" @click="goToLogin">
             <span class="login-icon">👤</span>
             登录
           </button>
 
           <!-- 个人中心 -->
-          <div class="user-center">
+          <div v-if="hasToken" class="user-center">
             <button class="btn-user-center" @click="toggleUserCenter">个人中心</button>
             <!-- 个人中心下拉菜单 -->
             <div v-if="showUserCenter" class="user-center-dropdown">
@@ -397,34 +394,38 @@ const route = useRoute()
 // 用户状态管理
 const userStore = useUserStore()
 
+// 直接检查localStorage中的token - 这是关键！
+const hasToken = computed(() => {
+  const token = localStorage.getItem('userToken')
+  return !!token && token !== 'undefined' && token !== 'null'
+})
+
 // 响应式数据 - 导航栏相关
-const showUserCenter = ref(false) // 显示个人中心菜单
-const activeMenu = ref('') // 当前激活的菜单
-const showSubMenu = ref('') // 显示子菜单
-const isMobile = ref(false) // 是否为移动端
-const showSidebar = ref(true) // 左侧导航栏是否显示
-const selectedMenu = ref('statistics') // 当前激活的菜单
-const selectedTimeRange = ref('today') // 当前选中的时间范围
+const showUserCenter = ref(false)
+const activeMenu = ref('')
+const showSubMenu = ref('')
+const isMobile = ref(false)
+const showSidebar = ref(true)
+const selectedMenu = ref('statistics')
+const selectedTimeRange = ref('today')
 
 // 响应式数据 - 后端数据
-const statisticsData = ref({}) // 统计分析数据
-const analysisData = ref({}) // 学习数据分析结果
-const suggestionData = ref({}) // 学习建议数据
-const loading = ref(false) // 加载状态
-const userId = ref(1) // 用户ID
-const error = ref('') // 错误信息
-const statistics = ref(null) // 统计数据
-const suggestions = ref([]) // 学习建议
+const statisticsData = ref({})
+const analysisData = ref({})
+const suggestionData = ref({})
+const loading = ref(false)
+const userId = ref(1)
+const error = ref('')
+const statistics = ref(null)
+const suggestions = ref([])
 
 // 图表引用
-const donutChartRef = ref(null) // 环形图引用
-const pieChartRef = ref(null) // 饼图引用
-// 图表实例
-let donutChartInstance = null // 环形图实例
-let pieChartInstance = null // 饼图实例
+const donutChartRef = ref(null)
+const pieChartRef = ref(null)
+let donutChartInstance = null
+let pieChartInstance = null
 
 // 计算属性 - 动态饼图标题
-// 统一三个时间维度都显示「计划难度分布」
 const pieChartTitle = computed(() => {
   return '计划难度分布'
 })
@@ -438,10 +439,9 @@ const updateSelectedMenu = () => {
   }
 }
 
-// 检查屏幕尺寸 - 响应式设计
+// 检查屏幕尺寸
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
-  // 小屏幕时折叠左侧导航栏
   if (window.innerWidth < 768) {
     showSidebar.value = false
   } else {
@@ -449,7 +449,7 @@ const checkScreenSize = () => {
   }
 }
 
-// 导航栏跳转函数 - 与首页保持一致
+// 导航栏跳转函数
 const goToIndex = () => {
   router.push('/index')
 }
@@ -474,12 +474,10 @@ const goToCompetitionManagement = () => {
   router.push('/career/competitions')
 }
 
-// 跳转到职业导航页面
 const goToCareerNavigation = () => {
   router.push('/career/position')
 }
 
-// 跳转到考研支持页面
 const goToExamSupport = () => {
   router.push('/career/pee')
 }
@@ -504,7 +502,6 @@ const hideSubMenu = () => {
 
 const handleMenuClick = (menu: string) => {
   if (menu === '首页') {
-    // 点击首页，跳转到首页
     goToIndex()
     activeMenu.value = '首页'
     return
@@ -527,7 +524,6 @@ const handleMenuClick = (menu: string) => {
   }
 }
 
-// 处理用户菜单点击
 const handleUserMenuClick = (item: string) => {
   if (item === '个人信息') {
     router.push('/profile')
@@ -539,12 +535,38 @@ const handleUserMenuClick = (item: string) => {
       type: 'warning',
     })
       .then(() => {
-        // 执行退出登录
-        userStore.logout(true) // 传递true以重定向到登录页
+        // 1. 清除所有相关存储
+        const keysToRemove = [
+          'userToken',
+          'userInfo',
+          'refreshToken',
+          'username',
+          'userId',
+          'redirectAfterLogin',
+        ]
+
+        keysToRemove.forEach((key) => {
+          localStorage.removeItem(key)
+          sessionStorage.removeItem(key)
+        })
+
+        // 2. 清除store状态（如果需要）
+        userStore.userState.isLoggedIn = false
+        userStore.userState.userInfo = null
+
+        // 3. 关闭个人中心菜单
+        showUserCenter.value = false
+
+        // 4. 显示成功消息
+        ElMessage.success('退出登录成功')
+
+        // 5. 刷新页面以更新UI状态
+        setTimeout(() => {
+          window.location.reload()
+        }, 300)
       })
       .catch(() => {
-        // 用户取消
-        console.log('取消退出登录')
+        console.log('用户取消退出登录')
       })
   }
   closeUserCenter()
@@ -558,14 +580,12 @@ const toggleSidebar = () => {
 // 左侧导航菜单选择处理
 const selectMenu = async (menu: string) => {
   selectedMenu.value = menu
-  // 跳转到对应的URL
   if (menu === 'statistics') {
     router.push('/campus/analysis')
   } else if (menu === 'suggestion') {
     router.push('/campus/advice')
   }
   console.log('当前选中模块:', menu)
-  // 切换菜单后只加载统计数据
   await fetchStatisticsData()
 }
 
@@ -573,17 +593,14 @@ const selectMenu = async (menu: string) => {
 const selectTimeRange = (timeRange: string) => {
   selectedTimeRange.value = timeRange
   console.log('当前选中时间范围:', timeRange)
-  // 根据时间范围只获取统计数据
   fetchStatisticsData()
 }
 
 // 生成学习建议按钮点击处理
 const handleGenerateSuggestion = () => {
   console.log('生成学习建议按钮被点击')
-  // 清空之前的建议和错误信息
   suggestions.value = []
   error.value = ''
-  // 只获取学习建议数据
   fetchSuggestionsData()
 }
 
@@ -597,13 +614,11 @@ const fetchStatisticsData = async () => {
   }
 
   try {
-    // 打印请求参数
     console.log('请求统计数据参数:', {
       timeRange: selectedTimeRange.value,
       userId: userId.value,
     })
 
-    // 请求真实接口
     console.log('开始请求统计数据...')
     const realStatsData = await getStudyStatistics({
       timeRange: selectedTimeRange.value,
@@ -613,16 +628,13 @@ const fetchStatisticsData = async () => {
     console.log('统计数据请求成功')
     console.log('统计数据响应:', realStatsData)
 
-    // 验证响应数据
     if (typeof realStatsData !== 'object' || realStatsData === null) {
       throw new Error('统计数据格式错误')
     }
 
-    // 保存数据
     statistics.value = realStatsData
     console.log('保存后的统计数据:', statistics.value)
   } catch (err: any) {
-    // 处理错误
     console.error('统计数据请求失败:', err)
     error.value = '网络错误，请稍后重试'
     statistics.value = null
@@ -632,7 +644,6 @@ const fetchStatisticsData = async () => {
 
 // 获取学习建议数据
 const fetchSuggestionsData = async () => {
-  // 验证参数
   if (!userId.value) {
     error.value = '请输入用户ID'
     ElMessage.error('请输入用户ID')
@@ -643,13 +654,11 @@ const fetchSuggestionsData = async () => {
   error.value = ''
 
   try {
-    // 打印请求参数
     console.log('请求学习建议参数:', {
       timeRange: selectedTimeRange.value,
       userId: userId.value,
     })
 
-    // 请求真实接口
     console.log('开始请求学习建议...')
     const realSuggestionsData = await getStudySuggestions({
       timeRange: selectedTimeRange.value,
@@ -659,12 +668,10 @@ const fetchSuggestionsData = async () => {
     console.log('学习建议请求成功')
     console.log('完整学习建议响应:', realSuggestionsData)
 
-    // 验证响应数据
     if (typeof realSuggestionsData !== 'object' || realSuggestionsData === null) {
       throw new Error('学习建议数据格式错误')
     }
 
-    // 处理业务逻辑错误
     if (realSuggestionsData.success === false) {
       console.error('业务逻辑错误:', realSuggestionsData.message || '生成失败')
       error.value = '生成失败'
@@ -673,15 +680,8 @@ const fetchSuggestionsData = async () => {
       return
     }
 
-    // 确保suggestions是数组
     let suggestionsArray = []
     if (realSuggestionsData && typeof realSuggestionsData === 'object') {
-      // 打印所有可能的字段路径
-      console.log('检查suggestions字段...')
-      console.log('realSuggestionsData.suggestions:', realSuggestionsData.suggestions)
-      console.log('realSuggestionsData.data:', realSuggestionsData.data)
-      console.log('realSuggestionsData.data?.suggestions:', realSuggestionsData.data?.suggestions)
-
       if (Array.isArray(realSuggestionsData.suggestions)) {
         suggestionsArray = realSuggestionsData.suggestions
         console.log('使用realSuggestionsData.suggestions数组')
@@ -695,7 +695,6 @@ const fetchSuggestionsData = async () => {
         suggestionsArray = realSuggestionsData.data
         console.log('使用realSuggestionsData.data数组')
       } else {
-        // 尝试提取可能的suggestions字段
         const possibleSuggestions =
           realSuggestionsData.suggestions || realSuggestionsData.data || []
         if (Array.isArray(possibleSuggestions)) {
@@ -710,22 +709,15 @@ const fetchSuggestionsData = async () => {
 
     suggestions.value = suggestionsArray || []
     console.log('最终suggestions:', suggestions.value)
-
-    // 打印保存后的数据
     console.log('保存后的学习建议:', suggestions.value)
   } catch (err: any) {
-    // 处理错误
     console.error('学习建议请求失败:', err)
     error.value = '网络错误，请稍后重试'
-    // 设置默认提示项
     suggestions.value = ['AI 服务暂时不可用，请稍后再试。']
 
-    // 优化错误提示
     if (err.code === 'ECONNABORTED') {
-      // 请求超时
       ElMessage.error('网络连接超时，请检查网络设置')
     } else {
-      // 其他错误
       ElMessage.error('AI 服务繁忙，请稍后再试')
     }
   } finally {
@@ -737,26 +729,13 @@ const fetchSuggestionsData = async () => {
 const initDonutChart = () => {
   if (!donutChartRef.value || !statistics.value) return
 
-  // 销毁已有的图表实例
   if (donutChartInstance) {
     donutChartInstance.dispose()
   }
 
-  // 创建新的图表实例
   donutChartInstance = echarts.init(donutChartRef.value)
-
-  // 计算总计划数
   const totalCount = statistics.value.totalPlanCount || 0
 
-  // 准备数据
-  // 确保与下方统计数据完全一致
-  console.log('环形图数据来源:', {
-    completedPlanCount: statistics.value.completedPlanCount,
-    unfinishedCount: statistics.value.unfinishedCount,
-    overduePlanCount: statistics.value.overduePlanCount,
-  })
-
-  // 直接使用统计数据中的字段，确保完全一致
   const completedCount = statistics.value.completedPlanCount || 0
   const unfinishedCount = statistics.value.unfinishedCount || 0
   const overdueCount = statistics.value.overduePlanCount || 0
@@ -771,42 +750,30 @@ const initDonutChart = () => {
     {
       name: '已完成',
       value: completedCount,
-      itemStyle: {
-        color: '#67c23a', // 绿色
-      },
+      itemStyle: { color: '#67c23a' },
     },
     {
       name: '未完成',
       value: unfinishedCount,
-      itemStyle: {
-        color: '#e6a23c', // 橙色
-      },
+      itemStyle: { color: '#e6a23c' },
     },
     {
       name: '延期',
       value: overdueCount,
-      itemStyle: {
-        color: '#f56c6c', // 红色
-      },
+      itemStyle: { color: '#f56c6c' },
     },
   ]
 
-  // 图表配置
   const option = {
-    // 图例
     legend: {
       orient: 'horizontal',
       bottom: 10,
       left: 'center',
-      textStyle: {
-        fontSize: 12,
-        color: '#666',
-      },
+      textStyle: { fontSize: 12, color: '#666' },
       itemWidth: 12,
       itemHeight: 12,
       itemGap: 20,
     },
-    // 提示框
     tooltip: {
       trigger: 'item',
       formatter: function (params: any) {
@@ -815,65 +782,41 @@ const initDonutChart = () => {
       },
       backgroundColor: 'rgba(0, 0, 0, 0.7)',
       borderColor: '#409eff',
-      textStyle: {
-        color: '#fff',
-      },
+      textStyle: { color: '#fff' },
     },
-    // 系列配置
     series: [
-      // 环形图系列
       {
         type: 'pie',
-        radius: ['60%', '80%'], // 环形图内外半径
-        center: ['50%', '45%'], // 图表中心位置，确保与标题对齐
+        radius: ['60%', '80%'],
+        center: ['50%', '45%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
           borderColor: '#fff',
           borderWidth: 2,
         },
-        label: {
-          show: false, // 不显示标签
-          position: 'center',
-        },
+        label: { show: false, position: 'center' },
         emphasis: {
-          label: {
-            show: false,
-          },
+          label: { show: false },
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
             shadowColor: 'rgba(0, 0, 0, 0.5)',
           },
         },
-        labelLine: {
-          show: false,
-        },
+        labelLine: { show: false },
         data: data,
       },
-      // 中心文字系列
       {
         type: 'gauge',
         startAngle: 90,
         endAngle: -270,
-        pointer: {
-          show: false,
-        },
-        progress: {
-          show: false,
-        },
-        axisLine: {
-          show: false,
-        },
-        splitLine: {
-          show: false,
-        },
-        axisTick: {
-          show: false,
-        },
-        axisLabel: {
-          show: false,
-        },
+        pointer: { show: false },
+        progress: { show: false },
+        axisLine: { show: false },
+        splitLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { show: false },
         detail: {
           valueAnimation: true,
           fontSize: 30,
@@ -893,10 +836,7 @@ const initDonutChart = () => {
     ],
   }
 
-  // 设置图表配置
   donutChartInstance.setOption(option)
-
-  // 监听窗口大小变化，自动调整图表大小
   window.addEventListener('resize', handleResize)
 }
 
@@ -904,20 +844,14 @@ const initDonutChart = () => {
 const initPieChart = () => {
   if (!pieChartRef.value || !statistics.value) return
 
-  // 销毁已有的图表实例
   if (pieChartInstance) {
     pieChartInstance.dispose()
   }
 
-  // 创建新的图表实例
   pieChartInstance = echarts.init(pieChartRef.value)
-
-  // 准备数据 - 统一三个时间维度都显示「计划难度分布」
   let distributionData = []
 
-  // 难度分布数据
   if (statistics.value.difficultyDistribution && statistics.value.difficultyDistribution.details) {
-    // 难度名称映射
     const difficultyMap: Record<string, string> = {
       easy: '简单',
       medium: '中等',
@@ -928,7 +862,6 @@ const initPieChart = () => {
       value: item.count,
     }))
   } else {
-    // 默认测试数据
     distributionData = [
       { name: '简单', value: 3 },
       { name: '中等', value: 5 },
@@ -936,33 +869,20 @@ const initPieChart = () => {
     ]
   }
 
-  // 计算总计划数
   const totalCount = distributionData.reduce((sum: number, item: any) => sum + item.value, 0)
-
-  // 颜色列表 - 与现有页面风格统一
   const colorList = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#5470c6']
-
-  // 准备数据（添加颜色）
   const data = distributionData.map((item: any, index: number) => ({
     ...item,
-    itemStyle: {
-      color: colorList[index % colorList.length],
-    },
+    itemStyle: { color: colorList[index % colorList.length] },
   }))
 
-  // 图表配置
   const option = {
-    // 图例
     legend: {
       orient: 'vertical',
       right: 10,
       top: 'center',
-      textStyle: {
-        fontSize: 12,
-        color: '#666',
-      },
+      textStyle: { fontSize: 12, color: '#666' },
     },
-    // 提示框
     tooltip: {
       trigger: 'item',
       formatter: function (params: any) {
@@ -971,26 +891,20 @@ const initPieChart = () => {
       },
       backgroundColor: 'rgba(0, 0, 0, 0.7)',
       borderColor: '#409eff',
-      textStyle: {
-        color: '#fff',
-      },
+      textStyle: { color: '#fff' },
     },
-    // 系列配置
     series: [
       {
         type: 'pie',
         radius: '60%',
-        center: ['50%', '50%'], // 调整为50%，与标题对齐
+        center: ['50%', '50%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
           borderColor: '#fff',
           borderWidth: 2,
         },
-        label: {
-          show: false,
-          position: 'center',
-        },
+        label: { show: false, position: 'center' },
         emphasis: {
           label: {
             show: true,
@@ -1007,18 +921,13 @@ const initPieChart = () => {
             shadowColor: 'rgba(0, 0, 0, 0.5)',
           },
         },
-        labelLine: {
-          show: false,
-        },
+        labelLine: { show: false },
         data: data,
       },
     ],
   }
 
-  // 设置图表配置
   pieChartInstance.setOption(option)
-
-  // 监听窗口大小变化，自动调整图表大小
   window.addEventListener('resize', handleResize)
 }
 
@@ -1054,10 +963,8 @@ watch(
   () => selectedTimeRange.value,
   () => {
     console.log('时间范围变化，重置建议状态')
-    // 重置建议相关状态
     suggestions.value = []
     error.value = ''
-    // 这样就会重新显示生成按钮
   },
 )
 
@@ -1073,40 +980,25 @@ const showAlert = (message: string) => {
 }
 
 onBeforeMount(() => {
-  console.log('StudyManagement组件挂载前检查')
+  console.log('组件挂载前检查登录状态')
 
+  // 检查是否有token
   const token = localStorage.getItem('userToken')
-  const isLoggedIn = userStore.userState.isLoggedIn
+  console.log('当前token:', token)
 
-  console.log('检查结果:', { token, isLoggedIn })
-
-  // 如果没有token，直接重定向
   if (!token) {
-    console.log('没有token，重定向到登录页')
+    console.log('未登录，重定向到登录页')
     router.replace('/login')
-    return
-  }
-
-  // 如果有token但store状态不对，尝试恢复
-  if (token && !isLoggedIn) {
-    console.log('有token但store未登录，尝试恢复')
-    const restored = userStore.restoreFromStorage()
-
-    if (!restored) {
-      console.log('恢复失败，清除token并重定向')
-      localStorage.removeItem('userToken')
-      localStorage.removeItem('userInfo')
-      router.replace('/login')
-      return
-    }
   }
 })
 
+// 生命周期钩子 - 初始化和窗口大小监听
 onMounted(async () => {
-  console.log('StudyManagement组件挂载')
+  console.log('组件挂载，最终检查登录状态')
 
   // 最终检查
-  if (!userStore.userState.isLoggedIn) {
+  const token = localStorage.getItem('userToken')
+  if (!token) {
     console.log('最终检查未登录，重定向到登录页')
     router.replace('/login')
     return
