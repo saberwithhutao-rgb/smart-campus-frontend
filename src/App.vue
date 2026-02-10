@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
@@ -7,18 +7,26 @@ import { useRouter } from 'vue-router'
 const userStore = useUserStore()
 const router = useRouter()
 
+// 全局状态检查函数
 function globalAuthCheck() {
   const token = localStorage.getItem('userToken')
   const isLoggedIn = userStore.userState.isLoggedIn
 
-  console.log('全局状态检查:', { token, isLoggedIn })
+  console.log('🔍 全局状态检查:', { token, isLoggedIn })
 
   if (!token && isLoggedIn) {
-    console.log('检测到状态异常: 无token但显示已登录，修正状态')
+    console.log('⚠️ 检测到状态异常: 无token但显示已登录，修正状态')
     userStore.userState.isLoggedIn = false
     userStore.userState.userInfo = null
   }
+
+  // 如果store未登录但有token，尝试恢复
+  if (token && !isLoggedIn) {
+    console.log('🔄 有token但store未登录，尝试恢复状态')
+    userStore.restoreFromStorage()
+  }
 }
+
 // 页面加载的时段问候提示功能
 const showGreetingMessage = () => {
   const GREETING_KEY = 'system_greeting_shown'
@@ -62,10 +70,8 @@ const showGreetingMessage = () => {
 
     // 设置过期时间（当天有效）
     const tomorrow = new Date()
-    tomorrow.setHours(24, 0, 0, 0) // 设置到明天0点
+    tomorrow.setHours(24, 0, 0, 0)
     const expires = tomorrow.getTime()
-
-    // 保存过期时间
     localStorage.setItem(`${GREETING_KEY}_expires`, expires.toString())
   } else {
     // 检查是否过期（跨天了）
@@ -73,7 +79,6 @@ const showGreetingMessage = () => {
     if (expiresStr) {
       const expires = parseInt(expiresStr)
       if (Date.now() > expires) {
-        // 已过期，清除并重新显示
         localStorage.removeItem(GREETING_KEY)
         localStorage.removeItem(`${GREETING_KEY}_expires`)
         showGreetingMessage()
@@ -81,37 +86,96 @@ const showGreetingMessage = () => {
     }
   }
 }
-// 页面首次加载时触发
-onMounted(() => {
-  showGreetingMessage()
-  globalAuthCheck()
+
+// Storage事件处理函数
+const handleStorageChange = (e: StorageEvent) => {
+  console.log('📡 Storage事件:', e.key, e.oldValue, '→', e.newValue)
+
+  if (e.key === 'userToken') {
+    if (!e.newValue) {
+      console.log('🗑️ 检测到token被清除，同步状态')
+      userStore.userState.isLoggedIn = false
+      userStore.userState.userInfo = null
+
+      // 如果不是在登录页，跳转到登录页
+      if (!router.currentRoute.value.path.includes('/login')) {
+        console.log('重定向到登录页')
+        router.replace('/login')
+      }
+    } else if (e.newValue && e.newValue !== e.oldValue) {
+      console.log('🔄 检测到token变化，恢复状态')
+      userStore.restoreFromStorage()
+    }
+  }
+}
+
+// 全局路由守卫
+router.beforeEach((to, from, next) => {
+  console.log('🚦 路由守卫: ', from.path, '→', to.path)
+
+  // 公开页面列表（不需要登录）
+  const publicPages = ['/login', '/register', '/index', '/']
+
+  // 如果是公开页面，直接放行
+  if (publicPages.includes(to.path)) {
+    // 如果已登录且访问登录页，重定向到首页
+    if ((to.path === '/login' || to.path === '/register') && userStore.userState.isLoggedIn) {
+      console.log('已登录用户访问登录页，重定向到首页')
+      next('/index')
+      return
+    }
+    next()
+    return
+  }
+
+  // 检查登录状态
+  const token = localStorage.getItem('userToken')
+  if (!token) {
+    console.log('❌ 未登录，重定向到登录页')
+    next('/login')
+    return
+  }
+
+  // 有token但store状态不对，尝试恢复
+  if (!userStore.userState.isLoggedIn) {
+    console.log('🔄 有token但store未登录，尝试恢复')
+    userStore.restoreFromStorage()
+  }
+
+  next()
 })
 
-watch(
-  () => userStore.userState.isLoggedIn,
-  (newVal, oldVal) => {
-    console.log('登录状态变化:', { old: oldVal, new: newVal })
+router.afterEach((to) => {
+  console.log('✅ 路由跳转完成: ', to.path)
 
-    if (!newVal) {
-      // 如果是false，检查当前页面是否需要登录
-      const currentPath = window.location.pathname
-      const publicPages = ['/login', '/register', '/index', '/', '/logout']
-
-      if (!publicPages.includes(currentPath)) {
-        console.log('用户退出登录，当前页面需要登录，延迟跳转')
-        // 使用setTimeout避免在路由守卫中重复跳转
-        setTimeout(() => {
-          router.replace('/login')
-        }, 100)
-      }
-    }
-  },
-  { deep: true },
-)
-router.afterEach((to, from) => {
+  // 访问登录页时强制检查状态
   if (to.path === '/login') {
     globalAuthCheck()
   }
+})
+
+// 页面首次加载时触发
+onMounted(() => {
+  console.log('🚀 App.vue 挂载')
+
+  // 显示问候
+  showGreetingMessage()
+
+  // 初始状态检查
+  globalAuthCheck()
+
+  // 添加storage事件监听（跨标签页同步）
+  window.addEventListener('storage', handleStorageChange)
+
+  // 添加全局错误处理
+  window.addEventListener('error', (event) => {
+    console.error('🌐 全局错误:', event.error)
+  })
+})
+
+// 清理事件监听
+onBeforeUnmount(() => {
+  window.removeEventListener('storage', handleStorageChange)
 })
 </script>
 

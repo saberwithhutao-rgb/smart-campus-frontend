@@ -88,7 +88,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function logout(redirectToLogin: boolean = true) {
-    console.log('开始执行退出登录...')
+    console.log('执行退出登录...')
 
     // 1. 清除store状态
     userState.value = {
@@ -96,27 +96,14 @@ export const useUserStore = defineStore('user', () => {
       userInfo: null,
     }
 
-    // 2. 强制同步更新
-    if (import.meta.hot) {
-      // 开发模式下确保状态更新
-      import.meta.hot.on('pinia:hot', () => {
-        userState.value = {
-          isLoggedIn: false,
-          userInfo: null,
-        }
-      })
-    }
-
-    // 3. 清除所有存储
+    // 2. 清除所有存储
     clearStorage()
 
-    // 4. 跳转到登录页 - 使用硬跳转避免历史记录问题
+    console.log('退出登录完成')
+
+    // 3. 只有在指定时才跳转
     if (redirectToLogin) {
-      console.log('跳转到登录页...')
-      // 强制刷新页面，确保所有状态都被重置
-      window.location.href = '/login'
-      // 或者使用replace，但有时候需要强制刷新
-      // window.location.replace('/login')
+      window.location.replace('/login')
     }
   }
 
@@ -131,14 +118,17 @@ export const useUserStore = defineStore('user', () => {
       'userId',
       'sessionId',
       'lastLoginTime',
+      'redirectAfterLogin', // 添加这个
+      'system_greeting_shown', // 添加这个
+      'system_greeting_shown_expires', // 添加这个
     ]
 
     tokenKeys.forEach((key) => {
       localStorage.removeItem(key)
-      sessionStorage.removeItem(key) // 同时清除sessionStorage
+      sessionStorage.removeItem(key)
     })
 
-    // 清除所有cookie（如果有）
+    // 清除所有cookie
     document.cookie.split(';').forEach((cookie) => {
       const name = cookie.trim().split('=')[0]
       document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`

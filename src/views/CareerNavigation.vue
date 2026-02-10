@@ -1,69 +1,6 @@
 <template>
   <div class="career-navigation">
-    <!-- 顶部导航栏 - 复用智能问答导航栏 -->
-    <nav class="navbar">
-      <div class="navbar-container">
-        <!-- Logo区域 -->
-        <div class="logo">
-          <div class="logo-placeholder">logo</div>
-        </div>
-
-        <!-- 导航菜单 -->
-        <div class="nav-menu" :class="{ 'mobile-menu': isMobile }">
-          <div class="nav-item" @click="router.push('/index')">首页</div>
-
-          <div class="nav-item has-submenu">
-            个性化学习伴侣
-            <div class="submenu">
-              <div class="submenu-item" @click="router.push('/ai/chat')">智能问答</div>
-              <div class="submenu-item" @click="router.push('/ai/study')">个性化规划</div>
-            </div>
-          </div>
-
-          <div class="nav-item has-submenu">
-            校园生活
-            <div class="submenu">
-              <div class="submenu-item" @click="router.push('/campus/analysis')">学习管理</div>
-              <div class="submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
-            </div>
-          </div>
-
-          <div class="nav-item has-submenu">
-            竞赛相关
-            <div class="submenu">
-              <div class="submenu-item" @click="router.push('/career/competitions')">竞赛管理</div>
-              <div class="submenu-item" @click="router.push('/career/position')">职业导航</div>
-              <div class="submenu-item" @click="router.push('/career/pee')">考研支持</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 右侧操作区 -->
-        <div class="nav-actions">
-          <!-- 登录按钮 - 未登录时显示 -->
-          <button
-            v-if="!userStore.userState.isLoggedIn"
-            class="btn-login"
-            @click="router.push('/login')"
-          >
-            <span class="login-icon">👤</span>
-            登录
-          </button>
-
-          <!-- 个人中心 -->
-          <div class="user-center">
-            <button class="btn-user-center" @click="showUserCenter = !showUserCenter">
-              个人中心
-            </button>
-            <!-- 个人中心下拉菜单 -->
-            <div v-if="showUserCenter" class="user-center-dropdown">
-              <div class="dropdown-item" @click="router.push('/profile')">个人信息</div>
-              <div class="dropdown-item logout" @click="router.push('/login')">退出登录</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <GlobalNavbar />
 
     <!-- 主体内容区 -->
     <div class="main-content">
@@ -371,6 +308,7 @@
 </template>
 
 <script setup lang="ts">
+import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'

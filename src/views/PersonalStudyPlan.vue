@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GlobalNavbar from '../components/GlobalNavbar.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
@@ -199,12 +200,12 @@ const addPlan = () => {
 // 打开编辑计划弹窗
 const openEditModalHandler = (plan: StudyPlan) => {
   currentEditPlan.value = plan
-  editPlan.value = { 
-    ...plan, 
+  editPlan.value = {
+    ...plan,
     id: plan.id,
     subjects: plan.subjects,
-    difficulty: plan.subjects[0] || '中', 
-    time: `${plan.startDate} - ${plan.endDate}` 
+    difficulty: plan.subjects[0] || '中',
+    time: `${plan.startDate} - ${plan.endDate}`,
   }
   showEditModal.value = true
 }
@@ -263,110 +264,7 @@ onMounted(() => {
 
 <template>
   <div class="smart-qa-container">
-    <!-- 顶部导航栏 - 完全复用首页导航栏（含所有交互） -->
-    <nav class="navbar">
-      <div class="navbar-container">
-        <!-- Logo区域 -->
-        <div class="logo">
-          <div class="logo-placeholder">logo</div>
-        </div>
-
-        <!-- 导航菜单 -->
-        <div class="nav-menu" :class="{ 'mobile-menu': isMobile }">
-          <div
-            class="nav-item"
-            :class="{ active: activeMenu === '首页' }"
-            @click="handleMenuClick('首页')"
-            @mouseenter="showSubMenuHandler('首页')"
-            @mouseleave="hideSubMenu"
-          >
-            首页
-          </div>
-
-          <div
-            class="nav-item has-submenu"
-            @mouseenter="showSubMenuHandler('个性化学习伴侣')"
-            @mouseleave="hideSubMenu"
-            @click="handleMenuClick('个性化学习伴侣')"
-          >
-            个性化学习伴侣
-            <!-- 子菜单悬浮层 -->
-            <div v-if="showSubMenu === '个性化学习伴侣' && !isMobile" class="submenu">
-              <!-- 智能问答 - 点击跳转到智能问答页面 -->
-              <div class="submenu-item" @click="goToSmartQA">智能问答</div>
-              <!-- 个性化规划 - 点击跳转到个性化规划页面 -->
-              <div class="submenu-item" @click="router.push('/ai/study')">个性化规划</div>
-            </div>
-            <!-- 移动端子菜单 -->
-            <div v-if="showSubMenu === '个性化学习伴侣' && isMobile" class="mobile-submenu">
-              <div class="mobile-submenu-item" @click="goToSmartQA">智能问答</div>
-              <div class="mobile-submenu-item" @click="router.push('/ai/study')">个性化规划</div>
-            </div>
-          </div>
-
-          <div
-            class="nav-item has-submenu"
-            @mouseenter="showSubMenuHandler('校园生活')"
-            @mouseleave="hideSubMenu"
-            @click="handleMenuClick('校园生活')"
-          >
-            校园生活
-            <!-- 子菜单悬浮层 -->
-            <div v-if="showSubMenu === '校园生活' && !isMobile" class="submenu">
-              <div class="submenu-item" @click="goToStudyManagement">学习管理</div>
-              <div class="submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
-            </div>
-            <!-- 移动端子菜单 -->
-            <div v-if="showSubMenu === '校园生活' && isMobile" class="mobile-submenu">
-              <div class="mobile-submenu-item" @click="goToStudyManagement">学习管理</div>
-              <div class="mobile-submenu-item">馆藏实况</div>
-            </div>
-          </div>
-
-          <div
-            class="nav-item has-submenu"
-            @mouseenter="showSubMenuHandler('竞赛相关')"
-            @mouseleave="hideSubMenu"
-            @click="handleMenuClick('竞赛相关')"
-          >
-            竞赛相关
-            <!-- 子菜单悬浮层 -->
-            <div v-if="showSubMenu === '竞赛相关' && !isMobile" class="submenu">
-              <div class="submenu-item" @click="goToCompetitionManagement">竞赛管理</div>
-              <div class="submenu-item" @click="goToCareerNavigation">职业导航</div>
-              <div class="submenu-item" @click="router.push('/career/pee')">考研支持</div>
-            </div>
-            <!-- 移动端子菜单 -->
-            <div v-if="showSubMenu === '竞赛相关' && isMobile" class="mobile-submenu">
-              <div class="mobile-submenu-item" @click="goToCompetitionManagement">竞赛管理</div>
-              <div class="mobile-submenu-item" @click="goToCareerNavigation">职业导航</div>
-              <div class="mobile-submenu-item" @click="router.push('/career/pee')">考研支持</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 右侧操作区 -->
-        <div class="nav-actions">
-          <!-- 登录按钮 - 未登录时显示 -->
-          <button v-if="!userStore.userState.isLoggedIn" class="btn-login" @click="goToLogin">
-            <span class="login-icon">👤</span>
-            登录
-          </button>
-
-          <!-- 个人中心 -->
-          <div class="user-center">
-            <button class="btn-user-center" @click="toggleUserCenter">个人中心</button>
-            <!-- 个人中心下拉菜单 -->
-            <div v-if="showUserCenter" class="user-center-dropdown">
-              <div class="dropdown-item" @click="handleUserMenuClick('个人信息')">个人信息</div>
-              <div class="dropdown-item logout" @click="handleUserMenuClick('退出登录')">
-                退出登录
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <GlobalNavbar />
 
     <!-- 主内容区 -->
     <div class="main-content">
@@ -426,46 +324,46 @@ onMounted(() => {
 
             <!-- 计划列表 -->
             <div class="plan-list">
-<div
-  v-for="plan in studyPlans"
-  :key="plan.id"
-  class="plan-item"
-  :class="{ 'plan-item-completed': plan.progress >= 100 }"
->
-  <!-- 计划左侧：名称和完成情况 -->
-  <div class="plan-left">
-    <div class="plan-complete">
-      <input type="checkbox" v-model="plan.progress" class="complete-checkbox" />
-    </div>
-    <div class="plan-name">{{ plan.title }}</div>
-  </div>
+              <div
+                v-for="plan in studyPlans"
+                :key="plan.id"
+                class="plan-item"
+                :class="{ 'plan-item-completed': plan.progress >= 100 }"
+              >
+                <!-- 计划左侧：名称和完成情况 -->
+                <div class="plan-left">
+                  <div class="plan-complete">
+                    <input type="checkbox" v-model="plan.progress" class="complete-checkbox" />
+                  </div>
+                  <div class="plan-name">{{ plan.title }}</div>
+                </div>
 
-  <!-- 计划右侧：难度、时间和操作按钮 -->
-  <div class="plan-right">
-    <!-- 难度和时间 -->
-    <div class="plan-meta">
-      <div
-        class="plan-difficulty"
-        :class="{
-          'difficulty-hard': plan.subjects[0] === '难',
-          'difficulty-medium': plan.subjects[0] === '中',
-          'difficulty-easy': plan.subjects[0] === '易',
-        }"
-      >
-        {{ plan.title }}
-      </div>
-      <div class="plan-time-info">{{ `${plan.startDate} - ${plan.endDate}` }}</div>
-    </div>
+                <!-- 计划右侧：难度、时间和操作按钮 -->
+                <div class="plan-right">
+                  <!-- 难度和时间 -->
+                  <div class="plan-meta">
+                    <div
+                      class="plan-difficulty"
+                      :class="{
+                        'difficulty-hard': plan.subjects[0] === '难',
+                        'difficulty-medium': plan.subjects[0] === '中',
+                        'difficulty-easy': plan.subjects[0] === '易',
+                      }"
+                    >
+                      {{ plan.title }}
+                    </div>
+                    <div class="plan-time-info">{{ `${plan.startDate} - ${plan.endDate}` }}</div>
+                  </div>
 
-    <!-- 操作按钮 - 右下角位置，更小字体 -->
-    <div class="plan-actions">
-      <button class="action-btn edit-btn" @click="openEditModalHandler(plan)">
-        修改
-      </button>
-      <button class="action-btn delete-btn" @click="deletePlan(plan.id)">删除</button>
-    </div>
-  </div>
-</div>
+                  <!-- 操作按钮 - 右下角位置，更小字体 -->
+                  <div class="plan-actions">
+                    <button class="action-btn edit-btn" @click="openEditModalHandler(plan)">
+                      修改
+                    </button>
+                    <button class="action-btn delete-btn" @click="deletePlan(plan.id)">删除</button>
+                  </div>
+                </div>
+              </div>
 
               <!-- 空状态 -->
               <div v-if="studyPlans.length === 0" class="empty-state">
