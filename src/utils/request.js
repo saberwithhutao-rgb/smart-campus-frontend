@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 
 // 创建axios实例
 const request = axios.create({
-  baseURL: '/api', // 使用代理路径，与api/index.ts保持一致
+  baseURL: '',
   timeout: 60000, // 请求超时时间，改为60秒以适应大模型生成
   headers: {
     'Content-Type': 'application/json;charset=utf-8',
@@ -13,8 +13,7 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
-    // 可以在这里添加token等认证信息
-    // config.headers.Authorization = localStorage.getItem('token');
+    config.headers.Authorization = localStorage.getItem('token')
     return config
   },
   (error) => {
