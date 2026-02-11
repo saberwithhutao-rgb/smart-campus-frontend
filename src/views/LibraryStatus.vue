@@ -219,15 +219,12 @@ const enterLibrary = async () => {
     console.log('进入图书馆请求参数:', { userId: userId.value })
 
     // 1. 先调用记录图书馆时间的接口
-    const timeResponse = await fetch(
-      `http://localhost:8080/api/library/enter?userId=${userId.value}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    const timeResponse = await fetch(`/api/library/enter?userId=${userId.value}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    )
+    })
 
     const timeData = await timeResponse.json()
     console.log('记录图书馆时间响应:', timeData)
@@ -291,15 +288,12 @@ const leaveLibrary = async () => {
     isLoading.value = true
 
     // 1. 先调用记录图书馆时间的接口
-    const timeResponse = await fetch(
-      `http://localhost:8080/api/library/leave?recordId=${recordId.value}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    const timeResponse = await fetch(`/api/library/leave?recordId=${recordId.value}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    )
+    })
 
     const timeData = await timeResponse.json()
     console.log('记录图书馆离开时间响应:', timeData)
@@ -353,15 +347,12 @@ const leaveLibrary = async () => {
 const fetchTodayDuration = async () => {
   try {
     console.log('查询今日总时长请求参数:', { userId: userId.value })
-    const response = await fetch(
-      `http://localhost:8080/api/library/today-duration?userId=${userId.value}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    const response = await fetch(`/api/library/today-duration?userId=${userId.value}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    )
+    })
 
     const data = await response.json()
     console.log('查询今日总时长响应:', data)
