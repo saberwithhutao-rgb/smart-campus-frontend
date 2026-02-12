@@ -323,7 +323,7 @@ export const api = {
     request<ApiResponse<null>>({
       method: 'POST',
       url: '/api/university/toggle',
-      params: { universityId },
+      data: { universityId },
     }),
 
   checkUniversityFavorite: (universityId: number) =>
