@@ -93,7 +93,6 @@ const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) 
 
 /**
  * ✅ 处理通义千问流式响应 - OpenAI 兼容格式
- * 格式: {"choices":[{"delta":{"content":"你好"},"finish_reason":null}]}
  */
 const processTongyiStream = async (
   response: Response,
@@ -115,6 +114,7 @@ const processTongyiStream = async (
     safeUpdateMessage(aiMessageIndex, '请先登录', false)
     return
   }
+
   try {
     while (true) {
       const { done, value } = await reader.read()
@@ -152,16 +152,19 @@ const processTongyiStream = async (
                 const chunk = choice.delta.content
                 accumulatedText += chunk
 
+                // ===== 🟢 关键修复：立即更新UI，显示AI的回答 =====
+                safeUpdateMessage(aiMessageIndex, accumulatedText, true)
+                // ============================================
+
                 // 是否完成
                 const isDone = choice.finish_reason === 'stop'
 
-                // 更新UI
-                safeUpdateMessage(aiMessageIndex, accumulatedText, !isDone)
-
                 // 如果已完成
                 if (isDone) {
+                  // 完成时更新为加载完成状态
                   safeUpdateMessage(aiMessageIndex, accumulatedText, false)
 
+                  // 保存完整对话
                   if (token) {
                     await fetch('/ai/chat/save', {
                       method: 'POST',
@@ -171,10 +174,10 @@ const processTongyiStream = async (
                       },
                       body: JSON.stringify({
                         sessionId: currentSessionId.value,
-                        question: question, // 你需要把question传进来
+                        question: question,
                         answer: accumulatedText,
                       }),
-                    })
+                    }).catch((err) => console.error('保存对话失败:', err))
                   }
 
                   reader.releaseLock()
