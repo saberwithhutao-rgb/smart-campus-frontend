@@ -152,6 +152,7 @@ export const useUserStore = defineStore('user', () => {
       }
 
       const data = response.data
+      const email = data.email || ''
 
       // 创建完整的userInfo对象
       const userInfo: UserInfo = {
@@ -160,7 +161,7 @@ export const useUserStore = defineStore('user', () => {
         role: data.role || 'user',
         username: data.username,
         userId: 0,
-        email: '',
+        email,
         avatar: '',
         studentId: '',
         major: '',
@@ -181,7 +182,7 @@ export const useUserStore = defineStore('user', () => {
           role: data.role,
           username: data.username,
           userId: 0,
-          email: '',
+          email,
           avatar: '',
           studentId: '',
           major: '',
