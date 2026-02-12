@@ -144,7 +144,10 @@ const processTongyiStream = async (
           if (!trimmedLine.startsWith('data:')) continue
 
           // 🟢 关键修复：使用 replace 去掉 "data:" 前缀
-          const jsonStr = trimmedLine.replace(/^data:\s*/, '').trim()
+          let jsonStr = trimmedLine
+          while (jsonStr.startsWith('data:')) {
+            jsonStr = jsonStr.substring(5).trim()
+          }
 
           // 调试日志
           if (jsonStr.length > 0 && jsonStr !== '[DONE]') {
