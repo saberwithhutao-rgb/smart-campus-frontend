@@ -33,20 +33,19 @@ const service: AxiosInstance = axios.create({
 })
 
 // 新增类型定义
-interface CaptchaDataResponse {
-  code: number
-  data: string
-  message: string
-  captchaId: string
-  expiresIn: number
-  captchaBase64: string
-}
-
 interface LoginData {
   token: string
   role: string
   username: string
-  refreshToken?: string
+  email: string // 邮箱
+  avatar: string // 头像URL
+  studentId: string // 学号
+  major: string // 专业
+  college: string // 学院
+  grade: string // 年级
+  gender: string // 性别
+  genderText: string // 性别文本描述
+  refreshToken?: string // 可选字段
 }
 
 interface ChatResponse {
