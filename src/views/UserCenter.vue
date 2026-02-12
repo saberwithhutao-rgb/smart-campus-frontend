@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue' // 添加 computed
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 
@@ -54,6 +54,16 @@ const router = useRouter()
 
 // 用户状态管理
 const userStore = useUserStore()
+
+// ✅ 从 store 获取真实用户信息
+const userInfo = computed(() => {
+  const storeUser = userStore.userState?.userInfo
+  return {
+    nickname: storeUser?.username || storeUser?.username || '用户',
+    email: storeUser?.email || '未设置邮箱',
+    avatar: storeUser?.avatar || 'https://via.placeholder.com/120',
+  }
+})
 
 // 检查屏幕尺寸 - 响应式设计
 const isMobile = ref(false)
@@ -67,25 +77,19 @@ const checkScreenSize = () => {
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
-})
 
-// 用户信息
-const userInfo = ref({
-  nickname: '用户123',
-  email: 'user@example.com',
-  avatar: 'https://via.placeholder.com/120',
+  // ✅ 确保用户信息已加载
+  userStore.restoreFromStorage?.()
 })
 
 // 跳转到修改资料页面
 const goToEditProfile = () => {
-  // 这里可以跳转到修改资料页面，暂时用alert模拟
   alert('修改资料功能开发中...')
 }
 
-// 跳转到学习统计页面
+// ✅ 跳转到真正的学习统计页面
 const goToStudyStats = () => {
-  // 这里可以跳转到学习统计页面，暂时用alert模拟
-  alert('学习统计功能开发中...')
+  router.push('/campus/analysis')
 }
 
 // 个人中心菜单项点击
@@ -93,6 +97,12 @@ const handleUserMenuClick = (item: string) => {
   if (item === '个人信息') {
     router.push('/profile')
   } else if (item === '退出登录') {
+    // 退出登录逻辑
+    localStorage.removeItem('userToken')
+    localStorage.removeItem('userInfo')
+    localStorage.removeItem('userId')
+    userStore.userState.isLoggedIn = false
+    userStore.userState.userInfo = null
     router.push('/login')
   }
   showUserCenter.value = false
