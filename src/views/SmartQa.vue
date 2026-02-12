@@ -70,43 +70,126 @@ const scrollToBottom = () => {
     }
   })
 }
+
 // 安全更新消息的函数
 const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) => {
-  console.log(`🔄 开始更新消息 ${index}，内容长度: ${content.length}，loading: ${isLoading}`)
-
-  // 边界检查
   if (index < 0 || index >= messages.value.length) {
-    console.error('❌ 消息索引超出范围:', index, '消息总数:', messages.value.length)
+    console.error('❌ 消息索引超出范围:', index)
     return
   }
 
   const message = messages.value[index]
-  if (!message) {
-    console.error('❌ 消息不存在，索引:', index)
-    return
-  }
+  if (!message) return
 
-  // 显示前50个字符用于调试
-  const preview =
-    content.length > 0 ? content.substring(0, Math.min(50, content.length)) : '[空内容]'
-  console.log(`📋 更新预览: "${preview}${content.length > 50 ? '...' : ''}"`)
-
-  // 使用Vue的响应式更新
   message.content = content
   if (isLoading !== undefined) {
     message.isLoading = isLoading
   }
 
-  // 强制触发响应式更新（如果需要）
+  // 强制触发响应式更新
   messages.value = [...messages.value]
-
-  console.log(`✅ 消息更新完成，新内容长度: ${message.content.length}`)
-
-  // 滚动到底部
   scrollToBottom()
 }
 
-// 主发送消息函数 - 默认使用流式输出
+/**
+ * ✅ 真正的流式处理 - 通义千问原生格式
+ * 格式: data: {"output":{"text":"xxx","finish_reason":null}}
+ */
+const processTongyiStream = async (response: Response, aiMessageIndex: number) => {
+  const reader = response.body?.getReader()
+  if (!reader) {
+    throw new Error('无法读取响应流')
+  }
+
+  const decoder = new TextDecoder()
+  let accumulatedText = ''
+  let buffer = ''
+
+  const token = localStorage.getItem('userToken')
+  if (!token) {
+    console.error('❌ 未找到用户令牌，请重新登录')
+    safeUpdateMessage(aiMessageIndex, '请先登录', false)
+    return
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) {
+        console.log('✅ 流式响应完成')
+        safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+        break
+      }
+
+      buffer += decoder.decode(value, { stream: true })
+
+      // SSE格式：data: {...}\n\n
+      const events = buffer.split('\n\n')
+      buffer = events.pop() || ''
+
+      for (const event of events) {
+        const lines = event.split('\n')
+        for (const line of lines) {
+          const trimmedLine = line.trim()
+          if (!trimmedLine.startsWith('data:')) continue
+
+          const jsonStr = trimmedLine.substring(5).trim()
+          if (!jsonStr || jsonStr === '[DONE]') continue
+
+          try {
+            const data = JSON.parse(jsonStr)
+
+            // ✅ 通义千问原生流式格式
+            if (data.output?.text) {
+              const fullText = data.output.text
+              accumulatedText = fullText
+
+              // 是否完成
+              const isDone = data.output.finish_reason === 'stop'
+
+              // 更新UI
+              safeUpdateMessage(aiMessageIndex, accumulatedText, !isDone)
+
+              // 如果已完成
+              if (isDone) {
+                const question = inputMessage.value.trim() // 明确获取用户输入的问题
+                if (!question) {
+                  console.warn('⚠️ 问题内容为空，跳过保存')
+                  return
+                }
+                // 保存完整对话
+                await fetch('/ai/chat/save', {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    sessionId: currentSessionId.value,
+                    question: question,
+                    answer: accumulatedText,
+                  }),
+                })
+              }
+            }
+          } catch (e) {
+            console.warn('⚠️ JSON解析失败:', e.message)
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ 读取流失败:', error)
+    safeUpdateMessage(aiMessageIndex, accumulatedText || '连接中断', false)
+  } finally {
+    reader.releaseLock()
+  }
+}
+
+/**
+ * ✅ 主发送消息函数 - 使用通义千问原生流式
+ */
 const sendMessage = async () => {
   if (!inputMessage.value.trim()) return
 
@@ -120,45 +203,25 @@ const sendMessage = async () => {
   messages.value.push(userMessage)
   scrollToBottom()
 
-  // 清空输入框
   const question = inputMessage.value
   inputMessage.value = ''
 
-  // 创建AI消息占位符
+  // 创建AI消息占位符（初始为空）
   const aiMessageId = Date.now() + 1
   const aiMessage: ChatMessage = {
     id: aiMessageId,
-    content: '思考中',
+    content: '', // 初始为空，不是"思考中"
     sender: 'ai',
     timestamp: new Date().toLocaleTimeString(),
     isLoading: true,
   }
-
-  // 添加到消息列表并记住索引
   messages.value.push(aiMessage)
   const aiMessageIndex = messages.value.length - 1
   scrollToBottom()
 
   try {
-    // 默认使用流式输出
-    await handleStreamChat(question, aiMessageIndex)
-  } catch (error) {
-    console.error('请求失败:', error)
-    safeUpdateMessage(
-      aiMessageIndex,
-      `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
-      false,
-    )
-  }
-}
-
-// 流式聊天处理函数
-const handleStreamChat = async (question: string, aiMessageIndex: number) => {
-  try {
-    // 直接从 localStorage 获取 token
     const token = localStorage.getItem('userToken')
     if (!token) {
-      console.error('❌ 未找到用户token')
       safeUpdateMessage(aiMessageIndex, '请先登录', false)
       setTimeout(() => router.push('/login'), 1500)
       return
@@ -169,173 +232,51 @@ const handleStreamChat = async (question: string, aiMessageIndex: number) => {
     if (currentSessionId.value) {
       formData.append('sessionId', currentSessionId.value)
     }
-    formData.append('stream', 'true')
+    formData.append('stream', 'true') // 启用流式
 
-    console.log('🚀 直接发送流式请求（绕过api拦截器）...')
+    console.log('🚀 发送通义千问流式请求...')
 
     const response = await fetch('/ai/chat', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
-        // 不要设置 Content-Type，让浏览器自动设置
       },
       body: formData,
     })
 
-    console.log('📊 响应状态:', response.status, response.statusText)
-    console.log('📄 Content-Type:', response.headers.get('content-type'))
-
     if (response.status === 401) {
-      console.warn('❌ Token无效或已过期')
       localStorage.removeItem('userToken')
-      localStorage.removeItem('token')
-      localStorage.removeItem('userInfo')
-
       safeUpdateMessage(aiMessageIndex, '登录已过期，请重新登录', false)
       setTimeout(() => router.push('/login'), 1500)
       return
     }
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ HTTP错误详情:', errorText)
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      throw new Error(`HTTP ${response.status}`)
     }
 
     const contentType = response.headers.get('content-type') || ''
 
     if (contentType.includes('text/event-stream')) {
-      console.log('✅ 后端返回SSE流式数据')
-      await processSSEResponse(response, aiMessageIndex)
+      // ✅ 使用通义千问原生流式处理器
+      await processTongyiStream(response, aiMessageIndex)
     } else {
-      console.log('⚠️ 后端返回非流式格式，降级处理')
-      await processJSONResponse(response, aiMessageIndex)
+      // 降级到JSON
+      const data = await response.json()
+      if (data.code === 200 && data.data?.answer) {
+        safeUpdateMessage(aiMessageIndex, data.data.answer, false)
+        if (data.data.sessionId) {
+          currentSessionId.value = data.data.sessionId
+        }
+      } else {
+        throw new Error(data.message || '未知错误')
+      }
     }
   } catch (error) {
-    console.error('❌ 流式处理失败:', error)
+    console.error('❌ 请求失败:', error)
     safeUpdateMessage(
       aiMessageIndex,
       `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
-      false,
-    )
-  }
-}
-// 简化的SSE处理（针对你的数据格式）
-const processSSEResponse = async (response: Response, aiMessageIndex: number) => {
-  const reader = response.body?.getReader()
-  if (!reader) {
-    throw new Error('无法读取响应流')
-  }
-
-  const decoder = new TextDecoder('utf-8')
-  let accumulatedText = ''
-
-  console.log('🎯 开始处理SSE响应（简化版）')
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) {
-        console.log('✅ SSE流读取完成')
-        safeUpdateMessage(aiMessageIndex, accumulatedText, false)
-        break
-      }
-
-      const text = decoder.decode(value)
-      console.log('📦 收到原始文本，长度:', text.length)
-
-      // 🔧 修复：使用正确的正则匹配完整JSON
-      // 匹配格式：data: {...} （支持嵌套花括号）
-      const dataRegex = /data:\s*(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})/g
-      let match
-
-      while ((match = dataRegex.exec(text)) !== null) {
-        try {
-          // 检查 match[1] 是否存在
-          if (!match[1]) {
-            console.warn('⚠️ 匹配结果为空，跳过当前块')
-            continue
-          }
-
-          const jsonStr = match[1]
-          console.log('📦 提取完整JSON字符串，长度:', jsonStr.length)
-
-          const data = JSON.parse(jsonStr)
-          console.log('✅ JSON解析成功，chunk长度:', data.chunk?.length || 0)
-
-          if (data.chunk && typeof data.chunk === 'string') {
-            accumulatedText += data.chunk
-            console.log('📝 添加chunk内容:', data.chunk)
-            console.log('📊 累积文本长度:', accumulatedText.length)
-
-            // 更新UI
-            safeUpdateMessage(aiMessageIndex, accumulatedText, !data.done)
-
-            // 处理完成状态
-            if (data.done === true) {
-              console.log('🎉 流式完成')
-              safeUpdateMessage(aiMessageIndex, accumulatedText, false)
-
-              if (data.sessionId) {
-                currentSessionId.value = data.sessionId
-                console.log('🆔 更新sessionId:', data.sessionId)
-              }
-
-              reader.releaseLock()
-              return
-            }
-          }
-        } catch (error) {
-          console.error('❌ 解析JSON失败:', error)
-          console.error('❌ 失败数据（前100字符）:', match[1]?.substring(0, 100))
-          // 添加调试：查看实际收到的数据
-          try {
-            console.log('🔍 原始匹配数据:', match[0])
-            console.log(
-              '🔍 原始文本上下文:',
-              text.substring(
-                Math.max(0, match.index - 50),
-                Math.min(text.length, match.index + match[0].length + 50),
-              ),
-            )
-          } catch {
-            console.error('调试输出失败')
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error('❌ 读取失败:', error)
-    safeUpdateMessage(aiMessageIndex, accumulatedText || '处理失败', false)
-  } finally {
-    reader.releaseLock()
-  }
-}
-
-// 处理JSON响应（备用方案）
-const processJSONResponse = async (response: Response, aiMessageIndex: number) => {
-  try {
-    const data = await response.json()
-    console.log('📄 JSON响应:', data)
-
-    if (data.code === 200 && data.data && data.data.answer) {
-      safeUpdateMessage(aiMessageIndex, data.data.answer, false)
-
-      if (data.data.sessionId) {
-        currentSessionId.value = data.data.sessionId
-      }
-    } else {
-      safeUpdateMessage(
-        aiMessageIndex,
-        `API返回错误: ${data.code || '未知'} - ${data.message || '无消息'}`,
-        false,
-      )
-    }
-  } catch (error) {
-    console.error('❌ 解析JSON失败:', error)
-    safeUpdateMessage(
-      aiMessageIndex,
-      `解析响应失败: ${error instanceof Error ? error.message : '未知错误'}`,
       false,
     )
   }
@@ -345,28 +286,26 @@ const processJSONResponse = async (response: Response, aiMessageIndex: number) =
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault()
-    sendMessage() // 默认使用流式
+    sendMessage()
   }
 }
 
 // 处理文件选择
 const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
-  if (input.files && input.files.length > 0) {
-    const file = input.files[0]
-    if (file) {
-      selectedFile.value = file
-    }
+  const file = input.files?.[0] // 使用可选链操作符安全访问
+  if (file) {
+    selectedFile.value = file
   }
 }
 
-// 上传文件（使用普通模式，因为上传不支持流式）
+// 上传文件（非流式）
 const uploadFile = async () => {
   if (!selectedFile.value) return
 
   const fileMessage: ChatMessage = {
     id: Date.now(),
-    content: `上传了文件: ${selectedFile.value.name}`,
+    content: `📎 上传了文件: ${selectedFile.value.name}`,
     sender: 'user',
     timestamp: new Date().toLocaleTimeString(),
   }
@@ -374,25 +313,30 @@ const uploadFile = async () => {
   scrollToBottom()
 
   try {
-    // 使用普通模式，因为上传不支持流式
     const response = await api.askQuestion({
       question: inputMessage.value || '请分析这个文件',
       file: selectedFile.value,
       sessionId: currentSessionId.value || undefined,
-      stream: false, // 上传文件使用普通模式
+      stream: false,
     })
 
     if (response.code === 202) {
-      const taskId = response.data.taskId || ''
-      pollTaskStatus(taskId)
+      // 异步处理
+      const taskId = response.data.taskId
+      if (taskId) {
+        pollTaskStatus(taskId) // 确保 taskId 存在后再调用
+      } else {
+        console.error('❌ taskId 未定义，无法启动轮询')
+      }
 
       if (response.data.sessionId) {
         currentSessionId.value = response.data.sessionId
       }
     } else if (response.code === 200) {
+      // 同步完成
       const aiMessage: ChatMessage = {
         id: Date.now() + 1,
-        content: response.data.answer || 'AI未返回具体答案',
+        content: response.data.answer || '文件处理完成',
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString(),
       }
@@ -404,10 +348,10 @@ const uploadFile = async () => {
       }
     }
   } catch (error) {
-    console.error('请求失败:', error)
+    console.error('上传失败:', error)
     const errorMessage: ChatMessage = {
       id: Date.now(),
-      content: `操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      content: `❌ 上传失败: ${error instanceof Error ? error.message : '未知错误'}`,
       sender: 'system',
       timestamp: new Date().toLocaleTimeString(),
     }
@@ -436,7 +380,6 @@ const pollTaskStatus = async (taskId: string) => {
 
       if (response.data.status === 'completed') {
         clearInterval(interval)
-
         const aiMessage: ChatMessage = {
           id: Date.now(),
           content: response.data.answer || '文件处理完成',
@@ -447,10 +390,9 @@ const pollTaskStatus = async (taskId: string) => {
         scrollToBottom()
       } else if (response.data.status === 'failed') {
         clearInterval(interval)
-
         const errorMessage: ChatMessage = {
           id: Date.now(),
-          content: `处理失败: ${response.data.error || '未知错误'}`,
+          content: `❌ 处理失败: ${response.data.error || '未知错误'}`,
           sender: 'system',
           timestamp: new Date().toLocaleTimeString(),
         }
@@ -464,12 +406,12 @@ const pollTaskStatus = async (taskId: string) => {
   }, 2000)
 }
 
-// 切换侧边栏显示
+// 切换侧边栏
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value
 }
 
-// 生命周期钩子
+// 生命周期
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
