@@ -312,38 +312,37 @@ export const api = {
 
   // 竞赛管理模块
   getCompetitions: (params?: CompetitionListParams) =>
-    request<CompetitionListResponse>({ method: 'GET', url: '/competitions', params }),
+    request<CompetitionListResponse>({ method: 'GET', url: '/api/competition', params }),
 
   getCompetitionDetail: (id: number) =>
-    request<ApiResponse<CompetitionRule[]>>({ method: 'GET', url: `/competitions/${id}` }),
-
+    request<ApiResponse<CompetitionRule[]>>({ method: 'GET', url: `/api/competition/${id}` }),
   // 院校管理模块
-  getUniversities: () => request<UniversityListResponse>({ method: 'GET', url: '/universities' }),
+  getUniversities: () => request<UniversityListResponse>({ method: 'GET', url: '/api/university' }),
 
   toggleFavoriteUniversity: (universityId: number) =>
     request<ApiResponse<null>>({
       method: 'POST',
-      url: '/universities/toggle',
+      url: '/api/university/toggle',
       params: { universityId },
     }),
 
   checkUniversityFavorite: (universityId: number) =>
     request<UniversityCheckResponse>({
       method: 'GET',
-      url: '/universities/check',
+      url: '/api/university/check',
       params: { universityId },
     }),
 
   getFavoriteUniversityIds: () =>
-    request<UniversityIdsResponse>({ method: 'GET', url: '/universities/university-ids' }),
+    request<UniversityIdsResponse>({ method: 'GET', url: '/api/university/university-ids' }),
 
   getFavoriteUniversities: () =>
-    request<UniversityListDetailResponse>({ method: 'GET', url: '/universities/list' }),
+    request<UniversityListDetailResponse>({ method: 'GET', url: '/api/university/list' }),
 
   getUniversityFavoriteCount: (universityId: number) =>
     request<UniversityCountResponse>({
       method: 'GET',
-      url: '/universities/count',
+      url: '/api/university/count',
       params: { universityId },
     }),
 }
