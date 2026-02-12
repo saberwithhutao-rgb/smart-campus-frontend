@@ -166,19 +166,29 @@ const processTongyiStream = async (
 
               if (choice.delta && choice.delta.content) {
                 const chunk = choice.delta.content
-                accumulatedText += chunk
 
-                if (!hasReceivedContent && chunk.trim() !== '') {
-                  hasReceivedContent = true
-                  safeUpdateMessage(aiMessageIndex, accumulatedText, false)
-                } else if (hasReceivedContent) {
-                  safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+                // 🟢 将chunk拆分成单个字符
+                for (let i = 0; i < chunk.length; i++) {
+                  const char = chunk[i]
+                  accumulatedText += char
+
+                  if (!hasReceivedContent && char.trim() !== '') {
+                    hasReceivedContent = true
+                    safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+                  } else if (hasReceivedContent) {
+                    safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+                  }
+
+                  // 🟢 每个字符间隔30ms，制造流畅的打字效果
+                  await new Promise((resolve) => setTimeout(resolve, 30))
                 }
 
-                if (choice.finish_reason === 'stop') {
+                // 是否完成
+                const isDone = choice.finish_reason === 'stop'
+                if (isDone) {
                   console.log('🎉 流式输出完成，总长度:', accumulatedText.length)
 
-                  // 🟢 保存完整对话
+                  // 保存完整对话
                   if (token) {
                     await fetch('/ai/chat/save', {
                       method: 'POST',
