@@ -97,7 +97,6 @@ const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) 
   messages.value = [...messages.value]
   scrollToBottom()
 }
-
 /**
  * ✅ 处理通义千问流式响应 - OpenAI 兼容格式
  */
@@ -106,7 +105,6 @@ const processTongyiStream = async (
   aiMessageIndex: number,
   question: string,
 ) => {
-  console.log('🎯 processTongyiStream 被调用，aiMessageIndex:', aiMessageIndex)
   const reader = response.body?.getReader()
   if (!reader) {
     throw new Error('无法读取响应流')
@@ -115,7 +113,7 @@ const processTongyiStream = async (
   const decoder = new TextDecoder()
   let accumulatedText = ''
   let buffer = ''
-  let hasReceivedContent = false // 🟢 标记是否已经收到过内容
+  let hasReceivedContent = false
 
   const token = localStorage.getItem('userToken')
   if (!token) {
@@ -145,23 +143,11 @@ const processTongyiStream = async (
           const trimmedLine = line.trim()
           if (!trimmedLine.startsWith('data:')) continue
 
-          // 🟢🟢🟢 关键修复：确保去掉 "data:" 前缀 🟢🟢🟢
-          let jsonStr = trimmedLine.substring(5).trim()
-
-          // 调试：打印实际拿到的字符串
-          console.log('🔍 原始行:', trimmedLine)
-          console.log('🔍 提取后:', jsonStr)
-
-          // 如果还是包含 data:，用更激进的方法
-          if (jsonStr.startsWith('data:')) {
-            jsonStr = jsonStr.replace(/^data:\s*/, '')
-          }
-
+          const jsonStr = trimmedLine.substring(5).trim()
           if (!jsonStr || jsonStr === '[DONE]') continue
 
           try {
             const data = JSON.parse(jsonStr)
-            console.log('✅ JSON解析成功')
 
             if (data.choices && data.choices.length > 0) {
               const choice = data.choices[0]
@@ -178,18 +164,31 @@ const processTongyiStream = async (
                 }
 
                 if (choice.finish_reason === 'stop') {
-                  console.log('🎉 流式完成')
+                  console.log('🎉 流式输出完成，总长度:', accumulatedText.length)
+
+                  // 🟢 保存完整对话
                   if (token) {
-                    await fetch('/ai/chat/save', {...})
+                    await fetch('/ai/chat/save', {
+                      method: 'POST',
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        sessionId: currentSessionId.value,
+                        question: question,
+                        answer: accumulatedText,
+                      }),
+                    }).catch((err) => console.error('保存对话失败:', err))
                   }
+
                   reader.releaseLock()
                   return
                 }
               }
             }
           } catch (e) {
-            console.error('❌ JSON解析失败:', e.message)
-            console.error('❌ 问题字符串:', jsonStr)
+            console.warn('⚠️ JSON解析失败:', e.message)
           }
         }
       }
@@ -201,7 +200,6 @@ const processTongyiStream = async (
     reader.releaseLock()
   }
 }
-
 /**
  * ✅ 主发送消息函数 - 使用通义千问原生流式
  */
