@@ -13,11 +13,23 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
-    config.headers.Authorization = localStorage.getItem('token')
+    // ✅ 1. 添加token（关键！）
+    const token = localStorage.getItem('userToken') || localStorage.getItem('token')
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
+    // ✅ 2. 添加调试日志
+    console.log('[API Request]', {
+      url: config.url,
+      method: config.method,
+      hasToken: !!token,
+      headers: config.headers,
+    })
+
     return config
   },
   (error) => {
-    console.error('请求错误:', error)
     return Promise.reject(error)
   },
 )
