@@ -145,60 +145,51 @@ const processTongyiStream = async (
           const trimmedLine = line.trim()
           if (!trimmedLine.startsWith('data:')) continue
 
-          const jsonStr = trimmedLine.substring(5).trim()
+          // 🟢🟢🟢 关键修复：确保去掉 "data:" 前缀 🟢🟢🟢
+          let jsonStr = trimmedLine.substring(5).trim()
+
+          // 调试：打印实际拿到的字符串
+          console.log('🔍 原始行:', trimmedLine)
+          console.log('🔍 提取后:', jsonStr)
+
+          // 如果还是包含 data:，用更激进的方法
+          if (jsonStr.startsWith('data:')) {
+            jsonStr = jsonStr.replace(/^data:\s*/, '')
+          }
+
           if (!jsonStr || jsonStr === '[DONE]') continue
 
           try {
             const data = JSON.parse(jsonStr)
+            console.log('✅ JSON解析成功')
 
             if (data.choices && data.choices.length > 0) {
               const choice = data.choices[0]
 
-              // 获取增量内容
               if (choice.delta && choice.delta.content) {
                 const chunk = choice.delta.content
                 accumulatedText += chunk
-                console.log('📦 收到chunk:', chunk)
 
-                // 🟢🟢🟢 关键逻辑 🟢🟢🟢
                 if (!hasReceivedContent && chunk.trim() !== '') {
-                  // 第一次收到非空内容：关闭加载动画，显示内容
                   hasReceivedContent = true
                   safeUpdateMessage(aiMessageIndex, accumulatedText, false)
                 } else if (hasReceivedContent) {
-                  // 已经收到过内容：直接更新文本，保持非加载状态
                   safeUpdateMessage(aiMessageIndex, accumulatedText, false)
                 }
 
-                // 是否完成
-                const isDone = choice.finish_reason === 'stop'
-
-                if (isDone) {
-                  console.log('🎉 流式输出完成，总长度:', accumulatedText.length)
-
-                  // 保存完整对话
+                if (choice.finish_reason === 'stop') {
+                  console.log('🎉 流式完成')
                   if (token) {
-                    await fetch('/ai/chat/save', {
-                      method: 'POST',
-                      headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        sessionId: currentSessionId.value,
-                        question: question,
-                        answer: accumulatedText,
-                      }),
-                    }).catch((err) => console.error('保存对话失败:', err))
+                    await fetch('/ai/chat/save', {...})
                   }
-
                   reader.releaseLock()
                   return
                 }
               }
             }
           } catch (e) {
-            console.warn('⚠️ JSON解析失败:', e.message)
+            console.error('❌ JSON解析失败:', e.message)
+            console.error('❌ 问题字符串:', jsonStr)
           }
         }
       }
