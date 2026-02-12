@@ -143,11 +143,20 @@ const processTongyiStream = async (
           const trimmedLine = line.trim()
           if (!trimmedLine.startsWith('data:')) continue
 
-          const jsonStr = trimmedLine.substring(5).trim()
+          // 🟢 关键修复：使用 replace 去掉 "data:" 前缀
+          const jsonStr = trimmedLine.replace(/^data:\s*/, '').trim()
+
+          // 调试日志
+          if (jsonStr.length > 0 && jsonStr !== '[DONE]') {
+            console.log('📄 原始行:', trimmedLine.substring(0, 50))
+            console.log('📄 提取后:', jsonStr.substring(0, 50))
+          }
+
           if (!jsonStr || jsonStr === '[DONE]') continue
 
           try {
             const data = JSON.parse(jsonStr)
+            console.log('✅ JSON解析成功')
 
             if (data.choices && data.choices.length > 0) {
               const choice = data.choices[0]
