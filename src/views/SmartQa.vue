@@ -73,18 +73,25 @@ const scrollToBottom = () => {
 
 // 安全更新消息的函数
 const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) => {
+  console.log('🟡 safeUpdateMessage 被调用', { index, content, isLoading })
+
   if (index < 0 || index >= messages.value.length) {
     console.error('❌ 消息索引超出范围:', index)
     return
   }
 
   const message = messages.value[index]
-  if (!message) return
+  if (!message) {
+    console.error('❌ 消息不存在:', index)
+    return
+  }
 
+  console.log('📝 更新前:', message.content)
   message.content = content
   if (isLoading !== undefined) {
     message.isLoading = isLoading
   }
+  console.log('📝 更新后:', message.content)
 
   // 强制触发响应式更新
   messages.value = [...messages.value]
@@ -99,6 +106,7 @@ const processTongyiStream = async (
   aiMessageIndex: number,
   question: string,
 ) => {
+  console.log('🎯 processTongyiStream 被调用，aiMessageIndex:', aiMessageIndex)
   const reader = response.body?.getReader()
   if (!reader) {
     throw new Error('无法读取响应流')
@@ -150,6 +158,7 @@ const processTongyiStream = async (
               if (choice.delta && choice.delta.content) {
                 const chunk = choice.delta.content
                 accumulatedText += chunk
+                console.log('📦 收到chunk:', chunk)
 
                 // 🟢🟢🟢 关键逻辑 🟢🟢🟢
                 if (!hasReceivedContent && chunk.trim() !== '') {
