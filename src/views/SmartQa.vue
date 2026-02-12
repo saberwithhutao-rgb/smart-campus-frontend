@@ -107,6 +107,7 @@ const processTongyiStream = async (
   const decoder = new TextDecoder()
   let accumulatedText = ''
   let buffer = ''
+  let hasReceivedContent = false // 🟢 标记是否已经收到过内容
 
   const token = localStorage.getItem('userToken')
   if (!token) {
@@ -127,7 +128,6 @@ const processTongyiStream = async (
 
       buffer += decoder.decode(value, { stream: true })
 
-      // SSE格式：data: {...}\n\n
       const events = buffer.split('\n\n')
       buffer = events.pop() || ''
 
@@ -143,7 +143,6 @@ const processTongyiStream = async (
           try {
             const data = JSON.parse(jsonStr)
 
-            // OpenAI 兼容格式
             if (data.choices && data.choices.length > 0) {
               const choice = data.choices[0]
 
@@ -152,13 +151,19 @@ const processTongyiStream = async (
                 const chunk = choice.delta.content
                 accumulatedText += chunk
 
-                // 🟢🟢🟢 立即更新UI，isLoading设为false 🟢🟢🟢
-                safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+                // 🟢🟢🟢 关键逻辑 🟢🟢🟢
+                if (!hasReceivedContent && chunk.trim() !== '') {
+                  // 第一次收到非空内容：关闭加载动画，显示内容
+                  hasReceivedContent = true
+                  safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+                } else if (hasReceivedContent) {
+                  // 已经收到过内容：直接更新文本，保持非加载状态
+                  safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+                }
 
                 // 是否完成
                 const isDone = choice.finish_reason === 'stop'
 
-                // 如果已完成
                 if (isDone) {
                   console.log('🎉 流式输出完成，总长度:', accumulatedText.length)
 
