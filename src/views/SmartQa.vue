@@ -143,7 +143,7 @@ const processTongyiStream = async (
           try {
             const data = JSON.parse(jsonStr)
 
-            // ✅ OpenAI 兼容格式
+            // OpenAI 兼容格式
             if (data.choices && data.choices.length > 0) {
               const choice = data.choices[0]
 
@@ -152,17 +152,15 @@ const processTongyiStream = async (
                 const chunk = choice.delta.content
                 accumulatedText += chunk
 
-                // ===== 🟢 关键修复：立即更新UI，显示AI的回答 =====
-                safeUpdateMessage(aiMessageIndex, accumulatedText, true)
-                // ============================================
+                // 🟢🟢🟢 立即更新UI，isLoading设为false 🟢🟢🟢
+                safeUpdateMessage(aiMessageIndex, accumulatedText, false)
 
                 // 是否完成
                 const isDone = choice.finish_reason === 'stop'
 
                 // 如果已完成
                 if (isDone) {
-                  // 完成时更新为加载完成状态
-                  safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+                  console.log('🎉 流式输出完成，总长度:', accumulatedText.length)
 
                   // 保存完整对话
                   if (token) {
