@@ -92,10 +92,14 @@ const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) 
 }
 
 /**
- * ✅ 真正的流式处理 - 通义千问原生格式
- * 格式: data: {"output":{"text":"xxx","finish_reason":null}}
+ * ✅ 处理通义千问流式响应 - OpenAI 兼容格式
+ * 格式: {"choices":[{"delta":{"content":"你好"},"finish_reason":null}]}
  */
-const processTongyiStream = async (response: Response, aiMessageIndex: number) => {
+const processTongyiStream = async (
+  response: Response,
+  aiMessageIndex: number,
+  question: string,
+) => {
   const reader = response.body?.getReader()
   if (!reader) {
     throw new Error('无法读取响应流')
@@ -111,7 +115,6 @@ const processTongyiStream = async (response: Response, aiMessageIndex: number) =
     safeUpdateMessage(aiMessageIndex, '请先登录', false)
     return
   }
-
   try {
     while (true) {
       const { done, value } = await reader.read()
@@ -140,37 +143,43 @@ const processTongyiStream = async (response: Response, aiMessageIndex: number) =
           try {
             const data = JSON.parse(jsonStr)
 
-            // ✅ 通义千问原生流式格式
-            if (data.output?.text) {
-              const fullText = data.output.text
-              accumulatedText = fullText
+            // ✅ OpenAI 兼容格式
+            if (data.choices && data.choices.length > 0) {
+              const choice = data.choices[0]
 
-              // 是否完成
-              const isDone = data.output.finish_reason === 'stop'
+              // 获取增量内容
+              if (choice.delta && choice.delta.content) {
+                const chunk = choice.delta.content
+                accumulatedText += chunk
 
-              // 更新UI
-              safeUpdateMessage(aiMessageIndex, accumulatedText, !isDone)
+                // 是否完成
+                const isDone = choice.finish_reason === 'stop'
 
-              // 如果已完成
-              if (isDone) {
-                const question = inputMessage.value.trim() // 明确获取用户输入的问题
-                if (!question) {
-                  console.warn('⚠️ 问题内容为空，跳过保存')
+                // 更新UI
+                safeUpdateMessage(aiMessageIndex, accumulatedText, !isDone)
+
+                // 如果已完成
+                if (isDone) {
+                  safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+
+                  if (token) {
+                    await fetch('/ai/chat/save', {
+                      method: 'POST',
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        sessionId: currentSessionId.value,
+                        question: question, // 你需要把question传进来
+                        answer: accumulatedText,
+                      }),
+                    })
+                  }
+
+                  reader.releaseLock()
                   return
                 }
-                // 保存完整对话
-                await fetch('/ai/chat/save', {
-                  method: 'POST',
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    sessionId: currentSessionId.value,
-                    question: question,
-                    answer: accumulatedText,
-                  }),
-                })
               }
             }
           } catch (e) {
@@ -193,24 +202,26 @@ const processTongyiStream = async (response: Response, aiMessageIndex: number) =
 const sendMessage = async () => {
   if (!inputMessage.value.trim()) return
 
+  // 保存当前问题
+  const question = inputMessage.value
+
   // 添加用户消息
   const userMessage: ChatMessage = {
     id: Date.now(),
-    content: inputMessage.value,
+    content: question,
     sender: 'user',
     timestamp: new Date().toLocaleTimeString(),
   }
   messages.value.push(userMessage)
   scrollToBottom()
 
-  const question = inputMessage.value
   inputMessage.value = ''
 
-  // 创建AI消息占位符（初始为空）
+  // 创建AI消息占位符
   const aiMessageId = Date.now() + 1
   const aiMessage: ChatMessage = {
     id: aiMessageId,
-    content: '', // 初始为空，不是"思考中"
+    content: '',
     sender: 'ai',
     timestamp: new Date().toLocaleTimeString(),
     isLoading: true,
@@ -223,7 +234,6 @@ const sendMessage = async () => {
     const token = localStorage.getItem('userToken')
     if (!token) {
       safeUpdateMessage(aiMessageIndex, '请先登录', false)
-      setTimeout(() => router.push('/login'), 1500)
       return
     }
 
@@ -232,9 +242,7 @@ const sendMessage = async () => {
     if (currentSessionId.value) {
       formData.append('sessionId', currentSessionId.value)
     }
-    formData.append('stream', 'true') // 启用流式
-
-    console.log('🚀 发送通义千问流式请求...')
+    formData.append('stream', 'true')
 
     const response = await fetch('/ai/chat', {
       method: 'POST',
@@ -244,34 +252,12 @@ const sendMessage = async () => {
       body: formData,
     })
 
-    if (response.status === 401) {
-      localStorage.removeItem('userToken')
-      safeUpdateMessage(aiMessageIndex, '登录已过期，请重新登录', false)
-      setTimeout(() => router.push('/login'), 1500)
-      return
-    }
-
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`)
     }
 
-    const contentType = response.headers.get('content-type') || ''
-
-    if (contentType.includes('text/event-stream')) {
-      // ✅ 使用通义千问原生流式处理器
-      await processTongyiStream(response, aiMessageIndex)
-    } else {
-      // 降级到JSON
-      const data = await response.json()
-      if (data.code === 200 && data.data?.answer) {
-        safeUpdateMessage(aiMessageIndex, data.data.answer, false)
-        if (data.data.sessionId) {
-          currentSessionId.value = data.data.sessionId
-        }
-      } else {
-        throw new Error(data.message || '未知错误')
-      }
-    }
+    // ✅ 传入 question 以便保存
+    await processTongyiStream(response, aiMessageIndex, question)
   } catch (error) {
     console.error('❌ 请求失败:', error)
     safeUpdateMessage(
