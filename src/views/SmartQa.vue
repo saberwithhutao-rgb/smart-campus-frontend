@@ -263,6 +263,7 @@ const sendMessage = async () => {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
+        Accept: 'text/event-stream',
       },
       body: formData,
     })
