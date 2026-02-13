@@ -3,8 +3,8 @@ import GlobalNavbar from '../components/GlobalNavbar.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { useStudyPlanStore } from '../stores/studyPlan'
-import type { StudyPlan } from '../types/user'
+import { useStudyPlanStore } from '../stores/studyPlan' // 注意：你的是 studyPlan.ts，不是 studyPlanStore.ts
+import type { StudyPlan } from '../stores/studyPlan'
 
 // 路由实例
 const router = useRouter()
@@ -12,48 +12,42 @@ const router = useRouter()
 // 用户状态管理
 const userStore = useUserStore()
 
-// 响应式数据 - 导航栏相关
-const showUserCenter = ref(false) // 显示个人中心菜单
-const activeMenu = ref('') // 当前激活的菜单
-const showSubMenu = ref('') // 显示子菜单
-const isMobile = ref(false) // 是否为移动端
-
-// 响应式数据 - 学习计划相关
-const showSidebar = ref(true) // 是否显示侧边栏
-const selectedMenu = ref('plan') // 当前选中的菜单：plan-学习计划，review-智能复习
-
 // 学习计划store
 const studyPlanStore = useStudyPlanStore()
+
+// 响应式数据 - 导航栏相关
+const showUserCenter = ref(false)
+const activeMenu = ref('')
+const showSubMenu = ref('')
+const isMobile = ref(false)
+
+// 响应式数据 - 学习计划相关
+const showSidebar = ref(true)
+const selectedMenu = ref('plan')
 
 // 使用store中的学习计划数据和完成度计算
 const studyPlans = computed(() => studyPlanStore.studyPlans)
 const completionRate = computed(() => studyPlanStore.completionRate)
+const isLoading = computed(() => studyPlanStore.isLoading)
 
-// 添加新计划弹窗
+// 添加新计划弹窗 - ✅ 修改：完全匹配数据库表结构
 const showAddModal = ref(false)
 const newPlan = ref({
-  name: '', // 学习计划名称
-  difficulty: '中', // 难易程度
-  time: '', // 完成时间段
-})
-
-// 编辑计划弹窗
-const showEditModal = ref(false)
-const editPlan = ref({
-  id: '' as string,
   title: '',
   description: '',
-  startDate: '',
-  endDate: '',
-  status: 'planning' as 'planning' | 'in_progress' | 'completed',
-  subjects: [] as string[],
-  progress: 0,
-  difficulty: '中',
-  time: '',
+  plan_type: 'learning' as 'review' | 'learning' | 'project', // 新增：计划类型
+  subject: '', // 新增：学科
+  difficulty: 'medium' as 'easy' | 'medium' | 'hard', // 难易程度
+  start_date: '', // ✅ 开始日期
+  end_date: '', // ✅ 结束日期
 })
-const currentEditPlan = ref<any>(null)
 
-// 检查屏幕尺寸 - 响应式设计
+// 编辑计划弹窗 - ✅ 修改：完全匹配数据库表结构
+const showEditModal = ref(false)
+const editPlan = ref<StudyPlan | null>(null)
+const currentEditPlan = ref<StudyPlan | null>(null)
+
+// 检查屏幕尺寸
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
   if (isMobile.value) {
@@ -61,7 +55,7 @@ const checkScreenSize = () => {
   }
 }
 
-// 导航栏菜单处理 - 完全复用首页导航栏交互
+// ---------- 导航栏菜单处理 ----------
 const goToLogin = () => {
   router.push('/login')
 }
@@ -82,7 +76,6 @@ const goToCompetitionManagement = () => {
   router.push('/career/competitions')
 }
 
-// 跳转到职业导航页面
 const goToCareerNavigation = () => {
   router.push('/career/position')
 }
@@ -107,7 +100,6 @@ const hideSubMenu = () => {
 
 const handleMenuClick = (menu: string) => {
   if (menu === '首页') {
-    // 点击首页，跳转到首页
     router.push('/index')
     return
   }
@@ -131,6 +123,8 @@ const handleUserMenuClick = (item: string) => {
   if (item === '个人信息') {
     router.push('/profile')
   } else if (item === '退出登录') {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userToken')
     router.push('/login')
   }
   closeUserCenter()
@@ -139,111 +133,9 @@ const handleUserMenuClick = (item: string) => {
 // 切换学习计划菜单选中状态
 const selectMenu = (menu: string) => {
   if (menu === 'review') {
-    // 跳转到智能复习页面
     router.push('/ai/study/review')
   } else {
     selectedMenu.value = menu
-  }
-}
-
-// 切换计划完成状态
-const toggleComplete = (plan: StudyPlan) => {
-  // 使用store的方法切换完成状态
-  studyPlanStore.togglePlanComplete(plan.id)
-}
-
-// 排序学习计划函数：未完成在前，已完成在后，保持各自的原有顺序
-const sortStudyPlans = () => {
-  // 分离未完成和已完成的计划
-  const incompletePlans = studyPlans.value.filter((plan) => plan.progress < 100)
-  const completedPlans = studyPlans.value.filter((plan) => plan.progress >= 100)
-
-  // 合并数组：未完成在前，已完成在后
-  // 未完成项保持原添加顺序，已完成项也保持原完成顺序
-  studyPlans.value = [...incompletePlans, ...completedPlans]
-}
-
-// 打开添加计划弹窗
-const openAddModalHandler = () => {
-  showAddModal.value = true
-  newPlan.value = {
-    name: '',
-    difficulty: '中',
-    time: '',
-  }
-}
-
-// 关闭添加计划弹窗
-const closeAddModalHandler = () => {
-  showAddModal.value = false
-}
-
-// 添加新计划
-const addPlan = () => {
-  if (!newPlan.value.name.trim()) return
-
-  // 使用store的方法添加新计划
-  const planData = {
-    title: newPlan.value.name,
-    description: '',
-    startDate: newPlan.value.time.split('-')[0].trim(),
-    endDate: newPlan.value.time.split('-')[1].trim(),
-    status: 'planning' as 'planning' | 'in_progress' | 'completed',
-    subjects: [newPlan.value.difficulty],
-    progress: 0,
-  }
-  studyPlanStore.addPlan(planData)
-
-  closeAddModalHandler()
-}
-
-// 打开编辑计划弹窗
-const openEditModalHandler = (plan: StudyPlan) => {
-  currentEditPlan.value = plan
-  editPlan.value = {
-    ...plan,
-    id: plan.id,
-    subjects: plan.subjects,
-    difficulty: plan.subjects[0] || '中',
-    time: `${plan.startDate} - ${plan.endDate}`,
-  }
-  showEditModal.value = true
-}
-
-// 关闭编辑计划弹窗
-const closeEditModalHandler = () => {
-  showEditModal.value = false
-  currentEditPlan.value = null
-}
-
-// 保存编辑的计划
-const saveEditPlan = () => {
-  if (!editPlan.value.title.trim() || !currentEditPlan.value) return
-
-  // 使用store的方法更新计划
-  const planData = {
-    id: editPlan.value.id,
-    title: editPlan.value.title,
-    description: editPlan.value.description,
-    startDate: editPlan.value.startDate,
-    endDate: editPlan.value.endDate,
-    status: editPlan.value.status,
-    subjects: editPlan.value.subjects,
-    progress: editPlan.value.progress,
-    difficulty: editPlan.value.difficulty,
-    time: editPlan.value.time,
-  }
-  studyPlanStore.updatePlan(planData)
-
-  closeEditModalHandler()
-}
-
-// 删除计划 - 先弹出确认窗口，确认后删除计划，并更新完成度
-const deletePlan = (id: string) => {
-  // 弹出确认对话框
-  if (confirm('确定要删除这个学习计划吗？')) {
-    // 使用store的方法删除计划
-    studyPlanStore.deletePlan(id)
   }
 }
 
@@ -252,13 +144,191 @@ const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value
 }
 
-// 生命周期钩子 - 初始化和窗口大小监听
+// ---------- 学习计划 CRUD 操作 ----------
+
+/**
+ * 打开添加计划弹窗
+ */
+const openAddModalHandler = () => {
+  showAddModal.value = true
+  // 重置表单
+  newPlan.value = {
+    title: '',
+    description: '',
+    plan_type: 'learning',
+    subject: '',
+    difficulty: 'medium',
+    start_date: '',
+    end_date: '',
+  }
+}
+
+/**
+ * 关闭添加计划弹窗
+ */
+const closeAddModalHandler = () => {
+  showAddModal.value = false
+}
+
+/**
+ * 添加新计划 - ✅ 完全匹配数据库结构
+ */
+const addPlan = async () => {
+  if (!newPlan.value.title.trim()) {
+    ElMessage.warning('请输入计划名称')
+    return
+  }
+
+  if (!newPlan.value.start_date) {
+    ElMessage.warning('请选择开始日期')
+    return
+  }
+
+  try {
+    await studyPlanStore.addPlan({
+      title: newPlan.value.title,
+      description: newPlan.value.description || undefined,
+      plan_type: newPlan.value.plan_type,
+      subject: newPlan.value.subject || undefined,
+      difficulty: newPlan.value.difficulty,
+      start_date: newPlan.value.start_date,
+      end_date: newPlan.value.end_date || undefined,
+      progress_percent: 0,
+    })
+
+    closeAddModalHandler()
+  } catch (error) {
+    console.error('添加计划失败:', error)
+  }
+}
+
+/**
+ * 打开编辑计划弹窗
+ */
+const openEditModalHandler = (plan: StudyPlan) => {
+  currentEditPlan.value = plan
+  editPlan.value = { ...plan } // 直接复制整个计划对象
+  showEditModal.value = true
+}
+
+/**
+ * 关闭编辑计划弹窗
+ */
+const closeEditModalHandler = () => {
+  showEditModal.value = false
+  editPlan.value = null
+  currentEditPlan.value = null
+}
+
+/**
+ * 保存编辑的计划
+ */
+const saveEditPlan = async () => {
+  if (!editPlan.value || !editPlan.value.title.trim() || !currentEditPlan.value) {
+    ElMessage.warning('计划名称不能为空')
+    return
+  }
+
+  try {
+    await studyPlanStore.updatePlan(editPlan.value.id, {
+      title: editPlan.value.title,
+      description: editPlan.value.description || undefined,
+      plan_type: editPlan.value.plan_type,
+      subject: editPlan.value.subject || undefined,
+      difficulty: editPlan.value.difficulty,
+      start_date: editPlan.value.start_date,
+      end_date: editPlan.value.end_date || undefined,
+      progress_percent: editPlan.value.progress_percent,
+    })
+
+    closeEditModalHandler()
+  } catch (error) {
+    console.error('更新计划失败:', error)
+  }
+}
+
+/**
+ * 删除计划
+ */
+const deletePlan = async (id: number) => {
+  if (confirm('确定要删除这个学习计划吗？')) {
+    try {
+      await studyPlanStore.deletePlan(id)
+    } catch (error) {
+      console.error('删除计划失败:', error)
+    }
+  }
+}
+
+/**
+ * 切换计划完成状态
+ */
+const toggleComplete = async (plan: StudyPlan) => {
+  await studyPlanStore.togglePlanComplete(plan.id)
+}
+
+/**
+ * 格式化日期显示
+ */
+const formatDate = (date: string | null) => {
+  if (!date) return '待定'
+  return date
+}
+
+/**
+ * 获取难度类名
+ */
+const getDifficultyClass = (difficulty: string) => {
+  return {
+    'difficulty-hard': difficulty === 'hard',
+    'difficulty-medium': difficulty === 'medium',
+    'difficulty-easy': difficulty === 'easy',
+  }
+}
+
+/**
+ * 获取难度显示文本
+ */
+const getDifficultyText = (difficulty: string) => {
+  const map = {
+    easy: '简单',
+    medium: '中等',
+    hard: '困难',
+  }
+  return map[difficulty as keyof typeof map] || difficulty
+}
+
+/**
+ * 获取计划类型显示文本
+ */
+const getPlanTypeText = (type: string) => {
+  const map = {
+    learning: '学习',
+    review: '复习',
+    project: '项目',
+  }
+  return map[type as keyof typeof map] || type
+}
+
+/**
+ * 获取状态显示文本
+ */
+const getStatusText = (status: string) => {
+  const map = {
+    active: '进行中',
+    completed: '已完成',
+    paused: '已暂停',
+  }
+  return map[status as keyof typeof map] || status
+}
+
+// 生命周期钩子
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
 
-  // 初始化排序，确保未完成的计划在前，已完成的计划在后
-  sortStudyPlans()
+  // ✅ 加载学习计划数据
+  studyPlanStore.fetchStudyPlans()
 })
 </script>
 
@@ -280,7 +350,6 @@ onMounted(() => {
         </div>
 
         <div class="sidebar-menu">
-          <!-- 学习计划选项 -->
           <div
             class="sidebar-item"
             :class="{ 'sidebar-item-active': selectedMenu === 'plan' }"
@@ -288,8 +357,6 @@ onMounted(() => {
           >
             学习计划
           </div>
-
-          <!-- 智能复习选项 -->
           <div
             class="sidebar-item"
             :class="{ 'sidebar-item-active': selectedMenu === 'review' }"
@@ -302,8 +369,14 @@ onMounted(() => {
 
       <!-- 中间学习计划区域 -->
       <main class="study-main">
+        <!-- 加载中状态 -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">加载中...</div>
+        </div>
+
         <!-- 学习计划区域 -->
-        <div v-if="selectedMenu === 'plan'" class="plan-main">
+        <div v-else-if="selectedMenu === 'plan'" class="plan-main">
           <!-- 完成度模块 -->
           <div class="completion-section">
             <div class="completion-header">
@@ -318,8 +391,11 @@ onMounted(() => {
           <!-- 学习计划列表 -->
           <div class="plan-section">
             <div class="plan-header">
-              <h3 class="plan-title">学习计划</h3>
-              <div class="plan-time">预计时效：/test-经</div>
+              <h3 class="plan-title">我的学习计划</h3>
+              <div class="plan-stats">
+                总数: {{ studyPlans.length }} | 进行中: {{ studyPlanStore.activeCount }} | 已完成:
+                {{ studyPlanStore.completedPlans.length }}
+              </div>
             </div>
 
             <!-- 计划列表 -->
@@ -328,34 +404,62 @@ onMounted(() => {
                 v-for="plan in studyPlans"
                 :key="plan.id"
                 class="plan-item"
-                :class="{ 'plan-item-completed': plan.progress >= 100 }"
+                :class="{ 'plan-item-completed': plan.status === 'completed' }"
               >
-                <!-- 计划左侧：名称和完成情况 -->
+                <!-- 计划左侧：复选框和名称 -->
                 <div class="plan-left">
                   <div class="plan-complete">
-                    <input type="checkbox" v-model="plan.progress" class="complete-checkbox" />
+                    <input
+                      type="checkbox"
+                      :checked="plan.status === 'completed'"
+                      @change="toggleComplete(plan)"
+                      class="complete-checkbox"
+                    />
                   </div>
-                  <div class="plan-name">{{ plan.title }}</div>
+                  <div class="plan-info">
+                    <div class="plan-name">{{ plan.title }}</div>
+                    <div class="plan-description" v-if="plan.description">
+                      {{ plan.description }}
+                    </div>
+                    <div class="plan-tags">
+                      <span class="plan-type-tag">{{ getPlanTypeText(plan.plan_type) }}</span>
+                      <span class="plan-subject-tag" v-if="plan.subject">{{ plan.subject }}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- 计划右侧：难度、时间和操作按钮 -->
                 <div class="plan-right">
-                  <!-- 难度和时间 -->
                   <div class="plan-meta">
-                    <div
-                      class="plan-difficulty"
-                      :class="{
-                        'difficulty-hard': plan.subjects[0] === '难',
-                        'difficulty-medium': plan.subjects[0] === '中',
-                        'difficulty-easy': plan.subjects[0] === '易',
-                      }"
-                    >
-                      {{ plan.title }}
+                    <!-- 难度标签 -->
+                    <div class="plan-difficulty" :class="getDifficultyClass(plan.difficulty)">
+                      {{ getDifficultyText(plan.difficulty) }}
                     </div>
-                    <div class="plan-time-info">{{ `${plan.startDate} - ${plan.endDate}` }}</div>
+
+                    <!-- 日期信息 -->
+                    <div class="plan-time-info">
+                      📅 {{ formatDate(plan.start_date) }}
+                      <span v-if="plan.end_date">→ {{ formatDate(plan.end_date) }}</span>
+                    </div>
+
+                    <!-- 进度条 -->
+                    <div class="plan-progress">
+                      <div class="progress-bar-container">
+                        <div
+                          class="progress-bar"
+                          :style="{ width: `${plan.progress_percent}%` }"
+                        ></div>
+                      </div>
+                      <span class="progress-text">{{ plan.progress_percent }}%</span>
+                    </div>
+
+                    <!-- 状态 -->
+                    <div class="plan-status" :class="`status-${plan.status}`">
+                      {{ getStatusText(plan.status) }}
+                    </div>
                   </div>
 
-                  <!-- 操作按钮 - 右下角位置，更小字体 -->
+                  <!-- 操作按钮 -->
                   <div class="plan-actions">
                     <button class="action-btn edit-btn" @click="openEditModalHandler(plan)">
                       修改
@@ -369,6 +473,7 @@ onMounted(() => {
               <div v-if="studyPlans.length === 0" class="empty-state">
                 <div class="empty-icon">📝</div>
                 <div class="empty-text">暂无学习计划</div>
+                <div class="empty-tip">点击右下角按钮创建你的第一个学习计划</div>
               </div>
             </div>
           </div>
@@ -383,94 +488,209 @@ onMounted(() => {
     </div>
 
     <!-- 添加新计划按钮 - 固定在右下角 -->
-    <button class="add-plan-btn" @click="openAddModalHandler">添加新计划</button>
+    <button class="add-plan-btn" @click="openAddModalHandler">➕ 添加新计划</button>
 
-    <!-- 添加新计划弹窗 -->
+    <!-- 添加新计划弹窗 - ✅ 完全匹配数据库结构 -->
     <div v-if="showAddModal" class="modal-overlay" @click="closeAddModalHandler">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3 class="modal-title">添加新计划</h3>
+          <h3 class="modal-title">创建新学习计划</h3>
           <button class="modal-close" @click="closeAddModalHandler">&times;</button>
         </div>
 
         <div class="modal-body">
+          <!-- 计划名称 -->
           <div class="form-group">
-            <label for="plan-name">计划名称</label>
+            <label for="plan-title">计划名称 <span class="required">*</span></label>
             <input
               type="text"
-              id="plan-name"
-              v-model="newPlan.name"
+              id="plan-title"
+              v-model="newPlan.title"
               class="form-input"
-              placeholder="请输入计划名称"
+              placeholder="例如：Java学习"
             />
           </div>
 
+          <!-- 计划描述 -->
+          <div class="form-group">
+            <label for="plan-description">计划描述</label>
+            <textarea
+              id="plan-description"
+              v-model="newPlan.description"
+              class="form-textarea"
+              placeholder="简单描述一下学习计划..."
+              rows="3"
+            ></textarea>
+          </div>
+
+          <!-- 计划类型和学科（一行两个） -->
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="plan-type">计划类型 <span class="required">*</span></label>
+              <select id="plan-type" v-model="newPlan.plan_type" class="form-select">
+                <option value="learning">学习</option>
+                <option value="review">复习</option>
+                <option value="project">项目</option>
+              </select>
+            </div>
+            <div class="form-group half">
+              <label for="plan-subject">学科/科目</label>
+              <input
+                type="text"
+                id="plan-subject"
+                v-model="newPlan.subject"
+                class="form-input"
+                placeholder="例如：编程、数学"
+              />
+            </div>
+          </div>
+
+          <!-- 难易程度 -->
           <div class="form-group">
             <label for="plan-difficulty">难易程度</label>
             <select id="plan-difficulty" v-model="newPlan.difficulty" class="form-select">
-              <option value="难">难</option>
-              <option value="中">中</option>
-              <option value="易">易</option>
+              <option value="easy">简单</option>
+              <option value="medium">中等</option>
+              <option value="hard">困难</option>
             </select>
           </div>
 
-          <div class="form-group">
-            <label for="plan-time">完成时间段</label>
-            <input
-              type="text"
-              id="plan-time"
-              v-model="newPlan.time"
-              class="form-input"
-              placeholder="如：12月6日-12月8日"
-            />
+          <!-- 日期范围（一行两个） -->
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="plan-start-date">开始日期 <span class="required">*</span></label>
+              <input
+                type="date"
+                id="plan-start-date"
+                v-model="newPlan.start_date"
+                class="form-input"
+              />
+            </div>
+            <div class="form-group half">
+              <label for="plan-end-date">结束日期</label>
+              <input
+                type="date"
+                id="plan-end-date"
+                v-model="newPlan.end_date"
+                class="form-input"
+                :min="newPlan.start_date"
+              />
+            </div>
           </div>
         </div>
 
         <div class="modal-footer">
           <button class="modal-btn cancel-btn" @click="closeAddModalHandler">取消</button>
-          <button class="modal-btn confirm-btn" @click="addPlan">确认添加</button>
+          <button class="modal-btn confirm-btn" @click="addPlan">创建计划</button>
         </div>
       </div>
     </div>
 
-    <!-- 编辑计划弹窗 -->
-    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModalHandler">
+    <!-- 编辑计划弹窗 - ✅ 完全匹配数据库结构 -->
+    <div v-if="showEditModal && editPlan" class="modal-overlay" @click="closeEditModalHandler">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3 class="modal-title">编辑计划</h3>
+          <h3 class="modal-title">编辑学习计划</h3>
           <button class="modal-close" @click="closeEditModalHandler">&times;</button>
         </div>
 
         <div class="modal-body">
+          <!-- 计划名称 -->
           <div class="form-group">
-            <label for="edit-plan-name">计划名称</label>
-            <input
-              type="text"
-              id="edit-plan-name"
-              v-model="editPlan.name"
-              class="form-input"
-              placeholder="请输入计划名称"
-            />
+            <label for="edit-plan-title">计划名称 <span class="required">*</span></label>
+            <input type="text" id="edit-plan-title" v-model="editPlan.title" class="form-input" />
           </div>
 
+          <!-- 计划描述 -->
+          <div class="form-group">
+            <label for="edit-plan-description">计划描述</label>
+            <textarea
+              id="edit-plan-description"
+              v-model="editPlan.description"
+              class="form-textarea"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <!-- 计划类型和学科 -->
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="edit-plan-type">计划类型</label>
+              <select id="edit-plan-type" v-model="editPlan.plan_type" class="form-select">
+                <option value="learning">学习</option>
+                <option value="review">复习</option>
+                <option value="project">项目</option>
+              </select>
+            </div>
+            <div class="form-group half">
+              <label for="edit-plan-subject">学科/科目</label>
+              <input
+                type="text"
+                id="edit-plan-subject"
+                v-model="editPlan.subject"
+                class="form-input"
+              />
+            </div>
+          </div>
+
+          <!-- 难易程度 -->
           <div class="form-group">
             <label for="edit-plan-difficulty">难易程度</label>
             <select id="edit-plan-difficulty" v-model="editPlan.difficulty" class="form-select">
-              <option value="难">难</option>
-              <option value="中">中</option>
-              <option value="易">易</option>
+              <option value="easy">简单</option>
+              <option value="medium">中等</option>
+              <option value="hard">困难</option>
             </select>
           </div>
 
+          <!-- 日期范围 -->
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="edit-plan-start-date">开始日期</label>
+              <input
+                type="date"
+                id="edit-plan-start-date"
+                v-model="editPlan.start_date"
+                class="form-input"
+              />
+            </div>
+            <div class="form-group half">
+              <label for="edit-plan-end-date">结束日期</label>
+              <input
+                type="date"
+                id="edit-plan-end-date"
+                v-model="editPlan.end_date"
+                class="form-input"
+                :min="editPlan.start_date"
+              />
+            </div>
+          </div>
+
+          <!-- 进度百分比 -->
           <div class="form-group">
-            <label for="edit-plan-time">完成时间段</label>
-            <input
-              type="text"
-              id="edit-plan-time"
-              v-model="editPlan.time"
-              class="form-input"
-              placeholder="如：12月6日-12月8日"
-            />
+            <label for="edit-plan-progress">学习进度 (0-100%)</label>
+            <div class="progress-input-group">
+              <input
+                type="range"
+                id="edit-plan-progress"
+                v-model.number="editPlan.progress_percent"
+                class="progress-slider"
+                min="0"
+                max="100"
+                step="1"
+              />
+              <span class="progress-value">{{ editPlan.progress_percent }}%</span>
+            </div>
+          </div>
+
+          <!-- 状态 -->
+          <div class="form-group">
+            <label for="edit-plan-status">状态</label>
+            <select id="edit-plan-status" v-model="editPlan.status" class="form-select">
+              <option value="active">进行中</option>
+              <option value="completed">已完成</option>
+              <option value="paused">已暂停</option>
+            </select>
           </div>
         </div>
 
@@ -1561,5 +1781,203 @@ onMounted(() => {
     top: 60px;
     height: calc(100vh - 60px);
   }
+}
+
+.plan-info {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.plan-description {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.plan-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.plan-type-tag,
+.plan-subject-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: #f0f2f5;
+  color: #1e293b;
+}
+
+.plan-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.progress-bar-container {
+  flex: 1;
+  height: 6px;
+  background-color: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #3b82f6;
+  min-width: 45px;
+}
+
+.plan-status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.status-active {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-completed {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-paused {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.difficulty-hard {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.difficulty-medium {
+  background-color: #fef9c3;
+  color: #854d0e;
+}
+
+.difficulty-easy {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.plan-stats {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group.half {
+  flex: 1;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.progress-input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  background: #e2e8f0;
+  border-radius: 3px;
+  outline: none;
+}
+
+.progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.progress-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: #3b82f6;
+}
+
+.progress-value {
+  min-width: 45px;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.required {
+  color: #dc2626;
+  margin-left: 4px;
+}
+
+.empty-tip {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-top: 8px;
 }
 </style>
