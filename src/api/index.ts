@@ -221,20 +221,111 @@ export const api = {
   getCaptcha: () => request<CaptchaResponse>({ method: 'GET', url: '/api/captcha' }),
 
   // 学习计划模块
-  getStudyPlans: () =>
-    request<ApiResponse<StudyPlan[]>>({ method: 'GET', url: '/api/study-plans' }),
+  getStudyPlans: (params?: { page?: number; size?: number; status?: string; planType?: string }) =>
+    request<
+      ApiResponse<{
+        list: StudyPlan[]
+        total: number
+        page: number
+        size: number
+        totalPages: number
+      }>
+    >({
+      method: 'GET',
+      url: '/api/study/plans', // ✅ 修正路径！
+      params,
+    }),
 
-  getStudyPlan: (id: string) =>
-    request<ApiResponse<StudyPlan>>({ method: 'GET', url: `/api/study-plans/${id}` }),
+  getStudyPlan: (
+    id: number, // ✅ 类型从 string 改为 number
+  ) =>
+    request<ApiResponse<StudyPlan>>({
+      method: 'GET',
+      url: `/api/study/plans/${id}`, // ✅ 修正路径！
+    }),
 
-  createStudyPlan: (data: Omit<StudyPlan, 'id'>) =>
-    request<ApiResponse<StudyPlan>>({ method: 'POST', url: '/api/study-plans', data }),
+  createStudyPlan: (data: {
+    title: string
+    description?: string
+    planType: 'review' | 'learning' | 'project'
+    subject?: string
+    difficulty?: 'easy' | 'medium' | 'hard'
+    startDate: string
+    endDate?: string
+    progressPercent?: number
+  }) =>
+    request<ApiResponse<StudyPlan>>({
+      method: 'POST',
+      url: '/api/study/plans',
+      data,
+    }),
 
-  updateStudyPlan: (id: string, data: Partial<StudyPlan>) =>
-    request<ApiResponse<StudyPlan>>({ method: 'PUT', url: `/api/study-plans/${id}`, data }),
+  updateStudyPlan: (
+    id: number,
+    data: {
+      title?: string
+      description?: string
+      planType?: 'review' | 'learning' | 'project'
+      subject?: string
+      difficulty?: 'easy' | 'medium' | 'hard'
+      status?: 'active' | 'completed' | 'paused'
+      startDate?: string
+      endDate?: string
+      progressPercent?: number
+    },
+  ) =>
+    request<ApiResponse<StudyPlan>>({
+      method: 'PUT',
+      url: `/api/study/plans/${id}`,
+      data,
+    }),
 
-  deleteStudyPlan: (id: string) =>
-    request<ApiResponse<null>>({ method: 'DELETE', url: `/api/study-plans/${id}` }),
+  deleteStudyPlan: (id: number) =>
+    request<ApiResponse<null>>({
+      method: 'DELETE',
+      url: `/api/study/plans/${id}`,
+    }),
+
+  updateProgress: (id: number, progress: number) =>
+    request<
+      ApiResponse<{
+        id: number
+        progress_percent: number
+        status: string
+        updated_at: string
+      }>
+    >({
+      method: 'PATCH',
+      url: `/api/study/plans/${id}/progress`,
+      data: { progressPercent: progress },
+    }),
+
+  // ✅ 切换完成状态
+  togglePlanComplete: (id: number) =>
+    request<ApiResponse<StudyPlan>>({
+      method: 'POST',
+      url: `/api/study/plans/${id}/toggle`,
+    }),
+
+  // ✅ 获取学习日程
+  getStudySchedule: (params?: { startDate?: string; endDate?: string; planId?: number }) =>
+    request<
+      ApiResponse<
+        Array<{
+          id: number
+          title: string
+          type: string
+          start_date: string
+          end_date: string | null
+          progress: number
+          status: string
+        }>
+      >
+    >({
+      method: 'GET',
+      url: '/api/study/schedule',
+      params,
+    }),
 
   // 智能问答模块
   askQuestion: (data: { question: string; file?: File; sessionId?: string; stream?: boolean }) => {
@@ -301,13 +392,6 @@ export const api = {
   // 学习进度模块
   getLearningProgress: () =>
     request<ApiResponse<LearningProgress[]>>({ method: 'GET', url: '/api/learning-progress' }),
-
-  updateProgress: (data: Partial<LearningProgress>) =>
-    request<ApiResponse<LearningProgress>>({
-      method: 'POST',
-      url: '/api/learning-progress/update',
-      data,
-    }),
 
   // 竞赛管理模块
   getCompetitions: (params?: CompetitionListParams) =>
