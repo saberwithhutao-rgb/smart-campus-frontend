@@ -1,22 +1,23 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { api } from '@/api' // ✅ 导入api，不是自己模拟！
+import { api } from '@/api'
+import type { un } from 'vue-router/dist/router-CWoNjPRp.mjs'
 
 export interface StudyPlan {
   id: number
-  user_id: number
+  userId: number
   title: string
   description: string | null
-  plan_type: 'review' | 'learning' | 'project'
+  planType: 'review' | 'learning' | 'project'
   subject: string | null
   difficulty: 'easy' | 'medium' | 'hard'
   status: 'active' | 'completed' | 'paused'
-  progress_percent: number
-  start_date: string
-  end_date: string | null
-  created_at: string
-  updated_at: string
+  progressPercent: number
+  startDate: string
+  endDate: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export const useStudyPlanStore = defineStore('studyPlan', () => {
@@ -32,7 +33,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   const completionRate = computed(() => {
     if (studyPlans.value.length === 0) return 0
     const completedCount = studyPlans.value.filter(
-      (plan) => plan.status === 'completed' || plan.progress_percent >= 100,
+      (plan) => plan.status === 'completed' || plan.progressPercent >= 100,
     ).length
     return Math.round((completedCount / studyPlans.value.length) * 100)
   })
@@ -54,7 +55,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     page?: number
     size?: number
     status?: 'active' | 'completed' | 'paused'
-    plan_type?: 'review' | 'learning' | 'project'
+    planType?: 'review' | 'learning' | 'project'
     subject?: string
   }) => {
     isLoading.value = true
@@ -64,12 +65,12 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         page: params?.page || 1,
         size: params?.size || 10,
         status: params?.status,
-        planType: params?.plan_type, // 后端是 planType
+        planType: params?.planType, // 后端是 planType
         subject: params?.subject,
       })
 
       if (response.code === 200) {
-        studyPlans.value = response.data.list
+        studyPlans.value = response.data.list as unknown as StudyPlan[]
         total.value = response.data.total
         currentPage.value = response.data.page
         pageSize.value = response.data.size
@@ -90,12 +91,12 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   const addPlan = async (planData: {
     title: string
     description?: string
-    plan_type: 'review' | 'learning' | 'project'
+    planType: 'review' | 'learning' | 'project'
     subject?: string
     difficulty?: 'easy' | 'medium' | 'hard'
-    start_date: string
-    end_date?: string
-    progress_percent?: number
+    startDate: string
+    endDate?: string
+    progressPercent?: number
   }) => {
     isLoading.value = true
     try {
@@ -103,12 +104,12 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       const response = await api.createStudyPlan({
         title: planData.title,
         description: planData.description,
-        planType: planData.plan_type,
+        planType: planData.planType,
         subject: planData.subject,
         difficulty: planData.difficulty || 'medium',
-        startDate: planData.start_date,
-        endDate: planData.end_date,
-        progressPercent: planData.progress_percent || 0,
+        startDate: planData.startDate,
+        endDate: planData.endDate,
+        progressPercent: planData.progressPercent || 0,
       })
 
       if (response.code === 200 || response.code === 201) {
@@ -133,14 +134,14 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     try {
       const response = await api.updateStudyPlan(id, {
         title: planData.title,
-        description: planData.description,
-        planType: planData.plan_type,
-        subject: planData.subject,
+        description: planData.description ?? undefined,
+        planType: planData.planType,
+        subject: planData.subject ?? undefined,
         difficulty: planData.difficulty,
         status: planData.status,
-        startDate: planData.start_date,
-        endDate: planData.end_date,
-        progressPercent: planData.progress_percent,
+        startDate: planData.startDate,
+        endDate: planData.endDate ?? undefined,
+        progressPercent: planData.progressPercent,
       })
 
       if (response.code === 200) {
@@ -232,7 +233,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     try {
       const response = await api.getStudyPlan(id)
       if (response.code === 200) {
-        selectedPlan.value = response.data
+        selectedPlan.value = response.data as unknown as StudyPlan
         return response.data
       }
     } catch (error) {

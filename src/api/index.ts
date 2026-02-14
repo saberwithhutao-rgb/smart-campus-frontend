@@ -221,7 +221,13 @@ export const api = {
   getCaptcha: () => request<CaptchaResponse>({ method: 'GET', url: '/api/captcha' }),
 
   // 学习计划模块
-  getStudyPlans: (params?: { page?: number; size?: number; status?: string; planType?: string }) =>
+  getStudyPlans: (params?: {
+    page?: number
+    size?: number
+    status?: string
+    planType?: string
+    subject?: string
+  }) =>
     request<
       ApiResponse<{
         list: StudyPlan[]
@@ -290,7 +296,7 @@ export const api = {
     request<
       ApiResponse<{
         id: number
-        progress_percent: number
+        progressPercent: number
         status: string
         updated_at: string
       }>

@@ -4,7 +4,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { useStudyPlanStore } from '../stores/studyPlan' // 注意：你的是 studyPlan.ts，不是 studyPlanStore.ts
-import type { StudyPlan } from '../stores/studyPlan'
+import type { StudyPlan } from '@/stores/studyPlan'
+import { ElMessage } from 'element-plus'
+import 'element-plus/es/components/message/style/css' // 引入样式
 
 // 路由实例
 const router = useRouter()
@@ -35,11 +37,11 @@ const showAddModal = ref(false)
 const newPlan = ref({
   title: '',
   description: '',
-  plan_type: 'learning' as 'review' | 'learning' | 'project', // 新增：计划类型
+  planType: 'learning' as 'review' | 'learning' | 'project', // 新增：计划类型
   subject: '', // 新增：学科
   difficulty: 'medium' as 'easy' | 'medium' | 'hard', // 难易程度
-  start_date: '', // ✅ 开始日期
-  end_date: '', // ✅ 结束日期
+  startDate: '', // ✅ 开始日期
+  endDate: '', // ✅ 结束日期
 })
 
 // 编辑计划弹窗 - ✅ 修改：完全匹配数据库表结构
@@ -155,11 +157,11 @@ const openAddModalHandler = () => {
   newPlan.value = {
     title: '',
     description: '',
-    plan_type: 'learning',
+    planType: 'learning',
     subject: '',
     difficulty: 'medium',
-    start_date: '',
-    end_date: '',
+    startDate: '',
+    endDate: '',
   }
 }
 
@@ -179,7 +181,7 @@ const addPlan = async () => {
     return
   }
 
-  if (!newPlan.value.start_date) {
+  if (!newPlan.value.startDate) {
     ElMessage.warning('请选择开始日期')
     return
   }
@@ -188,12 +190,12 @@ const addPlan = async () => {
     await studyPlanStore.addPlan({
       title: newPlan.value.title,
       description: newPlan.value.description || undefined,
-      plan_type: newPlan.value.plan_type,
+      planType: newPlan.value.planType,
       subject: newPlan.value.subject || undefined,
       difficulty: newPlan.value.difficulty,
-      start_date: newPlan.value.start_date,
-      end_date: newPlan.value.end_date || undefined,
-      progress_percent: 0,
+      startDate: newPlan.value.startDate,
+      endDate: newPlan.value.endDate || undefined,
+      progressPercent: 0,
     })
 
     closeAddModalHandler()
@@ -233,12 +235,12 @@ const saveEditPlan = async () => {
     await studyPlanStore.updatePlan(editPlan.value.id, {
       title: editPlan.value.title,
       description: editPlan.value.description || undefined,
-      plan_type: editPlan.value.plan_type,
+      planType: editPlan.value.planType,
       subject: editPlan.value.subject || undefined,
       difficulty: editPlan.value.difficulty,
-      start_date: editPlan.value.start_date,
-      end_date: editPlan.value.end_date || undefined,
-      progress_percent: editPlan.value.progress_percent,
+      startDate: editPlan.value.startDate,
+      endDate: editPlan.value.endDate || undefined,
+      progressPercent: editPlan.value.progressPercent,
     })
 
     closeEditModalHandler()
@@ -422,7 +424,7 @@ onMounted(() => {
                       {{ plan.description }}
                     </div>
                     <div class="plan-tags">
-                      <span class="plan-type-tag">{{ getPlanTypeText(plan.plan_type) }}</span>
+                      <span class="plan-type-tag">{{ getPlanTypeText(plan.planType) }}</span>
                       <span class="plan-subject-tag" v-if="plan.subject">{{ plan.subject }}</span>
                     </div>
                   </div>
@@ -438,8 +440,8 @@ onMounted(() => {
 
                     <!-- 日期信息 -->
                     <div class="plan-time-info">
-                      📅 {{ formatDate(plan.start_date) }}
-                      <span v-if="plan.end_date">→ {{ formatDate(plan.end_date) }}</span>
+                      📅 {{ formatDate(plan.startDate) }}
+                      <span v-if="plan.endDate">→ {{ formatDate(plan.endDate) }}</span>
                     </div>
 
                     <!-- 进度条 -->
@@ -447,10 +449,10 @@ onMounted(() => {
                       <div class="progress-bar-container">
                         <div
                           class="progress-bar"
-                          :style="{ width: `${plan.progress_percent}%` }"
+                          :style="{ width: `${plan.progressPercent}%` }"
                         ></div>
                       </div>
-                      <span class="progress-text">{{ plan.progress_percent }}%</span>
+                      <span class="progress-text">{{ plan.progressPercent }}%</span>
                     </div>
 
                     <!-- 状态 -->
@@ -527,7 +529,7 @@ onMounted(() => {
           <div class="form-row">
             <div class="form-group half">
               <label for="plan-type">计划类型 <span class="required">*</span></label>
-              <select id="plan-type" v-model="newPlan.plan_type" class="form-select">
+              <select id="plan-type" v-model="newPlan.planType" class="form-select">
                 <option value="learning">学习</option>
                 <option value="review">复习</option>
                 <option value="project">项目</option>
@@ -562,7 +564,7 @@ onMounted(() => {
               <input
                 type="date"
                 id="plan-start-date"
-                v-model="newPlan.start_date"
+                v-model="newPlan.startDate"
                 class="form-input"
               />
             </div>
@@ -571,9 +573,9 @@ onMounted(() => {
               <input
                 type="date"
                 id="plan-end-date"
-                v-model="newPlan.end_date"
+                v-model="newPlan.endDate"
                 class="form-input"
-                :min="newPlan.start_date"
+                :min="newPlan.startDate"
               />
             </div>
           </div>
@@ -616,7 +618,7 @@ onMounted(() => {
           <div class="form-row">
             <div class="form-group half">
               <label for="edit-plan-type">计划类型</label>
-              <select id="edit-plan-type" v-model="editPlan.plan_type" class="form-select">
+              <select id="edit-plan-type" v-model="editPlan.planType" class="form-select">
                 <option value="learning">学习</option>
                 <option value="review">复习</option>
                 <option value="project">项目</option>
@@ -650,7 +652,7 @@ onMounted(() => {
               <input
                 type="date"
                 id="edit-plan-start-date"
-                v-model="editPlan.start_date"
+                v-model="editPlan.startDate"
                 class="form-input"
               />
             </div>
@@ -659,9 +661,9 @@ onMounted(() => {
               <input
                 type="date"
                 id="edit-plan-end-date"
-                v-model="editPlan.end_date"
+                v-model="editPlan.endDate"
                 class="form-input"
-                :min="editPlan.start_date"
+                :min="editPlan.startDate"
               />
             </div>
           </div>
@@ -673,13 +675,13 @@ onMounted(() => {
               <input
                 type="range"
                 id="edit-plan-progress"
-                v-model.number="editPlan.progress_percent"
+                v-model.number="editPlan.progressPercent"
                 class="progress-slider"
                 min="0"
                 max="100"
                 step="1"
               />
-              <span class="progress-value">{{ editPlan.progress_percent }}%</span>
+              <span class="progress-value">{{ editPlan.progressPercent }}%</span>
             </div>
           </div>
 
@@ -1344,11 +1346,6 @@ onMounted(() => {
 .delete-btn:hover {
   background-color: var(--accent-color-dark);
   transform: translateY(-1px);
-}
-
-/* 移除不再使用的样式 */
-.plan-info {
-  display: none;
 }
 
 /* 空状态 */
