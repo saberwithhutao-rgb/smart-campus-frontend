@@ -209,17 +209,46 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
    */
   const togglePlanComplete = async (id: number) => {
     isLoading.value = true
+    let planIndex = -1 // 提升作用域并初始化
+    let originalPlan: StudyPlan | null = null // 保存原始数据
+
     try {
+      // 找到要修改的计划
+      planIndex = studyPlans.value.findIndex((p) => p.id === id)
+      if (planIndex === -1) return
+
+      originalPlan = { ...studyPlans.value[planIndex] } as StudyPlan
+
+      // 计算新状态
+      const newProgress = (originalPlan.progressPercent ?? 0) >= 100 ? 0 : 100
+      const newStatus = newProgress >= 100 ? 'completed' : 'active'
+
+      const updatedPlan = {
+        ...originalPlan,
+        progressPercent: newProgress,
+        status: newStatus,
+      } as StudyPlan
+      studyPlans.value[planIndex] = updatedPlan
+
+      // 调用API
       const response = await api.togglePlanComplete(id)
+
       if (response.code === 200) {
         ElMessage.success('状态切换成功')
-        await fetchStudyPlans()
-        return response.data
+        if (response.data) {
+          studyPlans.value[planIndex] = {
+            ...studyPlans.value[planIndex],
+            ...response.data,
+          }
+        }
       }
     } catch (error) {
       console.error('切换状态失败:', error)
       ElMessage.error('切换状态失败')
-      throw error
+
+      if (planIndex !== -1 && originalPlan) {
+        studyPlans.value[planIndex] = originalPlan
+      }
     } finally {
       isLoading.value = false
     }

@@ -32,7 +32,6 @@ const studyPlans = computed(() => studyPlanStore.studyPlans)
 const completionRate = computed(() => studyPlanStore.completionRate)
 const isLoading = computed(() => studyPlanStore.isLoading)
 
-// 添加新计划弹窗 - ✅ 修改：完全匹配数据库表结构
 const showAddModal = ref(false)
 const newPlan = ref({
   title: '',
@@ -40,8 +39,8 @@ const newPlan = ref({
   planType: 'learning' as 'review' | 'learning' | 'project', // 新增：计划类型
   subject: '', // 新增：学科
   difficulty: 'medium' as 'easy' | 'medium' | 'hard', // 难易程度
-  startDate: '', // ✅ 开始日期
-  endDate: '', // ✅ 结束日期
+  startDate: '',
+  endDate: '',
 })
 
 // 编辑计划弹窗 - ✅ 修改：完全匹配数据库表结构
