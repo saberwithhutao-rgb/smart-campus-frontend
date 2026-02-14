@@ -13,13 +13,11 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
-    // ✅ 1. 添加token（关键！）
     const token = localStorage.getItem('userToken') || localStorage.getItem('token')
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
 
-    // ✅ 2. 添加调试日志
     console.log('[API Request]', {
       url: config.url,
       method: config.method,
@@ -46,9 +44,36 @@ request.interceptors.response.use(
       // 服务器返回错误状态码
       console.error('响应错误:', error.response.status, error.response.data)
 
-      // 处理500错误
-      if (error.response.status === 500) {
+      // 🟢🟢🟢 处理 401 未授权/Token过期 🟢🟢🟢
+      if (error.response.status === 401) {
+        // 清除过期的 token
+        localStorage.removeItem('userToken')
+        localStorage.removeItem('token')
+        localStorage.removeItem('userInfo')
+
+        // 提示用户
+        ElMessage.error('登录已过期，请重新登录')
+
+        // 跳转到登录页
+        setTimeout(() => {
+          window.location.href = '/login'
+        }, 1500)
+      }
+      // 处理 403 禁止访问
+      else if (error.response.status === 403) {
+        ElMessage.error('没有权限访问此资源')
+      }
+      // 处理 404 资源不存在
+      else if (error.response.status === 404) {
+        ElMessage.error('请求的资源不存在')
+      }
+      // 处理 500 服务器错误
+      else if (error.response.status === 500) {
         ElMessage.error('服务器开小差了，请稍后再试')
+      }
+      // 其他错误
+      else {
+        ElMessage.error(error.response.data?.message || '请求失败')
       }
     } else if (error.request) {
       // 请求已发出但没有收到响应
