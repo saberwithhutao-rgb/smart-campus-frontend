@@ -130,6 +130,46 @@ export interface StudyPlan {
   progress: number
 }
 
+export interface ReviewPoint {
+  day: number
+  reviewTime: string
+  description: string
+}
+
+// 复习曲线
+export interface ReviewCurve {
+  points: ReviewPoint[]
+  recommendation: string
+}
+
+// 复习计划
+export interface ReviewPlan {
+  id: number
+  userId: number
+  title: string
+  items: ReviewItem[]
+  createdAt: string
+  nextReviewTime: string
+}
+
+// 复习项
+export interface ReviewItem {
+  content: string
+  difficulty: string
+  tags?: string[]
+  reviewDay?: number
+}
+
+// 难点标记
+export interface DifficultyMark {
+  id: number
+  userId: number
+  planId: number
+  content: string
+  tags: string[]
+  createdAt: string
+}
+
 // 智能问答相关类型
 export interface QaMessage {
   id: string

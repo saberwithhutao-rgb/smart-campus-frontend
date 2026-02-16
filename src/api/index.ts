@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios'
+import type { ReviewItem, StudyPlan } from '@/stores/studyPlan'
 import type {
-  StudyPlan,
   QaMessage,
   FileItem,
   LearningProgress,
@@ -433,6 +433,29 @@ export const api = {
       method: 'GET',
       url: '/api/university/count',
       params: { universityId },
+    }),
+  getReviewTasks: () =>
+    request<ApiResponse<ReviewItem[]>>({
+      method: 'GET',
+      url: '/api/study/tasks/review',
+    }),
+
+  getTodayTasks: () =>
+    request<ApiResponse<ReviewItem[]>>({
+      method: 'GET',
+      url: '/api/study/tasks/today',
+    }),
+
+  getOverdueTasks: () =>
+    request<ApiResponse<ReviewItem[]>>({
+      method: 'GET',
+      url: '/api/study/tasks/overdue',
+    }),
+
+  completeTask: (id: number) =>
+    request<ApiResponse<ReviewItem>>({
+      method: 'POST',
+      url: `/api/study/tasks/${id}/complete`,
     }),
 }
 

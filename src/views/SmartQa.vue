@@ -209,8 +209,9 @@ const processTongyiStream = async (
                 }
               }
             }
-          } catch (e) {
-            console.warn('⚠️ JSON解析失败:', e.message)
+          } catch (error) {
+            const err = error as Error
+            console.warn('⚠️ JSON解析失败:', err.message)
           }
         }
       }
