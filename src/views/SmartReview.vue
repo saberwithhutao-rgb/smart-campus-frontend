@@ -206,7 +206,7 @@ const completeTask = async (id: number) => {
 const ignoreTask = async (id: number) => {
   if (confirm('确定要忽略这个复习任务吗？')) {
     // 可以调用一个忽略API，或者直接刷新列表
-    await studyPlanStore.fetchReviewTasks()
+    await studyPlanStore.fetchPendingTasks()
   }
 }
 
@@ -224,7 +224,7 @@ const generateReviewPlan = () => {
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
-  studyPlanStore.fetchReviewTasks()
+  studyPlanStore.fetchPendingTasks()
 })
 </script>
 

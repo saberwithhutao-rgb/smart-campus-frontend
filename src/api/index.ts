@@ -439,6 +439,11 @@ export const api = {
       method: 'GET',
       url: '/api/study/tasks/review',
     }),
+  getPendingTasks: () =>
+    request<ApiResponse<ReviewItem[]>>({
+      method: 'GET',
+      url: '/api/study/tasks/pending',
+    }),
 
   getTodayTasks: () =>
     request<ApiResponse<ReviewItem[]>>({

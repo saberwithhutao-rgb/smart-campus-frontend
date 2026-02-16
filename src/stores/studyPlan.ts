@@ -63,7 +63,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   })
 
   // ----- 复习任务相关方法 -----
-  const fetchReviewTasks = async () => {
+  const fetchPendingTasks = async () => {
     isLoading.value = true
     try {
       const response = await api.getReviewTasks()
@@ -83,7 +83,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       const response = await api.completeTask(id)
       if (response.code === 200) {
         ElMessage.success('任务已完成')
-        await fetchReviewTasks()
+        await fetchPendingTasks()
       }
     } catch (error) {
       console.error('完成任务失败:', error)
@@ -318,7 +318,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     togglePlanComplete,
     getPlanById,
     reviewItems,
-    fetchReviewTasks,
+    fetchPendingTasks,
     completeTask,
     init,
   }
