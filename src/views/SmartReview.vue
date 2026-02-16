@@ -1,123 +1,3 @@
-<script setup lang="ts">
-import GlobalNavbar from '../components/GlobalNavbar.vue'
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
-import { useStudyPlanStore } from '../stores/studyPlan'
-import { ElMessage, ElMessageBox } from 'element-plus'
-
-// 路由实例
-const router = useRouter()
-const userStore = useUserStore()
-const studyPlanStore = useStudyPlanStore()
-
-// 响应式数据
-const showUserCenter = ref(false)
-const activeMenu = ref('')
-const showSubMenu = ref('')
-const isMobile = ref(false)
-const showSidebar = ref(true)
-
-// 复习任务列表
-const reviewItems = computed(() => studyPlanStore.reviewItems)
-
-// 格式化日期
-const formatDate = (date: string) => {
-  if (!date) return '待定'
-  return new Date(date).toLocaleDateString('zh-CN')
-}
-
-// 获取难度显示
-const getDifficultyText = (stage: number) => {
-  // 根据复习阶段返回难度标识
-  const difficulties = ['易', '中', '难']
-  return difficulties[Math.min(stage - 1, 2)] || '中'
-}
-
-// 获取难度类名
-const getDifficultyClass = (stage: number) => {
-  const text = getDifficultyText(stage)
-  return {
-    'difficulty-hard': text === '难',
-    'difficulty-medium': text === '中',
-    'difficulty-easy': text === '易',
-  }
-}
-
-// 完成任务
-const completeTask = async (id: number) => {
-  try {
-    await studyPlanStore.completeTask(id)
-    ElMessage.success('任务已完成')
-  } catch (error) {
-    console.error('完成任务失败:', error)
-    ElMessage.error('操作失败')
-  }
-}
-
-// 忽略任务
-const ignoreTask = async (id: number) => {
-  try {
-    await ElMessageBox.confirm('确定要忽略这个复习任务吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-    // 这里可以调用标记忽略的API
-    await studyPlanStore.fetchReviewTasks()
-    ElMessage.success('已忽略')
-  } catch {
-    // 用户取消
-  }
-}
-
-// 生成复习计划
-const generateReviewPlan = async () => {
-  const selectedItems = reviewItems.value.filter((item) => item.status === 'pending')
-  if (selectedItems.length === 0) {
-    ElMessage.warning('请先选择要复习的任务')
-    return
-  }
-
-  ElMessage.success(`已选择 ${selectedItems.length} 个复习任务`)
-  // TODO: 调用生成复习计划的API
-}
-
-// 标记难点
-const markSelectedDifficulty = async () => {
-  const selectedItems = reviewItems.value.filter((item) => item.status === 'pending')
-  if (selectedItems.length === 0) {
-    ElMessage.warning('请先选择要标记的任务')
-    return
-  }
-
-  ElMessage.success(`已标记 ${selectedItems.length} 个难点`)
-  // TODO: 调用标记难点的API
-}
-
-// 检查屏幕尺寸
-const checkScreenSize = () => {
-  isMobile.value = window.innerWidth <= 1024
-  if (isMobile.value) {
-    showSidebar.value = false
-  }
-}
-
-// 导航
-const goToStudyPlan = () => router.push('/ai/study')
-const goToSmartReview = () => {
-  /* 当前页面 */
-}
-const toggleSidebar = () => (showSidebar.value = !showSidebar.value)
-
-// 生命周期
-onMounted(() => {
-  checkScreenSize()
-  window.addEventListener('resize', checkScreenSize)
-  studyPlanStore.fetchReviewTasks()
-})
-</script>
-
 <template>
   <div class="smart-qa-container">
     <GlobalNavbar />
@@ -134,44 +14,51 @@ onMounted(() => {
         <div class="sidebar-header">
           <h2 class="sidebar-title">学习规划</h2>
         </div>
+
         <div class="sidebar-menu">
+          <!-- 学习计划选项 -->
           <div class="sidebar-item" @click="goToStudyPlan">学习计划</div>
+          <!-- 智能复习选项 -->
           <div class="sidebar-item sidebar-item-active" @click="goToSmartReview">智能复习</div>
         </div>
       </aside>
 
       <!-- 中间智能复习区域 -->
       <main class="study-main">
+        <!-- 智能复习区域 -->
         <div class="review-main">
           <h2 class="review-title">个性化智能复习</h2>
 
+          <!-- 智能复习模块 -->
           <div class="review-section">
             <h3 class="section-title">待复习任务</h3>
 
-            <!-- 任务列表 -->
-            <div class="review-table" v-if="reviewItems.length > 0">
-              <!-- 表头 -->
+            <!-- 复习任务列表 -->
+            <div class="review-table">
+              <!-- 表头 - 保持原有样式 -->
               <div class="review-table-header">
-                <div class="review-table-header-item">任务名称</div>
-                <div class="review-table-header-item">复习阶段</div>
-                <div class="review-table-header-item">计划时间</div>
-                <div class="review-table-header-item">状态</div>
+                <div class="review-table-header-item">学习项名称</div>
+                <div class="review-table-header-item">难度标识</div>
+                <div class="review-table-header-item">时间</div>
+                <div class="review-table-header-item">是否复习</div>
                 <div class="review-table-header-item">操作</div>
               </div>
 
               <!-- 表格内容 -->
               <div class="review-table-body">
                 <div v-for="item in reviewItems" :key="item.id" class="review-table-row">
+                  <!-- 学习项名称 - 显示任务标题 -->
                   <div class="review-table-cell">{{ item.title }}</div>
 
+                  <!-- 难度标识 - 显示复习阶段（第X次） -->
                   <div class="review-table-cell">
-                    <span class="difficulty-tag" :class="getDifficultyClass(item.reviewStage)">
-                      第{{ item.reviewStage }}次
-                    </span>
+                    <span class="difficulty-tag">第{{ item.reviewStage }}次</span>
                   </div>
 
+                  <!-- 时间 - 显示任务日期 -->
                   <div class="review-table-cell">{{ formatDate(item.taskDate) }}</div>
 
+                  <!-- 是否复习 - 复选框 -->
                   <div class="review-table-cell">
                     <input
                       type="checkbox"
@@ -181,23 +68,24 @@ onMounted(() => {
                     />
                   </div>
 
+                  <!-- 操作 - 忽略按钮 -->
                   <div class="review-table-cell">
                     <button class="delete-btn" @click="ignoreTask(item.id)">忽略</button>
                   </div>
                 </div>
+
+                <!-- 空状态 -->
+                <div v-if="reviewItems.length === 0" class="empty-state">
+                  <div class="empty-icon">📚</div>
+                  <div class="empty-text">暂无复习任务</div>
+                  <div class="empty-tip">完成学习计划后会自动生成复习任务</div>
+                </div>
               </div>
             </div>
 
-            <!-- 空状态 -->
-            <div v-else class="empty-state">
-              <p>暂无复习任务</p>
-              <p class="empty-tip">完成学习计划后会自动生成复习任务</p>
-            </div>
-
-            <!-- 操作按钮 -->
+            <!-- 生成复习计划按钮 -->
             <div class="review-footer">
               <button class="generate-btn" @click="generateReviewPlan">生成复习计划</button>
-              <button class="difficulty-btn" @click="markSelectedDifficulty">标记难点</button>
             </div>
           </div>
         </div>
@@ -205,6 +93,140 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import GlobalNavbar from '../components/GlobalNavbar.vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
+import { useStudyPlanStore } from '../stores/studyPlan'
+import { ElMessage } from 'element-plus'
+
+const router = useRouter()
+const userStore = useUserStore()
+const studyPlanStore = useStudyPlanStore()
+
+// 响应式数据
+const showUserCenter = ref(false)
+const activeMenu = ref('')
+const showSubMenu = ref('')
+const isMobile = ref(false)
+const showSidebar = ref(true)
+
+// 使用store中的复习任务数据
+const reviewItems = computed(() => studyPlanStore.reviewItems)
+
+// 检查屏幕尺寸
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth <= 1024
+}
+
+// 导航栏方法
+const goToLogin = () => router.push('/login')
+const goToRegister = () => router.push('/register')
+const goToSmartQA = () => router.push('/ai/chat')
+const goToStudyPlan = () => router.push('/ai/study')
+const goToStudyManagement = () => router.push('/campus/analysis')
+
+const toggleUserCenter = () => {
+  showUserCenter.value = !showUserCenter.value
+}
+
+const closeUserCenter = () => {
+  showUserCenter.value = false
+}
+
+const showSubMenuHandler = (menu: string) => {
+  if (!isMobile.value) {
+    showSubMenu.value = menu
+  }
+}
+
+const hideSubMenu = () => {
+  showSubMenu.value = ''
+}
+
+const handleMenuClick = (menu: string) => {
+  if (menu === '首页') {
+    router.push('/index')
+    return
+  }
+
+  if (isMobile.value) {
+    if (showSubMenu.value === menu) {
+      showSubMenu.value = ''
+    } else {
+      showSubMenu.value = menu
+    }
+  } else {
+    if (['个性化学习伴侣', '校园生活', '竞赛相关'].includes(menu)) {
+      showSubMenuHandler(menu)
+    } else {
+      hideSubMenu()
+    }
+  }
+}
+
+const handleUserMenuClick = (item: string) => {
+  if (item === '个人信息') {
+    router.push('/profile')
+  } else if (item === '退出登录') {
+    router.push('/login')
+  }
+  closeUserCenter()
+}
+
+const goToSmartReview = () => {
+  // 已在当前页面
+  return
+}
+
+// 切换侧边栏
+const toggleSidebar = () => {
+  showSidebar.value = !showSidebar.value
+}
+
+// 格式化日期
+const formatDate = (date: string) => {
+  return new Date(date)
+    .toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    .replace(/\//g, '-')
+}
+
+// 完成任务
+const completeTask = async (id: number) => {
+  await studyPlanStore.completeTask(id)
+}
+
+// 忽略任务
+const ignoreTask = async (id: number) => {
+  if (confirm('确定要忽略这个复习任务吗？')) {
+    // 可以调用一个忽略API，或者直接刷新列表
+    await studyPlanStore.fetchReviewTasks()
+  }
+}
+
+// 生成复习计划
+const generateReviewPlan = () => {
+  const selectedItems = reviewItems.value.filter((item) => item.status === 'pending')
+  if (selectedItems.length === 0) {
+    ElMessage.warning('请至少选择一个待复习任务')
+    return
+  }
+  ElMessage.success(`已选择 ${selectedItems.length} 个任务，正在生成复习计划...`)
+}
+
+// 生命周期
+onMounted(() => {
+  checkScreenSize()
+  window.addEventListener('resize', checkScreenSize)
+  studyPlanStore.fetchReviewTasks()
+})
+</script>
 
 <style scoped>
 /* 全局变量 */
