@@ -80,14 +80,27 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
 
   const completeTask = async (id: number) => {
     try {
+      // 乐观更新：先修改本地状态
+      const taskIndex = reviewItems.value.findIndex((item) => item.id === id)
+      if (taskIndex !== -1 && reviewItems.value[taskIndex]) {
+        reviewItems.value[taskIndex] = {
+          ...reviewItems.value[taskIndex],
+          status: 'completed',
+        }
+      }
+
       const response = await api.completeTask(id)
       if (response.code === 200) {
         ElMessage.success('任务已完成')
-        await fetchPendingTasks()
+        // 可选：用后端数据更新
+        if (response.data) {
+          reviewItems.value[taskIndex] = response.data
+        }
       }
     } catch (error) {
       console.error('完成任务失败:', error)
       ElMessage.error('完成任务失败')
+      await fetchPendingTasks() // 失败时重新获取
     }
   }
 
