@@ -46,7 +46,7 @@
 
               <!-- 表格内容 -->
               <div class="review-table-body">
-                <div v-for="item in reviewItems" :key="item.id" class="review-table-row">
+                <div v-for="item in filteredReviewItems" :key="item.id" class="review-table-row">
                   <!-- 学习项名称 - 显示任务标题 -->
                   <div class="review-table-cell">{{ item.title }}</div>
 
@@ -77,7 +77,7 @@
                 <!-- 空状态 -->
                 <div v-if="reviewItems.length === 0" class="empty-state">
                   <div class="empty-icon">📚</div>
-                  <div class="empty-text">暂无复习任务</div>
+                  <div class="empty-text">今天暂无复习任务</div>
                   <div class="empty-tip">完成学习计划后会自动生成复习任务</div>
                 </div>
               </div>
@@ -115,7 +115,14 @@ const showSidebar = ref(true)
 
 // 使用store中的复习任务数据
 const reviewItems = computed(() => studyPlanStore.reviewItems)
+const today: string = new Date().toISOString().split('T')[0] ?? ''
 
+// 过滤出今天及之前的待复习任务
+const filteredReviewItems = computed(() => {
+  return reviewItems.value.filter((item) => {
+    return item.taskDate <= today && item.status === 'pending'
+  })
+})
 // 检查屏幕尺寸
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
@@ -678,7 +685,13 @@ onMounted(() => {
   border-right: 1px solid var(--border-color);
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.review-table-cell:first-child {
   justify-content: flex-start;
+  text-align: left;
 }
 
 .review-table-cell:last-child {
@@ -692,7 +705,7 @@ onMounted(() => {
   border-radius: var(--border-radius-sm);
   font-size: 12px;
   font-weight: 500;
-  color: #fff;
+  color: black;
 }
 
 .difficulty-hard {
@@ -717,11 +730,6 @@ onMounted(() => {
   padding: 0;
 }
 
-/* 是否复习列居中 */
-.review-table-cell:nth-child(4) {
-  justify-content: center;
-}
-
 /* 删除按钮 */
 .delete-btn {
   background: none;
@@ -737,6 +745,31 @@ onMounted(() => {
 .delete-btn:hover {
   background-color: var(--accent-color-light);
   color: #fff;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text-color-light);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.empty-tip {
+  font-size: 14px;
+  color: var(--text-color-light);
 }
 
 /* 生成复习计划按钮 */
