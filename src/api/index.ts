@@ -434,11 +434,6 @@ export const api = {
       url: '/api/university/count',
       params: { universityId },
     }),
-  getReviewTasks: () =>
-    request<ApiResponse<ReviewItem[]>>({
-      method: 'GET',
-      url: '/api/study/tasks/review',
-    }),
   getPendingTasks: () =>
     request<ApiResponse<ReviewItem[]>>({
       method: 'GET',

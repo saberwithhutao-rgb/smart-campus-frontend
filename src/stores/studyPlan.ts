@@ -66,7 +66,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   const fetchPendingTasks = async () => {
     isLoading.value = true
     try {
-      const response = await api.getReviewTasks()
+      const response = await api.getPendingTasks()
       if (response.code === 200) {
         reviewItems.value = response.data
       }
