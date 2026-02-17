@@ -32,13 +32,36 @@ const studyPlans = computed(() => studyPlanStore.studyPlans)
 const completionRate = computed(() => studyPlanStore.completionRate)
 const isLoading = computed(() => studyPlanStore.isLoading)
 
+const subjectOptions = [
+  { value: '数学', label: '数学' },
+  { value: '英语', label: '英语' },
+  { value: '语文', label: '语文' },
+  { value: '物理', label: '物理' },
+  { value: '化学', label: '化学' },
+  { value: '生物', label: '生物' },
+  { value: '历史', label: '历史' },
+  { value: '地理', label: '地理' },
+  { value: '政治', label: '政治' },
+  { value: '计算机', label: '计算机' },
+  { value: '编程', label: '编程' },
+  { value: '算法', label: '算法' },
+  { value: '数据结构', label: '数据结构' },
+  { value: '数据库', label: '数据库' },
+  { value: '前端', label: '前端' },
+  { value: '后端', label: '后端' },
+  { value: '移动开发', label: '移动开发' },
+  { value: '人工智能', label: '人工智能' },
+  { value: '机器学习', label: '机器学习' },
+  { value: '深度学习', label: '深度学习' },
+]
+
 const showAddModal = ref(false)
 const newPlan = ref({
   title: '',
   description: '',
-  planType: 'learning' as 'review' | 'learning' | 'project', // 新增：计划类型
-  subject: '', // 新增：学科
-  difficulty: 'medium' as 'easy' | 'medium' | 'hard', // 难易程度
+  planType: '',
+  subject: '',
+  difficulty: 'medium',
   startDate: '',
   endDate: '',
 })
@@ -180,6 +203,11 @@ const addPlan = async () => {
     return
   }
 
+  if (!newPlan.value.subject) {
+    ElMessage.warning('请选择学科')
+    return
+  }
+
   if (!newPlan.value.startDate) {
     ElMessage.warning('请选择开始日期')
     return
@@ -190,11 +218,10 @@ const addPlan = async () => {
       title: newPlan.value.title,
       description: newPlan.value.description || undefined,
       planType: newPlan.value.planType,
-      subject: newPlan.value.subject || undefined,
+      subject: newPlan.value.subject,
       difficulty: newPlan.value.difficulty,
       startDate: newPlan.value.startDate,
       endDate: newPlan.value.endDate || undefined,
-      progressPercent: 0,
     })
 
     closeAddModalHandler()
@@ -230,16 +257,20 @@ const saveEditPlan = async () => {
     return
   }
 
+  if (!editPlan.value.subject) {
+    ElMessage.warning('请选择学科')
+    return
+  }
+
   try {
     await studyPlanStore.updatePlan(editPlan.value.id, {
       title: editPlan.value.title,
       description: editPlan.value.description || undefined,
       planType: editPlan.value.planType,
-      subject: editPlan.value.subject || undefined,
+      subject: editPlan.value.subject,
       difficulty: editPlan.value.difficulty,
       startDate: editPlan.value.startDate,
       endDate: editPlan.value.endDate || undefined,
-      progressPercent: editPlan.value.progressPercent,
     })
 
     closeEditModalHandler()
@@ -318,7 +349,7 @@ const getStatusText = (status: string) => {
   const map = {
     active: '进行中',
     completed: '已完成',
-    paused: '已暂停',
+    paused: '未开始',
   }
   return map[status as keyof typeof map] || status
 }
@@ -442,19 +473,6 @@ onMounted(() => {
                       📅 {{ formatDate(plan.startDate) }}
                       <span v-if="plan.endDate">→ {{ formatDate(plan.endDate) }}</span>
                     </div>
-
-                    <!-- 进度条 -->
-                    <div class="plan-progress">
-                      <div class="progress-bar-container">
-                        <div
-                          class="progress-bar"
-                          :style="{ width: `${plan.progressPercent}%` }"
-                        ></div>
-                      </div>
-                      <span class="progress-text">{{ plan.progressPercent }}%</span>
-                    </div>
-
-                    <!-- 状态 -->
                     <div class="plan-status" :class="`status-${plan.status}`">
                       {{ getStatusText(plan.status) }}
                     </div>
@@ -491,7 +509,7 @@ onMounted(() => {
     <!-- 添加新计划按钮 - 固定在右下角 -->
     <button class="add-plan-btn" @click="openAddModalHandler">➕ 添加新计划</button>
 
-    <!-- 添加新计划弹窗 - ✅ 完全匹配数据库结构 -->
+    <!-- 添加新计划弹窗-->
     <div v-if="showAddModal" class="modal-overlay" @click="closeAddModalHandler">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
@@ -524,10 +542,10 @@ onMounted(() => {
             ></textarea>
           </div>
 
-          <!-- 计划类型和学科（一行两个） -->
+          <!-- 计划类型（选填）和学科（必选） -->
           <div class="form-row">
             <div class="form-group half">
-              <label for="plan-type">计划类型 <span class="required">*</span></label>
+              <label for="plan-type">计划类型</label>
               <select id="plan-type" v-model="newPlan.planType" class="form-select">
                 <option value="learning">学习</option>
                 <option value="review">复习</option>
@@ -535,14 +553,13 @@ onMounted(() => {
               </select>
             </div>
             <div class="form-group half">
-              <label for="plan-subject">学科/科目</label>
-              <input
-                type="text"
-                id="plan-subject"
-                v-model="newPlan.subject"
-                class="form-input"
-                placeholder="例如：编程、数学"
-              />
+              <label for="plan-subject">学科/科目 <span class="required">*</span></label>
+              <select id="plan-subject" v-model="newPlan.subject" class="form-select">
+                <option value="" disabled>请选择学科</option>
+                <option v-for="option in subjectOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
             </div>
           </div>
 
@@ -587,7 +604,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 编辑计划弹窗 - ✅ 完全匹配数据库结构 -->
+    <!-- 编辑计划弹窗 -->
     <div v-if="showEditModal && editPlan" class="modal-overlay" @click="closeEditModalHandler">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
@@ -624,13 +641,13 @@ onMounted(() => {
               </select>
             </div>
             <div class="form-group half">
-              <label for="edit-plan-subject">学科/科目</label>
-              <input
-                type="text"
-                id="edit-plan-subject"
-                v-model="editPlan.subject"
-                class="form-input"
-              />
+              <label for="edit-plan-subject">学科/科目 <span class="required">*</span></label>
+              <select id="edit-plan-subject" v-model="editPlan.subject" class="form-select">
+                <option value="" disabled>请选择学科</option>
+                <option v-for="option in subjectOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
             </div>
           </div>
 
@@ -667,30 +684,12 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- 进度百分比 -->
-          <div class="form-group">
-            <label for="edit-plan-progress">学习进度 (0-100%)</label>
-            <div class="progress-input-group">
-              <input
-                type="range"
-                id="edit-plan-progress"
-                v-model.number="editPlan.progressPercent"
-                class="progress-slider"
-                min="0"
-                max="100"
-                step="1"
-              />
-              <span class="progress-value">{{ editPlan.progressPercent }}%</span>
-            </div>
-          </div>
-
-          <!-- 状态 -->
           <div class="form-group">
             <label for="edit-plan-status">状态</label>
             <select id="edit-plan-status" v-model="editPlan.status" class="form-select">
               <option value="active">进行中</option>
+              <option value="paused">未开始</option>
               <option value="completed">已完成</option>
-              <option value="paused">已暂停</option>
             </select>
           </div>
         </div>

@@ -75,7 +75,7 @@
                 </div>
 
                 <!-- 空状态 -->
-                <div v-if="reviewItems.length === 0" class="empty-state">
+                <div v-if="filteredReviewItems.length === 0" class="empty-state">
                   <div class="empty-icon">📚</div>
                   <div class="empty-text">今天暂无复习任务</div>
                   <div class="empty-tip">完成学习计划后会自动生成复习任务</div>

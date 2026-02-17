@@ -12,7 +12,6 @@ export interface StudyPlan {
   subject: string | null
   difficulty: 'easy' | 'medium' | 'hard'
   status: 'active' | 'completed' | 'paused'
-  progressPercent: number
   startDate: string
   endDate: string | null
   createdAt: string
@@ -38,7 +37,7 @@ export interface ReviewItem {
 export const useStudyPlanStore = defineStore('studyPlan', () => {
   // ----- 状态 -----
   const studyPlans = ref<StudyPlan[]>([])
-  const reviewItems = ref<ReviewItem[]>([]) // ✅ 移到里面！
+  const reviewItems = ref<ReviewItem[]>([])
   const isLoading = ref(false)
   const currentPage = ref(1)
   const pageSize = ref(10)
@@ -48,9 +47,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   // ----- 计算属性 -----
   const completionRate = computed(() => {
     if (studyPlans.value.length === 0) return 0
-    const completedCount = studyPlans.value.filter(
-      (plan) => plan.status === 'completed' || plan.progressPercent >= 100,
-    ).length
+    const completedCount = studyPlans.value.filter((plan) => plan.status === 'completed').length
     return Math.round((completedCount / studyPlans.value.length) * 100)
   })
 
@@ -141,12 +138,11 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   const addPlan = async (planData: {
     title: string
     description?: string
-    planType: 'review' | 'learning' | 'project'
-    subject?: string
+    planType?: 'review' | 'learning' | 'project'
+    subject: string
     difficulty?: 'easy' | 'medium' | 'hard'
     startDate: string
     endDate?: string
-    progressPercent?: number
   }) => {
     isLoading.value = true
     try {
@@ -158,7 +154,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         difficulty: planData.difficulty || 'medium',
         startDate: planData.startDate,
         endDate: planData.endDate,
-        progressPercent: planData.progressPercent || 0,
       })
 
       if (response.code === 200 || response.code === 201) {
@@ -187,7 +182,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         status: planData.status,
         startDate: planData.startDate,
         endDate: planData.endDate ?? undefined,
-        progressPercent: planData.progressPercent,
       })
 
       if (response.code === 200) {
@@ -221,29 +215,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     }
   }
 
-  const updateProgress = async (id: number, progress: number) => {
-    if (progress < 0 || progress > 100) {
-      ElMessage.error('进度必须在0-100之间')
-      return
-    }
-
-    isLoading.value = true
-    try {
-      const response = await api.updateProgress(id, progress)
-      if (response.code === 200) {
-        ElMessage.success(response.message || '进度更新成功')
-        await fetchStudyPlans()
-        return response.data
-      }
-    } catch (error) {
-      console.error('更新进度失败:', error)
-      ElMessage.error('更新进度失败')
-      throw error
-    } finally {
-      isLoading.value = false
-    }
-  }
-
   const togglePlanComplete = async (id: number) => {
     isLoading.value = true
     let planIndex = -1
@@ -254,13 +225,10 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       if (planIndex === -1) return
 
       originalPlan = { ...studyPlans.value[planIndex] } as StudyPlan
-
-      const newProgress = (originalPlan.progressPercent ?? 0) >= 100 ? 0 : 100
-      const newStatus = newProgress >= 100 ? 'completed' : 'active'
+      const newStatus = originalPlan.status === 'completed' ? 'active' : 'completed'
 
       const updatedPlan = {
         ...originalPlan,
-        progressPercent: newProgress,
         status: newStatus,
       } as StudyPlan
       studyPlans.value[planIndex] = updatedPlan
@@ -327,7 +295,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     addPlan,
     updatePlan,
     deletePlan,
-    updateProgress,
     togglePlanComplete,
     getPlanById,
     reviewItems,
