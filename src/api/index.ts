@@ -258,7 +258,6 @@ export const api = {
     difficulty?: 'easy' | 'medium' | 'hard'
     startDate: string
     endDate?: string
-    progressPercent?: number
   }) =>
     request<ApiResponse<StudyPlan>>({
       method: 'POST',
@@ -277,7 +276,6 @@ export const api = {
       status?: 'active' | 'completed' | 'paused'
       startDate?: string
       endDate?: string
-      progressPercent?: number
     },
   ) =>
     request<ApiResponse<StudyPlan>>({
@@ -290,20 +288,6 @@ export const api = {
     request<ApiResponse<null>>({
       method: 'DELETE',
       url: `/api/study/plans/${id}`,
-    }),
-
-  updateProgress: (id: number, progress: number) =>
-    request<
-      ApiResponse<{
-        id: number
-        progressPercent: number
-        status: string
-        updated_at: string
-      }>
-    >({
-      method: 'PATCH',
-      url: `/api/study/plans/${id}/progress`,
-      data: { progressPercent: progress },
     }),
 
   // ✅ 切换完成状态
