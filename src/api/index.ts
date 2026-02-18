@@ -380,6 +380,19 @@ export const api = {
     })
   },
 
+  saveConversation: (data: {
+    sessionId: string
+    question: string
+    answer: string
+    isFirstMessage: boolean
+    fileId?: number
+  }) =>
+    request<ApiResponse<null>>({
+      method: 'POST',
+      url: '/ai/chat/save',
+      data,
+    }),
+
   // 简单问答接口（兼容旧版本）
   sendAiMessage: (message: string, chanId?: string) =>
     request<string>({
@@ -405,8 +418,6 @@ export const api = {
       url: '/ai/chat/history',
       params: { sessionId, limit },
     }),
-
-  // ===== 新增：历史对话相关接口 =====
 
   /**
    * 获取用户的会话列表（每个会话一条记录）
