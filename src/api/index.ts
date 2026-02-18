@@ -72,6 +72,48 @@ interface ChatHistoryItem {
   fileId?: number
 }
 
+// ===== 新增：历史对话相关类型定义 =====
+/**
+ * 会话列表项
+ */
+export interface ConversationSession {
+  sessionId: string
+  title: string
+  preview: string
+  createTime: string
+  messageCount: number
+  fileId?: number
+  fileName?: string
+  fileType?: string
+}
+
+/**
+ * 会话历史记录项
+ */
+export interface SessionHistoryItem {
+  question: string
+  answer: string
+  createTime: string
+  questionType: string
+  rating: number
+  tokenUsage: number
+  fileId?: number
+  fileName?: string
+  fileType?: string
+}
+
+/**
+ * 对话统计信息
+ */
+export interface ChatStats {
+  totalConversations: number
+  totalTokens: number
+  totalSessions: number
+  positiveRatings: number
+  negativeRatings: number
+  unrated: number
+}
+
 // 请求拦截器
 service.interceptors.request.use(
   (config) => {
@@ -362,6 +404,70 @@ export const api = {
       method: 'GET',
       url: '/ai/chat/history',
       params: { sessionId, limit },
+    }),
+
+  // ===== 新增：历史对话相关接口 =====
+
+  /**
+   * 获取用户的会话列表（每个会话一条记录）
+   */
+  getConversationSessions: () =>
+    request<ApiResponse<ConversationSession[]>>({
+      method: 'GET',
+      url: '/ai/chat/sessions',
+    }),
+
+  /**
+   * 获取某个会话的完整历史记录
+   * @param sessionId 会话ID
+   */
+  getSessionHistory: (sessionId: string) =>
+    request<ApiResponse<SessionHistoryItem[]>>({
+      method: 'GET',
+      url: `/ai/chat/history/${sessionId}`,
+    }),
+
+  /**
+   * 删除整个会话
+   * @param sessionId 会话ID
+   */
+  deleteSession: (sessionId: string) =>
+    request<ApiResponse<{ deletedCount: number }>>({
+      method: 'DELETE',
+      url: `/ai/chat/session/${sessionId}`,
+    }),
+
+  /**
+   * 重命名会话
+   * @param sessionId 会话ID
+   * @param title 新标题
+   */
+  renameSession: (sessionId: string, title: string) =>
+    request<ApiResponse<null>>({
+      method: 'PUT',
+      url: `/ai/chat/session/${sessionId}`,
+      data: { title },
+    }),
+
+  /**
+   * 评价回答
+   * @param conversationId 对话记录ID
+   * @param rating 评分：-1不满意，0未评价，1满意
+   */
+  rateConversation: (conversationId: number, rating: number) =>
+    request<ApiResponse<null>>({
+      method: 'POST',
+      url: `/ai/chat/rate/${conversationId}`,
+      data: { rating },
+    }),
+
+  /**
+   * 获取对话统计信息
+   */
+  getChatStats: () =>
+    request<ApiResponse<ChatStats>>({
+      method: 'GET',
+      url: '/ai/chat/stats',
     }),
 
   // 文件处理模块
