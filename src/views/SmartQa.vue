@@ -510,7 +510,7 @@ const handleFileChange = (event: Event) => {
   }
 }
 
-// 上传文件（非流式）
+// 上传文件（使用流式）
 const uploadFile = async () => {
   if (!selectedFile.value) return
 
@@ -523,54 +523,63 @@ const uploadFile = async () => {
   messages.value.push(fileMessage)
   scrollToBottom()
 
+  // 创建AI消息占位符
+  const aiMessageId = Date.now() + 1
+  const aiMessage: ChatMessage = {
+    id: aiMessageId,
+    content: '',
+    sender: 'ai',
+    timestamp: new Date().toLocaleTimeString(),
+    isLoading: true,
+  }
+  messages.value.push(aiMessage)
+  const aiMessageIndex = messages.value.length - 1
+  scrollToBottom()
+
   try {
-    const response = await api.askQuestion({
-      question: inputMessage.value || '请分析这个文件',
-      file: selectedFile.value,
-      sessionId: currentSessionId.value || undefined,
-      stream: false,
+    const token = localStorage.getItem('userToken')
+    if (!token) {
+      safeUpdateMessage(aiMessageIndex, '请先登录', false)
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('question', inputMessage.value || '请分析这个文件')
+
+    if (currentSessionId.value) {
+      formData.append('sessionId', currentSessionId.value)
+    }
+
+    formData.append('file', selectedFile.value)
+    formData.append('stream', 'true') // 👈 改为 true，使用流式
+
+    const response = await fetch('/ai/chat', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'text/event-stream',
+      },
+      body: formData,
     })
 
-    if (response.code === 202) {
-      // 异步处理
-      const taskId = response.data.taskId
-      if (taskId) {
-        pollTaskStatus(taskId) // 确保 taskId 存在后再调用
-      } else {
-        console.error('❌ taskId 未定义，无法启动轮询')
-      }
-
-      if (response.data.sessionId) {
-        currentSessionId.value = response.data.sessionId
-      }
-    } else if (response.code === 200) {
-      // 同步完成
-      const aiMessage: ChatMessage = {
-        id: Date.now() + 1,
-        content: response.data.answer || '文件处理完成',
-        sender: 'ai',
-        timestamp: new Date().toLocaleTimeString(),
-      }
-      messages.value.push(aiMessage)
-      scrollToBottom()
-
-      if (response.data.sessionId) {
-        currentSessionId.value = response.data.sessionId
-      }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
     }
+
+    // 使用流式处理
+    await processTongyiStream(response, aiMessageIndex, inputMessage.value || '请分析这个文件')
+
+    // 清除文件选择
+    selectedFile.value = null
+    isUploadMode.value = false
   } catch (error) {
     console.error('上传失败:', error)
-    const errorMessage: ChatMessage = {
-      id: Date.now(),
-      content: `❌ 上传失败: ${error instanceof Error ? error.message : '未知错误'}`,
-      sender: 'system',
-      timestamp: new Date().toLocaleTimeString(),
-    }
-    messages.value.push(errorMessage)
-    scrollToBottom()
+    safeUpdateMessage(
+      aiMessageIndex,
+      `上传失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      false,
+    )
   }
-
-  cancelUpload()
 }
 
 // 取消上传
@@ -581,40 +590,6 @@ const cancelUpload = () => {
   if (input) {
     input.value = ''
   }
-}
-
-// 轮询任务状态
-const pollTaskStatus = async (taskId: string) => {
-  const interval = setInterval(async () => {
-    try {
-      const response = await api.getTaskStatus(taskId)
-
-      if (response.data.status === 'completed') {
-        clearInterval(interval)
-        const aiMessage: ChatMessage = {
-          id: Date.now(),
-          content: response.data.answer || '文件处理完成',
-          sender: 'ai',
-          timestamp: new Date().toLocaleTimeString(),
-        }
-        messages.value.push(aiMessage)
-        scrollToBottom()
-      } else if (response.data.status === 'failed') {
-        clearInterval(interval)
-        const errorMessage: ChatMessage = {
-          id: Date.now(),
-          content: `❌ 处理失败: ${response.data.error || '未知错误'}`,
-          sender: 'system',
-          timestamp: new Date().toLocaleTimeString(),
-        }
-        messages.value.push(errorMessage)
-        scrollToBottom()
-      }
-    } catch (error) {
-      console.error('轮询失败:', error)
-      clearInterval(interval)
-    }
-  }, 2000)
 }
 
 // 切换侧边栏
