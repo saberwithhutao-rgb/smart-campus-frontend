@@ -426,7 +426,7 @@ export const api = {
     request<ApiResponse<ConversationSession[]>>({
       method: 'GET',
       url: '/ai/chat/sessions',
-      timeout: 10000,
+      timeout: 30000,
       responseType: 'json', // 强制指定响应类型
       headers: {
         Accept: 'application/json;charset=UTF-8', // 明确指定编码

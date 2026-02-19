@@ -78,7 +78,7 @@ const loadSessions = async () => {
 
     if (response?.code === 200) {
       if (Array.isArray(response.data)) {
-        sessions.value = response.data
+        // sessions.value = response.data
         console.log('sessions.value 已赋值:', sessions.value)
       } else {
         console.error('response.data 不是数组:', response.data)
