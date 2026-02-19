@@ -63,18 +63,34 @@ watch(selectedMenu, async (newVal) => {
 
 // ===== 新增：加载会话列表 =====
 const loadSessions = async () => {
+  console.log('loadSessions 开始')
   loadingSessions.value = true
   try {
-    console.log('加载会话列表...')
+    console.log('调用 api.getConversationSessions()')
     const response = await api.getConversationSessions()
-    console.log('加载会话列表响应:', response)
-    if (response.code === 200) {
-      sessions.value = response.data
-      console.log('会话列表:', sessions.value)
+    console.log('api 返回原始数据:', response)
+
+    // 检查 response 的结构
+    console.log('response.code:', response?.code)
+    console.log('response.data:', response?.data)
+    console.log('response.data 类型:', typeof response?.data)
+    console.log('response.data 是数组吗?', Array.isArray(response?.data))
+
+    if (response?.code === 200) {
+      if (Array.isArray(response.data)) {
+        sessions.value = response.data
+        console.log('sessions.value 已赋值:', sessions.value)
+      } else {
+        console.error('response.data 不是数组:', response.data)
+      }
+    } else {
+      console.error('response.code 不是 200:', response?.code)
     }
   } catch (error) {
-    console.error('加载会话列表失败:', error)
+    console.error('loadSessions 捕获到错误:', error)
+    console.error('错误详情:', JSON.stringify(error))
   } finally {
+    console.log('loadSessions 结束，loadingSessions 设为 false')
     loadingSessions.value = false
   }
 }
