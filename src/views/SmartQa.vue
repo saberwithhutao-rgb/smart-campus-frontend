@@ -606,14 +606,14 @@ onMounted(async () => {
   window.addEventListener('resize', checkScreenSize)
 
   // ===== 新增：自动加载历史会话 =====
-  if (userStore.isLoggedIn) {
-    await loadSessions()
+  // if (userStore.userState.isLoggedIn) {
+  //   await loadSessions()
 
-    // 如果有会话，默认选择第一个
-    if (sessions.value.length > 0) {
-      selectSession(sessions.value[0])
-    }
-  }
+  //   // 如果有会话，默认选择第一个
+  //   if (sessions.value.length > 0 && sessions.value[0]) {
+  //     selectSession(sessions.value[0])
+  //   }
+  // }
 })
 
 onUnmounted(() => {
@@ -622,11 +622,11 @@ onUnmounted(() => {
 
 // ===== 新增：监听登录状态变化 =====
 watch(
-  () => userStore.isLoggedIn,
+  () => userStore.userState.isLoggedIn,
   async (isLoggedIn) => {
     if (isLoggedIn) {
       await loadSessions()
-      if (sessions.value.length > 0) {
+      if (sessions.value.length > 0 && sessions.value[0]) {
         selectSession(sessions.value[0])
       }
     } else {

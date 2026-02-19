@@ -426,6 +426,7 @@ export const api = {
     request<ApiResponse<ConversationSession[]>>({
       method: 'GET',
       url: '/ai/chat/sessions',
+      timeout: 10000,
     }),
 
   /**
