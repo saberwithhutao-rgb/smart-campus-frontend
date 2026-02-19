@@ -448,7 +448,7 @@ const sendMessage = async () => {
       stream: true,
     })
 
-    const response = await fetch('/ai/chat', {
+    const response = await fetch('/ai/chat/send', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -553,7 +553,7 @@ const uploadFile = async () => {
     formData.append('file', selectedFile.value)
     formData.append('stream', 'true') // 👈 改为 true，使用流式
 
-    const response = await fetch('/ai/chat', {
+    const response = await fetch('/ai/chat/send', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -598,14 +598,50 @@ const toggleSidebar = () => {
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
+
+  // ===== 新增：自动加载历史会话 =====
+  if (userStore.isLoggedIn) {
+    await loadSessions()
+
+    // 如果有会话，默认选择第一个
+    if (sessions.value.length > 0) {
+      selectSession(sessions.value[0])
+    }
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkScreenSize)
 })
+
+// ===== 新增：监听登录状态变化 =====
+watch(
+  () => userStore.isLoggedIn,
+  async (isLoggedIn) => {
+    if (isLoggedIn) {
+      await loadSessions()
+      if (sessions.value.length > 0) {
+        selectSession(sessions.value[0])
+      }
+    } else {
+      // 未登录时清空数据
+      sessions.value = []
+      messages.value = [
+        {
+          id: 1,
+          content: '您好！我是您的智能学习助手，有什么可以帮助您的吗？',
+          sender: 'ai',
+          timestamp: new Date().toLocaleTimeString(),
+        },
+      ]
+      currentSessionId.value = ''
+      selectedSessionId.value = ''
+    }
+  },
+)
 </script>
 
 <template>

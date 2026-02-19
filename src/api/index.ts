@@ -375,7 +375,7 @@ export const api = {
 
     return request<ApiResponse<ChatResponse>>({
       method: 'POST',
-      url: '/ai/chat',
+      url: '/ai/chat/send',
       data: formData,
     })
   },
@@ -579,7 +579,7 @@ export const askQuestionStream = async (params: {
   formData.append('stream', 'true')
 
   try {
-    const response = await fetch('/ai/chat', {
+    const response = await fetch('/ai/chat/send', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
