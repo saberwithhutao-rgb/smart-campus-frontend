@@ -65,9 +65,12 @@ watch(selectedMenu, async (newVal) => {
 const loadSessions = async () => {
   loadingSessions.value = true
   try {
+    console.log('加载会话列表...')
     const response = await api.getConversationSessions()
+    console.log('加载会话列表响应:', response)
     if (response.code === 200) {
       sessions.value = response.data
+      console.log('会话列表:', sessions.value)
     }
   } catch (error) {
     console.error('加载会话列表失败:', error)
