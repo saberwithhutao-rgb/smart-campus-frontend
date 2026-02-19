@@ -230,9 +230,15 @@ service.interceptors.response.use(
 
 // 通用请求函数
 const request = <T>(config: AxiosRequestConfig): Promise<T> => {
-  return service(config).then((res) => {
-    return res.data
-  })
+  return service(config)
+    .then((res) => {
+      console.log('request 收到响应，准备返回 data')
+      return res.data
+    })
+    .catch((err) => {
+      console.log('request 捕获错误:', err)
+      throw err
+    })
 }
 
 // API 接口定义
@@ -426,7 +432,7 @@ export const api = {
     request<ApiResponse<ConversationSession[]>>({
       method: 'GET',
       url: '/ai/chat/sessions',
-      timeout: 30000,
+      timeout: 10000,
       responseType: 'json', // 强制指定响应类型
       headers: {
         Accept: 'application/json;charset=UTF-8', // 明确指定编码
