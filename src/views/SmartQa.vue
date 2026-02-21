@@ -98,6 +98,7 @@ const loadSessions = async () => {
 // ===== 新增：加载某个会话的历史消息 =====
 const loadSessionHistory = async (sessionId: string) => {
   loadingHistory.value = true
+  console.log('加载会话:', sessionId, '请求URL:', `/ai/chat/history/${sessionId}`)
   try {
     const response = await api.getSessionHistory(sessionId)
     if (response.code === 200) {
