@@ -298,6 +298,13 @@ export const api = {
       url: `/api/study/plans/${id}`, // ✅ 修正路径！
     }),
 
+  batchGenerateReviewPlans: (taskIds: number[]) =>
+    request<ApiResponse<null>>({
+      method: 'POST',
+      url: '/api/study/tasks/batch-generate',
+      data: taskIds,
+    }),
+
   createStudyPlan: (data: {
     title: string
     description?: string

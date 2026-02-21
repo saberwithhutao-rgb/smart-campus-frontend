@@ -16,18 +16,26 @@
         </div>
 
         <div class="sidebar-menu">
-          <!-- 学习计划选项 -->
           <div class="sidebar-item" @click="goToStudyPlan">学习计划</div>
-          <!-- 智能复习选项 -->
           <div class="sidebar-item sidebar-item-active" @click="goToSmartReview">智能复习</div>
         </div>
       </aside>
 
       <!-- 中间智能复习区域 -->
       <main class="study-main">
-        <!-- 智能复习区域 -->
         <div class="review-main">
-          <h2 class="review-title">个性化智能复习</h2>
+          <div class="review-header">
+            <h2 class="review-title">个性化智能复习</h2>
+            <div class="review-actions">
+              <el-button
+                type="primary"
+                :disabled="selectedTaskIds.length === 0"
+                @click="showEbbinghausModal = true"
+              >
+                生成复习计划 ({{ selectedTaskIds.length }})
+              </el-button>
+            </div>
+          </div>
 
           <!-- 智能复习模块 -->
           <div class="review-section">
@@ -35,62 +43,115 @@
 
             <!-- 复习任务列表 -->
             <div class="review-table">
-              <!-- 表头 - 保持原有样式 -->
+              <!-- 表头 -->
               <div class="review-table-header">
+                <div class="review-table-header-item" style="width: 40px">
+                  <el-checkbox
+                    v-model="selectAll"
+                    :indeterminate="isIndeterminate"
+                    @change="handleSelectAllChange"
+                  />
+                </div>
                 <div class="review-table-header-item">学习项名称</div>
                 <div class="review-table-header-item">难度标识</div>
                 <div class="review-table-header-item">时间</div>
-                <div class="review-table-header-item">是否复习</div>
-                <div class="review-table-header-item">操作</div>
+                <div class="review-table-header-item" style="width: 100px">操作</div>
               </div>
 
               <!-- 表格内容 -->
               <div class="review-table-body">
-                <div v-for="item in filteredReviewItems" :key="item.id" class="review-table-row">
-                  <!-- 学习项名称 - 显示任务标题 -->
-                  <div class="review-table-cell">{{ item.title }}</div>
-
-                  <!-- 难度标识 - 显示复习阶段（第X次） -->
-                  <div class="review-table-cell">
-                    <span class="difficulty-tag">第{{ item.reviewStage }}次</span>
-                  </div>
-
-                  <!-- 时间 - 显示任务日期 -->
-                  <div class="review-table-cell">{{ formatDate(item.taskDate) }}</div>
-
-                  <!-- 是否复习 - 复选框 -->
-                  <div class="review-table-cell">
-                    <input
-                      type="checkbox"
-                      :checked="item.status === 'completed'"
-                      @change="completeTask(item.id)"
-                      class="complete-checkbox"
+                <div v-for="item in reviewItems" :key="item.id" class="review-table-row">
+                  <!-- 复选框列 -->
+                  <div class="review-table-cell" style="width: 40px">
+                    <el-checkbox
+                      v-model="selectedTaskIds"
+                      :label="item.id"
+                      :disabled="item.difficulty !== 'pending' || item.reviewStage !== 0"
                     />
                   </div>
 
-                  <!-- 操作 - 忽略按钮 -->
+                  <!-- 学习项名称 -->
+                  <div class="review-table-cell">{{ item.title }}</div>
+
+                  <!-- 难度标识 -->
                   <div class="review-table-cell">
-                    <button class="delete-btn" @click="ignoreTask(item.id)">忽略</button>
+                    <el-tag
+                      v-if="item.difficulty === 'pending' && item.reviewStage === 0"
+                      type="warning"
+                      size="small"
+                    >
+                      待生产
+                    </el-tag>
+                    <el-tag v-else :type="getDifficultyType(item.difficulty)" size="small">
+                      第{{ item.reviewStage }}次
+                    </el-tag>
+                  </div>
+
+                  <!-- 时间 -->
+                  <div class="review-table-cell">{{ formatDate(item.taskDate) }}</div>
+
+                  <!-- 操作 -->
+                  <div class="review-table-cell" style="width: 100px">
+                    <el-button type="danger" link size="small" @click="ignoreTask(item.id)">
+                      忽略
+                    </el-button>
                   </div>
                 </div>
 
                 <!-- 空状态 -->
-                <div v-if="filteredReviewItems.length === 0" class="empty-state">
+                <div v-if="reviewItems.length === 0" class="empty-state">
                   <div class="empty-icon">📚</div>
-                  <div class="empty-text">今天暂无复习任务</div>
-                  <div class="empty-tip">完成学习计划后会自动生成复习任务</div>
+                  <div class="empty-text">暂无复习任务</div>
+                  <div class="empty-tip">完成学习计划后会自动生成待生产任务</div>
                 </div>
               </div>
-            </div>
-
-            <!-- 生成复习计划按钮 -->
-            <div class="review-footer">
-              <button class="generate-btn" @click="generateReviewPlan">生成复习计划</button>
             </div>
           </div>
         </div>
       </main>
     </div>
+
+    <!-- 艾宾浩斯遗忘曲线弹窗 -->
+    <el-dialog
+      v-model="showEbbinghausModal"
+      title="艾宾浩斯遗忘曲线"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <div class="ebbinghaus-container">
+        <!-- 曲线图 -->
+        <div class="curve-image-container">
+          <img
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Crect width='800' height='400' fill='%23f5f7fa'/%3E%3Cpath d='M100 300 L700 300' stroke='%23ccc' stroke-width='2'/%3E%3Cpath d='M100 300 L100 50' stroke='%23ccc' stroke-width='2'/%3E%3Ctext x='80' y='320' fill='%23666' font-size='12'%3E0%3C/text%3E%3Ctext x='180' y='320' fill='%23666' font-size='12'%3E1%3C/text%3E%3Ctext x='280' y='320' fill='%23666' font-size='12'%3E2%3C/text%3E%3Ctext x='380' y='320' fill='%23666' font-size='12'%3E3%3C/text%3E%3Ctext x='480' y='320' fill='%23666' font-size='12'%3E4%3C/text%3E%3Ctext x='580' y='320' fill='%23666' font-size='12'%3E5%3C/text%3E%3Ctext x='680' y='320' fill='%23666' font-size='12'%3E6%3C/text%3E%3Ctext x='60' y='300' fill='%23666' font-size='12'%3E100%25%3C/text%3E%3Ctext x='60' y='250' fill='%23666' font-size='12'%3E75%25%3C/text%3E%3Ctext x='60' y='200' fill='%23666' font-size='12'%3E50%25%3C/text%3E%3Ctext x='60' y='150' fill='%23666' font-size='12'%3E25%25%3C/text%3E%3Ctext x='60' y='100' fill='%23666' font-size='12'%3E0%25%3C/text%3E%3Cpath d='M100 100 Q200 180 300 200 Q400 220 500 250 Q600 280 700 300' stroke='%23165dff' stroke-width='4' fill='none'/%3E%3Ccircle cx='100' cy='100' r='6' fill='%23165dff'/%3E%3Ccircle cx='200' cy='180' r='6' fill='%23165dff'/%3E%3Ccircle cx='300' cy='200' r='6' fill='%23165dff'/%3E%3Ccircle cx='400' cy='220' r='6' fill='%23165dff'/%3E%3Ccircle cx='500' cy='250' r='6' fill='%23165dff'/%3E%3Ccircle cx='600' cy='280' r='6' fill='%23165dff'/%3E%3Ccircle cx='700' cy='300' r='6' fill='%23165dff'/%3E%3Ctext x='80' y='80' fill='%23165dff' font-size='14'%3E刚刚记忆%3C/text%3E%3Ctext x='180' y='160' fill='%23165dff' font-size='14'%3E1天后%3C/text%3E%3Ctext x='280' y='180' fill='%23165dff' font-size='14'%3E2天后%3C/text%3E%3Ctext x='380' y='200' fill='%23165dff' font-size='14'%3E3天后%3C/text%3E%3Ctext x='480' y='230' fill='%23165dff' font-size='14'%3E4天后%3C/text%3E%3Ctext x='580' y='260' fill='%23165dff' font-size='14'%3E5天后%3C/text%3E%3Ctext x='680' y='280' fill='%23165dff' font-size='14'%3E6天后%3C/text%3E%3C/svg%3E"
+            alt="艾宾浩斯遗忘曲线"
+            class="curve-image"
+          />
+        </div>
+
+        <!-- 说明文字 -->
+        <div class="curve-description">
+          <h4>艾宾浩斯遗忘曲线复习计划</h4>
+          <p>根据遗忘曲线规律，您将在以下时间点进行复习：</p>
+          <ul>
+            <li><span class="dot"></span> 第1天（记忆保留约44%）</li>
+            <li><span class="dot"></span> 第3天（记忆保留约33%）</li>
+            <li><span class="dot"></span> 第7天（记忆保留约25%）</li>
+            <li><span class="dot"></span> 第15天（记忆保留约21%）</li>
+            <li><span class="dot"></span> 第30天（记忆保留约19%）</li>
+          </ul>
+          <p class="note">每次复习后，记忆保留率会大幅提升，最终形成长期记忆。</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showEbbinghausModal = false">取消</el-button>
+          <el-button type="primary" @click="confirmGenerate" :loading="generating">
+            开始生成 ({{ selectedTaskIds.length }}个任务)
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -101,6 +162,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { useStudyPlanStore } from '../stores/studyPlan'
 import { ElMessage } from 'element-plus'
+import type { ReviewItem } from '../stores/studyPlan'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -113,16 +175,44 @@ const showSubMenu = ref('')
 const isMobile = ref(false)
 const showSidebar = ref(true)
 
-// 使用store中的复习任务数据
+// 复习任务数据
 const reviewItems = computed(() => studyPlanStore.reviewItems)
-const today: string = new Date().toISOString().split('T')[0] ?? ''
 
-// 过滤出今天及之前的待复习任务
-const filteredReviewItems = computed(() => {
-  return reviewItems.value.filter((item) => {
-    return item.taskDate <= today && item.status === 'pending'
-  })
+// 选中状态
+const selectedTaskIds = ref<number[]>([])
+const showEbbinghausModal = ref(false)
+const generating = ref(false)
+
+// 全选逻辑
+const selectAll = computed({
+  get: () => {
+    const selectableTasks = reviewItems.value.filter(
+      (item) => item.difficulty === 'pending' && item.reviewStage === 0,
+    )
+    return selectableTasks.length > 0 && selectedTaskIds.value.length === selectableTasks.length
+  },
+  set: (value) => {
+    if (value) {
+      selectedTaskIds.value = reviewItems.value
+        .filter((item) => item.difficulty === 'pending' && item.reviewStage === 0)
+        .map((item) => item.id)
+    } else {
+      selectedTaskIds.value = []
+    }
+  },
 })
+
+const isIndeterminate = computed(() => {
+  const selectableTasks = reviewItems.value.filter(
+    (item) => item.difficulty === 'pending' && item.reviewStage === 0,
+  )
+  return selectedTaskIds.value.length > 0 && selectedTaskIds.value.length < selectableTasks.length
+})
+
+const handleSelectAllChange = (value: boolean) => {
+  selectAll.value = value
+}
+
 // 检查屏幕尺寸
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
@@ -134,6 +224,7 @@ const goToRegister = () => router.push('/register')
 const goToSmartQA = () => router.push('/ai/chat')
 const goToStudyPlan = () => router.push('/ai/study')
 const goToStudyManagement = () => router.push('/campus/analysis')
+const goToSmartReview = () => {} // 已在当前页面
 
 const toggleUserCenter = () => {
   showUserCenter.value = !showUserCenter.value
@@ -178,14 +269,11 @@ const handleUserMenuClick = (item: string) => {
   if (item === '个人信息') {
     router.push('/profile')
   } else if (item === '退出登录') {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userToken')
     router.push('/login')
   }
   closeUserCenter()
-}
-
-const goToSmartReview = () => {
-  // 已在当前页面
-  return
 }
 
 // 切换侧边栏
@@ -204,27 +292,52 @@ const formatDate = (date: string) => {
     .replace(/\//g, '-')
 }
 
-// 完成任务
-const completeTask = async (id: number) => {
-  await studyPlanStore.completeTask(id)
+// 获取难度标签类型
+const getDifficultyType = (difficulty: string) => {
+  const map: Record<string, string> = {
+    easy: 'success',
+    medium: 'warning',
+    hard: 'danger',
+  }
+  return map[difficulty] || 'info'
 }
 
 // 忽略任务
 const ignoreTask = async (id: number) => {
-  if (confirm('确定要忽略这个复习任务吗？')) {
-    // 可以调用一个忽略API，或者直接刷新列表
+  try {
+    // 这里可以调用一个忽略API，或者直接删除
+    // 暂时先刷新列表
     await studyPlanStore.fetchPendingTasks()
+    ElMessage.success('任务已忽略')
+  } catch (error) {
+    ElMessage.error('操作失败')
   }
 }
 
-// 生成复习计划
-const generateReviewPlan = () => {
-  const selectedItems = reviewItems.value.filter((item) => item.status === 'pending')
-  if (selectedItems.length === 0) {
-    ElMessage.warning('请至少选择一个待复习任务')
+// 确认生成复习计划
+const confirmGenerate = async () => {
+  if (selectedTaskIds.value.length === 0) {
+    ElMessage.warning('请至少选择一个任务')
     return
   }
-  ElMessage.success(`已选择 ${selectedItems.length} 个任务，正在生成复习计划...`)
+
+  generating.value = true
+  try {
+    // ✅ 调用批量生成接口
+    await api.batchGenerateReviewPlans(selectedTaskIds.value)
+
+    ElMessage.success(`已为 ${selectedTaskIds.value.length} 个任务生成复习计划`)
+    showEbbinghausModal.value = false
+    selectedTaskIds.value = []
+
+    // 刷新任务列表
+    await studyPlanStore.fetchPendingTasks()
+  } catch (error) {
+    console.error('生成复习计划失败:', error)
+    ElMessage.error('生成复习计划失败')
+  } finally {
+    generating.value = false
+  }
 }
 
 // 生命周期
@@ -905,6 +1018,99 @@ onMounted(() => {
   .sidebar {
     top: 60px;
     height: calc(100vh - 60px);
+  }
+
+  .review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .review-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+  }
+
+  .review-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  /* 艾宾浩斯弹窗样式 */
+  .ebbinghaus-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .curve-image-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .curve-image {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .curve-description {
+    padding: 0 16px;
+  }
+
+  .curve-description h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 12px 0;
+  }
+
+  .curve-description p {
+    font-size: 14px;
+    color: var(--text-color-secondary);
+    margin: 8px 0;
+  }
+
+  .curve-description ul {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+  }
+
+  .curve-description li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-color);
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    display: inline-block;
+  }
+
+  .note {
+    color: var(--text-color-light);
+    font-style: italic;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color-light);
+  }
+
+  .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
   }
 }
 </style>
