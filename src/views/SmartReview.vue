@@ -26,15 +26,7 @@
         <div class="review-main">
           <div class="review-header">
             <h2 class="review-title">个性化智能复习</h2>
-            <div class="review-actions">
-              <el-button
-                type="primary"
-                :disabled="selectedTaskIds.length === 0"
-                @click="showEbbinghausModal = true"
-              >
-                生成复习计划 ({{ selectedTaskIds.length }})
-              </el-button>
-            </div>
+            <!-- ✅ 删除了右上角的按钮 -->
           </div>
 
           <!-- 智能复习模块 -->
@@ -66,7 +58,9 @@
                     v-model="selectedTaskIds"
                     :label="item.id"
                     :disabled="item.reviewStage !== 0"
-                  />
+                  >
+                    <!-- 空插槽，不显示数字 -->
+                  </el-checkbox>
                 </div>
 
                 <!-- 名称 -->
@@ -97,6 +91,19 @@
                 <div class="empty-text">暂无复习任务</div>
                 <div class="empty-tip">完成学习计划后会自动生成待生产任务</div>
               </div>
+            </div>
+
+            <!-- ✅ 按钮移回表格下面 -->
+            <div class="review-footer">
+              <el-button
+                type="primary"
+                size="large"
+                :disabled="selectedTaskIds.length === 0"
+                @click="showEbbinghausModal = true"
+                class="generate-btn"
+              >
+                生成复习计划 ({{ selectedTaskIds.length }})
+              </el-button>
             </div>
           </div>
         </div>
@@ -155,6 +162,7 @@ import { useUserStore } from '../stores/user'
 import { useStudyPlanStore } from '../stores/studyPlan'
 import { ElMessage } from 'element-plus'
 import type { ReviewItem } from '../stores/studyPlan'
+import { api } from '@/api'
 
 const router = useRouter()
 const userStore = useUserStore()
