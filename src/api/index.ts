@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios'
 import type { ReviewItem, StudyPlan } from '@/stores/studyPlan'
+import type { ExamCountdown } from '../types/user'
 import type {
   QaMessage,
   FileItem,
@@ -563,6 +564,15 @@ export const api = {
       method: 'POST',
       url: `/api/study/tasks/${id}/complete`,
     }),
+
+  updateProgress: (data: Partial<LearningProgress>) =>
+    request<ApiResponse<LearningProgress>>({
+      method: 'POST',
+      url: '/api/learning-progress/update',
+      data,
+    }),
+
+  getExamCountdowns: () => request<ExamCountdown>({ method: 'GET', url: '/api/exams' }),
 }
 
 // 流式请求方法

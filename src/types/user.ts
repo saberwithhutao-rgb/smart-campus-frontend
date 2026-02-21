@@ -196,3 +196,11 @@ export interface LearningProgress {
   total: number
   percentage: number
 }
+
+export interface ExamCountdown {
+  name: string
+  startDate: string
+  endDate: string
+  daysRemaining: number
+  expired: boolean
+}

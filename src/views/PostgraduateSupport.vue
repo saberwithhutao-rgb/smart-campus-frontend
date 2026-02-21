@@ -39,15 +39,45 @@
         <!-- 顶部统计卡片 -->
         <div class="top-cards">
           <!-- 考试时间卡片 -->
-          <div class="card">
+          <div class="card exam-card">
             <div class="card-header">
               <span class="card-icon">📅</span>
-              <span class="card-title">考试时间</span>
+              <span class="card-title">考试倒计时</span>
             </div>
             <div class="card-content">
-              <p class="exam-name">2024年全国硕士研究生招生考试</p>
-              <p class="exam-date">2023-12-23 至 2023-12-24</p>
-              <p class="countdown">倒计时：<span class="countdown-days">35天</span></p>
+              <template v-if="latestExam">
+                <p class="exam-name">{{ latestExam.name }}</p>
+                <p class="exam-date">{{ latestExam.startDate }} 至 {{ latestExam.endDate }}</p>
+                <div class="countdown-display">
+                  <div class="countdown-item">
+                    <span class="countdown-number">{{
+                      getCountdownDisplay(latestExam.name).days
+                    }}</span>
+                    <span class="countdown-label">天</span>
+                  </div>
+                  <div class="countdown-item">
+                    <span class="countdown-number">{{
+                      getCountdownDisplay(latestExam.name).hours
+                    }}</span>
+                    <span class="countdown-label">时</span>
+                  </div>
+                  <div class="countdown-item">
+                    <span class="countdown-number">{{
+                      getCountdownDisplay(latestExam.name).minutes
+                    }}</span>
+                    <span class="countdown-label">分</span>
+                  </div>
+                  <div class="countdown-item">
+                    <span class="countdown-number">{{
+                      getCountdownDisplay(latestExam.name).seconds
+                    }}</span>
+                    <span class="countdown-label">秒</span>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <p class="exam-name">暂无即将开始的考试</p>
+              </template>
             </div>
           </div>
 
@@ -333,11 +363,12 @@
 
 <script setup lang="ts">
 import GlobalNavbar from '../components/GlobalNavbar.vue'
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { api } from '../api'
 import type { University, UniversityListDetail } from '../types/university'
+import type { ExamCountdown } from '../types/user'
 
 // 路由实例
 const router = useRouter()
@@ -359,6 +390,13 @@ const favoriteUniversityIds = ref<number[]>([])
 const favoriteUniversities = ref<University[]>([])
 const showFavorites = ref(false)
 
+// 考试倒计时数据
+const examCountdowns = ref<ExamCountdown[]>([])
+const countdownTimers = reactive<
+  Record<string, { days: number; hours: number; minutes: number; seconds: number }>
+>({})
+let countdownInterval: ReturnType<typeof setInterval> | null = null
+
 // 筛选参数
 const filterParams = ref({
   province: '',
@@ -372,6 +410,92 @@ const filterParams = ref({
 
 // 计算属性 - 获取已收藏院校数量
 const favoriteCount = computed(() => favoriteUniversityIds.value.length)
+
+// 获取最近的未过期考试
+const latestExam = computed(() => {
+  const activeExams = examCountdowns.value.filter((exam) => !exam.expired)
+  if (activeExams.length === 0) return null
+  return activeExams.sort((a, b) => a.daysRemaining - b.daysRemaining)[0]
+})
+
+// 获取考试倒计时数据
+const fetchExamCountdowns = async () => {
+  try {
+    const response = await api.getExamCountdowns()
+    console.log('考试倒计时响应:', response)
+    if (response && response.code === 1 && Array.isArray(response.data)) {
+      examCountdowns.value = response.data
+      console.log('考试数据:', examCountdowns.value)
+      initCountdownTimers()
+    }
+  } catch (err) {
+    console.error('获取考试倒计时失败:', err)
+  }
+}
+
+// 初始化倒计时计时器
+const initCountdownTimers = () => {
+  examCountdowns.value.forEach((exam) => {
+    updateCountdownTimer(exam)
+  })
+}
+
+// 更新单个考试的倒计时
+const updateCountdownTimer = (exam: ExamCountdown) => {
+  const startDate = new Date(exam.startDate)
+  const now = new Date()
+  const diff = startDate.getTime() - now.getTime()
+
+  if (diff <= 0) {
+    countdownTimers[exam.name] = {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+    }
+    return
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+  countdownTimers[exam.name] = {
+    days,
+    hours,
+    minutes,
+    seconds,
+  }
+}
+
+// 启动每秒更新倒计时
+const startCountdownInterval = () => {
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+  }
+
+  countdownInterval = setInterval(() => {
+    examCountdowns.value.forEach((exam) => {
+      if (!exam.expired) {
+        updateCountdownTimer(exam)
+      }
+    })
+  }, 1000)
+}
+
+// 停止倒计时
+const stopCountdownInterval = () => {
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+    countdownInterval = null
+  }
+}
+
+// 获取倒计时显示
+const getCountdownDisplay = (examName: string) => {
+  return countdownTimers[examName] || { days: 0, hours: 0, minutes: 0, seconds: 0 }
+}
 
 // 获取院校列表
 const fetchUniversities = async () => {
@@ -503,6 +627,14 @@ onMounted(() => {
   window.addEventListener('resize', checkScreenSize)
   fetchUniversities()
   fetchFavoriteIds()
+  fetchExamCountdowns()
+  startCountdownInterval()
+})
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  window.removeEventListener('resize', checkScreenSize)
+  stopCountdownInterval()
 })
 
 // 监听收藏列表显示状态
@@ -888,6 +1020,10 @@ watch(showFavorites, (newVal) => {
 }
 
 /* 考试时间卡片 */
+.exam-card .card-content {
+  align-items: center;
+}
+
 .exam-name {
   font-size: 14px;
   color: #646b7a;
@@ -900,16 +1036,34 @@ watch(showFavorites, (newVal) => {
   margin: 0;
 }
 
-.countdown {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
+.countdown-display {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
 }
 
-.countdown-days {
-  color: #f53f3f;
-  font-size: 18px;
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #f53f3f 0%, #ff7d00 100%);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 50px;
+}
+
+.countdown-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.countdown-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 4px;
 }
 
 /* 院校选择卡片 */
