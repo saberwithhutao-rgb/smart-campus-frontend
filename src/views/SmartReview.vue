@@ -58,48 +58,44 @@
                 <div class="review-table-header-item" style="width: 100px">操作</div>
               </div>
 
-              <!-- 表格内容 -->
-              <div class="review-table-body">
-                <div v-for="item in reviewItems" :key="item.id" class="review-table-row">
-                  <!-- 复选框列 -->
-                  <div class="review-table-cell" style="width: 40px">
-                    <el-checkbox
-                      v-model="selectedTaskIds"
-                      :label="item.id"
-                      :disabled="item.reviewStage !== 0"
-                    />
-                  </div>
-
-                  <!-- 学习项名称 -->
-                  <div class="review-table-cell">{{ item.title }}</div>
-
-                  <!-- 难度标识（只保留一个） -->
-                  <div class="review-table-cell">
-                    <el-tag v-if="item.reviewStage === 0" type="warning" size="small">
-                      待生产
-                    </el-tag>
-                    <el-tag v-else :type="getDifficultyType(item.difficulty)" size="small">
-                      第{{ item.reviewStage }}次
-                    </el-tag>
-                  </div>
-
-                  <!-- 时间 -->
-                  <div class="review-table-cell">{{ formatDate(item.taskDate) }}</div>
-
-                  <!-- 操作 -->
-                  <div class="review-table-cell" style="width: 100px">
-                    <el-button type="danger" link size="small" @click="ignoreTask(item.id)">
-                      忽略
-                    </el-button>
-                  </div>
+              <!-- 数据行 -->
+              <div v-for="item in reviewItems" :key="item.id" class="review-table-row">
+                <!-- 复选框 -->
+                <div class="review-table-cell" style="width: 40px">
+                  <el-checkbox
+                    v-model="selectedTaskIds"
+                    :label="item.id"
+                    :disabled="item.reviewStage !== 0"
+                  />
                 </div>
 
-                <!-- 空状态 -->
-                <div v-if="reviewItems.length === 0" class="empty-state">
-                  <div class="empty-icon">📚</div>
-                  <div class="empty-text">暂无复习任务</div>
-                  <div class="empty-tip">完成学习计划后会自动生成待生产任务</div>
+                <!-- 名称 -->
+                <div class="review-table-cell" :title="item.title">{{ item.title }}</div>
+
+                <!-- 难度标识 -->
+                <div class="review-table-cell">
+                  <el-tag v-if="item.reviewStage === 0" type="warning" size="small" effect="dark">
+                    待生成
+                  </el-tag>
+                  <span v-else> 第{{ item.reviewStage }}次复习 </span>
                 </div>
+
+                <!-- 时间 -->
+                <div class="review-table-cell">{{ formatDate(item.taskDate) }}</div>
+
+                <!-- 操作 -->
+                <div class="review-table-cell" style="width: 100px">
+                  <el-button type="danger" link size="small" @click="ignoreTask(item.id)">
+                    忽略
+                  </el-button>
+                </div>
+              </div>
+
+              <!-- 空状态 -->
+              <div v-if="reviewItems.length === 0" class="empty-state">
+                <div class="empty-icon">📚</div>
+                <div class="empty-text">暂无复习任务</div>
+                <div class="empty-tip">完成学习计划后会自动生成待生产任务</div>
               </div>
             </div>
           </div>
@@ -179,18 +175,16 @@ const selectedTaskIds = ref<number[]>([])
 const showEbbinghausModal = ref(false)
 const generating = ref(false)
 
-// 全选逻辑
+// 全选逻辑 - 用 reviewStage === 0 判断
 const selectAll = computed({
   get: () => {
-    const selectableTasks = reviewItems.value.filter(
-      (item) => item.difficulty === 'pending' && item.reviewStage === 0,
-    )
+    const selectableTasks = reviewItems.value.filter((item) => item.reviewStage === 0)
     return selectableTasks.length > 0 && selectedTaskIds.value.length === selectableTasks.length
   },
   set: (value) => {
     if (value) {
       selectedTaskIds.value = reviewItems.value
-        .filter((item) => item.difficulty === 'pending' && item.reviewStage === 0)
+        .filter((item) => item.reviewStage === 0)
         .map((item) => item.id)
     } else {
       selectedTaskIds.value = []
@@ -199,9 +193,7 @@ const selectAll = computed({
 })
 
 const isIndeterminate = computed(() => {
-  const selectableTasks = reviewItems.value.filter(
-    (item) => item.difficulty === 'pending' && item.reviewStage === 0,
-  )
+  const selectableTasks = reviewItems.value.filter((item) => item.reviewStage === 0)
   return selectedTaskIds.value.length > 0 && selectedTaskIds.value.length < selectableTasks.length
 })
 
@@ -288,16 +280,6 @@ const formatDate = (date: string) => {
     .replace(/\//g, '-')
 }
 
-// 获取难度标签类型
-const getDifficultyType = (difficulty: string) => {
-  const map: Record<string, string> = {
-    easy: 'success',
-    medium: 'warning',
-    hard: 'danger',
-  }
-  return map[difficulty] || 'info'
-}
-
 // 忽略任务
 const ignoreTask = async (id: number) => {
   try {
@@ -345,46 +327,32 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 全局变量 */
+/* 全局变量保持不变 */
 :root {
-  /* 主色调：科技蓝 */
   --primary-color: #165dff;
   --primary-color-dark: #0e46cc;
   --primary-color-light: #4c8aff;
-
-  /* 辅助色：浅红色 */
   --accent-color: #f53f3f;
   --accent-color-dark: #e13d3d;
   --accent-color-light: #f76d6d;
-
-  /* 背景色：浅灰色 */
   --bg-color: #f5f7fa;
   --bg-color-light: #fafafb;
   --bg-color-dark: #eef1f5;
-
-  /* 文字主色：深灰色 */
   --text-color: #1d2129;
   --text-color-secondary: #4e5969;
   --text-color-light: #86909c;
-
-  /* 边框和阴影 */
   --border-color: #e5e7eb;
   --border-color-light: #f0f2f5;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-
-  /* 圆角 */
   --border-radius-sm: 4px;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
   --border-radius-xl: 16px;
-
-  /* 过渡 */
   --transition: all 0.3s ease;
 }
 
-/* 继承自学习计划页面的样式 */
 .smart-qa-container {
   min-height: 100vh;
   background-color: var(--bg-color);
@@ -415,11 +383,6 @@ onMounted(() => {
   height: 100%;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-}
-
 .logo-placeholder {
   padding: 8px 16px;
   background-color: var(--primary-color);
@@ -433,10 +396,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 32px;
-}
-
-.nav-menu.mobile-menu {
-  display: none;
 }
 
 .nav-item {
@@ -478,7 +437,6 @@ onMounted(() => {
   min-width: 160px;
   z-index: 200;
   animation: slideDown 0.2s ease;
-  display: block;
 }
 
 .submenu-item {
@@ -493,27 +451,6 @@ onMounted(() => {
 .submenu-item:hover {
   background-color: var(--bg-color-light);
   color: var(--primary-color);
-}
-
-.mobile-submenu {
-  background-color: var(--bg-color-light);
-  border-radius: var(--border-radius-md);
-  margin-top: 8px;
-  padding: 8px 0;
-  display: block;
-}
-
-.mobile-submenu-item {
-  padding: 10px 20px;
-  font-size: 14px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.mobile-submenu-item:hover {
-  background-color: var(--primary-color);
-  color: #fff;
 }
 
 .nav-actions {
@@ -533,17 +470,11 @@ onMounted(() => {
   border-radius: var(--border-radius-md);
   font-size: 14px;
   font-weight: 500;
-  transition: var(--transition);
   cursor: pointer;
 }
 
 .btn-login:hover {
   background-color: var(--primary-color-dark);
-  border-color: var(--primary-color-dark);
-}
-
-.login-icon {
-  font-size: 16px;
 }
 
 .user-center {
@@ -558,7 +489,6 @@ onMounted(() => {
   border-radius: var(--border-radius-md);
   font-size: 14px;
   font-weight: 500;
-  transition: var(--transition);
   cursor: pointer;
 }
 
@@ -587,7 +517,6 @@ onMounted(() => {
   font-size: 14px;
   color: var(--text-color);
   cursor: pointer;
-  transition: var(--transition);
 }
 
 .dropdown-item:hover {
@@ -595,25 +524,8 @@ onMounted(() => {
   color: var(--primary-color);
 }
 
-.dropdown-item.register {
-  color: var(--primary-color);
-  border-bottom: 1px solid var(--border-color-light);
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-}
-
-.dropdown-item.register:hover {
-  background-color: var(--primary-color);
-  color: #fff;
-}
-
 .dropdown-item.logout {
   color: var(--accent-color);
-}
-
-.dropdown-item.logout:hover {
-  background-color: var(--accent-color);
-  color: #fff;
 }
 
 @keyframes slideDown {
@@ -703,11 +615,17 @@ onMounted(() => {
   overflow-y: auto;
 }
 
-/* 智能复习页面特有样式 */
+/* 智能复习页面样式 */
 .review-main {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .review-title {
@@ -722,9 +640,6 @@ onMounted(() => {
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
   border: 1px solid var(--border-color-light);
 }
 
@@ -732,13 +647,7 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-color);
-  margin: 0;
-}
-
-.sort-note {
-  color: var(--accent-color);
-  font-size: 14px;
-  font-weight: 500;
+  margin: 0 0 16px 0;
 }
 
 /* 表格样式 */
@@ -750,7 +659,7 @@ onMounted(() => {
 
 .review-table-header {
   display: grid;
-  grid-template-columns: 1fr 120px 120px 120px 100px;
+  grid-template-columns: 40px 1fr 120px 120px 100px;
   background-color: var(--bg-color-light);
   border-bottom: 1px solid var(--border-color);
 }
@@ -767,14 +676,9 @@ onMounted(() => {
   border-right: none;
 }
 
-.review-table-body {
-  display: flex;
-  flex-direction: column;
-}
-
 .review-table-row {
   display: grid;
-  grid-template-columns: 1fr 120px 120px 120px 100px;
+  grid-template-columns: 40px 1fr 120px 120px 100px;
   border-bottom: 1px solid var(--border-color);
   transition: var(--transition);
 }
@@ -788,74 +692,24 @@ onMounted(() => {
 }
 
 .review-table-cell {
-  padding: 16px;
+  padding: 12px 16px;
   font-size: 14px;
   color: var(--text-color);
   border-right: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.review-table-cell:first-child {
-  justify-content: flex-start;
-  text-align: left;
 }
 
 .review-table-cell:last-child {
   border-right: none;
+}
+
+/* 复选框列居中 */
+.review-table-cell:first-child {
   justify-content: center;
 }
 
-/* 难度标签样式 */
-.difficulty-tag {
-  padding: 4px 12px;
-  border-radius: var(--border-radius-sm);
-  font-size: 12px;
-  font-weight: 500;
-  color: black;
-}
-
-.difficulty-hard {
-  background-color: var(--accent-color);
-}
-
-.difficulty-medium {
-  background-color: #f7ba1e;
-}
-
-.difficulty-easy {
-  background-color: #52c41a;
-}
-
-/* 完成复选框 */
-.complete-checkbox {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--primary-color);
-  margin: 0;
-  padding: 0;
-}
-
-/* 删除按钮 */
-.delete-btn {
-  background: none;
-  border: none;
-  color: var(--accent-color);
-  font-size: 14px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: var(--border-radius-sm);
-  transition: var(--transition);
-}
-
-.delete-btn:hover {
-  background-color: var(--accent-color-light);
-  color: #fff;
-}
-
+/* 空状态 */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -881,46 +735,76 @@ onMounted(() => {
   color: var(--text-color-light);
 }
 
-/* 生成复习计划按钮 */
-.review-footer {
+/* 艾宾浩斯弹窗样式 */
+.ebbinghaus-container {
   display: flex;
-  justify-content: center;
-  margin-top: 16px;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.generate-btn {
-  padding: 12px 32px;
-  background-color: var(--primary-color);
-  color: #fff;
-  border: none;
-  border-radius: var(--border-radius-md);
+.curve-image-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.curve-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.curve-description {
+  padding: 0 16px;
+}
+
+.curve-description h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 12px 0;
+}
+
+.curve-description p {
   font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-  box-shadow: var(--shadow-md);
+  color: var(--text-color-secondary);
+  margin: 8px 0;
 }
 
-.generate-btn:hover {
-  background-color: var(--primary-color-dark);
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
+.curve-description ul {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+
+.curve-description li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  display: inline-block;
+}
+
+.note {
+  color: var(--text-color-light);
+  font-style: italic;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color-light);
 }
 
 /* 响应式设计 */
-@media (max-width: 1366px) {
-  /* 笔记本端适配 */
-  .sidebar {
-    width: 240px;
-  }
-
-  .study-main {
-    max-width: calc(100% - 240px);
-  }
-}
-
 @media (max-width: 1024px) {
-  /* 平板端适配 */
   .sidebar-toggle {
     display: block;
   }
@@ -934,47 +818,34 @@ onMounted(() => {
     transform: translateX(0);
   }
 
+  .sidebar-collapsed {
+    transform: translateX(-100%);
+  }
+
   .study-main {
     max-width: 100%;
   }
 }
 
 @media (max-width: 768px) {
-  /* 移动端适配 */
   .navbar-container {
     padding: 0 16px;
     height: 60px;
   }
 
-  .nav-menu {
-    display: none;
+  .navbar {
+    height: 60px;
   }
 
-  .nav-menu.mobile-menu {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: #fff;
-    box-shadow: var(--shadow-lg);
-    border-top: 1px solid var(--border-color-light);
-    padding: 16px;
-    gap: 8px;
+  .main-content {
+    margin-top: 60px;
   }
 
-  .nav-item {
-    padding: 12px 16px;
-    border-radius: var(--border-radius-md);
-    border: 1px solid var(--border-color-light);
+  .sidebar {
+    top: 60px;
+    height: calc(100vh - 60px);
   }
 
-  .study-main {
-    padding: 10px;
-  }
-
-  /* 表格在移动端改为垂直布局 */
   .review-table-header {
     display: none;
   }
@@ -982,9 +853,8 @@ onMounted(() => {
   .review-table-row {
     display: flex;
     flex-direction: column;
-    gap: 12px;
     padding: 16px;
-    border-bottom: 1px solid var(--border-color);
+    gap: 12px;
   }
 
   .review-table-cell {
@@ -996,117 +866,6 @@ onMounted(() => {
 
   .review-table-cell:last-child {
     border-bottom: none;
-    justify-content: flex-start;
-  }
-
-  /* 移动端导航栏高度调整 */
-  .navbar {
-    height: 60px;
-  }
-
-  /* 移动端主内容区顶部边距调整 */
-  .main-content {
-    margin-top: 60px;
-    min-height: calc(100vh - 60px);
-  }
-
-  /* 移动端侧边栏高度调整 */
-  .sidebar {
-    top: 60px;
-    height: calc(100vh - 60px);
-  }
-
-  .review-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-
-  .review-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--text-color);
-    margin: 0;
-  }
-
-  .review-actions {
-    display: flex;
-    gap: 12px;
-  }
-
-  /* 艾宾浩斯弹窗样式 */
-  .ebbinghaus-container {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .curve-image-container {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .curve-image {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-
-  .curve-description {
-    padding: 0 16px;
-  }
-
-  .curve-description h4 {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-color);
-    margin: 0 0 12px 0;
-  }
-
-  .curve-description p {
-    font-size: 14px;
-    color: var(--text-color-secondary);
-    margin: 8px 0;
-  }
-
-  .curve-description ul {
-    list-style: none;
-    padding: 0;
-    margin: 16px 0;
-  }
-
-  .curve-description li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: var(--text-color);
-  }
-
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    display: inline-block;
-  }
-
-  .note {
-    color: var(--text-color-light);
-    font-style: italic;
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border-color-light);
-  }
-
-  .dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
   }
 }
 </style>
