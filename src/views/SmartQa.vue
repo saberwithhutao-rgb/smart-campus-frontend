@@ -262,12 +262,10 @@ const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) 
     return
   }
 
-  console.log('📝 更新前:', message.content)
   message.content = content
   if (isLoading !== undefined) {
     message.isLoading = isLoading
   }
-  console.log('📝 更新后:', message.content)
 
   // 强制触发响应式更新
   messages.value = [...messages.value]
