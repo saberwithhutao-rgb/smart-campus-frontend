@@ -311,6 +311,7 @@ const processTongyiStream = async (
 
         // 保存完整对话
         if (token) {
+          console.log('answer:', accumulatedText)
           await fetch('/ai/chat/save', {
             method: 'POST',
             headers: {
