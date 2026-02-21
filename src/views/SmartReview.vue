@@ -24,10 +24,7 @@
       <!-- 中间智能复习区域 -->
       <main class="study-main">
         <div class="review-main">
-          <div class="review-header">
-            <h2 class="review-title">个性化智能复习</h2>
-            <!-- ✅ 删除了右上角的按钮 -->
-          </div>
+          <h2 class="review-title">个性化智能复习</h2>
 
           <!-- 智能复习模块 -->
           <div class="review-section">
@@ -35,7 +32,7 @@
 
             <!-- 复习任务列表 -->
             <div class="review-table">
-              <!-- 表头 -->
+              <!-- 表头 - 6列：复选框 | 名称 | 难度 | 时间 | 是否复习 | 操作 -->
               <div class="review-table-header">
                 <div class="review-table-header-item" style="width: 40px">
                   <el-checkbox
@@ -47,19 +44,21 @@
                 <div class="review-table-header-item">学习项名称</div>
                 <div class="review-table-header-item">难度标识</div>
                 <div class="review-table-header-item">时间</div>
+                <div class="review-table-header-item">是否复习</div>
                 <div class="review-table-header-item" style="width: 100px">操作</div>
               </div>
 
-              <!-- 数据行 -->
+              <!-- 数据行 - 6列 -->
               <div v-for="item in reviewItems" :key="item.id" class="review-table-row">
-                <!-- 复选框 -->
+                <!-- 复选框列 -->
                 <div class="review-table-cell" style="width: 40px">
                   <el-checkbox
                     v-model="selectedTaskIds"
                     :label="item.id"
                     :disabled="item.reviewStage !== 0"
                   >
-                    <!-- 空插槽，不显示数字 -->
+                    <!-- 空插槽 + CSS隐藏，双重保险 -->
+                    <span style="display: none"></span>
                   </el-checkbox>
                 </div>
 
@@ -77,6 +76,11 @@
                 <!-- 时间 -->
                 <div class="review-table-cell">{{ formatDate(item.taskDate) }}</div>
 
+                <!-- 是否复习 - 复选框 -->
+                <div class="review-table-cell">
+                  <el-checkbox v-model="item.reviewed" />
+                </div>
+
                 <!-- 操作 -->
                 <div class="review-table-cell" style="width: 100px">
                   <el-button type="danger" link size="small" @click="ignoreTask(item.id)">
@@ -93,14 +97,13 @@
               </div>
             </div>
 
-            <!-- ✅ 按钮移回表格下面 -->
+            <!-- 按钮放在表格下面，居中 -->
             <div class="review-footer">
               <el-button
                 type="primary"
                 size="large"
                 :disabled="selectedTaskIds.length === 0"
                 @click="showEbbinghausModal = true"
-                class="generate-btn"
               >
                 生成复习计划 ({{ selectedTaskIds.length }})
               </el-button>
@@ -665,38 +668,62 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.review-table-header {
-  display: grid;
-  grid-template-columns: 40px 1fr 120px 120px 100px;
-  background-color: var(--bg-color-light);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.review-table-header-item {
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-color);
-  border-right: 1px solid var(--border-color);
-}
-
-.review-table-header-item:last-child {
-  border-right: none;
-}
-
+.review-table-header,
 .review-table-row {
   display: grid;
-  grid-template-columns: 40px 1fr 120px 120px 100px;
+  grid-template-columns: 40px 1fr 120px 120px 80px 100px; /* 复选框 | 名称 | 难度 | 时间 | 是否复习 | 操作 */
+  align-items: center;
   border-bottom: 1px solid var(--border-color);
-  transition: var(--transition);
 }
 
-.review-table-row:hover {
+/* 表头样式 */
+.review-table-header {
   background-color: var(--bg-color-light);
+  font-weight: 600;
 }
 
-.review-table-row:last-child {
-  border-bottom: none;
+/* 单元格样式 */
+.review-table-header-item,
+.review-table-cell {
+  padding: 12px 8px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 复选框列居中 */
+.review-table-cell:first-child,
+.review-table-header-item:first-child {
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* 是否复习列居中 */
+.review-table-cell:nth-child(5),
+.review-table-header-item:nth-child(5) {
+  text-align: center;
+}
+
+/* 隐藏el-checkbox的label文本（双重保险） */
+.el-checkbox__label {
+  display: none !important;
+}
+
+/* 按钮容器 - 居中 */
+.review-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color-light);
+}
+
+/* 按钮样式 */
+.review-footer .el-button {
+  min-width: 200px;
+  height: 40px;
 }
 
 .review-table-cell {
