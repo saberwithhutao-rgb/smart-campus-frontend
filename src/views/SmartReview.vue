@@ -47,9 +47,9 @@
               <div class="review-table-header">
                 <div class="review-table-header-item" style="width: 40px">
                   <el-checkbox
-                    v-model="selectAll"
-                    :indeterminate="isIndeterminate"
-                    @change="handleSelectAllChange"
+                    v-model="selectedTaskIds"
+                    :label="item.id"
+                    :disabled="item.reviewStage !== 0"
                   />
                 </div>
                 <div class="review-table-header-item">学习项名称</div>
@@ -62,12 +62,13 @@
               <div class="review-table-body">
                 <div v-for="item in reviewItems" :key="item.id" class="review-table-row">
                   <!-- 复选框列 -->
-                  <div class="review-table-cell" style="width: 40px">
-                    <el-checkbox
-                      v-model="selectedTaskIds"
-                      :label="item.id"
-                      :disabled="item.difficulty !== 'pending' || item.reviewStage !== 0"
-                    />
+                  <div class="review-table-cell">
+                    <el-tag v-if="item.reviewStage === 0" type="warning" size="small">
+                      待生产
+                    </el-tag>
+                    <el-tag v-else :type="getDifficultyType(item.difficulty)" size="small">
+                      第{{ item.reviewStage }}次
+                    </el-tag>
                   </div>
 
                   <!-- 学习项名称 -->
