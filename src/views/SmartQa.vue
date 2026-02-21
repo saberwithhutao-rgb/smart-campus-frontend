@@ -307,27 +307,6 @@ const processTongyiStream = async (
         console.log('✅ 流式响应完成')
         safeUpdateMessage(aiMessageIndex, accumulatedText, false)
 
-        // 判断是否是会话的第一条消息
-        const isFirstMessage = messages.value.filter((m) => m.sender === 'user').length === 1
-
-        // 保存完整对话
-        if (token) {
-          console.log('answer:', accumulatedText)
-          await fetch('/ai/chat/save', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              sessionId: currentSessionId.value,
-              question: question,
-              answer: accumulatedText,
-              isFirstMessage: isFirstMessage, // 新增
-            }),
-          }).catch((err) => console.error('保存对话失败:', err))
-        }
-
         break
       }
 
@@ -348,25 +327,16 @@ const processTongyiStream = async (
             jsonStr = jsonStr.substring(5).trim()
           }
 
-          // 调试日志
-          if (jsonStr.length > 0 && jsonStr !== '[DONE]') {
-            console.log('📄 原始行:', trimmedLine.substring(0, 50))
-            console.log('📄 提取后:', jsonStr.substring(0, 50))
-          }
-
           if (!jsonStr || jsonStr === '[DONE]') continue
 
           try {
             const data = JSON.parse(jsonStr)
-            console.log('✅ JSON解析成功')
-
             if (data.choices && data.choices.length > 0) {
               const choice = data.choices[0]
 
               if (choice.delta && choice.delta.content) {
                 const chunk = choice.delta.content
 
-                // 🟢 将chunk拆分成单个字符
                 for (let i = 0; i < chunk.length; i++) {
                   const char = chunk[i]
                   accumulatedText += char
@@ -378,14 +348,11 @@ const processTongyiStream = async (
                     safeUpdateMessage(aiMessageIndex, accumulatedText, false)
                   }
 
-                  // 🟢 每个字符间隔30ms，制造流畅的打字效果
-                  await new Promise((resolve) => setTimeout(resolve, 30))
+                  await new Promise((resolve) => setTimeout(resolve, 20))
                 }
 
-                // 是否完成
                 const isDone = choice.finish_reason === 'stop'
                 if (isDone) {
-                  console.log('🎉 流式输出完成，总长度:', accumulatedText.length)
                   reader.releaseLock()
                   return
                 }
@@ -572,7 +539,7 @@ const uploadFile = async () => {
     }
 
     formData.append('file', selectedFile.value)
-    formData.append('stream', 'true') // 👈 改为 true，使用流式
+    formData.append('stream', 'true')
 
     const response = await fetch('/ai/chat/send', {
       method: 'POST',

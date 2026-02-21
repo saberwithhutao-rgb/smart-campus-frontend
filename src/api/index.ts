@@ -386,19 +386,6 @@ export const api = {
     })
   },
 
-  saveConversation: (data: {
-    sessionId: string
-    question: string
-    answer: string
-    isFirstMessage: boolean
-    fileId?: number
-  }) =>
-    request<ApiResponse<null>>({
-      method: 'POST',
-      url: '/ai/chat/save',
-      data,
-    }),
-
   // 简单问答接口（兼容旧版本）
   sendAiMessage: (message: string, chanId?: string) =>
     request<string>({
