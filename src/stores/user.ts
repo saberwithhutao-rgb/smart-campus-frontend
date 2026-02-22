@@ -135,72 +135,51 @@ export const useUserStore = defineStore('user', () => {
     })
   }
 
-  async function login(
-    username: string,
-    password: string,
-    captcha: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  async function login(username, password, captcha): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = (await api.login({
-        username,
-        password,
-        captcha,
-      })) as ProjectLoginResponse
+      const response = await api.login({ username, password, captcha })
 
       if (response.code !== 200) {
         throw new Error(response.message || '登录失败')
       }
 
       const data = response.data
-      const email = data.email || ''
+      const token = data.token
 
-      // 创建完整的userInfo对象
-      const userInfo: UserInfo = {
-        token: data.token,
-        refreshToken: data.refreshToken || undefined,
-        role: data.role || 'user',
-        username: data.username,
-        userId: 0,
-        email,
-        avatar: '',
-        studentId: '',
-        major: '',
-        college: '',
+      let userId = 0
+      if (token && token.startsWith('jwt-')) {
+        const parts = token.split('-')
+        if (parts.length >= 2 && parts[1] !== undefined && !isNaN(Number(parts[1]))) {
+          userId = parseInt(parts[1], 10) // 明确指定进制为10
+          console.log('从 token 解析出 userId:', userId)
+        } else {
+          console.warn('Token 格式不符合预期，无法解析 userId')
+        }
       }
 
-      // 更新状态
-      userState.value = {
-        isLoggedIn: true,
-        userInfo,
+      // 创建完整的 userInfo 对象
+      const userInfo = {
+        token: token,
+        role: data.role || 'user',
+        username: data.username,
+        userId: userId,
+        email: data.email || '',
+        avatar: data.avatar || '',
+        studentId: data.studentId || '',
+        major: data.major || '',
+        college: data.college || '',
       }
 
       // 保存到 localStorage
-      localStorage.setItem('userToken', data.token)
-      localStorage.setItem(
-        'userInfo',
-        JSON.stringify({
-          role: data.role,
-          username: data.username,
-          userId: 0,
-          email,
-          avatar: '',
-          studentId: '',
-          major: '',
-          college: '',
-        }),
-      )
+      localStorage.setItem('userToken', token)
+      localStorage.setItem('userInfo', JSON.stringify(userInfo))
 
-      if (data.refreshToken) {
-        localStorage.setItem('refreshToken', data.refreshToken)
-      }
+      console.log('保存的用户信息:', userInfo)
 
       return { success: true }
-    } catch (error: any) {
+    } catch (error) {
       console.error('登录错误:', error)
-      return {
-        success: false,
-        error: error.message || '登录失败',
-      }
+      return { success: false, error: error.message }
     }
   }
 

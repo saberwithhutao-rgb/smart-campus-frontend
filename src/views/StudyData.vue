@@ -115,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import { useUserStore } from '@/stores/user'
 
