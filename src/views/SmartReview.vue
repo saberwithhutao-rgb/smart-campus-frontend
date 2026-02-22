@@ -76,14 +76,22 @@
                 <!-- 时间 -->
                 <div class="review-table-cell">{{ formatDate(item.taskDate) }}</div>
 
-                <el-checkbox
-                  :model-value="item.status === 'completed'"
-                  @change="
-                    (val: boolean) => {
-                      if (val) completeTask(item.id)
-                    }
-                  "
-                />
+                <div class="review-table-cell">
+                  <el-checkbox
+                    :model-value="item.status === 'completed'"
+                    @change="
+                      (val: boolean) => {
+                        if (val) {
+                          if (item.reviewStage === 0) {
+                            ElMessage.warning('请先生成复习计划')
+                          } else {
+                            completeTask(item.id)
+                          }
+                        }
+                      }
+                    "
+                  />
+                </div>
 
                 <!-- 操作 -->
                 <div class="review-table-cell" style="width: 100px">
