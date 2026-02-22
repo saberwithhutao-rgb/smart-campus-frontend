@@ -65,7 +65,11 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     try {
       const response = await api.getPendingTasks()
       if (response.code === 200) {
-        reviewItems.value = response.data
+        // ✅ 只保留今天及之前的任务
+        const today = new Date().toISOString().split('T')[0] ?? ''
+        reviewItems.value = response.data.filter(
+          (item) => item.taskDate <= today || item.reviewStage === 0,
+        )
       }
     } catch (error) {
       console.error('获取复习任务失败:', error)

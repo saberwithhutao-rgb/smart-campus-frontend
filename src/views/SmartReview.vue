@@ -677,18 +677,17 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.review-table-header,
-.review-table-row {
-  display: grid;
-  grid-template-columns: 40px 1fr 120px 120px 80px 100px; /* 复选框 | 名称 | 难度 | 时间 | 是否复习 | 操作 */
-  align-items: center;
-  border-bottom: 1px solid var(--border-color);
-}
-
 /* 表头样式 */
 .review-table-header {
   background-color: var(--bg-color-light);
   font-weight: 600;
+}
+
+.review-table-header,
+.review-table-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 120px 120px 80px 100px;
+  align-items: center;
 }
 
 /* 单元格样式 */
@@ -699,6 +698,7 @@ onMounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 
 /* 复选框列居中 */
@@ -709,13 +709,22 @@ onMounted(() => {
   padding-right: 0;
 }
 
+.el-checkbox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.el-checkbox__inner {
+  margin: 0;
+}
+
 /* 是否复习列居中 */
 .review-table-cell:nth-child(5),
 .review-table-header-item:nth-child(5) {
   text-align: center;
 }
 
-/* 隐藏el-checkbox的label文本（双重保险） */
 .el-checkbox__label {
   display: none !important;
 }
@@ -736,12 +745,9 @@ onMounted(() => {
 }
 
 .review-table-cell {
-  padding: 12px 16px;
   font-size: 14px;
+  line-height: 1.5;
   color: var(--text-color);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
 }
 
 .review-table-cell:last-child {
