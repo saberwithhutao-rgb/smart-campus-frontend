@@ -117,9 +117,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
+import { useUserStore } from '@/stores/user'
 
-// 固定用户ID为1
-const userId = 1
+const userStore = useUserStore()
+
+// 获取用户ID
+const userId = userStore.userInfo?.userId
 
 // 响应式数据
 const timeRange = ref('today') // 默认时间范围为今天
