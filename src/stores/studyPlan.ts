@@ -80,28 +80,37 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   }
 
   const completeTask = async (id: number) => {
-    try {
-      // 乐观更新：先修改本地状态
-      const taskIndex = reviewItems.value.findIndex((item) => item.id === id)
-      if (taskIndex !== -1 && reviewItems.value[taskIndex]) {
-        reviewItems.value[taskIndex] = {
-          ...reviewItems.value[taskIndex],
-          status: 'completed',
-        }
-      }
+    const taskIndex = reviewItems.value.findIndex((item) => item.id === id)
+    if (taskIndex === -1 || !reviewItems.value[taskIndex]) return // 增加边界检查
 
+    // 1. 保存原状态
+    const originalTask: ReviewItem = { ...reviewItems.value[taskIndex] }
+
+    // 2. 乐观更新
+    reviewItems.value[taskIndex] = {
+      ...reviewItems.value[taskIndex],
+      status: 'completed',
+    }
+
+    try {
       const response = await api.completeTask(id)
+
       if (response.code === 200) {
         ElMessage.success('任务已完成')
-        // 可选：用后端数据更新
+        // 3. 用后端数据更新（可选）
         if (response.data) {
           reviewItems.value[taskIndex] = response.data
         }
+      } else {
+        // 4. API返回错误码，回滚
+        reviewItems.value[taskIndex] = originalTask
+        ElMessage.error(response.message || '操作失败')
       }
     } catch (error) {
+      // 5. 网络错误，回滚
       console.error('完成任务失败:', error)
-      ElMessage.error('完成任务失败')
-      await fetchPendingTasks() // 失败时重新获取
+      reviewItems.value[taskIndex] = originalTask
+      ElMessage.error('网络错误，请重试')
     }
   }
 
