@@ -149,7 +149,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       const response = await api.createStudyPlan({
         title: planData.title,
         description: planData.description,
-        planType: planData.planType,
+        planType: planData.planType ?? 'learning',
         subject: planData.subject,
         difficulty: planData.difficulty || 'medium',
         startDate: planData.startDate,

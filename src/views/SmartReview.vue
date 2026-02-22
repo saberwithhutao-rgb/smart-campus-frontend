@@ -76,10 +76,14 @@
                 <!-- 时间 -->
                 <div class="review-table-cell">{{ formatDate(item.taskDate) }}</div>
 
-                <!-- 是否复习 - 复选框 -->
-                <div class="review-table-cell">
-                  <el-checkbox v-model="item.reviewed" />
-                </div>
+                <el-checkbox
+                  :model-value="item.status === 'completed'"
+                  @change="
+                    (val: boolean) => {
+                      if (val) completeTask(item.id)
+                    }
+                  "
+                />
 
                 <!-- 操作 -->
                 <div class="review-table-cell" style="width: 100px">
@@ -180,7 +184,14 @@ const showSidebar = ref(true)
 
 // 复习任务数据
 const reviewItems = computed(() => studyPlanStore.reviewItems)
-
+const completeTask = async (id: number) => {
+  try {
+    await studyPlanStore.completeTask(id)
+    ElMessage.success('任务已完成')
+  } catch {
+    ElMessage.error('操作失败')
+  }
+}
 // 选中状态
 const selectedTaskIds = ref<number[]>([])
 const showEbbinghausModal = ref(false)
@@ -294,11 +305,9 @@ const formatDate = (date: string) => {
 // 忽略任务
 const ignoreTask = async (id: number) => {
   try {
-    // 这里可以调用一个忽略API，或者直接删除
-    // 暂时先刷新列表
     await studyPlanStore.fetchPendingTasks()
     ElMessage.success('任务已忽略')
-  } catch (error) {
+  } catch {
     ElMessage.error('操作失败')
   }
 }
