@@ -122,7 +122,7 @@ import { useUserStore } from '@/stores/user'
 const userStore = useUserStore()
 
 // 获取用户ID
-const userId = userStore.userInfo?.userId
+const userId = computed(() => userStore.userInfo?.userId)
 
 // 响应式数据
 const timeRange = ref('today') // 默认时间范围为今天
