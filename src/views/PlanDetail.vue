@@ -16,7 +16,6 @@ const planId = Number(route.params.id)
 const currentPlan = computed(() => studyPlanStore.studyPlans.find((p) => p.id === planId))
 const isLoggedIn = computed(() => userStore.userState.isLoggedIn)
 
-// 直接从detail store获取
 const generatedPlan = computed(() => studyPlanDetailStore.currentDetail)
 const isGenerating = computed(() => studyPlanDetailStore.isGenerating)
 
@@ -84,7 +83,8 @@ const goBack = () => router.go(-1)
         <div class="info-item">
           <span class="label">计划周期：</span>
           <span class="value">
-            {{ formatDate(currentPlan.startDate) }} 至 {{ formatDate(currentPlan.endDate) }}
+            {{ formatDate(currentPlan.startDate || '') }} 至
+            {{ formatDate(currentPlan.endDate || '') }}
           </span>
         </div>
       </div>
@@ -105,7 +105,7 @@ const goBack = () => router.go(-1)
         <h2>专属学习计划</h2>
 
         <!-- 按周循环显示 -->
-        <div v-for="week in generatedPlan.plan" :key="week.week" class="week-plan">
+        <div v-for="week in generatedPlan.planDetails.plan" :key="week.week" class="week-plan">
           <el-card class="week-card" :header="week.title">
             <!-- 按天循环显示 -->
             <div v-for="day in week.days" :key="day.day" class="day-plan">
