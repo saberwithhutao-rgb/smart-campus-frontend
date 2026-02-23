@@ -3,7 +3,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '@/api'
-// 导入详情类型（用于关联）
 import type { StudyPlanDetail } from './studyPlanDetail'
 
 export interface StudyPlan {
@@ -27,7 +26,6 @@ export interface StudyPlan {
   latestDetailId?: number
 }
 
-// 复习项类型 - 匹配 study_tasks 表
 export interface ReviewItem {
   id: number
   planId: number

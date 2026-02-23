@@ -1,46 +1,28 @@
-// stores/studyPlanDetail.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '@/api'
-import { useStudyPlanStore } from './studyPlan'
 
-// AI生成的学习计划详情（JSON结构）
-export interface AIGeneratedPlan {
-  plan: Array<{
-    week: number
-    title: string
-    days: Array<{
-      day: number
-      topic: string
-      tasks: string[]
-      resources: string[]
-      assignments: string[]
-    }>
-  }>
+export interface ApiResponse<T = unknown> {
+  code: number
+  message: string
+  data: T
 }
 
-// 解析后的详情（包含JSON对象）
-export interface StudyPlanDetailWithParsed {
-  id: number
-  studyPlanId: number
-  duration: string
-  level: 'easy' | 'medium' | 'hard'
-  planDetails: AIGeneratedPlan
-  createdAt: string
+export interface GeneratePlanResponse {
+  plan: string
+  detailId: number
 }
 
-// 数据库实体
 export interface StudyPlanDetail {
   id: number
-  studyPlanId: number
+  studyPlanId: number // 必须要有这个字段来区分是哪个计划的详情
   duration: string
   level: 'easy' | 'medium' | 'hard'
-  planDetails: string // JSON字符串
+  plan: string
   createdAt: string
 }
 
-// 生成计划参数
 export interface GeneratePlanParams {
   studyPlanId: number
   subject: string
@@ -49,60 +31,35 @@ export interface GeneratePlanParams {
 }
 
 export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
-  // ----- 状态 -----
-  const currentDetail = ref<StudyPlanDetailWithParsed | null>(null)
+  // 改为用 Map 存储，key 是 studyPlanId
+  const planDetailsMap = ref<Map<number, StudyPlanDetail>>(new Map())
   const isGenerating = ref(false)
 
-  // 辅助函数：解析JSON
-  const parsePlanDetails = (detail: StudyPlanDetail): StudyPlanDetailWithParsed => {
-    try {
-      const parsed = JSON.parse(detail.planDetails) as AIGeneratedPlan
-      return {
-        ...detail,
-        planDetails: parsed,
-      }
-    } catch (e) {
-      console.error('解析计划详情JSON失败:', e)
-      return {
-        ...detail,
-        planDetails: { plan: [] },
-      }
-    }
-  }
-
-  // ----- 生成新的学习计划详情 -----
   const generatePlanDetail = async (params: GeneratePlanParams) => {
     isGenerating.value = true
     try {
-      const response = await api.generatePlanDetail({
+      const response = (await api.generatePlanDetail({
         studyPlanId: params.studyPlanId,
         subject: params.subject,
         duration: params.duration,
         level: params.level,
-      })
+      })) as ApiResponse<GeneratePlanResponse>
 
       if (response.code === 200) {
-        const data = response.data // { planDetails: {...}, detailId: xxx }
-
-        // 构建详情对象
-        const newDetail: StudyPlanDetail = {
-          id: data.detailId,
+        const newDetail = {
+          id: response.data.detailId,
           studyPlanId: params.studyPlanId,
           duration: params.duration,
           level: params.level as 'easy' | 'medium' | 'hard',
-          planDetails: JSON.stringify(data.planDetails),
+          plan: response.data.plan,
           createdAt: new Date().toISOString(),
         }
 
-        // 设置为当前选中的详情（解析后的）
-        currentDetail.value = parsePlanDetails(newDetail)
-
-        // 更新学习计划store中的最新详情ID
-        const studyPlanStore = useStudyPlanStore()
-        studyPlanStore.updatePlanLatestDetail(params.studyPlanId, data.detailId)
+        // 按 studyPlanId 存储
+        planDetailsMap.value.set(params.studyPlanId, newDetail)
 
         ElMessage.success('学习计划生成成功')
-        return currentDetail.value
+        return newDetail
       } else {
         ElMessage.error(response.message || '生成计划失败')
         return null
@@ -116,19 +73,19 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
     }
   }
 
-  // 清空当前选中的详情
-  const clearCurrentDetail = () => {
-    currentDetail.value = null
+  // 根据 studyPlanId 获取对应的详情
+  const getPlanDetailByStudyPlanId = (studyPlanId: number) => {
+    return planDetailsMap.value.get(studyPlanId) || null
+  }
+
+  const clearPlanDetail = (studyPlanId: number) => {
+    planDetailsMap.value.delete(studyPlanId)
   }
 
   return {
-    // 状态
-    currentDetail,
     isGenerating,
-
-    // 方法
     generatePlanDetail,
-    clearCurrentDetail,
-    parsePlanDetails,
+    getPlanDetailByStudyPlanId,
+    clearPlanDetail,
   }
 })

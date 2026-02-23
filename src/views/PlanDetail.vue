@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GlobalNavbar from '../components/GlobalNavbar.vue'
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -16,10 +17,14 @@ const planId = Number(route.params.id)
 const currentPlan = computed(() => studyPlanStore.studyPlans.find((p) => p.id === planId))
 const isLoggedIn = computed(() => userStore.userState.isLoggedIn)
 
-const generatedPlan = computed(() => studyPlanDetailStore.currentDetail)
+const generatedPlan = computed(() => studyPlanDetailStore.getPlanDetailByStudyPlanId(planId))
 const isGenerating = computed(() => studyPlanDetailStore.isGenerating)
 
-onMounted(() => !currentPlan.value && router.push('/ai/study'))
+onMounted(() => {
+  if (!currentPlan.value) {
+    router.push('/ai/study')
+  }
+})
 
 const generateStudyPlan = async () => {
   if (!isLoggedIn.value) {
@@ -54,102 +59,65 @@ const goBack = () => router.go(-1)
 </script>
 
 <template>
-  <div class="plan-detail-container">
-    <div v-if="!currentPlan" class="loading">
-      <el-skeleton :rows="5" />
-    </div>
+  <div class="smart-qa-container">
+    <GlobalNavbar />
 
-    <div v-else class="plan-content">
-      <div class="header-actions">
-        <el-button @click="goBack" icon="ArrowLeft">返回</el-button>
-      </div>
-
-      <h1>{{ currentPlan.title }}</h1>
-      <p class="description">{{ currentPlan.description }}</p>
-
-      <div class="plan-info">
-        <div class="info-item">
-          <span class="label">计划类型：</span>
-          <span class="value">{{ getPlanTypeText(currentPlan.planType) }}</span>
+    <!-- 主内容区 -->
+    <div class="main-content">
+      <div class="plan-detail-container">
+        <div v-if="!currentPlan" class="loading">
+          <el-skeleton :rows="5" />
         </div>
-        <div class="info-item">
-          <span class="label">学科：</span>
-          <span class="value">{{ currentPlan.subject }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">难度：</span>
-          <span class="value">{{ currentPlan.difficulty }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">计划周期：</span>
-          <span class="value">
-            {{ formatDate(currentPlan.startDate || '') }} 至
-            {{ formatDate(currentPlan.endDate || '') }}
-          </span>
-        </div>
-      </div>
 
-      <div class="action-section">
-        <el-button
-          type="primary"
-          @click="generateStudyPlan"
-          :loading="isGenerating"
-          :disabled="isGenerating"
-        >
-          生成专属学习计划
-        </el-button>
-      </div>
+        <div v-else class="plan-content">
+          <div class="header-actions">
+            <el-button @click="goBack" icon="ArrowLeft">返回</el-button>
+          </div>
 
-      <!-- 修改后的计划显示部分 -->
-      <div v-if="generatedPlan" class="generated-plan">
-        <h2>专属学习计划</h2>
+          <h1>{{ currentPlan.title }}</h1>
+          <p class="description">{{ currentPlan.description }}</p>
 
-        <!-- 按周循环显示 -->
-        <div v-for="week in generatedPlan.planDetails.plan" :key="week.week" class="week-plan">
-          <el-card class="week-card" :header="week.title">
-            <!-- 按天循环显示 -->
-            <div v-for="day in week.days" :key="day.day" class="day-plan">
-              <div class="day-header">
-                <h4>第 {{ day.day }} 天：{{ day.topic }}</h4>
-              </div>
-
-              <div class="day-content">
-                <!-- 学习任务 -->
-                <div v-if="day.tasks && day.tasks.length" class="section tasks">
-                  <h5>📚 学习任务</h5>
-                  <ul>
-                    <li v-for="(task, idx) in day.tasks" :key="idx">
-                      <el-tag size="small" type="primary" effect="plain">{{ task }}</el-tag>
-                    </li>
-                  </ul>
-                </div>
-
-                <!-- 学习资源 -->
-                <div v-if="day.resources && day.resources.length" class="section resources">
-                  <h5>📖 学习资源</h5>
-                  <ul>
-                    <li v-for="(resource, idx) in day.resources" :key="idx">
-                      <el-link type="primary" :href="resource" v-if="resource.startsWith('http')">
-                        {{ resource }}
-                      </el-link>
-                      <span v-else>{{ resource }}</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <!-- 练习作业 -->
-                <div v-if="day.assignments && day.assignments.length" class="section assignments">
-                  <h5>✍️ 练习作业</h5>
-                  <ul>
-                    <li v-for="(assignment, idx) in day.assignments" :key="idx">
-                      <el-tag size="small" type="success" effect="plain">{{ assignment }}</el-tag>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <el-divider v-if="day.day < week.days.length" />
+          <div class="plan-info">
+            <div class="info-item">
+              <span class="label">计划类型：</span>
+              <span class="value">{{ getPlanTypeText(currentPlan.planType) }}</span>
             </div>
-          </el-card>
+            <div class="info-item">
+              <span class="label">学科：</span>
+              <span class="value">{{ currentPlan.subject }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">难度：</span>
+              <span class="value">{{ currentPlan.difficulty }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">时间：</span>
+              <span class="value">
+                {{ formatDate(currentPlan.startDate || '') }} 至
+                {{ formatDate(currentPlan.endDate || '') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="action-section">
+            <el-button
+              type="primary"
+              @click="generateStudyPlan"
+              :loading="isGenerating"
+              :disabled="isGenerating"
+            >
+              生成专属学习计划
+            </el-button>
+          </div>
+
+          <!-- 直接显示AI返回的纯文本 -->
+          <div v-if="generatedPlan" class="generated-plan">
+            <h2>专属学习计划</h2>
+            <div class="plan-text">
+              {{ generatedPlan.plan }}
+            </div>
+            <div v-if="generatedPlan.id" class="detail-id">计划ID: {{ generatedPlan.id }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -160,90 +128,62 @@ const goBack = () => router.go(-1)
 .plan-detail-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-}
-
-.plan-content {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
-}
-
-.header-actions {
-  margin-bottom: 1rem;
+  padding: 20px;
 }
 
 .plan-info {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
 }
 
 .info-item {
-  padding: 0.75rem;
-  background: #f8f9fa;
-  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
-.label {
-  font-weight: bold;
-  color: #6c757d;
+.info-item .label {
+  font-size: 14px;
+  color: #909399;
 }
 
-.plan-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin: 2rem 0;
+.info-item .value {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
 }
 
-.summary-item {
+.action-section {
   text-align: center;
-  padding: 1.5rem;
-  background: #e9ecef;
+  margin: 30px 0;
+}
+
+.generated-plan {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #fff;
   border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-.value {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #4a6fa5;
+.plan-text {
+  white-space: pre-wrap; /* 保留换行和空格 */
+  line-height: 1.8;
+  font-size: 16px;
+  padding: 20px;
+  background-color: #fafafa;
+  border-radius: 4px;
 }
 
-.daily-plans {
-  margin-top: 2rem;
-}
-
-.day-plan {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.task {
-  font-weight: bold;
-  color: #4a6fa5;
-  margin-bottom: 0.75rem;
-}
-
-.resources {
-  margin-top: 0.75rem;
-}
-
-.resource {
-  margin: 0.5rem 0;
-  font-size: 0.9rem;
-}
-
-.resource a {
-  color: #4a6fa5;
-  text-decoration: none;
-}
-
-.resource a:hover {
-  text-decoration: underline;
+.detail-id {
+  margin-top: 20px;
+  text-align: right;
+  color: #909399;
+  font-size: 14px;
 }
 </style>
