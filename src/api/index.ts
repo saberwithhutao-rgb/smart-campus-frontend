@@ -22,6 +22,7 @@ import type {
   UniversityListDetailResponse,
   UniversityCountResponse,
 } from '../types/university'
+import { time } from 'console'
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
@@ -274,6 +275,7 @@ export const api = {
       method: 'POST',
       url: '/ai/plan-detail',
       data,
+      timeout: 120000,
     }),
 
   deleteStudyPlanDetail: (detailId: number) =>
