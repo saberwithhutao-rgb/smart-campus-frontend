@@ -588,15 +588,14 @@ onMounted(async () => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
 
-  // ===== 新增：自动加载历史会话 =====
-  // if (userStore.userState.isLoggedIn) {
-  //   await loadSessions()
+  if (userStore.userState.isLoggedIn) {
+    await loadSessions()
 
-  //   // 如果有会话，默认选择第一个
-  //   if (sessions.value.length > 0 && sessions.value[0]) {
-  //     selectSession(sessions.value[0])
-  //   }
-  // }
+    // 如果有会话，默认选择第一个
+    if (sessions.value.length > 0 && sessions.value[0]) {
+      selectSession(sessions.value[0])
+    }
+  }
 })
 
 onUnmounted(() => {

@@ -142,13 +142,28 @@ const fetchData = async () => {
   error.value = ''
 
   try {
-    // 打印请求参数
+    // 🔴 直接从 token 解析 userId
+    const token = localStorage.getItem('userToken')
+    let userId = 0
+
+    if (token && token.startsWith('jwt-')) {
+      const parts = token.split('-')
+      if (parts.length >= 2) {
+        userId = parseInt(parts[1], 10)
+        console.log('从 token 解析出 userId:', userId)
+      }
+    }
+
+    if (!userId) {
+      error.value = '无法获取用户ID'
+      return
+    }
+
     console.log('请求参数:', {
       timeRange: timeRange.value,
       userId,
     })
 
-    // 并行请求两个接口
     const [statsData, suggestionsData] = await Promise.all([
       getStudyStatistics({
         timeRange: timeRange.value,
@@ -160,23 +175,11 @@ const fetchData = async () => {
       }),
     ])
 
-    // 打印响应数据
-    console.log('统计数据响应:', statsData)
-    console.log('学习建议响应:', suggestionsData)
-
-    // 保存数据
     statistics.value = statsData
     suggestions.value = suggestionsData.suggestions || suggestionsData || []
-
-    // 打印保存后的数据
-    console.log('保存后的统计数据:', statistics.value)
-    console.log('保存后的学习建议:', suggestions.value)
   } catch (err) {
-    // 处理错误
     console.error('请求失败:', err)
     error.value = err.message || '请求失败，请稍后重试'
-    statistics.value = null
-    suggestions.value = []
   } finally {
     loading.value = false
   }

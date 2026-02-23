@@ -1,7 +1,10 @@
+// stores/studyPlan.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '@/api'
+// 导入详情类型（用于关联）
+import type { StudyPlanDetail } from './studyPlanDetail'
 
 export interface StudyPlan {
   id: number
@@ -16,6 +19,12 @@ export interface StudyPlan {
   endDate: string | null
   createdAt: string
   updatedAt: string
+
+  // 关联的学习计划详情（一对多）
+  studyPlanDetails?: StudyPlanDetail[]
+
+  // 最新的详情ID（用于快速访问）
+  latestDetailId?: number
 }
 
 // 复习项类型 - 匹配 study_tasks 表
@@ -32,6 +41,26 @@ export interface ReviewItem {
   reviewStage: number
   completedAt: string | null
   createdAt: string
+}
+
+// 创建计划参数
+export interface CreateStudyPlanParams {
+  title: string
+  description?: string
+  planType?: 'review' | 'learning' | 'project'
+  subject: string
+  difficulty?: 'easy' | 'medium' | 'hard'
+  startDate: string
+  endDate?: string
+}
+
+// 查询参数
+export interface StudyPlanQueryParams {
+  page?: number
+  size?: number
+  status?: 'active' | 'completed' | 'paused'
+  planType?: 'review' | 'learning' | 'project'
+  subject?: string
 }
 
 export const useStudyPlanStore = defineStore('studyPlan', () => {
@@ -59,16 +88,20 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     return studyPlans.value.filter((plan) => plan.status === 'completed')
   })
 
+  // 获取有计划详情的计划
+  const plansWithDetails = computed(() => {
+    return studyPlans.value.filter((plan) => plan.latestDetailId)
+  })
+
   // ----- 复习任务相关方法 -----
   const fetchPendingTasks = async () => {
     isLoading.value = true
     try {
       const response = await api.getPendingTasks()
       if (response.code === 200) {
-        // ✅ 只保留今天及之前的任务
         const today = new Date().toISOString().split('T')[0] ?? ''
         reviewItems.value = response.data.filter(
-          (item) => item.taskDate <= today || item.reviewStage === 0,
+          (item: ReviewItem) => item.taskDate <= today || item.reviewStage === 0,
         )
       }
     } catch (error) {
@@ -81,12 +114,10 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
 
   const completeTask = async (id: number) => {
     const taskIndex = reviewItems.value.findIndex((item) => item.id === id)
-    if (taskIndex === -1 || !reviewItems.value[taskIndex]) return // 增加边界检查
+    if (taskIndex === -1 || !reviewItems.value[taskIndex]) return
 
-    // 1. 保存原状态
     const originalTask: ReviewItem = { ...reviewItems.value[taskIndex] }
 
-    // 2. 乐观更新
     reviewItems.value[taskIndex] = {
       ...reviewItems.value[taskIndex],
       status: 'completed',
@@ -97,17 +128,14 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
 
       if (response.code === 200) {
         ElMessage.success('任务已完成')
-        // 3. 用后端数据更新（可选）
         if (response.data) {
           reviewItems.value[taskIndex] = response.data
         }
       } else {
-        // 4. API返回错误码，回滚
         reviewItems.value[taskIndex] = originalTask
         ElMessage.error(response.message || '操作失败')
       }
     } catch (error) {
-      // 5. 网络错误，回滚
       console.error('完成任务失败:', error)
       reviewItems.value[taskIndex] = originalTask
       ElMessage.error('网络错误，请重试')
@@ -115,25 +143,19 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   }
 
   // ----- 学习计划相关方法 -----
-  const fetchStudyPlans = async (params?: {
-    page?: number
-    size?: number
-    status?: 'active' | 'completed' | 'paused'
-    planType?: 'review' | 'learning' | 'project'
-    subject?: string
-  }) => {
+  const fetchStudyPlans = async (params?: StudyPlanQueryParams) => {
     isLoading.value = true
     try {
       const response = await api.getStudyPlans({
-        page: params?.page || 1,
-        size: params?.size || 10,
+        page: params?.page || currentPage.value,
+        size: params?.size || pageSize.value,
         status: params?.status,
         planType: params?.planType,
         subject: params?.subject,
       })
 
       if (response.code === 200) {
-        studyPlans.value = response.data.list as unknown as StudyPlan[]
+        studyPlans.value = response.data.list as StudyPlan[]
         total.value = response.data.total
         currentPage.value = response.data.page
         pageSize.value = response.data.size
@@ -148,15 +170,24 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     }
   }
 
-  const addPlan = async (planData: {
-    title: string
-    description?: string
-    planType?: 'review' | 'learning' | 'project'
-    subject: string
-    difficulty?: 'easy' | 'medium' | 'hard'
-    startDate: string
-    endDate?: string
-  }) => {
+  const getPlanById = async (id: number) => {
+    isLoading.value = true
+    try {
+      const response = await api.getStudyPlan(id)
+      if (response.code === 200) {
+        selectedPlan.value = response.data as StudyPlan
+        return response.data
+      }
+    } catch (error) {
+      console.error('获取计划详情失败:', error)
+      ElMessage.error('获取计划详情失败')
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const addPlan = async (planData: CreateStudyPlanParams) => {
     isLoading.value = true
     try {
       const response = await api.createStudyPlan({
@@ -237,13 +268,13 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       planIndex = studyPlans.value.findIndex((p) => p.id === id)
       if (planIndex === -1) return
 
-      originalPlan = { ...studyPlans.value[planIndex] } as StudyPlan
+      originalPlan = { ...studyPlans.value[planIndex] }
       const newStatus = originalPlan.status === 'completed' ? 'active' : 'completed'
 
       const updatedPlan = {
         ...originalPlan,
         status: newStatus,
-      } as StudyPlan
+      }
       studyPlans.value[planIndex] = updatedPlan
 
       const response = await api.togglePlanComplete(id)
@@ -269,20 +300,14 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     }
   }
 
-  const getPlanById = async (id: number) => {
-    isLoading.value = true
-    try {
-      const response = await api.getStudyPlan(id)
-      if (response.code === 200) {
-        selectedPlan.value = response.data as unknown as StudyPlan
-        return response.data
-      }
-    } catch (error) {
-      console.error('获取计划详情失败:', error)
-      ElMessage.error('获取计划详情失败')
-      throw error
-    } finally {
-      isLoading.value = false
+  // 更新计划的最新详情ID（由详情store调用）
+  const updatePlanLatestDetail = (planId: number, detailId: number) => {
+    const plan = studyPlans.value.find((p) => p.id === planId)
+    if (plan) {
+      plan.latestDetailId = detailId
+    }
+    if (selectedPlan.value?.id === planId) {
+      selectedPlan.value.latestDetailId = detailId
     }
   }
 
@@ -294,25 +319,36 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   init()
 
   return {
-    // 学习计划相关
+    // 状态
     studyPlans,
+    reviewItems,
     isLoading,
     currentPage,
     pageSize,
     total,
     selectedPlan,
+
+    // 计算属性
     completionRate,
     activeCount,
     completedPlans,
+    plansWithDetails,
+
+    // 复习任务方法
+    fetchPendingTasks,
+    completeTask,
+
+    // 学习计划方法
     fetchStudyPlans,
+    getPlanById,
     addPlan,
     updatePlan,
     deletePlan,
     togglePlanComplete,
-    getPlanById,
-    reviewItems,
-    fetchPendingTasks,
-    completeTask,
+
+    // 关联方法
+    updatePlanLatestDetail,
+
     init,
   }
 })

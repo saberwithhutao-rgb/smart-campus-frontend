@@ -249,10 +249,39 @@ export const api = {
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
     localStorage.removeItem('refreshToken')
-
-    // 清除 axios 实例的默认 Authorization 头
     delete service.defaults.headers.common['Authorization']
   },
+
+  getStudyPlanDetails: (studyPlanId: number) =>
+    request({
+      method: 'GET',
+      url: `/study-plan-details/plan/${studyPlanId}`,
+    }),
+
+  getStudyPlanDetail: (detailId: number) =>
+    request({
+      method: 'GET',
+      url: `/study-plan-details/${detailId}`,
+    }),
+
+  generatePlanDetail: (data: {
+    studyPlanId: number
+    subject: string
+    duration: string
+    level: string
+  }) =>
+    request({
+      method: 'POST',
+      url: '/ai/plan-detail',
+      data,
+    }),
+
+  deleteStudyPlanDetail: (detailId: number) =>
+    request({
+      method: 'DELETE',
+      url: `/study-plan-details/${detailId}`,
+    }),
+
   // 认证模块
   login: (data: { username: string; password: string; captcha: string; captchaId?: string }) =>
     request<ApiResponse<LoginData>>({ method: 'POST', url: '/api/login', data }),

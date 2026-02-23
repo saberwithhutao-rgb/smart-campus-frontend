@@ -26,7 +26,6 @@ export const useUserStore = defineStore('user', () => {
     const token = localStorage.getItem('userToken')
     const userInfoStr = localStorage.getItem('userInfo')
 
-    // 添加验证逻辑
     if (!token || !userInfoStr) {
       console.log('没有token或userInfo，不恢复登录状态')
       userState.value = {
@@ -63,6 +62,23 @@ export const useUserStore = defineStore('user', () => {
           userInfo: null,
         }
         return false
+      }
+
+      // 🔴 重要：从 token 中重新解析 userId
+      let userIdFromToken = 0
+      if (token && token.startsWith('jwt-')) {
+        const parts = token.split('-')
+        if (parts.length >= 2 && parts[1] !== undefined && !isNaN(Number(parts[1]))) {
+          userIdFromToken = parseInt(parts[1], 10)
+          console.log('恢复时从 token 解析出 userId:', userIdFromToken)
+        }
+      }
+
+      if (userIdFromToken > 0 && userInfo.userId !== userIdFromToken) {
+        userInfo.userId = userIdFromToken
+
+        // 更新 localStorage
+        localStorage.setItem('userInfo', JSON.stringify(userInfo))
       }
 
       const restoredState = {

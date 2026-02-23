@@ -6,6 +6,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/detail/:id',
+      name: 'PlanDetail',
+      component: () => import('@/views/PlanDetail.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/logout',
       name: 'Logout',
       component: Logout,

@@ -187,6 +187,10 @@ const openAddModalHandler = () => {
   }
 }
 
+const goToPlanDetail = (id: number) => {
+  router.push(`detail/${id}`)
+}
+
 /**
  * 关闭添加计划弹窗
  */
@@ -437,6 +441,7 @@ onMounted(() => {
                 :key="plan.id"
                 class="plan-item"
                 :class="{ 'plan-item-completed': plan.status === 'completed' }"
+                @click="goToPlanDetail(plan.id)"
               >
                 <!-- 计划左侧：复选框和名称 -->
                 <div class="plan-left">

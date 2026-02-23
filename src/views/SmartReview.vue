@@ -171,11 +171,11 @@
 
 <script setup lang="ts">
 import GlobalNavbar from '../components/GlobalNavbar.vue'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { useStudyPlanStore } from '../stores/studyPlan'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { ReviewItem } from '../stores/studyPlan'
 import { api } from '@/api'
 
@@ -313,10 +313,21 @@ const formatDate = (date: string) => {
 // 忽略任务
 const ignoreTask = async (id: number) => {
   try {
-    await studyPlanStore.fetchPendingTasks()
+    // 添加确认提示
+    await ElMessageBox.confirm('确定要忽略这个任务吗？此操作不可撤销。', '确认操作', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    await studyPlanStore.ignoreTask(id) // 假设store中有这个方法
     ElMessage.success('任务已忽略')
-  } catch {
-    ElMessage.error('操作失败')
+    // 刷新任务列表
+    await studyPlanStore.fetchPendingTasks()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败')
+    }
   }
 }
 
@@ -329,7 +340,7 @@ const confirmGenerate = async () => {
 
   generating.value = true
   try {
-    // ✅ 调用批量生成接口
+    // 调用批量生成接口
     await api.batchGenerateReviewPlans(selectedTaskIds.value)
 
     ElMessage.success(`已为 ${selectedTaskIds.value.length} 个任务生成复习计划`)
@@ -346,11 +357,26 @@ const confirmGenerate = async () => {
   }
 }
 
+// 监听任务变化，自动清除已不在列表中的选中项
+watch(
+  reviewItems,
+  (newItems) => {
+    const validIds = newItems.map((item) => item.id)
+    selectedTaskIds.value = selectedTaskIds.value.filter((id) => validIds.includes(id))
+  },
+  { deep: true },
+)
+
 // 生命周期
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
   studyPlanStore.fetchPendingTasks()
+})
+
+// 页面卸载时移除事件监听器
+onUnmounted(() => {
+  window.removeEventListener('resize', checkScreenSize)
 })
 </script>
 
