@@ -8,7 +8,7 @@ const router = createRouter({
     {
       path: '/ai/study/detail/:id',
       name: 'PlanDetail',
-      component: () => import('@/views/PlanDetail.vue'),
+      component: () => import('../views/PlanDetail.vue'),
       meta: { requiresAuth: true },
     },
     {

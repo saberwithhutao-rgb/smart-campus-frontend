@@ -188,7 +188,11 @@ const openAddModalHandler = () => {
 }
 
 const goToPlanDetail = (id: number) => {
-  router.push(`detail/${id}`)
+  console.log('goToPlanDetail被调用', id)
+  router.push({
+    name: 'PlanDetail',
+    params: { id: id.toString() },
+  })
 }
 
 /**
@@ -485,10 +489,12 @@ onMounted(() => {
 
                   <!-- 操作按钮 -->
                   <div class="plan-actions">
-                    <button class="action-btn edit-btn" @click="openEditModalHandler(plan)">
+                    <button class="action-btn edit-btn" @click.stop="openEditModalHandler(plan)">
                       修改
                     </button>
-                    <button class="action-btn delete-btn" @click="deletePlan(plan.id)">删除</button>
+                    <button class="action-btn delete-btn" @click.stop="deletePlan(plan.id)">
+                      删除
+                    </button>
                   </div>
                 </div>
               </div>
