@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api/index'
 import { useUserStore } from '../stores/user'
+import { autoLogin } from '../utils/autoLogin'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -12,6 +13,7 @@ const form = reactive({
   username: '',
   password: '',
   captcha: '',
+  rememberMe: true, // 默认勾选记住我
 })
 
 // 图形验证码相关数据
@@ -66,6 +68,7 @@ const getCaptcha = async () => {
     isGettingCaptcha.value = false
   }
 }
+
 // 登录
 const handleLogin = async () => {
   // 清除之前的错误提示
@@ -88,8 +91,13 @@ const handleLogin = async () => {
 
   isLoggingIn.value = true
   try {
-    // 最佳实践：直接使用userStore.login
-    const result = await userStore.login(form.username, form.password, form.captcha)
+    // 调用登录，传入rememberMe状态
+    const result = await userStore.login(
+      form.username,
+      form.password,
+      form.captcha,
+      form.rememberMe, // 传入记住我选项
+    )
 
     if (result.success) {
       alert('登录成功！')
@@ -112,9 +120,16 @@ const goToRegister = () => {
   router.push('/register')
 }
 
-// 组件挂载时获取验证码
+// 组件挂载时获取验证码，并检查是否有保存的用户名
 onMounted(() => {
   getCaptcha()
+
+  // 如果有保存的用户名，自动填充
+  const savedUsername = autoLogin.getSavedUsername()
+  if (savedUsername) {
+    form.username = savedUsername
+    form.rememberMe = true
+  }
 })
 </script>
 
@@ -200,6 +215,14 @@ onMounted(() => {
             <div class="captcha-hint">（请输入上方4位验证码，不区分大小写）</div>
           </div>
         </div>
+      </div>
+
+      <!-- 记住我选项 -->
+      <div class="form-group remember-me">
+        <label class="checkbox-label">
+          <input type="checkbox" v-model="form.rememberMe" />
+          <span>记住我（下次自动登录）</span>
+        </label>
       </div>
 
       <!-- 登录按钮 -->
@@ -470,5 +493,24 @@ onMounted(() => {
   font-size: 12px;
   color: #888;
   margin-top: 4px;
+}
+
+.remember-me {
+  margin-bottom: 20px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #555;
+  font-size: 14px;
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 </style>

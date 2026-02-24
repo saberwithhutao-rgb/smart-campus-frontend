@@ -1,14 +1,32 @@
+// utils/request.js
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { autoLogin } from './autoLogin'
+import { useUserStore } from '../stores/user'
 
 // 创建axios实例
 const request = axios.create({
   baseURL: '',
-  timeout: 120000, // 请求超时时间，改为60秒以适应大模型生成
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json;charset=utf-8',
   },
 })
+
+// 请求队列，防止多个请求同时自动登录
+let isAutoLogging = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
 
 // 请求拦截器
 request.interceptors.request.use(
@@ -22,7 +40,6 @@ request.interceptors.request.use(
       url: config.url,
       method: config.method,
       hasToken: !!token,
-      headers: config.headers,
     })
 
     return config
@@ -35,55 +52,85 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
-    // 直接返回响应数据
     return response.data
   },
-  (error) => {
-    // 统一处理错误
+  async (error) => {
+    const originalRequest = error.config
+
+    // 处理401未授权/Token过期
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // 如果已经在自动登录，将请求加入队列
+      if (isAutoLogging) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        })
+          .then((token) => {
+            originalRequest.headers['Authorization'] = `Bearer ${token}`
+            return request(originalRequest)
+          })
+          .catch((err) => Promise.reject(err))
+      }
+
+      originalRequest._retry = true
+      isAutoLogging = true
+
+      try {
+        console.log('🔄 Token过期，尝试自动登录...')
+
+        // 尝试自动登录
+        const autoLoginSuccess = await autoLogin.tryAutoLogin()
+
+        if (autoLoginSuccess) {
+          console.log('✅ 自动登录成功，重试请求')
+          const newToken = localStorage.getItem('userToken') || localStorage.getItem('token')
+
+          // 处理队列中的请求
+          processQueue(null, newToken)
+
+          // 重试原请求
+          originalRequest.headers['Authorization'] = `Bearer ${newToken}`
+          return request(originalRequest)
+        } else {
+          console.log('❌ 自动登录失败')
+          processQueue(new Error('自动登录失败'), null)
+
+          // 清除用户状态
+          const userStore = useUserStore()
+          userStore.clearUser()
+
+          // 跳转到登录页（带重定向参数）
+          const currentPath = encodeURIComponent(window.location.pathname + window.location.search)
+          window.location.href = `/login?redirect=${currentPath}`
+        }
+      } catch (autoLoginError) {
+        console.error('自动登录过程出错:', autoLoginError)
+        processQueue(autoLoginError, null)
+      } finally {
+        isAutoLogging = false
+      }
+    }
+
+    // 处理其他错误
     if (error.response) {
-      // 服务器返回错误状态码
       console.error('响应错误:', error.response.status, error.response.data)
 
-      // 🟢🟢🟢 处理 401 未授权/Token过期 🟢🟢🟢
-      if (error.response.status === 401) {
-        // 清除过期的 token
-        localStorage.removeItem('userToken')
-        localStorage.removeItem('token')
-        localStorage.removeItem('userInfo')
-
-        // 提示用户
-        ElMessage.error('登录已过期，请重新登录')
-
-        // 跳转到登录页
-        setTimeout(() => {
-          window.location.href = '/login'
-        }, 1500)
-      }
-      // 处理 403 禁止访问
-      else if (error.response.status === 403) {
+      if (error.response.status === 403) {
         ElMessage.error('没有权限访问此资源')
-      }
-      // 处理 404 资源不存在
-      else if (error.response.status === 404) {
+      } else if (error.response.status === 404) {
         ElMessage.error('请求的资源不存在')
-      }
-      // 处理 500 服务器错误
-      else if (error.response.status === 500) {
+      } else if (error.response.status === 500) {
         ElMessage.error('服务器开小差了，请稍后再试')
-      }
-      // 其他错误
-      else {
+      } else {
         ElMessage.error(error.response.data?.message || '请求失败')
       }
     } else if (error.request) {
-      // 请求已发出但没有收到响应
       console.error('网络错误:', error.request)
       ElMessage.error('网络连接失败，请检查网络设置')
     } else {
-      // 请求配置出错
       console.error('请求错误:', error.message)
       ElMessage.error('请求失败，请稍后再试')
     }
+
     return Promise.reject(error)
   },
 )
