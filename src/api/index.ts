@@ -266,13 +266,13 @@ export const api = {
   getStudyPlanDetails: (studyPlanId: number) =>
     request({
       method: 'GET',
-      url: `/study-plan-details/plan/${studyPlanId}`,
+      url: `/api/study-plan-details/plan/${studyPlanId}`,
     }),
 
   getStudyPlanDetail: (detailId: number) =>
     request({
       method: 'GET',
-      url: `/study-plan-details/${detailId}`,
+      url: `/api/study-plan-details/${detailId}`,
     }),
 
   generatePlanDetail: (data: {
@@ -291,7 +291,7 @@ export const api = {
   deleteStudyPlanDetail: (detailId: number) =>
     request({
       method: 'DELETE',
-      url: `/study-plan-details/${detailId}`,
+      url: `/api/study-plan-details/${detailId}`,
     }),
 
   // 认证模块
@@ -328,16 +328,14 @@ export const api = {
       }>
     >({
       method: 'GET',
-      url: '/api/study/plans', // ✅ 修正路径！
+      url: '/api/study/plans',
       params,
     }),
 
-  getStudyPlan: (
-    id: number, // ✅ 类型从 string 改为 number
-  ) =>
+  getStudyPlan: (id: number) =>
     request<ApiResponse<StudyPlan>>({
       method: 'GET',
-      url: `/api/study/plans/${id}`, // ✅ 修正路径！
+      url: `/api/study/plans/${id}`,
     }),
 
   batchGenerateReviewPlans: (taskIds: number[]) =>
@@ -387,14 +385,12 @@ export const api = {
       url: `/api/study/plans/${id}`,
     }),
 
-  // ✅ 切换完成状态
   togglePlanComplete: (id: number) =>
     request<ApiResponse<StudyPlan>>({
       method: 'POST',
       url: `/api/study/plans/${id}/toggle`,
     }),
 
-  // ✅ 获取学习日程
   getStudySchedule: (params?: { startDate?: string; endDate?: string; planId?: number }) =>
     request<
       ApiResponse<
@@ -469,9 +465,9 @@ export const api = {
       method: 'GET',
       url: '/ai/chat/sessions',
       timeout: 10000,
-      responseType: 'json', // 强制指定响应类型
+      responseType: 'json',
       headers: {
-        Accept: 'application/json;charset=UTF-8', // 明确指定编码
+        Accept: 'application/json;charset=UTF-8',
       },
     }),
 
