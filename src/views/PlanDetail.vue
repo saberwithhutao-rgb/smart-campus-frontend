@@ -48,9 +48,7 @@
             >
               生成专属学习计划
             </el-button>
-            <el-button v-if="hasHistory" @click="openHistory" :loading="isLoading">
-              查看往期计划
-            </el-button>
+            <el-button @click="openHistory" :loading="isLoading"> 查看往期计划 </el-button>
           </div>
 
           <!-- 当前计划显示 -->
@@ -164,7 +162,7 @@ const studyPlanDetailStore = useStudyPlanDetailStore()
 
 // 配置 marked
 marked.setOptions({
-  highlight: function (code, lang) {
+  highlight: function (code: string, lang?: string) {
     if (lang && hljs.getLanguage(lang)) {
       return hljs.highlight(code, { language: lang }).value
     }
@@ -183,7 +181,6 @@ const generatedPlan = computed(() => studyPlanDetailStore.getCurrentPlanDetail(p
 const isGenerating = computed(() => studyPlanDetailStore.isGenerating)
 const isLoading = computed(() => studyPlanDetailStore.isLoading)
 const historyPlans = computed(() => studyPlanDetailStore.getHistoryPlans(planId))
-const hasHistory = computed(() => historyPlans.value.length > 0)
 
 // 渲染 Markdown
 const renderMarkdown = (content: string) => {
@@ -219,7 +216,10 @@ onMounted(async () => {
   }
 
   // 页面加载时获取最新生成的计划
-  await studyPlanDetailStore.fetchLatestPlan(planId)
+  await Promise.all([
+    studyPlanDetailStore.fetchLatestPlan(planId), // 获取当前显示的
+    studyPlanDetailStore.fetchHistoryPlans(planId), // 获取历史列表（让按钮显示）
+  ])
 
   // 监听窗口大小变化
   window.addEventListener('resize', () => {
@@ -254,6 +254,8 @@ const generateStudyPlan = async () => {
 
   if (result) {
     ElMessage.success('学习计划已生成!')
+    // 重新获取历史列表（包含新生成的计划）
+    await studyPlanDetailStore.fetchLatestPlan(planId)
   }
 }
 
@@ -283,6 +285,7 @@ const goBack = () => router.go(-1)
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  margin-top: 70px; /* 新增：为导航栏预留空间 */
 }
 
 .plan-detail-container {
@@ -300,6 +303,8 @@ const goBack = () => router.go(-1)
 /* 头部操作按钮 */
 .header-actions {
   margin-bottom: 20px;
+  position: relative;
+  z-index: 10;
 }
 
 .header-actions .el-button {
@@ -499,5 +504,12 @@ h1 {
 
 .p-4 {
   padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 10px;
+    margin-top: 60px; /* 移动端导航栏高度为 60px */
+  }
 }
 </style>

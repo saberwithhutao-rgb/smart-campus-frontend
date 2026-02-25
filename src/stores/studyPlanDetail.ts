@@ -64,10 +64,12 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
       >
 
       if (response.code === 200 && response.data.length > 0) {
-        // 按创建时间倒序排序，取最新的
+        // 按创建时间倒序排序
         const sorted = response.data.sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )
+
+        // 只取最新的保存到当前计划
         const latest = sorted[0]
         if (!latest) {
           return null
@@ -77,11 +79,11 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
           studyPlanId: latest.studyPlanId,
           duration: latest.duration,
           level: latest.level,
-          plan: latest.planDetails, // 数据库中是 planDetails
+          plan: latest.planDetails,
           createdAt: latest.createdAt,
         }
-
         currentPlanDetails.value.set(studyPlanId, parsedPlan)
+
         return parsedPlan
       }
       return null
@@ -93,7 +95,7 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
     }
   }
 
-  // 获取所有历史计划
+  // 获取全部历史（只存 historyPlans）
   const fetchHistoryPlans = async (studyPlanId: number) => {
     isLoading.value = true
     try {
