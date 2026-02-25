@@ -272,17 +272,120 @@ const goBack = () => router.go(-1)
 </script>
 
 <style scoped>
-/* 添加新样式 */
-.mr-2 {
-  margin-right: 8px;
+/* 全局容器样式 */
+.smart-qa-container {
+  min-height: 100vh;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
-.text-center {
-  text-align: center;
-}
-
-.p-4 {
+.main-content {
   padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.plan-detail-container {
+  background: var(--card-background);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+}
+
+/* 头部操作按钮 */
+.header-actions {
+  margin-bottom: 20px;
+}
+
+.header-actions .el-button {
+  font-size: 14px;
+}
+
+/* 标题和描述 */
+h1 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: var(--primary-text-color);
+}
+
+.description {
+  font-size: 16px;
+  color: var(--secondary-text-color);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* 计划信息展示 */
+.plan-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+}
+
+.label {
+  font-weight: 600;
+  margin-right: 8px;
+  color: var(--text-color);
+}
+
+.value {
+  color: var(--secondary-text-color);
+}
+
+/* 操作区域 */
+.action-section {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.action-section .el-button {
+  font-size: 14px;
+}
+
+/* 生成的学习计划卡片 */
+.generated-plan {
+  margin-top: 20px;
+}
+
+.plan-card {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h2 {
+  font-size: 20px;
+  margin: 0;
+  color: var(--primary-text-color);
+}
+
+.plan-content.markdown-body {
+  padding: 20px;
+  line-height: 1.8;
+  color: var(--text-color);
+}
+
+/* 历史计划弹窗 */
+.el-dialog {
+  border-radius: 8px;
 }
 
 .history-list {
@@ -295,6 +398,7 @@ const goBack = () => router.go(-1)
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: 10px;
+  border-radius: 6px;
 }
 
 .history-card:hover {
@@ -339,6 +443,30 @@ const goBack = () => router.go(-1)
 
 /* 移动端适配 */
 @media (max-width: 768px) {
+  .main-content {
+    padding: 10px;
+  }
+
+  .plan-detail-container {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .description {
+    font-size: 14px;
+  }
+
+  .plan-info {
+    grid-template-columns: 1fr;
+  }
+
+  .action-section {
+    flex-direction: column;
+  }
+
   .history-list {
     max-height: none;
   }
@@ -354,5 +482,22 @@ const goBack = () => router.go(-1)
   .history-content {
     font-size: 12px;
   }
+
+  .card-header h2 {
+    font-size: 18px;
+  }
+}
+
+/* 工具类 */
+.mr-2 {
+  margin-right: 8px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.p-4 {
+  padding: 20px;
 }
 </style>
