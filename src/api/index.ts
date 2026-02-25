@@ -33,6 +33,17 @@ const service: AxiosInstance = axios.create({
   withCredentials: true,
 })
 
+export interface ApiResponse<T = unknown> {
+  code: number
+  message: string
+  data: T
+}
+
+export interface GeneratePlanResponse {
+  plan: string
+  detailId: number
+}
+
 // 新增类型定义
 interface LoginData {
   token: string

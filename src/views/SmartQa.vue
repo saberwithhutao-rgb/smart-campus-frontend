@@ -416,11 +416,13 @@ const sendMessage = async () => {
     const formData = new FormData()
     formData.append('question', question || '请分析这个文件')
 
-    if (currentSessionId.value) {
-      formData.append('sessionId', currentSessionId.value)
+    let sessionIdToUse = currentSessionId.value
+    if (!sessionIdToUse) {
+      sessionIdToUse = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
+      currentSessionId.value = sessionIdToUse // 保存起来供后续使用
     }
+    formData.append('sessionId', sessionIdToUse)
 
-    // ✅ 修复：先检查文件是否存在，再添加到 FormData
     if (selectedFile.value) {
       formData.append('file', selectedFile.value) // 此时 TypeScript 知道 file 不是 null
     }
@@ -532,9 +534,12 @@ const uploadFile = async () => {
     const formData = new FormData()
     formData.append('question', inputMessage.value || '请分析这个文件')
 
-    if (currentSessionId.value) {
-      formData.append('sessionId', currentSessionId.value)
+    let sessionIdToUse = currentSessionId.value
+    if (!sessionIdToUse) {
+      sessionIdToUse = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
+      currentSessionId.value = sessionIdToUse
     }
+    formData.append('sessionId', sessionIdToUse)
 
     formData.append('file', selectedFile.value)
     formData.append('stream', 'true')
@@ -587,15 +592,6 @@ const toggleSidebar = () => {
 onMounted(async () => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
-
-  if (userStore.userState.isLoggedIn) {
-    await loadSessions()
-
-    // 如果有会话，默认选择第一个
-    if (sessions.value.length > 0 && sessions.value[0]) {
-      selectSession(sessions.value[0])
-    }
-  }
 })
 
 onUnmounted(() => {
