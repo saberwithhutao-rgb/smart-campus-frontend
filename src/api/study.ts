@@ -8,15 +8,15 @@ import request from '@/utils/request'
  */
 export interface StudyStatisticsParams {
   timeRange: string // 时间范围：today/week/month
-  userId: number    // 用户ID
+  userId: number // 用户ID
 }
 
 export interface StudyStatisticsResponse {
-  totalPlanCount: number         // 总计划数
-  completedPlanCount: number     // 已完成计划数
-  completionRate: number         // 完成率
-  unfinishedCount: number        // 未完成计划数
-  overduePlanCount: number       // 延期计划数
+  totalPlanCount: number // 总计划数
+  completedPlanCount: number // 已完成计划数
+  completionRate: number // 完成率
+  unfinishedCount: number // 未完成计划数
+  overduePlanCount: number // 延期计划数
   difficultyDistribution: {
     details: Array<{
       type: string
@@ -34,7 +34,9 @@ export interface StudyStatisticsResponse {
   subjectDistribution: Record<string, number> // 各科目计划数量
 }
 
-export async function getStudyStatistics(params: StudyStatisticsParams): Promise<StudyStatisticsResponse> {
+export async function getStudyStatistics(
+  params: StudyStatisticsParams,
+): Promise<StudyStatisticsResponse> {
   return request({
     url: '/api/study/statistics',
     method: 'GET',
@@ -49,7 +51,7 @@ export async function getStudyStatistics(params: StudyStatisticsParams): Promise
  */
 export interface StudySuggestionsParams {
   timeRange: string // 时间范围：today/week/month
-  userId: number    // 用户ID
+  userId: number // 用户ID
 }
 
 export interface StudySuggestionsResponse {
@@ -61,7 +63,9 @@ export interface StudySuggestionsResponse {
   }
 }
 
-export async function getStudySuggestions(params: StudySuggestionsParams): Promise<StudySuggestionsResponse> {
+export async function getStudySuggestions(
+  params: StudySuggestionsParams,
+): Promise<StudySuggestionsResponse> {
   return request({
     url: '/api/study/suggestions',
     method: 'GET',

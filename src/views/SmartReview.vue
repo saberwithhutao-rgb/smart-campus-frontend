@@ -171,22 +171,15 @@
 
 <script setup lang="ts">
 import GlobalNavbar from '../components/GlobalNavbar.vue'
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
 import { useStudyPlanStore } from '../stores/studyPlan'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { ReviewItem } from '../stores/studyPlan'
 import { api } from '@/api'
 
 const router = useRouter()
-const userStore = useUserStore()
 const studyPlanStore = useStudyPlanStore()
 
-// 响应式数据
-const showUserCenter = ref(false)
-const activeMenu = ref('')
-const showSubMenu = ref('')
 const isMobile = ref(false)
 const showSidebar = ref(true)
 
@@ -235,64 +228,8 @@ const handleSelectAllChange = (value: boolean) => {
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
 }
-
-// 导航栏方法
-const goToLogin = () => router.push('/login')
-const goToRegister = () => router.push('/register')
-const goToSmartQA = () => router.push('/ai/chat')
 const goToStudyPlan = () => router.push('/ai/study')
-const goToStudyManagement = () => router.push('/campus/analysis')
 const goToSmartReview = () => {} // 已在当前页面
-
-const toggleUserCenter = () => {
-  showUserCenter.value = !showUserCenter.value
-}
-
-const closeUserCenter = () => {
-  showUserCenter.value = false
-}
-
-const showSubMenuHandler = (menu: string) => {
-  if (!isMobile.value) {
-    showSubMenu.value = menu
-  }
-}
-
-const hideSubMenu = () => {
-  showSubMenu.value = ''
-}
-
-const handleMenuClick = (menu: string) => {
-  if (menu === '首页') {
-    router.push('/index')
-    return
-  }
-
-  if (isMobile.value) {
-    if (showSubMenu.value === menu) {
-      showSubMenu.value = ''
-    } else {
-      showSubMenu.value = menu
-    }
-  } else {
-    if (['个性化学习伴侣', '校园生活', '竞赛相关'].includes(menu)) {
-      showSubMenuHandler(menu)
-    } else {
-      hideSubMenu()
-    }
-  }
-}
-
-const handleUserMenuClick = (item: string) => {
-  if (item === '个人信息') {
-    router.push('/profile')
-  } else if (item === '退出登录') {
-    localStorage.removeItem('token')
-    localStorage.removeItem('userToken')
-    router.push('/login')
-  }
-  closeUserCenter()
-}
 
 // 切换侧边栏
 const toggleSidebar = () => {

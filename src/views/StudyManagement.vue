@@ -732,6 +732,7 @@ const initPieChart = () => {
   pieChartInstance = echarts.init(pieChartRef.value)
   let distributionData = []
 
+  // 检查是否有distribution数据，即使details为空数组也没关系
   if (statistics.value.difficultyDistribution && statistics.value.difficultyDistribution.details) {
     const difficultyMap: Record<string, string> = {
       easy: '简单',
@@ -740,17 +741,14 @@ const initPieChart = () => {
     }
     distributionData = statistics.value.difficultyDistribution.details.map((item: any) => ({
       name: difficultyMap[item.type] || item.type,
-      value: item.count,
+      value: item.count, // 这里会是0
     }))
   } else {
-    distributionData = [
-      { name: '简单', value: 3 },
-      { name: '中等', value: 5 },
-      { name: '困难', value: 2 },
-    ]
+    distributionData = []
   }
 
   const totalCount = distributionData.reduce((sum: number, item: any) => sum + item.value, 0)
+
   const colorList = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#5470c6']
   const data = distributionData.map((item: any, index: number) => ({
     ...item,
@@ -767,7 +765,9 @@ const initPieChart = () => {
     tooltip: {
       trigger: 'item',
       formatter: function (params: any) {
-        const percentage = ((params.value / totalCount) * 100).toFixed(2)
+        // 处理totalCount为0的情况
+        const percentage =
+          totalCount === 0 ? '0.00' : ((params.value / totalCount) * 100).toFixed(2)
         return `${params.name}<br/>数量: ${params.value}<br/>占比: ${percentage}%`
       },
       backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -792,7 +792,8 @@ const initPieChart = () => {
             fontSize: 16,
             fontWeight: 'bold',
             formatter: function (params: any) {
-              const percentage = ((params.value / totalCount) * 100).toFixed(2)
+              const percentage =
+                totalCount === 0 ? '0.00' : ((params.value / totalCount) * 100).toFixed(2)
               return `${params.name}\n${percentage}%`
             },
           },
