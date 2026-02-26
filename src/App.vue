@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ElMessage, ElLoading } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
 const router = useRouter()
+const appReady = ref(false) // 新增：应用是否就绪
 
 // 全局状态检查函数
 function globalAuthCheck() {
@@ -155,14 +156,37 @@ router.afterEach((to) => {
 })
 
 // 页面首次加载时触发
-onMounted(() => {
+onMounted(async () => {
   console.log('🚀 App.vue 挂载')
 
-  // 显示问候
-  showGreetingMessage()
+  // 显示加载动画
+  const loadingInstance = ElLoading.service({
+    fullscreen: true,
+    text: '正在初始化...',
+    background: 'rgba(0, 0, 0, 0.7)',
+    spinner: 'el-icon-loading',
+  })
 
-  // 初始状态检查
-  globalAuthCheck()
+  try {
+    // 尝试自动登录（如果userStore有tryAutoLogin方法）
+    if (!userStore.userState.isLoggedIn && userStore.tryAutoLogin) {
+      console.log('尝试自动登录...')
+      await userStore.tryAutoLogin()
+    }
+
+    // 初始状态检查
+    globalAuthCheck()
+
+    // 显示问候
+    showGreetingMessage()
+  } catch (error) {
+    console.error('初始化失败:', error)
+  } finally {
+    // 关闭加载动画
+    loadingInstance.close()
+    // 标记应用就绪
+    appReady.value = true
+  }
 
   // 添加storage事件监听（跨标签页同步）
   window.addEventListener('storage', handleStorageChange)
@@ -180,7 +204,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <router-view />
+  <!-- 加载中显示 -->
+  <div v-if="!appReady" class="app-loading">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">智慧校园平台正在初始化...</div>
+    </div>
+  </div>
+
+  <!-- 就绪后显示正常内容 -->
+  <router-view v-else />
 </template>
 
 <style>
@@ -450,6 +483,115 @@ a:hover {
   max-height: 90vh;
   overflow-y: auto;
   animation: slideIn 0.3s ease;
+}
+
+.app-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+  color: white;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 20px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+.loading-text {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 你原有的其他样式保持不变 */
+:root {
+  /* 主色调：科技蓝 */
+  --primary-color: #165dff;
+  --primary-color-dark: #0e46cc;
+  --primary-color-light: #4c8aff;
+
+  /* 辅助色：浅红色 */
+  --accent-color: #f53f3f;
+  --accent-color-dark: #e13d3d;
+  --accent-color-light: #f76d6d;
+
+  /* 背景色：浅灰色 */
+  --bg-color: #f5f7fa;
+  --bg-color-light: #fafafb;
+  --bg-color-dark: #eef1f5;
+
+  /* 文字主色：深灰色 */
+  --text-color: #1d2129;
+  --text-color-secondary: #4e5969;
+  --text-color-light: #86909c;
+
+  /* 边框色 */
+  --border-color: #e5e6eb;
+  --border-color-light: #f2f3f5;
+
+  /* 白色 */
+  --white: #ffffff;
+
+  /* 阴影 */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.15);
+
+  /* 圆角 */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+
+  /* 过渡动画 */
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    'Microsoft YaHei',
+    '微软雅黑',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  font-size: 14px;
+  font-weight: 400;
 }
 
 /* 动画 */
