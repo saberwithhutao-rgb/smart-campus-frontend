@@ -142,15 +142,20 @@ const fetchData = async () => {
   error.value = ''
 
   try {
-    // 🔴 直接从 token 解析 userId
     const token = localStorage.getItem('userToken')
+    console.log('fetchData被调用,token:', token)
     let userId = 0
 
-    if (token && token.startsWith('jwt-')) {
-      const parts = token.split('-')
-      if (parts.length >= 2) {
-        userId = parseInt(parts[1], 10)
-        console.log('从 token 解析出 userId:', userId)
+    if (token) {
+      try {
+        // 解析 JWT payload
+        const base64Url = token.split('.')[1]
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+        const payload = JSON.parse(atob(base64))
+        userId = payload.userId || 0
+        console.log('从 JWT 解析出 userId:', userId)
+      } catch (e) {
+        console.error('解析 token 失败:', e)
       }
     }
 
