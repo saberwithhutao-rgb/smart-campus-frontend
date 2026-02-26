@@ -176,6 +176,7 @@ import { useRouter } from 'vue-router'
 import { useStudyPlanStore } from '../stores/studyPlan'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '@/api'
+import { nextTick } from 'vue'
 
 const router = useRouter()
 const studyPlanStore = useStudyPlanStore()
@@ -304,8 +305,19 @@ watch(
   { deep: true },
 )
 
-// 生命周期
 onMounted(() => {
+  // 强制初始化侧边栏为显示状态
+  showSidebar.value = true
+
+  // 等待 DOM 更新
+  nextTick(() => {
+    checkScreenSize()
+
+    // 再次确认
+    setTimeout(() => {
+      checkScreenSize()
+    }, 50)
+  })
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
   studyPlanStore.fetchPendingTasks()

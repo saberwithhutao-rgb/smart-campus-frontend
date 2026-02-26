@@ -204,7 +204,6 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- 加载中显示 -->
   <div v-if="!appReady" class="app-loading">
     <div class="loading-content">
       <div class="loading-spinner"></div>
@@ -212,8 +211,9 @@ onBeforeUnmount(() => {
     </div>
   </div>
 
-  <!-- 就绪后显示正常内容 -->
-  <router-view v-else />
+  <div v-else class="app-content" :class="{ 'content-ready': appReady }">
+    <router-view />
+  </div>
 </template>
 
 <style>
@@ -284,6 +284,18 @@ body {
   line-height: 1.6;
   font-size: 14px;
   font-weight: 400;
+}
+
+.app-content {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+}
+
+.app-content.content-ready {
+  opacity: 1;
 }
 
 /* 全局按钮样式 */

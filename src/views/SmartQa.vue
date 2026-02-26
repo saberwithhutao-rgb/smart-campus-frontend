@@ -64,6 +64,8 @@ watch(selectedMenu, async (newVal) => {
 // ===== 新增：加载会话列表 =====
 const loadSessions = async () => {
   console.log('loadSessions 开始')
+  //記錄開始時間
+  const startTime = Date.now()
   loadingSessions.value = true
   try {
     console.log('调用 api.getConversationSessions()')
@@ -90,7 +92,10 @@ const loadSessions = async () => {
     console.error('loadSessions 捕获到错误:', error)
     console.error('错误详情:', JSON.stringify(error))
   } finally {
+    // 記錄結束時間
+    const endTime = Date.now()
     console.log('loadSessions 结束，loadingSessions 设为 false')
+    console.log('loadSessions 耗时:', endTime - startTime, '毫秒')
     loadingSessions.value = false
   }
 }

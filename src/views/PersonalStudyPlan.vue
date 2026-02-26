@@ -3,24 +3,19 @@ import GlobalNavbar from '../components/GlobalNavbar.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { useStudyPlanStore } from '../stores/studyPlan' // 注意：你的是 studyPlan.ts，不是 studyPlanStore.ts
+import { useStudyPlanStore } from '../stores/studyPlan'
 import type { StudyPlan } from '@/stores/studyPlan'
 import { ElMessage } from 'element-plus'
-import 'element-plus/es/components/message/style/css' // 引入样式
+import 'element-plus/es/components/message/style/css'
+import { nextTick } from 'vue'
 
 // 路由实例
 const router = useRouter()
-
-// 用户状态管理
-const userStore = useUserStore()
 
 // 学习计划store
 const studyPlanStore = useStudyPlanStore()
 
 // 响应式数据 - 导航栏相关
-const showUserCenter = ref(false)
-const activeMenu = ref('')
-const showSubMenu = ref('')
 const isMobile = ref(false)
 
 // 响应式数据 - 学习计划相关
@@ -77,81 +72,6 @@ const checkScreenSize = () => {
   if (isMobile.value) {
     showSidebar.value = false
   }
-}
-
-// ---------- 导航栏菜单处理 ----------
-const goToLogin = () => {
-  router.push('/login')
-}
-
-const goToRegister = () => {
-  router.push('/register')
-}
-
-const goToSmartQA = () => {
-  router.push('/ai/chat')
-}
-
-const goToStudyManagement = () => {
-  router.push('/campus/analysis')
-}
-
-const goToCompetitionManagement = () => {
-  router.push('/career/competitions')
-}
-
-const goToCareerNavigation = () => {
-  router.push('/career/position')
-}
-
-const toggleUserCenter = () => {
-  showUserCenter.value = !showUserCenter.value
-}
-
-const closeUserCenter = () => {
-  showUserCenter.value = false
-}
-
-const showSubMenuHandler = (menu: string) => {
-  if (!isMobile.value) {
-    showSubMenu.value = menu
-  }
-}
-
-const hideSubMenu = () => {
-  showSubMenu.value = ''
-}
-
-const handleMenuClick = (menu: string) => {
-  if (menu === '首页') {
-    router.push('/index')
-    return
-  }
-
-  if (isMobile.value) {
-    if (showSubMenu.value === menu) {
-      showSubMenu.value = ''
-    } else {
-      showSubMenu.value = menu
-    }
-  } else {
-    if (['个性化学习伴侣', '校园生活', '竞赛相关'].includes(menu)) {
-      showSubMenuHandler(menu)
-    } else {
-      hideSubMenu()
-    }
-  }
-}
-
-const handleUserMenuClick = (item: string) => {
-  if (item === '个人信息') {
-    router.push('/profile')
-  } else if (item === '退出登录') {
-    localStorage.removeItem('token')
-    localStorage.removeItem('userToken')
-    router.push('/login')
-  }
-  closeUserCenter()
 }
 
 // 切换学习计划菜单选中状态
@@ -364,10 +284,20 @@ const getStatusText = (status: string) => {
 
 // 生命周期钩子
 onMounted(() => {
-  checkScreenSize()
-  window.addEventListener('resize', checkScreenSize)
+  // 强制初始化侧边栏为显示状态
+  showSidebar.value = true
 
-  // ✅ 加载学习计划数据
+  // 等待 DOM 更新
+  nextTick(() => {
+    checkScreenSize()
+
+    // 再次确认
+    setTimeout(() => {
+      checkScreenSize()
+    }, 50)
+  })
+
+  window.addEventListener('resize', checkScreenSize)
   studyPlanStore.fetchStudyPlans()
 })
 </script>
