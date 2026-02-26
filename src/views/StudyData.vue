@@ -133,6 +133,7 @@ const suggestions = ref([]) // 学习建议
 
 // 处理时间范围切换
 const handleTimeRangeChange = () => {
+  console.log('handleTimeRangeChange被调用')
   fetchData()
 }
 
@@ -192,6 +193,12 @@ const fetchData = async () => {
 
 // 页面加载时自动获取数据
 onMounted(() => {
+  console.log('组件挂载，初始化数据')
+  fetchData()
+})
+
+watch(() => {
+  console.log('=== 时间范围变化 ===')
   fetchData()
 })
 </script>
