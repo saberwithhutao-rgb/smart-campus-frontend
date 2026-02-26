@@ -277,25 +277,33 @@
 
 <script setup lang="ts">
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
-import { ref, onMounted, watch, nextTick, computed, onBeforeMount } from 'vue'
+import { ref, onMounted, watch, nextTick, computed, onBeforeMount, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import * as echarts from 'echarts'
-import { ElMessage, ElLoading, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
+interface StatisticsData {
+  totalPlanCount?: number
+  completedPlanCount?: number
+  unfinishedCount?: number
+  overduePlanCount?: number
+  completionRate?: number
+  difficultyDistribution?: {
+    details: Array<{
+      type: string
+      count: number
+      percentage?: number
+    }>
+  }
+}
 // 路由实例
 const router = useRouter()
 const route = useRoute()
 
 // 用户状态管理
 const userStore = useUserStore()
-
-// 直接检查localStorage中的token - 这是关键！
-const hasToken = computed(() => {
-  const token = localStorage.getItem('userToken')
-  return !!token && token !== 'undefined' && token !== 'null'
-})
 
 // 响应式数据 - 导航栏相关
 const showUserCenter = ref(false)
@@ -307,20 +315,17 @@ const selectedMenu = ref('statistics')
 const selectedTimeRange = ref('today')
 
 // 响应式数据 - 后端数据
-const statisticsData = ref({})
-const analysisData = ref({})
-const suggestionData = ref({})
+const statistics = ref<StatisticsData | null>(null)
 const loading = ref(false)
-const userId = ref(1)
+const userId = ref(0)
 const error = ref('')
-const statistics = ref(null)
-const suggestions = ref([])
+const suggestions = ref<string[]>([])
 
 // 图表引用
 const donutChartRef = ref(null)
 const pieChartRef = ref(null)
-let donutChartInstance = null
-let pieChartInstance = null
+let donutChartInstance: echarts.ECharts | null = null
+let pieChartInstance: echarts.ECharts | null = null
 
 // 计算属性 - 动态饼图标题
 const pieChartTitle = computed(() => {
@@ -349,38 +354,6 @@ const checkScreenSize = () => {
 // 导航栏跳转函数
 const goToIndex = () => {
   router.push('/index')
-}
-
-const goToLogin = () => {
-  router.push('/login')
-}
-
-const goToSmartQA = () => {
-  router.push('/ai/chat')
-}
-
-const goToPersonalStudy = () => {
-  router.push('/ai/study')
-}
-
-const goToStudyManagement = () => {
-  router.push('/campus/analysis')
-}
-
-const goToCompetitionManagement = () => {
-  router.push('/career/competitions')
-}
-
-const goToCareerNavigation = () => {
-  router.push('/career/position')
-}
-
-const goToExamSupport = () => {
-  router.push('/career/pee')
-}
-
-const toggleUserCenter = () => {
-  showUserCenter.value = !showUserCenter.value
 }
 
 const closeUserCenter = () => {
@@ -464,8 +437,8 @@ const handleUserMenuClick = (item: string) => {
           window.location.reload()
         }, 300)
       })
-      .catch(() => {
-        if (action === 'cancel') {
+      .catch((e) => {
+        if (e === 'cancel') {
           console.log('用户取消退出登录')
           ElMessage.info('已取消退出登录')
         }
@@ -536,7 +509,7 @@ const fetchStatisticsData = async () => {
 
     statistics.value = realStatsData
     console.log('保存后的统计数据:', statistics.value)
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('统计数据请求失败:', err)
     error.value = '网络错误，请稍后重试'
     statistics.value = null
@@ -582,7 +555,7 @@ const fetchSuggestionsData = async () => {
       return
     }
 
-    let suggestionsArray = []
+    let suggestionsArray: string[] = []
     if (realSuggestionsData && typeof realSuggestionsData === 'object') {
       if (Array.isArray(realSuggestionsData.suggestions)) {
         suggestionsArray = realSuggestionsData.suggestions
@@ -612,13 +585,18 @@ const fetchSuggestionsData = async () => {
     suggestions.value = suggestionsArray || []
     console.log('最终suggestions:', suggestions.value)
     console.log('保存后的学习建议:', suggestions.value)
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('学习建议请求失败:', err)
     error.value = '网络错误，请稍后重试'
     suggestions.value = ['AI 服务暂时不可用，请稍后再试。']
 
-    if (err.code === 'ECONNABORTED') {
-      ElMessage.error('网络连接超时，请检查网络设置')
+    if (err && typeof err === 'object' && 'code' in err) {
+      const errorObj = err as { code?: string }
+      if (errorObj.code === 'ECONNABORTED') {
+        ElMessage.error('网络连接超时，请检查网络设置')
+      } else {
+        ElMessage.error('AI 服务繁忙，请稍后再试')
+      }
     } else {
       ElMessage.error('AI 服务繁忙，请稍后再试')
     }
@@ -724,7 +702,8 @@ const initDonutChart = () => {
           fontSize: 30,
           fontWeight: 'bold',
           formatter: function () {
-            return `${((statistics.value.completionRate || 0) * 100).toFixed(2)}%`
+            const completionRate = statistics.value ? statistics.value.completionRate || 0 : 0
+            return `${(completionRate * 100).toFixed(2)}%`
           },
           color: '#333',
           offsetCenter: [0, 0],
@@ -896,7 +875,6 @@ onBeforeMount(() => {
 
 // 生命周期钩子 - 初始化和窗口大小监听
 onMounted(async () => {
-  ElMessage.success('这是一个测试消息')
   console.log('组件挂载，最终检查登录状态')
 
   // 最终检查
@@ -906,6 +884,25 @@ onMounted(async () => {
     router.replace('/login')
     return
   }
+  try {
+    const tokenParts = token.split('.')
+    if (tokenParts.length !== 3) {
+      throw new Error('无效的 JWT 格式')
+    }
+
+    const base64Url = tokenParts[1]
+    if (!base64Url) {
+      throw new Error('JWT payload 为空')
+    }
+
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(atob(base64))
+    userId.value = payload.userId || 0
+    console.log('从 JWT 解析出 userId:', userId.value)
+  } catch (e) {
+    console.error('解析 token 失败:', e)
+    userId.value = 0
+  }
 
   // 检查通过，继续其他初始化
   checkScreenSize()
@@ -913,10 +910,21 @@ onMounted(async () => {
   updateSelectedMenu()
   await initData()
 })
+
+// 组件卸载时清理图表实例和事件监听
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('resize', checkScreenSize)
+  if (donutChartInstance) {
+    donutChartInstance.dispose()
+  }
+  if (pieChartInstance) {
+    pieChartInstance.dispose()
+  }
+})
 </script>
 
-<style scoped>
-/* 全局变量 - 与首页保持一致 */
+<style>
 :root {
   /* 主色调 */
   --primary-color: #409eff;
