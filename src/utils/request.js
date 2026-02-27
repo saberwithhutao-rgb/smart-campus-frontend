@@ -31,6 +31,7 @@ const processQueue = (error, token = null) => {
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
+    config.metadata = { startTime: Date.now() }
     const token = localStorage.getItem('userToken') || localStorage.getItem('token')
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
@@ -52,6 +53,7 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
+    console.log('请求耗时:', Date.now() - response.config.metadata.startTime, 'ms')
     return response.data
   },
   async (error) => {
