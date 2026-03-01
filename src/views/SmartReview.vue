@@ -330,20 +330,29 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 全局变量保持不变 */
+/* 全局变量 */
 :root {
+  /* 主色调：科技蓝 */
   --primary-color: #165dff;
   --primary-color-dark: #0e46cc;
   --primary-color-light: #4c8aff;
+
+  /* 辅助色：浅红色 */
   --accent-color: #f53f3f;
   --accent-color-dark: #e13d3d;
   --accent-color-light: #f76d6d;
+
+  /* 背景色：浅灰色 */
   --bg-color: #f5f7fa;
   --bg-color-light: #fafafb;
   --bg-color-dark: #eef1f5;
+
+  /* 文字主色：深灰色 */
   --text-color: #1d2129;
   --text-color-secondary: #4e5969;
   --text-color-light: #86909c;
+
+  /* 边框和阴影 */
   --border-color: #e5e7eb;
   --border-color-light: #f0f2f5;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -542,11 +551,14 @@ onUnmounted(() => {
   }
 }
 
+/* ===== 主要修复部分 ===== */
 .main-content {
   display: flex;
   flex: 1;
   margin-top: 70px;
   min-height: calc(100vh - 70px);
+  position: relative;
+  width: 100%;
 }
 
 .sidebar-toggle {
@@ -571,6 +583,9 @@ onUnmounted(() => {
   padding: 20px 0;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0; /* 防止侧边栏被压缩 */
+  position: relative;
+  z-index: 2;
 }
 
 .sidebar-header {
@@ -611,11 +626,13 @@ onUnmounted(() => {
 }
 
 .study-main {
-  flex: 1;
+  flex: 1; /* 自动占满剩余空间 */
   background-color: var(--bg-color);
   padding: 20px;
-  max-width: calc(100% - 280px);
   overflow-y: auto;
+  position: relative;
+  z-index: 1;
+  min-width: 0; /* 防止flex子项溢出 */
 }
 
 /* 智能复习页面样式 */
@@ -671,6 +688,7 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 40px 1fr 120px 120px 80px 100px;
   align-items: center;
+  width: 100%;
 }
 
 /* 单元格样式 */
@@ -735,11 +753,6 @@ onUnmounted(() => {
 
 .review-table-cell:last-child {
   border-right: none;
-}
-
-/* 复选框列居中 */
-.review-table-cell:first-child {
-  justify-content: center;
 }
 
 /* 空状态 */
@@ -837,6 +850,12 @@ onUnmounted(() => {
 }
 
 /* 响应式设计 */
+@media (max-width: 1366px) {
+  .sidebar {
+    width: 240px;
+  }
+}
+
 @media (max-width: 1024px) {
   .sidebar-toggle {
     display: block;
@@ -849,6 +868,7 @@ onUnmounted(() => {
     height: calc(100vh - 70px);
     z-index: 98;
     transform: translateX(0);
+    width: 280px;
   }
 
   .sidebar-collapsed {
@@ -899,6 +919,36 @@ onUnmounted(() => {
 
   .review-table-cell:last-child {
     border-bottom: none;
+  }
+
+  /* 移动端按钮样式调整 */
+  .review-footer .el-button {
+    min-width: 160px;
+    height: 36px;
+    font-size: 13px;
+  }
+}
+
+/* 超小屏幕 */
+@media (max-width: 480px) {
+  .review-title {
+    font-size: 20px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .empty-icon {
+    font-size: 36px;
+  }
+
+  .empty-text {
+    font-size: 14px;
+  }
+
+  .empty-tip {
+    font-size: 12px;
   }
 }
 </style>
