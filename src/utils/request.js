@@ -79,12 +79,12 @@ request.interceptors.response.use(
     const res = response.data
     const config = response.config
 
-    // ✅ 如果请求配置了 skipGlobalError，跳过全局错误处理
+    // 如果请求配置了 skipGlobalError，跳过全局错误处理
     if (config.skipGlobalError) {
       return res
     }
 
-    // ✅ 统一处理业务状态码
+    // 统一处理业务状态码
     // 根据后端约定的成功状态码判断（200 或 0 都视为成功）
     if (res.code === 200 || res.code === 0) {
       return res
@@ -98,7 +98,7 @@ request.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    // 处理401未授权/Token过期（这部分保持不变）
+    // 处理401未授权/Token过期
     if (error.response?.status === 401 && !originalRequest._retry) {
       // 如果已经在自动登录，将请求加入队列
       if (isAutoLogging) {
@@ -151,21 +151,35 @@ request.interceptors.response.use(
       }
     }
 
-    // ✅ 如果请求配置了 skipGlobalError，跳过全局错误处理
+    // 如果请求配置了 skipGlobalError，跳过全局错误处理
     if (originalRequest?.skipGlobalError) {
       return Promise.reject(error)
     }
 
-    // 处理其他错误（HTTP错误）
+    // ✅ 统一处理所有HTTP错误（重点修改的地方）
     if (error.response) {
       console.error('响应错误:', error.response.status, error.response.data)
 
-      // ✅ 优先显示后端返回的业务错误信息
-      const errorMessage =
-        error.response.data?.message || getHttpStatusMessage(error.response.status)
+      // ✅ 无论HTTP状态码是多少，优先使用后端返回的message
+      let errorMessage = '操作失败'
+
+      // 1. 优先使用后端返回的message
+      if (error.response.data?.message) {
+        errorMessage = error.response.data.message
+      }
+      // 2. 其次使用HTTP状态码的默认消息
+      else {
+        errorMessage = getHttpStatusMessage(error.response.status)
+      }
 
       // 显示错误信息
       ElMessage.error(errorMessage)
+
+      // 根据状态码做特殊处理（可选）
+      if (error.response.status === 401) {
+        // 可以在这里处理未授权跳转
+        console.log('未授权，需要登录')
+      }
     } else if (error.request) {
       console.error('网络错误:', error.request)
       ElMessage.error('网络连接失败，请检查网络设置')
