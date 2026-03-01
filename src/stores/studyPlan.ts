@@ -102,9 +102,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
           (item: ReviewItem) => item.taskDate <= today || item.reviewStage === 0,
         )
       }
-    } catch (error) {
-      console.error('获取复习任务失败:', error)
-      ElMessage.error('获取复习任务失败')
+    } catch {
     } finally {
       isLoading.value = false
     }
@@ -133,10 +131,8 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         reviewItems.value[taskIndex] = originalTask
         ElMessage.error(response.message || '操作失败')
       }
-    } catch (error) {
-      console.error('完成任务失败:', error)
+    } catch {
       reviewItems.value[taskIndex] = originalTask
-      ElMessage.error('网络错误，请重试')
     }
   }
 
@@ -159,10 +155,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         pageSize.value = response.data.size
       }
       return studyPlans.value
-    } catch (error) {
-      console.error('获取学习计划失败:', error)
-      ElMessage.error('获取学习计划失败')
-      throw error
+    } catch {
     } finally {
       isLoading.value = false
     }
@@ -176,10 +169,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         selectedPlan.value = response.data as StudyPlan
         return response.data
       }
-    } catch (error) {
-      console.error('获取计划详情失败:', error)
-      ElMessage.error('获取计划详情失败')
-      throw error
+    } catch {
     } finally {
       isLoading.value = false
     }
@@ -203,10 +193,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         await fetchStudyPlans()
         return response.data
       }
-    } catch (error) {
-      console.error('创建学习计划失败:', error)
-      ElMessage.error('创建学习计划失败')
-      throw error
+    } catch {
     } finally {
       isLoading.value = false
     }
@@ -231,10 +218,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         await fetchStudyPlans()
         return response.data
       }
-    } catch (error) {
-      console.error('更新学习计划失败:', error)
-      ElMessage.error('更新学习计划失败')
-      throw error
+    } catch {
     } finally {
       isLoading.value = false
     }
@@ -248,10 +232,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         ElMessage.success('删除学习计划成功')
         await fetchStudyPlans()
       }
-    } catch (error) {
-      console.error('删除学习计划失败:', error)
-      ElMessage.error('删除学习计划失败')
-      throw error
+    } catch {
     } finally {
       isLoading.value = false
     }
@@ -286,8 +267,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
           }
         }
       }
-    } catch (error) {
-      console.error('切换状态失败:', error)
+    } catch {
       ElMessage.error('切换状态失败')
 
       if (planIndex !== -1 && originalPlan) {

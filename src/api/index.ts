@@ -645,7 +645,6 @@ export const askQuestionStream = async (params: {
 
     return response.body
   } catch (error) {
-    console.error('流式请求失败:', error)
     throw error
   }
 }

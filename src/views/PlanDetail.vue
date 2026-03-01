@@ -249,7 +249,6 @@ onMounted(async () => {
 
 const generateStudyPlan = async () => {
   if (!isLoggedIn.value) {
-    ElMessage.error('请先登录')
     return router.push('/login')
   }
   if (!currentPlan.value) return

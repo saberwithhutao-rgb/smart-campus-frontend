@@ -153,9 +153,7 @@ const addPlan = async () => {
     })
 
     closeAddModalHandler()
-  } catch (error) {
-    console.error('添加计划失败:', error)
-  }
+  } catch {}
 }
 
 /**
@@ -202,9 +200,7 @@ const saveEditPlan = async () => {
     })
 
     closeEditModalHandler()
-  } catch (error) {
-    console.error('更新计划失败:', error)
-  }
+  } catch {}
 }
 
 /**
@@ -214,9 +210,7 @@ const deletePlan = async (id: number) => {
   if (confirm('确定要删除这个学习计划吗？')) {
     try {
       await studyPlanStore.deletePlan(id)
-    } catch (error) {
-      console.error('删除计划失败:', error)
-    }
+    } catch {}
   }
 }
 
@@ -384,6 +378,7 @@ onMounted(() => {
                       type="checkbox"
                       :checked="plan.status === 'completed'"
                       @change="toggleComplete(plan)"
+                      @click.stop
                       class="complete-checkbox"
                     />
                   </div>
@@ -462,13 +457,7 @@ onMounted(() => {
           <!-- 计划名称 -->
           <div class="form-group">
             <label for="plan-title">计划名称 <span class="required">*</span></label>
-            <input
-              type="text"
-              id="plan-title"
-              v-model="newPlan.title"
-              class="form-input"
-              placeholder="例如：Java学习"
-            />
+            <input type="text" id="plan-title" v-model="newPlan.title" class="form-input" />
           </div>
 
           <!-- 计划描述 -->

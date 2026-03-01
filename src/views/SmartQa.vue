@@ -3,7 +3,7 @@ import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { api, type ConversationSession, type SessionHistoryItem } from '../api/index' // 修改这里
+import { api, type ConversationSession, type SessionHistoryItem } from '../api/index'
 
 // 路由实例
 const router = useRouter()
@@ -988,6 +988,10 @@ watch(
   color: #165dff;
 }
 
+.user-center {
+  position: relative;
+}
+
 .user-center-dropdown {
   position: absolute;
   top: 100%;
@@ -1021,11 +1025,14 @@ watch(
   background-color: #fff2f2;
 }
 
+/* ===== 主要修复部分 ===== */
 .main-content {
   display: flex;
   flex: 1;
   margin-top: 70px;
   min-height: calc(100vh - 120px);
+  position: relative;
+  width: 100%;
 }
 
 .sidebar-toggle {
@@ -1050,6 +1057,10 @@ watch(
   padding: 20px 0;
   transition: all 0.3s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0; /* 防止侧边栏被压缩 */
+  position: relative;
+  z-index: 2;
+  overflow-y: auto;
 }
 
 .sidebar-header {
@@ -1075,6 +1086,9 @@ watch(
   cursor: pointer;
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .sidebar-item:hover {
@@ -1089,13 +1103,131 @@ watch(
   font-weight: 500;
 }
 
-.chat-main {
+.menu-icon {
+  font-size: 16px;
+}
+
+/* 历史对话列表 */
+.history-list {
   flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  margin-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.history-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  margin-bottom: 8px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.history-item:hover {
+  background-color: #e9ecef;
+}
+
+.history-item-active {
+  background-color: #e3f2fd;
+  border-left: 3px solid #1976d2;
+}
+
+.history-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-icon {
+  font-size: 14px;
+}
+
+.history-item-preview {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-item-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.history-item-count {
+  font-size: 11px;
+  color: #1976d2;
+  margin-top: 2px;
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.history-item:hover .history-item-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.action-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.delete-btn:hover {
+  color: #f44336;
+}
+
+.rename-btn:hover {
+  color: #1976d2;
+}
+
+.history-loading,
+.history-empty,
+.loading-history {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+/* 中间对话区 - 修复部分 */
+.chat-main {
+  flex: 1; /* 自动占满剩余空间 */
   display: flex;
   flex-direction: column;
   background-color: #f5f7fa;
   padding: 20px;
-  max-width: calc(100% - 280px);
+  /* 删除这行：max-width: calc(100% - 280px); */
+  min-width: 0; /* 防止flex子项溢出 */
+  overflow-y: auto;
 }
 
 .chat-header {
@@ -1104,6 +1236,9 @@ watch(
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .chat-ai-info {
@@ -1122,6 +1257,15 @@ watch(
   color: #1d2129;
 }
 
+.chat-header-actions {
+  font-size: 14px;
+  color: #666;
+}
+
+.session-title {
+  font-weight: 500;
+}
+
 .chat-messages {
   flex: 1;
   background-color: #fff;
@@ -1132,6 +1276,7 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-height: 400px;
 }
 
 .message-item {
@@ -1401,6 +1546,7 @@ watch(
   background-color: #fff;
   border-left: 1px solid #e5e7eb;
   padding: 20px;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .footer {
@@ -1412,131 +1558,14 @@ watch(
   justify-content: center;
   font-size: 14px;
   color: #86909c;
+  flex-shrink: 0;
 }
 
 .footer-content {
   text-align: center;
 }
 
-.history-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  margin-top: 8px;
-  border-top: 1px solid #eee;
-}
-
-.history-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 12px;
-  margin-bottom: 8px;
-  background-color: #f5f7fa;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  position: relative;
-}
-
-.history-item:hover {
-  background-color: #e9ecef;
-}
-
-.history-item-active {
-  background-color: #e3f2fd;
-  border-left: 3px solid #1976d2;
-}
-
-.history-item-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.history-item-title {
-  font-weight: 500;
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.history-icon {
-  font-size: 14px;
-}
-
-.history-item-preview {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.history-item-time {
-  font-size: 11px;
-  color: #999;
-}
-
-.history-item-count {
-  font-size: 11px;
-  color: #1976d2;
-  margin-top: 2px;
-}
-
-.history-item-actions {
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.history-item:hover .history-item-actions {
-  opacity: 1;
-}
-
-.action-btn {
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.action-btn:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-.delete-btn:hover {
-  color: #f44336;
-}
-
-.rename-btn:hover {
-  color: #1976d2;
-}
-
-.history-loading,
-.history-empty,
-.loading-history {
-  text-align: center;
-  padding: 20px;
-  color: #999;
-  font-size: 14px;
-}
-
-.chat-header-actions {
-  font-size: 14px;
-  color: #666;
-}
-
-.session-title {
-  font-weight: 500;
-}
-
+/* 重命名对话框 */
 .dialog-overlay {
   position: fixed;
   top: 0;
@@ -1629,13 +1658,10 @@ watch(
   background-color: #1565c0;
 }
 
+/* 响应式设计 */
 @media (max-width: 1366px) {
   .sidebar {
     width: 240px;
-  }
-
-  .chat-main {
-    max-width: calc(100% - 240px);
   }
 
   .right-sidebar {
@@ -1659,6 +1685,7 @@ watch(
     height: calc(100vh - 70px);
     z-index: 98;
     transform: translateX(0);
+    width: 280px;
   }
 
   .sidebar-collapsed {
@@ -1679,16 +1706,26 @@ watch(
 }
 
 @media (max-width: 768px) {
+  .navbar {
+    height: 60px;
+  }
+
   .navbar-container {
     padding: 0 16px;
   }
 
-  .nav-menu {
-    display: none;
+  .main-content {
+    margin-top: 60px;
+    min-height: calc(100vh - 110px);
   }
 
-  .main-content {
-    padding: 10px;
+  .sidebar {
+    top: 60px;
+    height: calc(100vh - 60px);
+  }
+
+  .nav-menu {
+    display: none;
   }
 
   .chat-main {
@@ -1697,6 +1734,89 @@ watch(
 
   .message-content {
     max-width: 90%;
+  }
+
+  .chat-header {
+    padding: 12px 16px;
+  }
+
+  .ai-avatar {
+    font-size: 24px;
+  }
+
+  .ai-name {
+    font-size: 16px;
+  }
+
+  .message-bubble {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  .input-container {
+    flex-direction: column;
+  }
+
+  .send-button {
+    width: 100%;
+    height: 40px;
+  }
+
+  .upload-box {
+    padding: 20px;
+  }
+
+  .upload-icon {
+    font-size: 36px;
+  }
+
+  .upload-text {
+    font-size: 14px;
+  }
+
+  .upload-hint {
+    font-size: 12px;
+  }
+
+  .upload-actions {
+    flex-direction: column;
+  }
+
+  .upload-submit,
+  .upload-cancel {
+    width: 100%;
+  }
+
+  .footer {
+    height: 40px;
+    font-size: 12px;
+  }
+}
+
+/* 超小屏幕 */
+@media (max-width: 480px) {
+  .sidebar {
+    width: 240px;
+  }
+
+  .chat-messages {
+    padding: 12px;
+  }
+
+  .message-item {
+    gap: 8px;
+  }
+
+  .message-avatar {
+    font-size: 20px;
+  }
+
+  .message-content {
+    max-width: 85%;
+  }
+
+  .message-time {
+    font-size: 10px;
   }
 }
 </style>

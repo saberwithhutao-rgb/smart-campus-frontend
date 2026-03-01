@@ -28,6 +28,27 @@ const processQueue = (error, token = null) => {
   failedQueue = []
 }
 
+// HTTP状态码默认提示
+const getHttpStatusMessage = (status) => {
+  const statusMessages = {
+    400: '请求参数错误',
+    401: '未授权，请重新登录',
+    403: '没有权限访问此资源',
+    404: '请求的资源不存在',
+    405: '请求方法不允许',
+    408: '请求超时',
+    409: '资源冲突',
+    413: '请求体过大',
+    422: '请求格式错误',
+    429: '请求过于频繁，请稍后再试',
+    500: '服务器开小差了，请稍后再试',
+    502: '网关错误',
+    503: '服务不可用',
+    504: '网关超时',
+  }
+  return statusMessages[status] || `请求失败 (${status})`
+}
+
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
@@ -54,12 +75,30 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => {
     console.log('请求耗时:', Date.now() - response.config.metadata.startTime, 'ms')
-    return response.data
+
+    const res = response.data
+    const config = response.config
+
+    // ✅ 如果请求配置了 skipGlobalError，跳过全局错误处理
+    if (config.skipGlobalError) {
+      return res
+    }
+
+    // ✅ 统一处理业务状态码
+    // 根据后端约定的成功状态码判断（200 或 0 都视为成功）
+    if (res.code === 200 || res.code === 0) {
+      return res
+    } else {
+      // ✅ 显示后端返回的具体错误信息
+      const errorMessage = res.message || '操作失败'
+      ElMessage.error(errorMessage)
+      return Promise.reject(new Error(errorMessage))
+    }
   },
   async (error) => {
     const originalRequest = error.config
 
-    // 处理401未授权/Token过期
+    // 处理401未授权/Token过期（这部分保持不变）
     if (error.response?.status === 401 && !originalRequest._retry) {
       // 如果已经在自动登录，将请求加入队列
       if (isAutoLogging) {
@@ -112,25 +151,27 @@ request.interceptors.response.use(
       }
     }
 
-    // 处理其他错误
+    // ✅ 如果请求配置了 skipGlobalError，跳过全局错误处理
+    if (originalRequest?.skipGlobalError) {
+      return Promise.reject(error)
+    }
+
+    // 处理其他错误（HTTP错误）
     if (error.response) {
       console.error('响应错误:', error.response.status, error.response.data)
 
-      if (error.response.status === 403) {
-        ElMessage.error('没有权限访问此资源')
-      } else if (error.response.status === 404) {
-        ElMessage.error('请求的资源不存在')
-      } else if (error.response.status === 500) {
-        ElMessage.error('服务器开小差了，请稍后再试')
-      } else {
-        ElMessage.error(error.response.data?.message || '请求失败')
-      }
+      // ✅ 优先显示后端返回的业务错误信息
+      const errorMessage =
+        error.response.data?.message || getHttpStatusMessage(error.response.status)
+
+      // 显示错误信息
+      ElMessage.error(errorMessage)
     } else if (error.request) {
       console.error('网络错误:', error.request)
       ElMessage.error('网络连接失败，请检查网络设置')
     } else {
       console.error('请求错误:', error.message)
-      ElMessage.error('请求失败，请稍后再试')
+      ElMessage.error(error.message || '请求失败，请稍后再试')
     }
 
     return Promise.reject(error)
