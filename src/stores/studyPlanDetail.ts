@@ -23,7 +23,7 @@ export interface StudyPlanDetailEntity {
   studyPlanId: number
   duration: string
   level: 'easy' | 'medium' | 'hard'
-  planDetails: string // 数据库中是 planDetails 字段
+  planDetails: string
   createdAt: string
 }
 

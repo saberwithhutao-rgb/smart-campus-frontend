@@ -28,13 +28,12 @@
             </div>
             <div class="info-item">
               <span class="label">难度：</span>
-              <span class="value">{{ currentPlan.difficulty }}</span>
+              <span class="value">{{ getDifficultyText(currentPlan.difficulty) }}</span>
             </div>
             <div class="info-item">
               <span class="label">时间：</span>
               <span class="value">
-                {{ formatDate(currentPlan.startDate || '') }} 至
-                {{ formatDate(currentPlan.endDate || '') }}
+                {{ formatDateRange(currentPlan.startDate, currentPlan.endDate) }}
               </span>
             </div>
           </div>
@@ -177,6 +176,18 @@ const currentPlan = computed(() => studyPlanStore.studyPlans.find((p) => p.id ==
 const isLoggedIn = computed(() => userStore.userState.isLoggedIn)
 const isMobile = ref(window.innerWidth <= 768)
 
+// 难度映射：英文转中文
+const difficultyMap: Record<string, string> = {
+  easy: '简单',
+  medium: '中等',
+  hard: '困难',
+}
+// 获取中文难度文本
+const getDifficultyText = (difficulty: string) => {
+  if (!difficulty) return '未知'
+  return difficultyMap[difficulty.toLowerCase()] || difficulty
+}
+
 const generatedPlan = computed(() => studyPlanDetailStore.getCurrentPlanDetail(planId))
 const isGenerating = computed(() => studyPlanDetailStore.isGenerating)
 const isLoading = computed(() => studyPlanDetailStore.isLoading)
@@ -205,8 +216,17 @@ const getPlainTextPreview = (content: string, maxLength: number = 100) => {
 
 // 格式化日期时间
 const formatDateTime = (dateStr: string) => {
-  const date = new Date(dateStr)
-  return `${date.toLocaleDateString('zh-CN')} ${date.toLocaleTimeString('zh-CN')}`
+  if (!dateStr) return '未知时间'
+
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) {
+      return '未知时间'
+    }
+    return `${date.toLocaleDateString('zh-CN')} ${date.toLocaleTimeString('zh-CN')}`
+  } catch {
+    return '未知时间'
+  }
 }
 
 onMounted(async () => {
@@ -267,9 +287,38 @@ const openHistory = () => {
 // 工具函数
 const getPlanTypeText = (type: string) =>
   ({ review: '复习计划', learning: '学习计划', project: '项目计划' })[type] || type
-const formatDate = (date: string) => new Date(date).toLocaleDateString('zh-CN')
-const getSubjectIcon = (subject: string) =>
-  ({ Python: 'python', JavaScript: 'js', Java: 'java', 'C++': 'cpp' })[subject] || 'default'
+const formatDate = (date: string | undefined | null) => {
+  if (!date) return '无限期'
+
+  try {
+    const d = new Date(date)
+    // 检查日期是否有效
+    if (isNaN(d.getTime())) {
+      return '无限期'
+    }
+    return d.toLocaleDateString('zh-CN')
+  } catch {
+    return '无限期'
+  }
+}
+
+const formatDateRange = (
+  startDate: string | undefined | null,
+  endDate: string | undefined | null,
+) => {
+  const start = formatDate(startDate)
+  const end = formatDate(endDate)
+
+  if (start === '无限期' && end === '无限期') {
+    return '无限期'
+  }
+
+  if (end === '无限期') {
+    return `${start} 至 无限期`
+  }
+
+  return `${start} 至 ${end}`
+}
 const goBack = () => router.go(-1)
 </script>
 
