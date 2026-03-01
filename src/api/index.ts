@@ -2,11 +2,11 @@ import axios from 'axios'
 import type { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios'
 import type { ReviewItem, StudyPlan } from '@/stores/studyPlan'
 import type { ExamCountdown } from '../types/user'
+import { ElMessage } from 'element-plus'
 import type {
   QaMessage,
   FileItem,
   LearningProgress,
-  LoginResponse,
   ApiResponse,
   CaptchaResponse,
 } from '../types/user'
@@ -173,70 +173,14 @@ service.interceptors.request.use(
 
 // 响应拦截器
 service.interceptors.response.use(
-  (response: AxiosResponse) => {
-    // 开发环境下添加调试日志
-    if (import.meta.env.DEV) {
-      console.log('%c[API Response]', 'color: #2196F3; font-weight: bold;', {
-        status: response.status,
-        data: response.data,
-        url: response.config.url,
-      })
-    }
+  (response) => {
     return response
   },
   (error) => {
-    // 优先使用后端返回的具体错误信息
     if (error.response && error.response.data && error.response.data.message) {
-      console.error('%c[Response Error]', 'color: #F44336; font-weight: bold;', {
-        message: error.response.data.message,
-        status: error.response.status,
-        url: error.config?.url,
-      })
-      return Promise.reject(new Error(error.response.data.message))
+      ElMessage.error(error.response.data.message)
     }
-
-    // 网络错误或后端没有返回具体信息时，使用通用错误
-    let message = '请求失败'
-    if (error.response) {
-      const { status } = error.response
-      switch (status) {
-        case 400:
-          message = '请求参数错误'
-          break
-        case 401:
-          message = '未授权，请登录'
-          // 清除所有用户相关存储
-          localStorage.removeItem('userToken')
-          localStorage.removeItem('token')
-          localStorage.removeItem('userInfo')
-          localStorage.removeItem('refreshToken')
-          // 跳转到登录页
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login'
-          }
-          break
-        case 403:
-          message = '拒绝访问'
-          break
-        case 404:
-          message = '请求资源不存在'
-          break
-        case 500:
-          message = '服务器内部错误'
-          break
-        default:
-          message = `连接错误: ${status}`
-      }
-    }
-
-    console.error('%c[Response Error]', 'color: #F44336; font-weight: bold;', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url,
-    })
-
-    return Promise.reject(new Error(message))
+    return Promise.reject(error)
   },
 )
 
