@@ -673,6 +673,7 @@ onMounted(() => {
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
 
   /* 圆角 */
   --border-radius-sm: 4px;
@@ -692,6 +693,7 @@ onMounted(() => {
   font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 /* 顶部导航栏 */
@@ -942,38 +944,27 @@ onMounted(() => {
   }
 }
 
-/* 主内容区 */
+/* 主内容区 - 修改为相对定位 */
 .main-content {
-  display: flex;
-  flex: 1;
+  position: relative;
   margin-top: 70px;
   min-height: calc(100vh - 70px);
 }
 
-/* 移动端侧边栏切换按钮 */
-.sidebar-toggle {
-  position: fixed;
-  top: 80px;
-  left: 10px;
-  z-index: 98;
-  padding: 8px 16px;
-  background-color: var(--primary-color);
-  color: #fff;
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  cursor: pointer;
-  display: none;
-}
-
-/* 左侧功能栏 */
+/* 左侧功能栏 - 改为固定定位 */
 .sidebar {
+  position: fixed;
+  left: 0;
+  top: 70px;
   width: 280px;
+  height: calc(100vh - 70px);
   background-color: #fff;
   border-right: 1px solid var(--border-color);
   padding: 20px 0;
-  transition: var(--transition);
+  transition: transform 0.3s ease;
   box-shadow: var(--shadow-sm);
+  z-index: 90;
+  overflow-y: auto;
 }
 
 .sidebar-header {
@@ -1013,13 +1004,64 @@ onMounted(() => {
   font-weight: 500;
 }
 
-/* 中间学习计划区域 */
+/* 中间学习计划区域 - 添加左边距 */
 .study-main {
-  flex: 1;
+  margin-left: 280px;
   background-color: var(--bg-color);
   padding: 20px;
   max-width: calc(100% - 280px);
+  min-height: calc(100vh - 70px);
   overflow-y: auto;
+}
+
+/* 移动端侧边栏切换按钮 */
+.sidebar-toggle {
+  position: fixed;
+  top: 80px;
+  left: 10px;
+  z-index: 99;
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  cursor: pointer;
+  display: none;
+  box-shadow: var(--shadow-md);
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--primary-color-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 移动端遮罩层 */
+.sidebar-overlay {
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 89;
+  display: none;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* 智能复习占位区 */
@@ -1057,100 +1099,81 @@ onMounted(() => {
 .completion-section {
   background-color: #fff;
   border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 20px 24px;
+  border: 1px solid var(--border-color-light);
+  margin-bottom: 20px;
 }
 
 .completion-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .completion-title {
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 600;
   color: var(--text-color);
   margin: 0;
+  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
 }
 
 .completion-value {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--primary-color);
+  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
 }
 
 .completion-bar-container {
-  height: 8px;
+  height: 10px;
   background-color: var(--bg-color-light);
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--border-radius-full);
   overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .completion-bar {
   height: 100%;
-  background-color: var(--primary-color);
-  transition: width 0.3s ease;
-  border-radius: var(--border-radius-sm);
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-color-light) 100%);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--border-radius-full);
+  box-shadow: 0 0 10px rgba(22, 93, 255, 0.3);
 }
 
 /* 学习计划区域 */
 .plan-section {
   background-color: #fff;
   border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 20px 24px;
+  border: 1px solid var(--border-color-light);
+  position: relative;
 }
 
 .plan-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color-light);
 }
 
 .plan-title {
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 600;
   color: var(--text-color);
   margin: 0;
+  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
 }
 
-.plan-time {
+.plan-stats {
   font-size: 14px;
   color: var(--text-color-light);
-}
-
-/* 添加新计划按钮 - 右下角定位，确保不与其他元素重叠 */
-.add-plan-btn {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  padding: 12px 28px;
-  background-color: var(--primary-color);
-  color: #fff;
-  border: none;
-  border-radius: var(--border-radius-lg);
-  font-size: 14px;
-  cursor: pointer;
-  transition: var(--transition);
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-}
-
-.add-plan-btn:hover {
-  background-color: var(--primary-color-dark);
-  box-shadow: var(--shadow-xl);
-  transform: translateY(-2px);
-}
-
-/* 学习计划区域 - 相对定位，用于内部元素定位 */
-.plan-section {
-  position: relative;
+  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
 }
 
 /* 计划列表 */
@@ -1165,34 +1188,51 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 16px;
-  background-color: var(--bg-color-light);
-  border-radius: var(--border-radius-md);
-  transition: var(--transition);
+  padding: 18px 20px;
+  background-color: #fff;
+  border-radius: var(--border-radius-lg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   gap: 16px;
   position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color-light);
+  cursor: pointer;
 }
 
 .plan-item:hover {
-  box-shadow: var(--shadow-md);
-  background-color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+  border-color: var(--primary-color-light);
+}
+
+/* 已完成计划的样式 */
+.plan-item-completed {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  opacity: 0.8;
+}
+
+.plan-item-completed .plan-name {
+  color: var(--text-color-light);
+  text-decoration: line-through;
+}
+
+.plan-item-completed .plan-difficulty {
+  opacity: 0.7;
+}
+
+.plan-item-completed .plan-time-info {
+  color: var(--text-color-light);
 }
 
 /* 计划左侧：名称和完成情况 */
 .plan-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   flex: 1;
 }
 
-.plan-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-color);
-}
-
-/* 完成复选框 */
 .plan-complete {
   display: flex;
   align-items: center;
@@ -1207,19 +1247,54 @@ onMounted(() => {
   accent-color: var(--primary-color);
 }
 
+.plan-info {
+  flex: 1;
+}
+
+.plan-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 4px;
+}
+
+.plan-description {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.plan-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.plan-type-tag,
+.plan-subject-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: var(--bg-color-dark);
+  color: var(--text-color-secondary);
+}
+
 /* 计划右侧：难度、时间和操作按钮 */
 .plan-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+  min-width: 200px;
 }
 
-/* 难度和时间 */
 .plan-meta {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* 难度标签 */
@@ -1247,6 +1322,29 @@ onMounted(() => {
 .plan-time-info {
   font-size: 12px;
   color: var(--text-color-light);
+  white-space: nowrap;
+}
+
+.plan-status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.status-active {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-completed {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-paused {
+  background-color: #fff3e0;
+  color: #f57c00;
 }
 
 /* 操作按钮 */
@@ -1293,10 +1391,11 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 60px 40px;
   background-color: var(--bg-color-light);
   border-radius: var(--border-radius-md);
   color: var(--text-color-light);
+  text-align: center;
 }
 
 .empty-icon {
@@ -1306,6 +1405,71 @@ onMounted(() => {
 
 .empty-text {
   font-size: 16px;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  margin-bottom: 8px;
+}
+
+.empty-tip {
+  font-size: 14px;
+  color: var(--text-color-light);
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--bg-color-dark);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: var(--text-color-light);
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 添加新计划按钮 - 固定在右下角 */
+.add-plan-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  padding: 12px 28px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius-lg);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+}
+
+.add-plan-btn:hover {
+  background-color: var(--primary-color-dark);
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
 }
 
 /* 模态框遮罩 */
@@ -1424,7 +1588,8 @@ onMounted(() => {
 }
 
 .form-input,
-.form-select {
+.form-select,
+.form-textarea {
   width: 100%;
   padding: 14px 18px;
   border: 1px solid var(--border-color);
@@ -1436,12 +1601,34 @@ onMounted(() => {
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
 .form-input:focus,
-.form-select:focus {
+.form-select:focus,
+.form-textarea:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(22, 93, 255, 0.12);
   transform: translateY(-1px);
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.form-group.half {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.required {
+  color: var(--accent-color);
+  margin-left: 4px;
 }
 
 /* 模态框底部 */
@@ -1492,153 +1679,27 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-/* 计划项样式优化 */
-.plan-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 18px 20px;
-  background-color: #fff;
-  border-radius: var(--border-radius-lg);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  gap: 16px;
-  position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid var(--border-color-light);
-}
-
-.plan-item:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
-  border-color: var(--primary-color-light);
-}
-
-/* 已完成计划的样式 */
-.plan-item-completed {
-  background-color: #f9fafb;
-  border-color: #e5e7eb;
-  opacity: 0.8;
-}
-
-.plan-item-completed .plan-name {
-  color: var(--text-color-light);
-  text-decoration: line-through;
-}
-
-.plan-item-completed .plan-difficulty {
-  opacity: 0.7;
-}
-
-.plan-item-completed .plan-time-info {
-  color: var(--text-color-light);
-}
-
-/* 完成度模块样式优化 */
-.completion-section {
-  background-color: #fff;
-  border-radius: var(--border-radius-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  padding: 20px 24px;
-  border: 1px solid var(--border-color-light);
-  margin-bottom: 20px;
-}
-
-.completion-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.completion-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-color);
-  margin: 0;
-  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
-}
-
-.completion-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--primary-color);
-  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
-}
-
-.completion-bar-container {
-  height: 10px;
-  background-color: var(--bg-color-light);
-  border-radius: var(--border-radius-full);
-  overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.completion-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-color-light) 100%);
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: var(--border-radius-full);
-  box-shadow: 0 0 10px rgba(22, 93, 255, 0.3);
-}
-
-/* 学习计划区域样式优化 */
-.plan-section {
-  background-color: #fff;
-  border-radius: var(--border-radius-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  padding: 20px 24px;
-  border: 1px solid var(--border-color-light);
-  position: relative;
-}
-
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-color-light);
-}
-
-.plan-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-color);
-  margin: 0;
-  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
-}
-
-.plan-time {
-  font-size: 14px;
-  color: var(--text-color-light);
-  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
-}
-
 /* 响应式设计 */
 @media (max-width: 1366px) {
-  /* 笔记本端适配 */
   .sidebar {
     width: 240px;
   }
 
   .study-main {
+    margin-left: 240px;
     max-width: calc(100% - 240px);
   }
 }
 
 @media (max-width: 1024px) {
-  /* 平板端适配 */
   .sidebar-toggle {
     display: block;
   }
 
   .sidebar {
-    position: fixed;
-    left: 0;
-    top: 70px;
-    height: calc(100vh - 70px);
-    z-index: 98;
+    width: 280px;
     transform: translateX(0);
+    z-index: 90;
   }
 
   .sidebar-collapsed {
@@ -1646,15 +1707,22 @@ onMounted(() => {
   }
 
   .study-main {
+    margin-left: 0;
     max-width: 100%;
+  }
+
+  .plan-right {
+    min-width: 160px;
   }
 }
 
 @media (max-width: 768px) {
-  /* 移动端适配 */
+  .navbar {
+    height: 60px;
+  }
+
   .navbar-container {
     padding: 0 16px;
-    height: 60px;
   }
 
   .nav-menu {
@@ -1673,6 +1741,7 @@ onMounted(() => {
     border-top: 1px solid var(--border-color-light);
     padding: 16px;
     gap: 8px;
+    z-index: 100;
   }
 
   .nav-item {
@@ -1681,19 +1750,42 @@ onMounted(() => {
     border: 1px solid var(--border-color-light);
   }
 
+  .main-content {
+    margin-top: 60px;
+    min-height: calc(100vh - 60px);
+  }
+
+  .sidebar {
+    top: 60px;
+    height: calc(100vh - 60px);
+    width: 260px;
+  }
+
+  .sidebar-toggle {
+    top: 70px;
+  }
+
   .study-main {
     padding: 10px;
   }
 
   .plan-item {
-    flex-wrap: wrap;
-    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .plan-info {
-    flex-direction: column;
+  .plan-left {
+    margin-bottom: 8px;
+  }
+
+  .plan-right {
     align-items: flex-start;
-    gap: 8px;
+    min-width: 100%;
+  }
+
+  .plan-meta {
+    justify-content: flex-start;
+    margin-bottom: 8px;
   }
 
   .plan-actions {
@@ -1701,153 +1793,63 @@ onMounted(() => {
     justify-content: flex-end;
   }
 
-  /* 移动端导航栏高度调整 */
-  .navbar {
-    height: 60px;
+  .add-plan-btn {
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    font-size: 13px;
   }
 
-  /* 移动端主内容区顶部边距调整 */
-  .main-content {
-    margin-top: 60px;
-    min-height: calc(100vh - 60px);
+  .modal-content {
+    max-width: 90%;
+    margin: 0 16px;
   }
 
-  /* 移动端侧边栏高度调整 */
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-group.half {
+    width: 100%;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 20px;
+  }
+}
+
+/* 小屏幕手机 */
+@media (max-width: 480px) {
   .sidebar {
-    top: 60px;
-    height: calc(100vh - 60px);
+    width: 240px;
   }
-}
 
-.plan-info {
-  flex: 1;
-  margin-left: 12px;
-}
-
-.plan-description {
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
-}
-
-.plan-tags {
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.plan-type-tag,
-.plan-subject-tag {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background-color: #f0f2f5;
-  color: #1e293b;
-}
-
-.plan-status {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  display: inline-block;
-  margin-top: 8px;
-}
-
-.status-active {
-  background-color: #e3f2fd;
-  color: #1976d2;
-}
-
-.status-completed {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-paused {
-  background-color: #fff3e0;
-  color: #f57c00;
-}
-
-.difficulty-hard {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.difficulty-medium {
-  background-color: #fef9c3;
-  color: #854d0e;
-}
-
-.difficulty-easy {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 400px;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
+  .plan-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
-  100% {
-    transform: rotate(360deg);
+
+  .plan-stats {
+    font-size: 12px;
   }
-}
 
-.plan-stats {
-  font-size: 13px;
-  color: #64748b;
-}
+  .plan-meta {
+    flex-wrap: wrap;
+  }
 
-.form-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-}
+  .plan-time-info {
+    white-space: normal;
+  }
 
-.form-group.half {
-  flex: 1;
-}
-
-.form-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: vertical;
-}
-
-.form-textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.required {
-  color: #dc2626;
-  margin-left: 4px;
-}
-
-.empty-tip {
-  font-size: 14px;
-  color: #94a3b8;
-  margin-top: 8px;
+  .add-plan-btn {
+    bottom: 16px;
+    right: 16px;
+    padding: 8px 16px;
+    font-size: 12px;
+  }
 }
 </style>
