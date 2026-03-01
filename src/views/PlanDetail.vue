@@ -277,161 +277,208 @@ const goBack = () => router.go(-1)
 /* 全局容器样式 */
 .smart-qa-container {
   min-height: 100vh;
-  background-color: var(--background-color);
-  color: var(--text-color);
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  color: #333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .main-content {
-  padding: 20px;
+  padding: 30px;
   max-width: 1200px;
   margin: 0 auto;
-  margin-top: 70px; /* 新增：为导航栏预留空间 */
+  margin-top: 80px;
 }
 
 .plan-detail-container {
-  background: var(--card-background);
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 10px var(--shadow-color);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.plan-detail-container:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
 }
 
 .loading {
   text-align: center;
-  padding: 40px;
+  padding: 50px;
 }
 
 /* 头部操作按钮 */
 .header-actions {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   position: relative;
   z-index: 10;
 }
 
 .header-actions .el-button {
   font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.header-actions .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* 标题和描述 */
 h1 {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  color: var(--primary-text-color);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #2c3e50;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .description {
-  font-size: 16px;
-  color: var(--secondary-text-color);
-  line-height: 1.6;
-  margin-bottom: 20px;
+  font-size: 17px;
+  color: #7f8c8d;
+  line-height: 1.7;
+  margin-bottom: 25px;
 }
 
 /* 计划信息展示 */
 .plan-info {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 25px;
 }
 
 .info-item {
   display: flex;
   align-items: center;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.info-item:hover {
+  background: #e9ecef;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 .label {
   font-weight: 600;
-  margin-right: 8px;
-  color: var(--text-color);
+  margin-right: 10px;
+  color: #34495e;
 }
 
 .value {
-  color: var(--secondary-text-color);
+  color: #7f8c8d;
+  font-weight: 500;
 }
 
 /* 操作区域 */
 .action-section {
   display: flex;
-  gap: 15px;
-  margin-bottom: 30px;
+  gap: 20px;
+  margin-bottom: 35px;
 }
 
 .action-section .el-button {
-  font-size: 14px;
+  font-size: 15px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.action-section .el-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 /* 生成的学习计划卡片 */
 .generated-plan {
-  margin-top: 20px;
+  margin-top: 25px;
 }
 
 .plan-card {
-  border-radius: 8px;
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.plan-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
 }
 
 .card-header h2 {
-  font-size: 20px;
+  font-size: 22px;
   margin: 0;
-  color: var(--primary-text-color);
+  font-weight: 600;
 }
 
 .plan-content.markdown-body {
-  padding: 20px;
-  line-height: 1.8;
-  color: var(--text-color);
+  padding: 25px;
+  line-height: 1.9;
+  color: #333;
+  background: #ffffff;
 }
 
 /* 历史计划弹窗 */
 .el-dialog {
-  border-radius: 8px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
 }
 
 .history-list {
-  max-height: 60vh;
+  max-height: 65vh;
   overflow-y: auto;
-  padding: 10px;
+  padding: 15px;
 }
 
 .history-card {
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-bottom: 10px;
-  border-radius: 6px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 
 .history-card:hover {
-  transform: translateX(5px);
-  box-shadow: 0 4px 12px var(--shadow-color);
+  transform: translateX(8px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .history-preview {
-  padding: 10px;
+  padding: 15px;
 }
 
 .history-title {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--text-color);
+  margin-bottom: 10px;
+  color: #2c3e50;
 }
 
 .history-meta {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .history-content {
-  font-size: 14px;
-  color: var(--secondary-text-color);
-  line-height: 1.6;
+  font-size: 15px;
+  color: #7f8c8d;
+  line-height: 1.7;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -443,25 +490,32 @@ h1 {
 }
 
 .back-btn {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  transform: translateX(-5px);
 }
 
 /* 移动端适配 */
 @media (max-width: 768px) {
   .main-content {
-    padding: 10px;
+    padding: 15px;
+    margin-top: 70px;
   }
 
   .plan-detail-container {
-    padding: 15px;
+    padding: 20px;
   }
 
   h1 {
-    font-size: 20px;
+    font-size: 24px;
   }
 
   .description {
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .plan-info {
@@ -477,25 +531,25 @@ h1 {
   }
 
   .history-card {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
   }
 
   .history-title {
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .history-content {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .card-header h2 {
-    font-size: 18px;
+    font-size: 20px;
   }
 }
 
 /* 工具类 */
 .mr-2 {
-  margin-right: 8px;
+  margin-right: 10px;
 }
 
 .text-center {
@@ -503,13 +557,6 @@ h1 {
 }
 
 .p-4 {
-  padding: 20px;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding: 10px;
-    margin-top: 60px; /* 移动端导航栏高度为 60px */
-  }
+  padding: 25px;
 }
 </style>
