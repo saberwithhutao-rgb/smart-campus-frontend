@@ -1,14 +1,8 @@
 // utils/autoLogin.ts
-import { encryption } from './encryption'
+import { encryptPassword, decryptPassword } from './encryption'
 import { api } from '../api/index'
 import { useUserStore } from '../stores/user'
-
-// 存储键名
-const STORAGE_KEYS = {
-  USERNAME: 'auto_login_username',
-  PASSWORD: 'auto_login_password',
-  REMEMBER_ME: 'remember_me',
-}
+import { STORAGE_KEYS } from './storageKeys' // 导入统一的键名
 
 class AutoLoginService {
   /**
@@ -16,10 +10,12 @@ class AutoLoginService {
    */
   saveCredentials(username: string, password: string): void {
     try {
-      const encryptedPwd = encryption.encrypt(password)
+      // 修复：使用 encryptPassword 而不是 encryption.encrypt
+      const encryptedPwd = encryptPassword(password)
       if (encryptedPwd) {
-        localStorage.setItem(STORAGE_KEYS.USERNAME, username)
-        localStorage.setItem(STORAGE_KEYS.PASSWORD, encryptedPwd)
+        // 修复：使用统一的 STORAGE_KEYS
+        localStorage.setItem(STORAGE_KEYS.SAVED_USERNAME, username)
+        localStorage.setItem(STORAGE_KEYS.SAVED_PASSWORD, encryptedPwd)
         localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true')
         console.log('✓ 登录凭证已保存，下次将自动登录')
       }
@@ -32,22 +28,26 @@ class AutoLoginService {
    * 获取保存的密码
    */
   getSavedPassword(): string | null {
-    const encrypted = localStorage.getItem(STORAGE_KEYS.PASSWORD)
+    // 修复：使用 STORAGE_KEYS
+    const encrypted = localStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD)
     if (!encrypted) return null
-    return encryption.decrypt(encrypted)
+    // 修复：使用 decryptPassword
+    return decryptPassword(encrypted)
   }
 
   /**
    * 获取保存的用户名
    */
   getSavedUsername(): string | null {
-    return localStorage.getItem(STORAGE_KEYS.USERNAME)
+    // 修复：使用 STORAGE_KEYS
+    return localStorage.getItem(STORAGE_KEYS.SAVED_USERNAME)
   }
 
   /**
    * 是否启用了记住我
    */
   isRememberMe(): boolean {
+    // 修复：使用 STORAGE_KEYS
     return localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) === 'true'
   }
 
@@ -55,7 +55,7 @@ class AutoLoginService {
    * 是否有保存的凭证
    */
   hasSavedCredentials(): boolean {
-    return !!(this.getSavedUsername() && localStorage.getItem(STORAGE_KEYS.PASSWORD))
+    return !!(this.getSavedUsername() && localStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD))
   }
 
   /**
@@ -80,7 +80,7 @@ class AutoLoginService {
     try {
       console.log('🔄 尝试自动登录...')
 
-      // 1. 先获取验证码（自动登录也需要验证码）
+      // 1. 先获取验证码
       const captchaResponse = await api.getCaptcha()
 
       if (captchaResponse.code !== 200) {
@@ -93,7 +93,8 @@ class AutoLoginService {
       const result = await userStore.login(
         username,
         password,
-        captchaResponse.data, // 使用获取到的验证码
+        captchaResponse.data,
+        true, // 保持记住我状态
       )
 
       if (result.success) {
@@ -119,8 +120,8 @@ class AutoLoginService {
    * 清除保存的凭证
    */
   clearCredentials(): void {
-    localStorage.removeItem(STORAGE_KEYS.USERNAME)
-    localStorage.removeItem(STORAGE_KEYS.PASSWORD)
+    localStorage.removeItem(STORAGE_KEYS.SAVED_USERNAME)
+    localStorage.removeItem(STORAGE_KEYS.SAVED_PASSWORD)
     localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME)
     console.log('🧹 已清除保存的登录凭证')
   }
@@ -129,10 +130,9 @@ class AutoLoginService {
    * 登出（不清除凭证，只清除token）
    */
   logout(): void {
-    // 清除token，但保留凭证以便下次自动登录
-    localStorage.removeItem('userToken')
-    localStorage.removeItem('token')
-    localStorage.removeItem('userInfo')
+    localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    localStorage.removeItem(STORAGE_KEYS.TOKEN_ALT)
+    localStorage.removeItem(STORAGE_KEYS.USER_INFO)
   }
 
   /**
