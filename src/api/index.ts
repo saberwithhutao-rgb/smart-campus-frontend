@@ -589,7 +589,7 @@ export const api = {
   addLearningProgress: (data: { name: string; progressPercent?: number }) =>
     request<ApiResponse<LearningProgressItem>>({
       method: 'POST',
-      url: '/learning-progress',
+      url: '/api/learning-progress',
       data,
     }),
 
@@ -597,7 +597,7 @@ export const api = {
   updateLearningProgress: (id: number, data: { name?: string; progressPercent?: number }) =>
     request<ApiResponse<LearningProgressItem>>({
       method: 'PUT',
-      url: `/learning-progress/${id}`,
+      url: `/api/learning-progress/${id}`,
       data,
     }),
 
@@ -605,21 +605,21 @@ export const api = {
   deleteLearningProgress: (id: number) =>
     request<ApiResponse<null>>({
       method: 'DELETE',
-      url: `/learning-progress/${id}`,
+      url: `/api/learning-progress/${id}`,
     }),
 
   /** 获取学习进度列表（按创建时间倒序） */
   getLearningProgressList: () =>
     request<ApiResponse<LearningProgressItem[]>>({
       method: 'GET',
-      url: '/learning-progress/list',
+      url: '/api/learning-progress/list',
     }),
 
   /** 获取学习进度总览（整体进度 + 科目列表） */
   getLearningProgressSummary: () =>
     request<ApiResponse<LearningProgressSummary>>({
       method: 'GET',
-      url: '/learning-progress/summary',
+      url: '/api/learning-progress/summary',
     }),
 }
 
