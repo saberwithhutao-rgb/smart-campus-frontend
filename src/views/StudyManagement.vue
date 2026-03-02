@@ -297,7 +297,16 @@ interface StatisticsData {
       percentage?: number
     }>
   }
+  planTypeDistribution?: {
+    details: Array<{
+      type: string
+      count: number
+      percentage?: number
+    }>
+  }
+  subjectDistribution?: Record<string, number>
 }
+
 // 路由实例
 const router = useRouter()
 const route = useRoute()
@@ -317,7 +326,7 @@ const selectedTimeRange = ref('today')
 // 响应式数据 - 后端数据
 const statistics = ref<StatisticsData | null>(null)
 const loading = ref(false)
-const userId = ref(0)
+const userId = ref<number | null>(null)
 const error = ref('')
 const suggestions = ref<string[]>([])
 
@@ -326,6 +335,36 @@ const donutChartRef = ref(null)
 const pieChartRef = ref(null)
 let donutChartInstance: echarts.ECharts | null = null
 let pieChartInstance: echarts.ECharts | null = null
+
+// ✨ 从 token 解析 userId 的工具函数
+const getUserIdFromToken = (): number | null => {
+  try {
+    const token = localStorage.getItem('userToken') || localStorage.getItem('token')
+
+    if (!token) {
+      console.log('未找到 token')
+      return null
+    }
+
+    // 解析 JWT token
+    const base64Url = token.split('.')[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(atob(base64))
+
+    console.log('Token payload:', payload)
+
+    // 根据你的 token 结构返回 userId
+    return payload.userId || payload.id || payload.sub || payload.user_id || null
+  } catch (e) {
+    console.error('解析 token 失败:', e)
+    return null
+  }
+}
+
+// ✨ 计算属性 - 是否已登录
+const isLoggedIn = computed(() => {
+  return !!userId.value && userStore.userState?.isLoggedIn
+})
 
 // 计算属性 - 动态饼图标题
 const pieChartTitle = computed(() => {
@@ -398,14 +437,12 @@ const handleUserMenuClick = (item: string) => {
   if (item === '个人信息') {
     router.push('/profile')
   } else if (item === '退出登录') {
-    // 显示确认对话框
     ElMessageBox.confirm('确定要退出登录吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning',
     })
       .then(() => {
-        // 1. 清除所有相关存储
         const keysToRemove = [
           'userToken',
           'userInfo',
@@ -420,19 +457,14 @@ const handleUserMenuClick = (item: string) => {
           sessionStorage.removeItem(key)
         })
 
-        // 2. 清除store状态（如果需要）
         if (userStore) {
           userStore.userState.isLoggedIn = false
           userStore.userState.userInfo = null
         }
 
-        // 3. 关闭个人中心菜单
         showUserCenter.value = false
-
-        // 4. 显示成功消息
         ElMessage.success('退出登录成功')
 
-        // 5. 刷新页面以更新UI状态
         setTimeout(() => {
           window.location.reload()
         }, 300)
@@ -479,12 +511,11 @@ const handleGenerateSuggestion = () => {
   fetchSuggestionsData()
 }
 
-// 获取统计数据
+// ✨ 获取统计数据（简化版）
 const fetchStatisticsData = async () => {
-  // 验证参数
   if (!userId.value) {
-    error.value = '请输入用户ID'
-    ElMessage.error('请输入用户ID')
+    error.value = '用户未登录'
+    ElMessage.error('请先登录')
     return
   }
 
@@ -494,34 +525,27 @@ const fetchStatisticsData = async () => {
       userId: userId.value,
     })
 
-    console.log('开始请求统计数据...')
-    const realStatsData = await getStudyStatistics({
+    // ✨ 直接获取数据，request.js 已经返回 res.data
+    const statsData = await getStudyStatistics({
       timeRange: selectedTimeRange.value,
       userId: userId.value,
     })
 
-    console.log('统计数据请求成功')
-    console.log('统计数据响应:', realStatsData)
-
-    if (typeof realStatsData !== 'object' || realStatsData === null) {
-      throw new Error('统计数据格式错误')
-    }
-
-    statistics.value = realStatsData
-    console.log('保存后的统计数据:', statistics.value)
+    console.log('统计数据请求成功:', statsData)
+    statistics.value = statsData
   } catch (err: unknown) {
     console.error('统计数据请求失败:', err)
-    error.value = '网络错误，请稍后重试'
+    error.value = '统计数据加载失败'
     statistics.value = null
     ElMessage.error('统计数据加载失败，请稍后再试')
   }
 }
 
-// 获取学习建议数据
+// ✨ 获取学习建议数据（简化版）
 const fetchSuggestionsData = async () => {
   if (!userId.value) {
-    error.value = '请输入用户ID'
-    ElMessage.error('请输入用户ID')
+    error.value = '用户未登录'
+    ElMessage.error('请先登录')
     return
   }
 
@@ -534,72 +558,30 @@ const fetchSuggestionsData = async () => {
       userId: userId.value,
     })
 
-    console.log('开始请求学习建议...')
-    const realSuggestionsData = await getStudySuggestions({
+    // ✨ 直接获取数据，request.js 已经返回 res.data
+    const suggestionsData = await getStudySuggestions({
       timeRange: selectedTimeRange.value,
       userId: userId.value,
     })
 
-    console.log('学习建议请求成功')
-    console.log('完整学习建议响应:', realSuggestionsData)
+    console.log('学习建议请求成功:', suggestionsData)
 
-    if (typeof realSuggestionsData !== 'object' || realSuggestionsData === null) {
-      throw new Error('学习建议数据格式错误')
-    }
-
-    if (realSuggestionsData.success === false) {
-      console.error('业务逻辑错误:', realSuggestionsData.message || '生成失败')
-      error.value = '生成失败'
+    // ✨ 处理不同的返回格式（但已经是处理后的数据）
+    if (Array.isArray(suggestionsData)) {
+      suggestions.value = suggestionsData
+    } else if (suggestionsData && typeof suggestionsData === 'object') {
+      // 可能是 { suggestions: [...] } 格式
+      suggestions.value = (suggestionsData as any).suggestions || []
+    } else {
       suggestions.value = []
-      ElMessage.error('生成失败，请稍后再试')
-      return
     }
 
-    let suggestionsArray: string[] = []
-    if (realSuggestionsData && typeof realSuggestionsData === 'object') {
-      if (Array.isArray(realSuggestionsData.suggestions)) {
-        suggestionsArray = realSuggestionsData.suggestions
-        console.log('使用realSuggestionsData.suggestions数组')
-      } else if (Array.isArray(realSuggestionsData)) {
-        suggestionsArray = realSuggestionsData
-        console.log('使用realSuggestionsData数组')
-      } else if (realSuggestionsData.data && Array.isArray(realSuggestionsData.data.suggestions)) {
-        suggestionsArray = realSuggestionsData.data.suggestions
-        console.log('使用realSuggestionsData.data.suggestions数组')
-      } else if (realSuggestionsData.data && Array.isArray(realSuggestionsData.data)) {
-        suggestionsArray = realSuggestionsData.data
-        console.log('使用realSuggestionsData.data数组')
-      } else {
-        const possibleSuggestions =
-          realSuggestionsData.suggestions || realSuggestionsData.data || []
-        if (Array.isArray(possibleSuggestions)) {
-          suggestionsArray = possibleSuggestions
-          console.log('使用可能的suggestions字段')
-        } else {
-          console.error('无法提取有效的suggestions数组')
-          throw new Error('无法提取有效的suggestions数组')
-        }
-      }
-    }
-
-    suggestions.value = suggestionsArray || []
     console.log('最终suggestions:', suggestions.value)
-    console.log('保存后的学习建议:', suggestions.value)
   } catch (err: unknown) {
     console.error('学习建议请求失败:', err)
-    error.value = '网络错误，请稍后重试'
+    error.value = '学习建议加载失败'
     suggestions.value = ['AI 服务暂时不可用，请稍后再试。']
-
-    if (err && typeof err === 'object' && 'code' in err) {
-      const errorObj = err as { code?: string }
-      if (errorObj.code === 'ECONNABORTED') {
-        ElMessage.error('网络连接超时，请检查网络设置')
-      } else {
-        ElMessage.error('AI 服务繁忙，请稍后再试')
-      }
-    } else {
-      ElMessage.error('AI 服务繁忙，请稍后再试')
-    }
+    ElMessage.error('学习建议加载失败，请稍后再试')
   } finally {
     loading.value = false
   }
@@ -732,7 +714,6 @@ const initPieChart = () => {
   pieChartInstance = echarts.init(pieChartRef.value)
   let distributionData = []
 
-  // 检查是否有distribution数据，即使details为空数组也没关系
   if (statistics.value.difficultyDistribution && statistics.value.difficultyDistribution.details) {
     const difficultyMap: Record<string, string> = {
       easy: '简单',
@@ -741,7 +722,7 @@ const initPieChart = () => {
     }
     distributionData = statistics.value.difficultyDistribution.details.map((item: any) => ({
       name: difficultyMap[item.type] || item.type,
-      value: item.count, // 这里会是0
+      value: item.count,
     }))
   } else {
     distributionData = []
@@ -765,7 +746,6 @@ const initPieChart = () => {
     tooltip: {
       trigger: 'item',
       formatter: function (params: any) {
-        // 处理totalCount为0的情况
         const percentage =
           totalCount === 0 ? '0.00' : ((params.value / totalCount) * 100).toFixed(2)
         return `${params.name}<br/>数量: ${params.value}<br/>占比: ${percentage}%`
@@ -850,10 +830,14 @@ watch(
   },
 )
 
-// 初始加载数据
+// ✨ 初始加载数据
 const initData = async () => {
-  await fetchStatisticsData()
-  updateCharts()
+  if (userId.value) {
+    await fetchStatisticsData()
+    updateCharts()
+  } else {
+    error.value = '用户未登录'
+  }
 }
 
 // 处理弹出提示
@@ -863,8 +847,6 @@ const showAlert = (message: string) => {
 
 onBeforeMount(() => {
   console.log('组件挂载前检查登录状态')
-
-  // 检查是否有token
   const token = localStorage.getItem('userToken')
   console.log('当前token:', token)
 
@@ -874,35 +856,25 @@ onBeforeMount(() => {
   }
 })
 
-// 生命周期钩子 - 初始化和窗口大小监听
+// ✨ 生命周期钩子 - 初始化
 onMounted(async () => {
   console.log('组件挂载，最终检查登录状态')
 
-  // 最终检查
   const token = localStorage.getItem('userToken')
   if (!token) {
     console.log('最终检查未登录，重定向到登录页')
     router.replace('/login')
     return
   }
-  try {
-    const tokenParts = token.split('.')
-    if (tokenParts.length !== 3) {
-      throw new Error('无效的 JWT 格式')
-    }
 
-    const base64Url = tokenParts[1]
-    if (!base64Url) {
-      throw new Error('JWT payload 为空')
-    }
+  // ✨ 从 token 解析 userId
+  userId.value = getUserIdFromToken()
+  console.log('解析出的 userId:', userId.value)
 
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const payload = JSON.parse(atob(base64))
-    userId.value = payload.userId || 0
-    console.log('从 JWT 解析出 userId:', userId.value)
-  } catch (e) {
-    console.error('解析 token 失败:', e)
-    userId.value = 0
+  if (!userId.value) {
+    error.value = '无法获取用户ID'
+    ElMessage.error('登录状态异常，请重新登录')
+    return
   }
 
   // 检查通过，继续其他初始化

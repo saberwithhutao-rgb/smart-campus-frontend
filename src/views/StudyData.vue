@@ -115,89 +115,146 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
 
-// 获取用户ID
-const userId = computed(() => userStore.userInfo?.userId)
-
 // 响应式数据
-const timeRange = ref('today') // 默认时间范围为今天
-const loading = ref(false) // 加载状态
-const error = ref('') // 错误信息
-const statistics = ref(null) // 统计数据
-const suggestions = ref([]) // 学习建议
+const timeRange = ref('today')
+const loading = ref(false)
+const error = ref('')
+const statistics = ref(null)
+const suggestions = ref([])
+
+// ✨ 从 token 解析 userId 的工具函数
+const getUserIdFromToken = () => {
+  try {
+    // 优先从 userStore 获取 token
+    const token =
+      userStore.userState?.userInfo?.token ||
+      localStorage.getItem('userToken') ||
+      localStorage.getItem('token')
+
+    if (!token) {
+      console.log('未找到 token')
+      return null
+    }
+
+    // 解析 JWT token
+    const base64Url = token.split('.')[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(atob(base64))
+
+    console.log('Token payload:', payload)
+
+    // 根据你的 token 结构返回 userId
+    // 常见字段名：userId, id, sub, user_id 等
+    return payload.userId || payload.id || payload.sub || payload.user_id || null
+  } catch (e) {
+    console.error('解析 token 失败:', e)
+    return null
+  }
+}
+
+// ✨ 计算属性：userId
+const userId = computed(() => {
+  return getUserIdFromToken()
+})
+
+// ✨ 计算属性：是否已登录
+const isLoggedIn = computed(() => {
+  return !!userId.value && userStore.userState?.isLoggedIn
+})
 
 // 处理时间范围切换
 const handleTimeRangeChange = () => {
-  console.log('handleTimeRangeChange被调用')
   fetchData()
 }
 
 // 获取数据
 const fetchData = async () => {
+  // 检查登录状态
+  if (!isLoggedIn.value) {
+    error.value = '请先登录'
+    console.error('用户未登录')
+    return
+  }
+
+  const currentUserId = userId.value
+  if (!currentUserId) {
+    error.value = '无法获取用户ID'
+    return
+  }
+
   loading.value = true
   error.value = ''
 
   try {
-    const token = localStorage.getItem('userToken')
-    console.log('fetchData被调用,token:', token)
-    let userId = 0
-
-    if (token) {
-      try {
-        // 解析 JWT payload
-        const base64Url = token.split('.')[1]
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-        const payload = JSON.parse(atob(base64))
-        userId = payload.userId || 0
-        console.log('从 JWT 解析出 userId:', userId)
-      } catch (e) {
-        console.error('解析 token 失败:', e)
-      }
-    }
-
-    if (!userId) {
-      error.value = '无法获取用户ID'
-      return
-    }
-
-    console.log('请求参数:', {
+    console.log('开始获取数据，参数:', {
       timeRange: timeRange.value,
-      userId,
+      userId: currentUserId,
     })
 
+    // ✨ 并行请求，response 已经是处理后的数据（因为 request.js 已经修改）
     const [statsData, suggestionsData] = await Promise.all([
       getStudyStatistics({
         timeRange: timeRange.value,
-        userId,
+        userId: currentUserId,
       }),
       getStudySuggestions({
         timeRange: timeRange.value,
-        userId,
+        userId: currentUserId,
       }),
     ])
 
+    // ✨ 直接赋值
     statistics.value = statsData
-    suggestions.value = suggestionsData.suggestions || suggestionsData || []
+    suggestions.value = Array.isArray(suggestionsData) ? suggestionsData : []
+
+    console.log('数据获取成功:', {
+      statistics: statistics.value,
+      suggestions: suggestions.value,
+    })
   } catch (err) {
     console.error('请求失败:', err)
     error.value = err.message || '请求失败，请稍后重试'
+
+    // 可选：显示错误提示
+    ElMessage.error(error.value)
   } finally {
     loading.value = false
   }
 }
 
-// 页面加载时自动获取数据
-onMounted(() => {
-  fetchData()
+// 监听时间范围变化
+watch(timeRange, () => {
+  if (isLoggedIn.value) {
+    fetchData()
+  }
 })
 
-watch(() => {
-  fetchData()
+// 监听登录状态变化
+watch(
+  () => userStore.userState?.isLoggedIn,
+  (newVal) => {
+    if (newVal) {
+      console.log('用户登录状态变化，重新获取数据')
+      fetchData()
+    }
+  },
+)
+
+// 页面加载时自动获取数据
+onMounted(() => {
+  console.log('组件挂载，userStore:', userStore.userState)
+  if (isLoggedIn.value) {
+    fetchData()
+  } else {
+    error.value = '请先登录'
+  }
 })
 </script>
 

@@ -71,10 +71,11 @@ request.interceptors.request.use(
   },
 )
 
-// 响应拦截器
+// 响应拦截器 - ✨ 主要修改在这里 ✨
 request.interceptors.response.use(
   (response) => {
-    console.log('请求耗时:', Date.now() - response.config.metadata.startTime, 'ms')
+    const耗时 = Date.now() - response.config.metadata.startTime
+    console.log(`请求耗时: ${耗时} ms - ${response.config.url}`)
 
     const res = response.data
     const config = response.config
@@ -84,13 +85,17 @@ request.interceptors.response.use(
       return res
     }
 
-    // 统一处理业务状态码
+    // ✅ 统一处理业务状态码
     // 根据后端约定的成功状态码判断（200 或 0 都视为成功）
-    if (res.code === 200 || res.code === 0) {
-      return res
+    if (res.code === 200 || res.code === 0 || res.success === true) {
+      // ✨ 关键修改：直接返回 res.data，这样组件中直接就能拿到数据
+      // 如果没有 data 字段，则返回整个响应（兼容不同后端格式）
+      console.log(`[API Success] ${config.url}:`, res.data || res)
+      return res.data ?? res
     } else {
-      // ✅ 显示后端返回的具体错误信息
+      // 业务错误处理
       const errorMessage = res.message || '操作失败'
+      console.error(`[API Error] ${config.url}:`, errorMessage, res)
       ElMessage.error(errorMessage)
       return Promise.reject(new Error(errorMessage))
     }
@@ -99,7 +104,7 @@ request.interceptors.response.use(
     const originalRequest = error.config
 
     // 处理401未授权/Token过期
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest?._retry) {
       // 如果已经在自动登录，将请求加入队列
       if (isAutoLogging) {
         return new Promise((resolve, reject) => {
@@ -112,7 +117,9 @@ request.interceptors.response.use(
           .catch((err) => Promise.reject(err))
       }
 
-      originalRequest._retry = true
+      if (originalRequest) {
+        originalRequest._retry = true
+      }
       isAutoLogging = true
 
       try {
@@ -129,8 +136,10 @@ request.interceptors.response.use(
           processQueue(null, newToken)
 
           // 重试原请求
-          originalRequest.headers['Authorization'] = `Bearer ${newToken}`
-          return request(originalRequest)
+          if (originalRequest) {
+            originalRequest.headers['Authorization'] = `Bearer ${newToken}`
+            return request(originalRequest)
+          }
         } else {
           console.log('❌ 自动登录失败')
           processQueue(new Error('自动登录失败'), null)
@@ -155,30 +164,19 @@ request.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    // ✅ 统一处理所有HTTP错误（重点修改的地方）
+    // ✅ 统一处理所有HTTP错误
     if (error.response) {
       console.error('响应错误:', error.response.status, error.response.data)
 
-      // ✅ 无论HTTP状态码是多少，优先使用后端返回的message
+      // 优先使用后端返回的message
       let errorMessage = '操作失败'
-
-      // 1. 优先使用后端返回的message
       if (error.response.data?.message) {
         errorMessage = error.response.data.message
-      }
-      // 2. 其次使用HTTP状态码的默认消息
-      else {
+      } else {
         errorMessage = getHttpStatusMessage(error.response.status)
       }
 
-      // 显示错误信息
       ElMessage.error(errorMessage)
-
-      // 根据状态码做特殊处理（可选）
-      if (error.response.status === 401) {
-        // 可以在这里处理未授权跳转
-        console.log('未授权，需要登录')
-      }
     } else if (error.request) {
       console.error('网络错误:', error.request)
       ElMessage.error('网络连接失败，请检查网络设置')
