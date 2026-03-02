@@ -9,6 +9,9 @@ import type {
   LearningProgress,
   ApiResponse,
   CaptchaResponse,
+  LearningProgressItem,
+  LearningProgressSummary,
+  LoginResponse,
 } from '../types/user'
 import type {
   CompetitionRule,
@@ -172,15 +175,42 @@ service.interceptors.request.use(
 )
 
 // 响应拦截器
+// 文件B有，文件A没有
 service.interceptors.response.use(
   (response) => {
+    // ✅ 响应日志
+    if (import.meta.env.DEV) {
+      console.log('%c[API Response]', 'color: #2196F3;', response)
+    }
     return response
   },
   (error) => {
-    if (error.response && error.response.data && error.response.data.message) {
-      ElMessage.error(error.response.data.message)
+    // ✅ 详细的HTTP状态码处理（400,401,403,404,500）
+    let message = '请求失败'
+    if (error.response) {
+      const { status } = error.response
+      switch (status) {
+        case 400:
+          message = '请求参数错误'
+          break
+        case 401:
+          message = '未授权，请登录'
+          // ✅ 自动清除存储并跳转登录页
+          localStorage.removeItem('userToken')
+          window.location.href = '/login'
+          break
+        case 403:
+          message = '拒绝访问'
+          break
+        case 404:
+          message = '请求资源不存在'
+          break
+        case 500:
+          message = '服务器内部错误'
+          break
+      }
     }
-    return Promise.reject(error)
+    return Promise.reject(new Error(message))
   },
 )
 
@@ -554,6 +584,43 @@ export const api = {
     }),
 
   getExamCountdowns: () => request<ExamCountdown>({ method: 'GET', url: '/api/exams' }),
+
+  /** 添加学习科目/知识点 */
+  addLearningProgress: (data: { name: string; progressPercent?: number }) =>
+    request<ApiResponse<LearningProgressItem>>({
+      method: 'POST',
+      url: '/learning-progress',
+      data,
+    }),
+
+  /** 更新学习进度 */
+  updateLearningProgress: (id: number, data: { name?: string; progressPercent?: number }) =>
+    request<ApiResponse<LearningProgressItem>>({
+      method: 'PUT',
+      url: `/learning-progress/${id}`,
+      data,
+    }),
+
+  /** 删除学习进度 */
+  deleteLearningProgress: (id: number) =>
+    request<ApiResponse<null>>({
+      method: 'DELETE',
+      url: `/learning-progress/${id}`,
+    }),
+
+  /** 获取学习进度列表（按创建时间倒序） */
+  getLearningProgressList: () =>
+    request<ApiResponse<LearningProgressItem[]>>({
+      method: 'GET',
+      url: '/learning-progress/list',
+    }),
+
+  /** 获取学习进度总览（整体进度 + 科目列表） */
+  getLearningProgressSummary: () =>
+    request<ApiResponse<LearningProgressSummary>>({
+      method: 'GET',
+      url: '/learning-progress/summary',
+    }),
 }
 
 // 流式请求方法

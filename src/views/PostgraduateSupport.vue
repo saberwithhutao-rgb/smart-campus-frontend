@@ -95,30 +95,93 @@
           </div>
 
           <!-- 学习进度卡片 -->
-          <div class="card">
+          <div class="card learning-progress-card">
             <div class="card-header">
               <span class="card-icon">📊</span>
               <span class="card-title">学习进度</span>
             </div>
             <div class="card-content">
-              <p class="current-progress">当前学习进度</p>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: 65%"></div>
+              <div v-if="progressLoading" class="progress-loading">
+                <span>加载中...</span>
               </div>
-              <div class="subject-progress">
-                <div class="subject">
-                  <span class="subject-name">政治:</span>
-                  <span class="subject-value">65%</span>
+              <template v-else-if="progressError">
+                <p class="progress-error">{{ progressError }}</p>
+                <button type="button" class="retry-progress-btn" @click="fetchLearningProgressSummary">重试</button>
+              </template>
+              <template v-else>
+                <p class="current-progress">当前学习进度</p>
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: (learningProgressSummary?.overallPercent ?? 0) + '%' }"></div>
                 </div>
-                <div class="subject">
-                  <span class="subject-name">英语:</span>
-                  <span class="subject-value">70%</span>
+                <p class="overall-percent">{{ learningProgressSummary?.overallPercent ?? 0 }}%</p>
+                <div class="subject-progress">
+                  <div
+                    v-for="item in learningProgressSummary?.items ?? []"
+                    :key="item.id"
+                    class="subject-row"
+                  >
+                    <template v-if="editingProgressId === item.id">
+                      <input
+                        v-model="editProgressName"
+                        class="subject-edit-input"
+                        placeholder="科目名称"
+                        @keyup.enter="submitUpdateProgress(item.id)"
+                      />
+                      <div class="subject-edit-actions">
+                        <input
+                          v-model.number="editProgressPercent"
+                          type="number"
+                          min="0"
+                          max="100"
+                          class="subject-percent-input"
+                        />
+                        <span class="percent-suffix">%</span>
+                        <button type="button" class="subject-btn save-btn" @click="submitUpdateProgress(item.id)">保存</button>
+                        <button type="button" class="subject-btn cancel-btn" @click="editingProgressId = null">取消</button>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="subject">
+                        <span class="subject-name">{{ item.name }}:</span>
+                        <span class="subject-value">{{ item.progressPercent }}%</span>
+                      </div>
+                      <div class="subject-actions">
+                        <button type="button" class="subject-btn edit-btn" @click="startEditProgress(item)">编辑</button>
+                        <button type="button" class="subject-btn delete-btn" @click="deleteProgressItem(item.id)">删除</button>
+                      </div>
+                    </template>
+                  </div>
+                  <div v-if="showAddProgress" class="subject-row add-form">
+                    <input
+                      v-model="newProgressName"
+                      class="subject-edit-input"
+                      placeholder="科目或知识点名称"
+                      @keyup.enter="submitAddProgress"
+                    />
+                    <div class="subject-edit-actions">
+                      <input
+                        v-model.number="newProgressPercent"
+                        type="number"
+                        min="0"
+                        max="100"
+                        class="subject-percent-input"
+                        placeholder="0"
+                      />
+                      <span class="percent-suffix">%</span>
+                      <button type="button" class="subject-btn save-btn" @click="submitAddProgress">添加</button>
+                      <button type="button" class="subject-btn cancel-btn" @click="showAddProgress = false; newProgressName = ''; newProgressPercent = 0">取消</button>
+                    </div>
+                  </div>
                 </div>
-                <div class="subject">
-                  <span class="subject-name">数学:</span>
-                  <span class="subject-value">65%</span>
-                </div>
-              </div>
+                <button
+                  v-if="!showAddProgress"
+                  type="button"
+                  class="add-progress-btn"
+                  @click="showAddProgress = true"
+                >
+                  + 添加科目/知识点
+                </button>
+              </template>
             </div>
           </div>
         </div>
@@ -368,7 +431,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { api } from '../api'
 import type { University, UniversityListDetail } from '../types/university'
-import type { ExamCountdown } from '../types/user'
+import type { ExamCountdown, LearningProgressItem, LearningProgressSummary } from '../types/user'
 
 // 路由实例
 const router = useRouter()
@@ -396,6 +459,17 @@ const countdownTimers = reactive<
   Record<string, { days: number; hours: number; minutes: number; seconds: number }>
 >({})
 let countdownInterval: ReturnType<typeof setInterval> | null = null
+
+// 学习进度数据
+const learningProgressSummary = ref<LearningProgressSummary | null>(null)
+const progressLoading = ref(false)
+const progressError = ref('')
+const showAddProgress = ref(false)
+const newProgressName = ref('')
+const newProgressPercent = ref(0)
+const editingProgressId = ref<number | null>(null)
+const editProgressName = ref('')
+const editProgressPercent = ref(0)
 
 // 筛选参数
 const filterParams = ref({
@@ -528,6 +602,105 @@ const fetchFavoriteIds = async () => {
   }
 }
 
+// ---------- 学习进度模块（与 /learning-progress API 交互） ----------
+const fetchLearningProgressSummary = async () => {
+  progressLoading.value = true
+  progressError.value = ''
+  try {
+    const response = await api.getLearningProgressSummary()
+    const code = (response as { code?: number }).code ?? response.code
+    if (code === 1) {
+      learningProgressSummary.value = response.data
+    } else {
+      const msg = (response as { msg?: string }).msg ?? (response as { message?: string }).message
+      progressError.value = msg || '获取学习进度失败'
+    }
+  } catch (err) {
+    progressError.value = err instanceof Error ? err.message : '网络错误，请稍后重试'
+    console.error('获取学习进度失败:', err)
+  } finally {
+    progressLoading.value = false
+  }
+}
+
+const startEditProgress = (item: LearningProgressItem) => {
+  editingProgressId.value = item.id
+  editProgressName.value = item.name
+  editProgressPercent.value = item.progressPercent
+}
+
+const submitUpdateProgress = async (id: number) => {
+  const name = editProgressName.value?.trim()
+  const percent = editProgressPercent.value
+  if (percent < 0 || percent > 100) {
+    alert('完成百分比必须在 0-100 之间')
+    return
+  }
+  try {
+    const response = await api.updateLearningProgress(id, {
+      ...(name ? { name } : {}),
+      progressPercent: percent,
+    })
+    const code = (response as { code?: number }).code ?? response.code
+    if (code === 1) {
+      editingProgressId.value = null
+      await fetchLearningProgressSummary()
+    } else {
+      const msg = (response as { msg?: string }).msg ?? (response as { message?: string }).message
+      alert(msg || '更新失败')
+    }
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '更新失败，请稍后重试')
+    console.error('更新学习进度失败:', err)
+  }
+}
+
+const submitAddProgress = async () => {
+  const name = newProgressName.value?.trim()
+  if (!name) {
+    alert('科目/知识点名称不能为空')
+    return
+  }
+  const percent = newProgressPercent.value
+  if (percent < 0 || percent > 100) {
+    alert('完成百分比必须在 0-100 之间')
+    return
+  }
+  try {
+    const response = await api.addLearningProgress({ name, progressPercent: percent })
+    const code = (response as { code?: number }).code ?? response.code
+    if (code === 1) {
+      showAddProgress.value = false
+      newProgressName.value = ''
+      newProgressPercent.value = 0
+      await fetchLearningProgressSummary()
+    } else {
+      const msg = (response as { msg?: string }).msg ?? (response as { message?: string }).message
+      alert(msg || '添加失败')
+    }
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '添加失败，请稍后重试')
+    console.error('添加学习进度失败:', err)
+  }
+}
+
+const deleteProgressItem = async (id: number) => {
+  if (!confirm('确定要删除该学习进度吗？')) return
+  try {
+    const response = await api.deleteLearningProgress(id)
+    const code = (response as { code?: number }).code ?? response.code
+    if (code === 1) {
+      await fetchLearningProgressSummary()
+    } else {
+      const msg = (response as { msg?: string }).msg ?? (response as { message?: string }).message
+      alert(msg || '删除失败')
+    }
+  } catch (err) {
+    alert(err instanceof Error ? err.message : '删除失败，请稍后重试')
+    console.error('删除学习进度失败:', err)
+  }
+}
+
 // 获取收藏的院校详细列表
 const fetchFavoriteUniversities = async () => {
   loading.value = true
@@ -629,6 +802,7 @@ onMounted(() => {
   fetchFavoriteIds()
   fetchExamCountdowns()
   startCountdownInterval()
+  fetchLearningProgressSummary()
 })
 
 // 组件卸载时清理定时器
@@ -1133,6 +1307,149 @@ watch(showFavorites, (newVal) => {
   justify-content: space-between;
   font-size: 14px;
   color: #333;
+}
+
+/* 学习进度 - 加载与错误 */
+.progress-loading,
+.progress-error {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 8px 0;
+}
+
+.progress-error {
+  color: #f56c6c;
+}
+
+.retry-progress-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #409eff;
+  background: #ecf5ff;
+  border: 1px solid #b3d8ff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.retry-progress-btn:hover {
+  background: #d9ecff;
+}
+
+.overall-percent {
+  font-size: 14px;
+  color: #409eff;
+  margin: 0 0 8px 0;
+}
+
+/* 学习进度 - 科目行与编辑 */
+.subject-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.subject-row:last-of-type {
+  border-bottom: none;
+}
+
+.subject-edit-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+
+.subject-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.subject-percent-input {
+  width: 56px;
+  padding: 6px 6px;
+  font-size: 14px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  text-align: right;
+}
+
+.percent-suffix {
+  font-size: 14px;
+  color: #666;
+}
+
+.subject-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.save-btn {
+  color: #fff;
+  background: #409eff;
+  border-color: #409eff;
+}
+
+.save-btn:hover {
+  background: #66b1ff;
+}
+
+.cancel-btn {
+  color: #606266;
+  background: #fff;
+  border-color: #dcdfe6;
+}
+
+.cancel-btn:hover {
+  color: #409eff;
+  border-color: #c6e2ff;
+  background: #ecf5ff;
+}
+
+.edit-btn {
+  color: #409eff;
+  background: #ecf5ff;
+  border-color: #b3d8ff;
+}
+
+.delete-btn {
+  color: #f56c6c;
+  background: #fef0f0;
+  border-color: #fbc4c4;
+}
+
+.edit-btn:hover,
+.delete-btn:hover {
+  opacity: 0.9;
+}
+
+.subject-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.add-progress-btn {
+  margin-top: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #409eff;
+  background: #ecf5ff;
+  border: 1px dashed #b3d8ff;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.add-progress-btn:hover {
+  background: #d9ecff;
 }
 
 /* 院校选择区域 */

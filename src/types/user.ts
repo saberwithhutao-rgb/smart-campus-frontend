@@ -204,3 +204,52 @@ export interface ExamCountdown {
   daysRemaining: number
   expired: boolean
 }
+
+// 新增：复习点
+export interface ReviewPoint {
+  day: number
+  reviewTime: string
+  description: string
+}
+
+// 新增：复习曲线
+export interface ReviewCurve {
+  points: ReviewPoint[]
+  recommendation: string
+}
+
+// 新增：复习计划
+export interface ReviewPlan {
+  id: number
+  userId: number
+  title: string
+  items: ReviewItem[]
+  createdAt: string
+  nextReviewTime: string
+}
+
+// 新增：复习项
+export interface ReviewItem {
+  content: string
+  difficulty: string
+  tags?: string[]
+  reviewDay?: number
+}
+
+// 新增：难点标记
+export interface DifficultyMark {
+  id: number
+  userId: number
+  planId: number
+  content: string
+  tags: string[]
+  createdAt: string
+}
+
+// 学习进度相关类型（简化版）
+export interface LearningProgress {
+  subject: string
+  completed: number
+  total: number
+  percentage: number
+}
