@@ -268,8 +268,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         }
       }
     } catch {
-      ElMessage.error('切换状态失败')
-
       if (planIndex !== -1 && originalPlan) {
         studyPlans.value[planIndex] = originalPlan
       }

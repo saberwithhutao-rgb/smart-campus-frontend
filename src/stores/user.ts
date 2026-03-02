@@ -249,7 +249,6 @@ export const useUserStore = defineStore('user', () => {
 
     // 如果没有启用记住我或无凭证，不自动登录
     if (!isRememberMeEnabled() || !hasAutoLoginCredentials()) {
-      console.log('⛔ 未启用记住我或无保存凭证，跳过自动登录')
       return false
     }
 
@@ -257,7 +256,6 @@ export const useUserStore = defineStore('user', () => {
     const password = getSavedPassword()
 
     if (!username || !password) {
-      console.log('⚠️ 凭证不完整，清除保存的数据')
       clearAutoLoginCredentials()
       return false
     }
@@ -307,6 +305,7 @@ export const useUserStore = defineStore('user', () => {
     rememberMe: boolean = false,
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log('调用登录API, rememberMe:', rememberMe)
       const response = await api.login({ username, password, captcha })
 
       if (response.code !== 200) {
@@ -316,18 +315,46 @@ export const useUserStore = defineStore('user', () => {
       const data = response.data
       const token = data.token
 
-      let userId = 0
+      let userId
       if (token && token.startsWith('jwt-')) {
         const parts = token.split('-')
         if (parts.length >= 2 && parts[1] !== undefined && !isNaN(Number(parts[1]))) {
           userId = parseInt(parts[1], 10)
-          console.log('从 token 解析出 userId:', userId)
         } else {
           console.warn('Token 格式不符合预期，无法解析 userId')
         }
       }
 
-      // 创建完整的 userInfo 对象
+      localStorage.setItem('userToken', token)
+      localStorage.setItem('userInfo', JSON.stringify(userInfo))
+
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken)
+      }
+
+      // 如果选择了"记住我"，保存凭证用于自动登录
+      if (rememberMe) {
+        console.log('💾 正在保存自动登录凭证...')
+
+        // 加密密码
+        const encryptedPwd = encryption.encrypt(password)
+        console.log('密码加密结果:', encryptedPwd ? '成功' : '失败')
+
+        if (encryptedPwd) {
+          localStorage.setItem('saved_username', username)
+          localStorage.setItem('saved_password', encryptedPwd)
+          console.log('✅ 凭证已保存到 localStorage')
+          console.log('saved_username:', localStorage.getItem('saved_username'))
+          console.log('saved_password 存在:', !!localStorage.getItem('saved_password'))
+        } else {
+          console.error('❌ 密码加密失败')
+        }
+      } else {
+        console.log('🧹 未选择记住我，清除已有凭证')
+        localStorage.removeItem('saved_username')
+        localStorage.removeItem('saved_password')
+      }
+
       const userInfo = {
         token: token,
         role: data.role || 'user',
@@ -340,37 +367,17 @@ export const useUserStore = defineStore('user', () => {
         college: data.college || '',
       }
 
-      // 保存到 localStorage
-      localStorage.setItem('userToken', token)
       localStorage.setItem('userInfo', JSON.stringify(userInfo))
-
-      // 如果有refreshToken，也保存
-      if (data.refreshToken) {
-        localStorage.setItem('refreshToken', data.refreshToken)
-      }
-
-      // 如果选择了"记住我"，保存凭证用于自动登录
-      if (rememberMe) {
-        saveAutoLoginCredentials(username, password)
-      } else {
-        // 如果没有选择记住我，清除之前保存的凭证
-        clearAutoLoginCredentials()
-      }
 
       // 更新状态
       userState.value = {
         isLoggedIn: true,
-        userInfo: {
-          token,
-          refreshToken: data.refreshToken,
-          ...userInfo,
-        },
+        userInfo,
       }
 
       console.log('保存的用户信息:', userInfo)
       return { success: true }
     } catch (error) {
-      console.error('登录错误:', error)
       return { success: false, error: error.message }
     }
   }

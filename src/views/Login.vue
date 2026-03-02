@@ -13,7 +13,7 @@ const form = reactive({
   username: '',
   password: '',
   captcha: '',
-  rememberMe: true, // 默认勾选记住我
+  rememberMe: true,
 })
 
 // 图形验证码相关数据
@@ -96,19 +96,21 @@ const handleLogin = async () => {
       form.username,
       form.password,
       form.captcha,
-      form.rememberMe, // 传入记住我选项
+      form.rememberMe,
     )
 
     if (result.success) {
       alert('登录成功！')
+      console.log('保存的用户名:', localStorage.getItem('saved_username'))
+      console.log('是否有保存的密码:', !!localStorage.getItem('saved_password'))
       router.push('/')
     } else {
       errorMessage.value = result.error || '登录失败'
-      getCaptcha() // 刷新验证码
+      getCaptcha()
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('登录出错:', error)
-    errorMessage.value = error.message || '登录失败'
+    errorMessage.value = '登录失败'
     getCaptcha()
   } finally {
     isLoggingIn.value = false

@@ -151,7 +151,6 @@ request.interceptors.response.use(
       }
     }
 
-    // 如果请求配置了 skipGlobalError，跳过全局错误处理
     if (originalRequest?.skipGlobalError) {
       return Promise.reject(error)
     }
