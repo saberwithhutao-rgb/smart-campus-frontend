@@ -86,16 +86,28 @@ request.interceptors.response.use(
     }
 
     // 统一处理业务状态码
-    if (res.code === 200 || res.code === 0 || res.success === true) {
-      // 关键修改：直接返回 res.data
-      console.log(`[API Success] ${config.url}:`, res.data || res)
-      return res.data ?? res
-    } else {
-      const errorMessage = res.message || '操作失败'
-      console.error(`[API Error] ${config.url}:`, errorMessage, res)
-      ElMessage.error(errorMessage)
-      return Promise.reject(new Error(errorMessage))
+    if (res && typeof res === 'object') {
+      // 检查是否有业务状态码字段
+      const hasBusinessCode = 'code' in res || 'success' in res
+
+      if (!hasBusinessCode) {
+        // 没有业务状态码，直接返回数据
+        console.log(`[API Success] ${config.url}: 直接返回数据`, res)
+        return res
+      }
+
+      // 有业务状态码，按状态码判断
+      if (res.code === 200 || res.code === 0 || res.success === true) {
+        console.log(`[API Success] ${config.url}:`, res.data || res)
+        return res.data ?? res
+      }
     }
+
+    // 其他情况视为错误
+    const errorMessage = res?.message || '操作失败'
+    console.error(`[API Error] ${config.url}:`, errorMessage, res)
+    ElMessage.error(errorMessage)
+    return Promise.reject(new Error(errorMessage))
   },
   async (error) => {
     const originalRequest = error.config
