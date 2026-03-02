@@ -519,7 +519,7 @@ export const api = {
 
   // 竞赛管理模块
   getCompetitions: (params?: CompetitionListParams) =>
-    request<CompetitionListResponse>({ method: 'GET', url: '/api/competition', params }),
+    request<CompetitionListResponse>({ method: 'GET', url: '/api/competitions', params }),
 
   getCompetitionDetail: (id: number) =>
     request<ApiResponse<CompetitionRule[]>>({ method: 'GET', url: `/api/competition/${id}` }),
