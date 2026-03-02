@@ -71,11 +71,11 @@ request.interceptors.request.use(
   },
 )
 
-// 响应拦截器 - ✨ 主要修改在这里 ✨
+// 响应拦截器
 request.interceptors.response.use(
   (response) => {
-    const耗时 = Date.now() - response.config.metadata.startTime
-    console.log(`请求耗时: ${耗时} ms - ${response.config.url}`)
+    const duration = Date.now() - response.config.metadata.startTime
+    console.log(`请求耗时: ${duration} ms - ${response.config.url}`)
 
     const res = response.data
     const config = response.config
@@ -85,15 +85,12 @@ request.interceptors.response.use(
       return res
     }
 
-    // ✅ 统一处理业务状态码
-    // 根据后端约定的成功状态码判断（200 或 0 都视为成功）
+    // 统一处理业务状态码
     if (res.code === 200 || res.code === 0 || res.success === true) {
-      // ✨ 关键修改：直接返回 res.data，这样组件中直接就能拿到数据
-      // 如果没有 data 字段，则返回整个响应（兼容不同后端格式）
+      // 关键修改：直接返回 res.data
       console.log(`[API Success] ${config.url}:`, res.data || res)
       return res.data ?? res
     } else {
-      // 业务错误处理
       const errorMessage = res.message || '操作失败'
       console.error(`[API Error] ${config.url}:`, errorMessage, res)
       ElMessage.error(errorMessage)
@@ -105,7 +102,6 @@ request.interceptors.response.use(
 
     // 处理401未授权/Token过期
     if (error.response?.status === 401 && !originalRequest?._retry) {
-      // 如果已经在自动登录，将请求加入队列
       if (isAutoLogging) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
@@ -124,18 +120,14 @@ request.interceptors.response.use(
 
       try {
         console.log('🔄 Token过期，尝试自动登录...')
-
-        // 尝试自动登录
         const autoLoginSuccess = await autoLogin.tryAutoLogin()
 
         if (autoLoginSuccess) {
           console.log('✅ 自动登录成功，重试请求')
           const newToken = localStorage.getItem('userToken') || localStorage.getItem('token')
 
-          // 处理队列中的请求
           processQueue(null, newToken)
 
-          // 重试原请求
           if (originalRequest) {
             originalRequest.headers['Authorization'] = `Bearer ${newToken}`
             return request(originalRequest)
@@ -144,11 +136,9 @@ request.interceptors.response.use(
           console.log('❌ 自动登录失败')
           processQueue(new Error('自动登录失败'), null)
 
-          // 清除用户状态
           const userStore = useUserStore()
           userStore.clearUser()
 
-          // 跳转到登录页（带重定向参数）
           const currentPath = encodeURIComponent(window.location.pathname + window.location.search)
           window.location.href = `/login?redirect=${currentPath}`
         }
@@ -164,11 +154,9 @@ request.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    // ✅ 统一处理所有HTTP错误
     if (error.response) {
       console.error('响应错误:', error.response.status, error.response.data)
 
-      // 优先使用后端返回的message
       let errorMessage = '操作失败'
       if (error.response.data?.message) {
         errorMessage = error.response.data.message
