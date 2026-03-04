@@ -131,11 +131,6 @@ const addPlan = async () => {
     return
   }
 
-  if (!newPlan.value.subject) {
-    ElMessage.warning('请选择学科')
-    return
-  }
-
   if (!newPlan.value.startDate) {
     ElMessage.warning('请选择开始日期')
     return
@@ -483,7 +478,7 @@ onMounted(() => {
               </select>
             </div>
             <div class="form-group half">
-              <label for="plan-subject">学科/科目 <span class="required">*</span></label>
+              <label for="plan-subject">学科/科目</label>
               <select id="plan-subject" v-model="newPlan.subject" class="form-select">
                 <option value="" disabled>请选择学科</option>
                 <option v-for="option in subjectOptions" :key="option.value" :value="option.value">

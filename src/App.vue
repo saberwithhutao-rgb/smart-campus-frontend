@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage, ElLoading } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -10,10 +11,12 @@ const appReady = ref(false) // 新增：应用是否就绪
 
 // 全局状态检查函数
 function globalAuthCheck() {
-  const token = localStorage.getItem('userToken')
+  // 修复：使用 STORAGE_KEYS 来获取 token
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
   const isLoggedIn = userStore.userState.isLoggedIn
 
-  console.log('🔍 全局状态检查:', { token, isLoggedIn })
+  console.log('🔍 全局状态检查:', { token: !!token, isLoggedIn })
 
   if (!token && isLoggedIn) {
     console.log('⚠️ 检测到状态异常: 无token但显示已登录，修正状态')
