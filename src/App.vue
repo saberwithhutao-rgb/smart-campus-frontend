@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { ElMessage, ElLoading } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
@@ -199,9 +199,21 @@ onMounted(async () => {
   } finally {
     // 关闭加载动画
     loadingInstance.close()
-    // 🔴 标记应用就绪 - 这之后路由守卫才会拿到正确状态
+
+    // 使用 nextTick 确保所有响应式更新完成
+    await nextTick()
+
+    // 标记应用就绪
     appReady.value = true
     console.log('4. 应用就绪，appReady = true')
+
+    // 最终安全检查
+    const token =
+      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+    if (token && !userStore.userState.isLoggedIn) {
+      console.log('🛡️ 最终保护性恢复')
+      userStore.restoreFromStorage()
+    }
   }
 
   // 添加storage事件监听
