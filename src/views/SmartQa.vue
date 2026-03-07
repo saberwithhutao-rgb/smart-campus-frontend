@@ -38,6 +38,7 @@ const showRenameDialog = ref(false)
 const renamingSession = ref<ConversationSession | null>(null)
 const newTitle = ref('')
 const loadingHistory = ref(false)
+const isVpnLikely = ref(false)
 
 // 用户状态管理
 const userStore = useUserStore()
@@ -60,12 +61,17 @@ watch(selectedMenu, async (newVal) => {
 // ===== 新增：加载会话列表 =====
 const loadSessions = async () => {
   loadingSessions.value = true
+  isVpnLikely.value = false
   try {
-    console.log('调用 api.getConversationSessions()')
+    const startTime = Date.now()
     const response = await api.getConversationSessions()
+    const requestTime = Date.now() - startTime
 
     if (response?.code === 200) {
       if (Array.isArray(response.data)) {
+        if (requestTime > 5000) {
+          isVpnLikely.value = true
+        }
         sessions.value = response.data
       }
     }
@@ -645,7 +651,13 @@ watch(
         <!-- ===== 新增：历史对话列表 ===== -->
         <div class="history-list" v-if="selectedMenu === 'history'">
           <div v-if="loadingSessions" class="history-loading">加载中...</div>
-          <div v-else-if="sessions.length === 0" class="history-empty">暂无历史对话</div>
+          <div v-else-if="sessions.length === 0" class="history-empty">
+            <template v-if="isVpnLikely">
+              <div>暂无历史对话</div>
+              <div class="vpn-tip">检测到网络异常，如开启VPN请关闭后重试</div>
+            </template>
+            <template v-else> 暂无历史对话 </template>
+          </div>
           <div
             v-for="session in sessions"
             :key="session.sessionId"
