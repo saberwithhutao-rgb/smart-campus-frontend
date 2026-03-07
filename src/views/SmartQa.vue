@@ -66,18 +66,6 @@ const loadSessions = async () => {
 
     if (response?.code === 200) {
       if (Array.isArray(response.data)) {
-        if (response.data.length === 0) {
-          // 判断是否可能是 VPN 问题
-          if (
-            window.location.hostname !== '8.134.179.88' ||
-            performance.getEntriesByType('resource').some((r) => r.name.includes('127.0.0.1'))
-          ) {
-            ElMessage.warning('暂无历史记录，如已开启VPN请关闭后重试')
-          }
-          sessions.value = []
-        } else {
-          sessions.value = response.data
-        }
         sessions.value = response.data
       }
     }

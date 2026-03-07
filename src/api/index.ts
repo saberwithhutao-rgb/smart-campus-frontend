@@ -223,6 +223,8 @@ const request = <T>(config: AxiosRequestConfig): Promise<T> => {
     })
     .catch((err) => {
       console.log('request 捕获错误:', err)
+      ElMessage.error('网络连接失败，请检查网络设置')
+      ElMessage.error('可能开启了VPN')
       throw err
     })
 }
