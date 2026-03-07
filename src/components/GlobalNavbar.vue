@@ -101,7 +101,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { STORAGE_KEYS } from '@/utils/storageKeys'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()

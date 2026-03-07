@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { api, type ConversationSession, type SessionHistoryItem } from '../api/index'
-
-// 路由实例
-const router = useRouter()
+import { ElMessage } from 'element-plus'
 
 interface ChatMessage {
   id: number
@@ -44,7 +41,6 @@ const loadingHistory = ref(false)
 
 // 用户状态管理
 const userStore = useUserStore()
-const showUserCenter = ref(false)
 
 // 检查屏幕尺寸
 const checkScreenSize = () => {
@@ -63,39 +59,30 @@ watch(selectedMenu, async (newVal) => {
 
 // ===== 新增：加载会话列表 =====
 const loadSessions = async () => {
-  console.log('loadSessions 开始')
-  //記錄開始時間
-  const startTime = Date.now()
   loadingSessions.value = true
   try {
     console.log('调用 api.getConversationSessions()')
     const response = await api.getConversationSessions()
-    console.log('api 返回原始数据:', response)
-
-    // 检查 response 的结构
-    console.log('response.code:', response?.code)
-    console.log('response.data:', response?.data)
-    console.log('response.data 类型:', typeof response?.data)
-    console.log('response.data 是数组吗?', Array.isArray(response?.data))
 
     if (response?.code === 200) {
       if (Array.isArray(response.data)) {
+        if (response.data.length === 0) {
+          // 判断是否可能是 VPN 问题
+          if (
+            window.location.hostname !== '8.134.179.88' ||
+            performance.getEntriesByType('resource').some((r) => r.name.includes('127.0.0.1'))
+          ) {
+            ElMessage.warning('暂无历史记录，如已开启VPN请关闭后重试')
+          }
+          sessions.value = []
+        } else {
+          sessions.value = response.data
+        }
         sessions.value = response.data
-        console.log('sessions.value 已赋值:', sessions.value)
-      } else {
-        console.error('response.data 不是数组:', response.data)
       }
-    } else {
-      console.error('response.code 不是 200:', response?.code)
     }
-  } catch (error) {
-    console.error('loadSessions 捕获到错误:', error)
-    console.error('错误详情:', JSON.stringify(error))
+  } catch {
   } finally {
-    // 記錄結束時間
-    const endTime = Date.now()
-    console.log('loadSessions 结束，loadingSessions 设为 false')
-    console.log('loadSessions 耗时:', endTime - startTime, '毫秒')
     loadingSessions.value = false
   }
 }
