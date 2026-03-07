@@ -12,8 +12,16 @@ export const useUserStore = defineStore('user', () => {
     userInfo: null,
   })
 
-  // 从localStorage恢复状态
+  // 【新增】初始化标记，防止重复恢复
+  let isInitialized = false
+
+  // 从 localStorage 恢复状态
   function restoreFromStorage() {
+    // 【新增】如果已初始化，直接返回
+    if (isInitialized) {
+      return true
+    }
+
     const token =
       localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
     const userInfoStr = localStorage.getItem(STORAGE_KEYS.USER_INFO)
@@ -21,8 +29,9 @@ export const useUserStore = defineStore('user', () => {
     console.log('恢复状态 - token:', !!token, 'userInfo:', !!userInfoStr)
 
     if (!token || !userInfoStr) {
-      console.log('缺少token或userInfo，清除状态')
+      console.log('缺少 token 或 userInfo，清除状态')
       userState.value = { isLoggedIn: false, userInfo: null }
+      isInitialized = true
       return false
     }
 
@@ -32,11 +41,13 @@ export const useUserStore = defineStore('user', () => {
         isLoggedIn: true,
         userInfo: { ...userInfo, token },
       }
+      isInitialized = true
       console.log('✅ 状态恢复成功')
       return true
     } catch (e) {
       console.error('恢复失败:', e)
       userState.value = { isLoggedIn: false, userInfo: null }
+      isInitialized = true
       return false
     }
   }
@@ -163,7 +174,6 @@ export const useUserStore = defineStore('user', () => {
   async function tryAutoLogin(): Promise<boolean> {
     console.log('========== 尝试自动登录 ==========')
 
-    // 检查是否有记住我凭证
     const rememberMe = localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) === 'true'
     const username = localStorage.getItem(STORAGE_KEYS.SAVED_USERNAME)
     const encryptedPwd = localStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD)
@@ -178,7 +188,6 @@ export const useUserStore = defineStore('user', () => {
     }
 
     try {
-      // 解密密码
       console.log('解密密码...')
       const password = decryptPassword(encryptedPwd)
       if (!password) {
@@ -187,7 +196,6 @@ export const useUserStore = defineStore('user', () => {
       }
       console.log('✅ 密码解密成功')
 
-      // 获取验证码
       console.log('获取验证码...')
       const captchaRes = await api.getCaptcha()
       if (captchaRes.code !== 200) {
@@ -196,7 +204,6 @@ export const useUserStore = defineStore('user', () => {
       }
       console.log('✅ 获取验证码成功')
 
-      // 登录
       console.log('使用保存的凭证登录...')
       const result = await login(username, password, captchaRes.data, true)
 
@@ -205,7 +212,6 @@ export const useUserStore = defineStore('user', () => {
         return true
       } else {
         console.log('❌ 自动登录失败:', result.error)
-        // 失败时清除凭证
         clearAutoLoginCredentials()
         return false
       }
@@ -222,7 +228,7 @@ export const useUserStore = defineStore('user', () => {
     rememberMe: boolean = false,
   ) {
     try {
-      console.log('调用登录API...')
+      console.log('调用登录 API...')
       const response = await api.login({ username, password, captcha })
 
       if (response.code !== 200) {
@@ -232,11 +238,9 @@ export const useUserStore = defineStore('user', () => {
       const token = response.data.token
       console.log('登录成功，token:', token ? '已获取' : '无')
 
-      // 保存token
       localStorage.setItem(STORAGE_KEYS.TOKEN, token)
       localStorage.setItem(STORAGE_KEYS.TOKEN_ALT, token)
 
-      // 保存用户信息
       const userInfo = {
         username: response.data.username,
         role: response.data.role || 'user',
@@ -244,7 +248,6 @@ export const useUserStore = defineStore('user', () => {
       }
       localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userInfo))
 
-      // 记住我功能
       if (rememberMe) {
         console.log('保存自动登录凭证...')
         const encryptedPwd = encryptPassword(password)
@@ -261,7 +264,6 @@ export const useUserStore = defineStore('user', () => {
         clearAutoLoginCredentials()
       }
 
-      // 更新状态
       userState.value = {
         isLoggedIn: true,
         userInfo: { ...userInfo, token },
@@ -349,27 +351,12 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // 【修改】简化 forceCheckLoginStatus，不再内部调用 restoreFromStorage
   function forceCheckLoginStatus(): boolean {
-    const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
-    const hasToken = !!token && token !== 'undefined' && token !== 'null'
-
-    if (!hasToken && userState.value.isLoggedIn) {
-      userState.value = {
-        isLoggedIn: false,
-        userInfo: null,
-      }
-      return false
-    }
-
-    if (hasToken && !userState.value.isLoggedIn) {
-      return restoreFromStorage()
-    }
-
     return userState.value.isLoggedIn
   }
 
-  // 初始化时恢复状态
-  restoreFromStorage()
+  // 【删除】删除底部的自动调用 restoreFromStorage()
 
   return {
     userState,

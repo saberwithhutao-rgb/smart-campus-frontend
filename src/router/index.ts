@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 import Logout from '@/views/Logout.vue'
 
 const router = createRouter({
@@ -25,7 +26,7 @@ const router = createRouter({
       name: 'home',
       component: () => import('../views/Home.vue'),
       meta: {
-        requiresAuth: false, // 首页不需要登录
+        requiresAuth: false,
       },
     },
     {
@@ -38,7 +39,7 @@ const router = createRouter({
       component: () => import('../views/Login.vue'),
       meta: {
         requiresAuth: false,
-        onlyGuest: true, // 只有未登录用户可以访问
+        onlyGuest: true,
       },
     },
     {
@@ -47,7 +48,7 @@ const router = createRouter({
       component: () => import('../views/Register.vue'),
       meta: {
         requiresAuth: false,
-        onlyGuest: true, // 只有未登录用户可以访问
+        onlyGuest: true,
       },
     },
     {
@@ -56,7 +57,7 @@ const router = createRouter({
       component: () => import('../views/UserManage.vue'),
       meta: {
         requiresAuth: true,
-        requiresAdmin: true, // 需要管理员权限
+        requiresAdmin: true,
       },
     },
     {
@@ -147,7 +148,6 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
-    // 404路由
     {
       path: '/:pathMatch(.*)*',
       redirect: '/index',
@@ -157,32 +157,33 @@ const router = createRouter({
 
 const publicPages = ['/login', '/register', '/index', '/', '/logout']
 
+// 【新增】初始化标记
+let isRouterInitialized = false
+
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
   console.log('=== 路由守卫开始 ===')
   console.log('从:', from.path, '到:', to.path)
 
-  // 获取用户store
   const userStore = useUserStore()
 
-  // 强制执行状态检查
-  userStore.forceCheckLoginStatus()
+  if (!isRouterInitialized) {
+    console.log('1. 开始恢复状态...')
+    userStore.restoreFromStorage()
+    isRouterInitialized = true
+    console.log('✅ 状态恢复成功')
+  }
 
-  // 获取当前状态
-  const token = localStorage.getItem('userToken')
   const isLoggedIn = userStore.userState.isLoggedIn
+  const token = userStore.userState.userInfo?.token
 
-  console.log('当前状态:', { token, isLoggedIn })
+  console.log('当前状态:', { token: !!token, isLoggedIn })
 
-  // 检查是否是公开页面
   const isPublicPage = publicPages.includes(to.path)
 
-  // 如果是公开页面
   if (isPublicPage) {
-    // 如果已登录且访问登录/注册页面，重定向到首页
     if ((to.path === '/login' || to.path === '/register') && isLoggedIn) {
       console.log('已登录用户访问登录/注册页面，重定向到首页')
-      // 强制跳转，不使用next()
       window.location.href = '/index'
       return
     }
@@ -192,39 +193,20 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // 检查页面是否需要登录
   if (to.meta?.requiresAuth) {
     console.log('需要登录的页面，检查登录状态...')
 
-    // 如果没有登录，重定向到登录页
-    if (!isLoggedIn && !token) {
+    if (!isLoggedIn) {
       console.log('未登录，重定向到登录页')
 
-      // 保存当前页面路径，登录后可以跳转回来
       if (to.path !== '/login') {
         localStorage.setItem('redirectAfterLogin', to.fullPath)
       }
 
-      // 强制跳转到登录页
       window.location.href = '/login'
       return
     }
 
-    // 有token但store状态不对，尝试恢复
-    if (token && !isLoggedIn) {
-      console.log('有token但store未登录，尝试恢复...')
-      const restored = userStore.restoreFromStorage()
-
-      if (!restored) {
-        console.log('恢复失败，重定向到登录页')
-        localStorage.removeItem('userToken')
-        localStorage.removeItem('userInfo')
-        window.location.href = '/login'
-        return
-      }
-    }
-
-    // 检查管理员权限（如果需要）
     if (to.meta?.requiresAdmin) {
       const userRole = userStore.userState.userInfo?.role
       if (userRole !== 'admin') {
@@ -239,21 +221,14 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // 其他页面直接放行
   console.log('其他页面，允许访问')
   next()
 })
 
-// 路由后置钩子
+// 【修改】简化 afterEach，删除状态检查
 router.afterEach((to, from) => {
   console.log('路由跳转完成:', to.path)
-
-  // 清除一些状态
-  if (to.path === '/login') {
-    // 每次访问登录页都强制检查状态
-    const userStore = useUserStore()
-    userStore.forceCheckLoginStatus()
-  }
+  // 删除 forceCheckLoginStatus 调用
 })
 
 export default router
