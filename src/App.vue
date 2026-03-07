@@ -147,7 +147,6 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // 有token，允许访问
   console.log('✅ 有token，允许访问')
   next()
 })
@@ -155,9 +154,11 @@ router.beforeEach((to, from, next) => {
 router.afterEach((to) => {
   console.log('✅ 路由跳转完成: ', to.path)
 
-  // 访问登录页时强制检查状态
-  if (to.path === '/login') {
-    globalAuthCheck()
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+  if (token && !userStore.userState.isLoggedIn) {
+    console.log('🔄 路由完成后强制恢复状态')
+    userStore.restoreFromStorage()
   }
 })
 
@@ -174,13 +175,21 @@ onMounted(async () => {
   })
 
   try {
-    // 尝试自动登录（如果userStore有tryAutoLogin方法）
+    // 🔴 1. 先恢复状态（从 localStorage）
+    console.log('1. 开始恢复状态...')
+    userStore.restoreFromStorage()
+
+    // 🔴 2. 再尝试自动登录（如果没有token但有记住我凭证）
     if (!userStore.userState.isLoggedIn && userStore.tryAutoLogin) {
-      console.log('尝试自动登录...')
+      console.log('2. 尝试自动登录...')
       await userStore.tryAutoLogin()
     }
 
-    // 初始状态检查
+    // 🔴 3. 再次恢复状态（确保自动登录后的状态）
+    userStore.restoreFromStorage()
+
+    // 🔴 4. 最后才做状态检查（此时状态应该已经稳定）
+    console.log('3. 最终状态检查')
     globalAuthCheck()
 
     // 显示问候
@@ -190,14 +199,13 @@ onMounted(async () => {
   } finally {
     // 关闭加载动画
     loadingInstance.close()
-    // 标记应用就绪
+    // 🔴 标记应用就绪 - 这之后路由守卫才会拿到正确状态
     appReady.value = true
+    console.log('4. 应用就绪，appReady = true')
   }
 
-  // 添加storage事件监听（跨标签页同步）
+  // 添加storage事件监听
   window.addEventListener('storage', handleStorageChange)
-
-  // 添加全局错误处理
   window.addEventListener('error', (event) => {
     console.error('🌐 全局错误:', event.error)
   })
