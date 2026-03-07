@@ -115,37 +115,40 @@ const handleStorageChange = (e: StorageEvent) => {
 
 // 全局路由守卫
 router.beforeEach((to, from, next) => {
-  console.log('🚦 路由守卫: ', from.path, '→', to.path)
+  console.log('=== 路由守卫开始 ===')
+  console.log('从:', from.path, '到:', to.path)
 
-  // 公开页面列表（不需要登录）
+  // 直接从 localStorage 读取 token
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+
+  console.log('当前token:', !!token)
+
+  // 公开页面列表
   const publicPages = ['/login', '/register', '/index', '/']
 
-  // 如果是公开页面，直接放行
+  // 如果是公开页面
   if (publicPages.includes(to.path)) {
-    // 如果已登录且访问登录页，重定向到首页
-    if ((to.path === '/login' || to.path === '/register') && userStore.userState.isLoggedIn) {
-      console.log('已登录用户访问登录页，重定向到首页')
+    // 如果有token且访问登录页，重定向到首页
+    if ((to.path === '/login' || to.path === '/register') && token) {
+      console.log('有token的用户访问登录页，重定向到首页')
       next('/index')
       return
     }
+    console.log('公开页面，允许访问')
     next()
     return
   }
 
-  // 检查登录状态
-  const token = localStorage.getItem('userToken')
+  // 需要登录的页面
   if (!token) {
-    console.log('❌ 未登录，重定向到登录页')
+    console.log('❌ 无token，重定向到登录页')
     next('/login')
     return
   }
 
-  // 有token但store状态不对，尝试恢复
-  if (!userStore.userState.isLoggedIn) {
-    console.log('🔄 有token但store未登录，尝试恢复')
-    userStore.restoreFromStorage()
-  }
-
+  // 有token，允许访问
+  console.log('✅ 有token，允许访问')
   next()
 })
 
