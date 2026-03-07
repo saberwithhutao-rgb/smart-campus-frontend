@@ -7,31 +7,9 @@ import { STORAGE_KEYS } from '@/utils/storageKeys'
 
 const userStore = useUserStore()
 const router = useRouter()
-const appReady = ref(false) // 新增：应用是否就绪
+const appReady = ref(false)
 
-// 全局状态检查函数
-function globalAuthCheck() {
-  // 修复：使用 STORAGE_KEYS 来获取 token
-  const token =
-    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
-  const isLoggedIn = userStore.userState.isLoggedIn
-
-  console.log('🔍 全局状态检查:', { token: !!token, isLoggedIn })
-
-  if (!token && isLoggedIn) {
-    console.log('⚠️ 检测到状态异常: 无token但显示已登录，修正状态')
-    userStore.userState.isLoggedIn = false
-    userStore.userState.userInfo = null
-  }
-
-  // 如果store未登录但有token，尝试恢复
-  if (token && !isLoggedIn) {
-    console.log('🔄 有token但store未登录，尝试恢复状态')
-    userStore.restoreFromStorage()
-  }
-}
-
-// 页面加载的时段问候提示功能
+// 保留：时段问候功能
 const showGreetingMessage = () => {
   const GREETING_KEY = 'system_greeting_shown'
   const hasShownGreeting = localStorage.getItem(GREETING_KEY)
@@ -39,20 +17,16 @@ const showGreetingMessage = () => {
   if (!hasShownGreeting) {
     const now = new Date()
     const hour = now.getHours()
-
-    // 根据时段显示不同的问候
     let message = ''
     let type: 'success' | 'warning' | 'info' = 'info'
 
     if (4 <= hour && hour < 6) {
       message = '凌晨好，新的一天即将开始~'
-      type = 'info'
     } else if (hour < 12) {
       message = '早上好，祝您有美好的一天！'
       type = 'success'
     } else if (hour < 18) {
       message = '下午好，工作学习辛苦了~'
-      type = 'info'
     } else if (hour < 22) {
       message = '晚上好，享受您的休闲时光~'
       type = 'success'
@@ -61,169 +35,72 @@ const showGreetingMessage = () => {
       type = 'warning'
     }
 
-    // 显示问候
-    ElMessage({
-      message,
-      type,
-      duration: 3000,
-      showClose: true,
-    })
-
-    // 使用更安全的键名保存状态
+    ElMessage({ message, type, duration: 3000, showClose: true })
     localStorage.setItem(GREETING_KEY, 'true')
-
-    // 设置过期时间（当天有效）
     const tomorrow = new Date()
     tomorrow.setHours(24, 0, 0, 0)
-    const expires = tomorrow.getTime()
-    localStorage.setItem(`${GREETING_KEY}_expires`, expires.toString())
+    localStorage.setItem(`${GREETING_KEY}_expires`, tomorrow.getTime().toString())
   } else {
-    // 检查是否过期（跨天了）
     const expiresStr = localStorage.getItem(`${GREETING_KEY}_expires`)
-    if (expiresStr) {
-      const expires = parseInt(expiresStr)
-      if (Date.now() > expires) {
-        localStorage.removeItem(GREETING_KEY)
-        localStorage.removeItem(`${GREETING_KEY}_expires`)
-        showGreetingMessage()
-      }
+    if (expiresStr && Date.now() > parseInt(expiresStr)) {
+      localStorage.removeItem(GREETING_KEY)
+      localStorage.removeItem(`${GREETING_KEY}_expires`)
+      showGreetingMessage()
     }
   }
 }
 
-// Storage事件处理函数
+// 保留：Storage 事件监听（多标签页同步）
 const handleStorageChange = (e: StorageEvent) => {
-  console.log('📡 Storage事件:', e.key, e.oldValue, '→', e.newValue)
+  console.log('📡 Storage 事件:', e.key)
 
-  if (e.key === 'userToken') {
+  // 修复：使用 STORAGE_KEYS 而不是硬编码
+  if (e.key === STORAGE_KEYS.TOKEN || e.key === STORAGE_KEYS.TOKEN_ALT) {
     if (!e.newValue) {
-      console.log('🗑️ 检测到token被清除，同步状态')
       userStore.userState.isLoggedIn = false
       userStore.userState.userInfo = null
-
-      // 如果不是在登录页，跳转到登录页
       if (!router.currentRoute.value.path.includes('/login')) {
-        console.log('重定向到登录页')
         router.replace('/login')
       }
-    } else if (e.newValue && e.newValue !== e.oldValue) {
-      console.log('🔄 检测到token变化，恢复状态')
-      userStore.restoreFromStorage()
     }
   }
 }
 
-// 全局路由守卫
-router.beforeEach((to, from, next) => {
-  console.log('=== 路由守卫开始 ===')
-  console.log('从:', from.path, '到:', to.path)
-
-  // 直接从 localStorage 读取 token
-  const token =
-    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
-
-  console.log('当前token:', !!token)
-
-  // 公开页面列表
-  const publicPages = ['/login', '/register', '/index', '/']
-
-  // 如果是公开页面
-  if (publicPages.includes(to.path)) {
-    // 如果有token且访问登录页，重定向到首页
-    if ((to.path === '/login' || to.path === '/register') && token) {
-      console.log('有token的用户访问登录页，重定向到首页')
-      next('/index')
-      return
-    }
-    console.log('公开页面，允许访问')
-    next()
-    return
-  }
-
-  // 需要登录的页面
-  if (!token) {
-    console.log('❌ 无token，重定向到登录页')
-    next('/login')
-    return
-  }
-
-  console.log('✅ 有token，允许访问')
-  next()
-})
-
-router.afterEach((to) => {
-  console.log('✅ 路由跳转完成: ', to.path)
-
-  const token =
-    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
-  if (token && !userStore.userState.isLoggedIn) {
-    console.log('🔄 路由完成后强制恢复状态')
-    userStore.restoreFromStorage()
-  }
-})
-
-// 页面首次加载时触发
+// 页面首次加载
 onMounted(async () => {
   console.log('🚀 App.vue 挂载')
 
-  // 显示加载动画
   const loadingInstance = ElLoading.service({
     fullscreen: true,
     text: '正在初始化...',
     background: 'rgba(0, 0, 0, 0.7)',
-    spinner: 'el-icon-loading',
   })
 
   try {
-    // 🔴 1. 先恢复状态（从 localStorage）
+    // 【修改】只保留一次恢复调用（有 isInitialized 标记，多次调用也无害）
     console.log('1. 开始恢复状态...')
     userStore.restoreFromStorage()
 
-    // 🔴 2. 再尝试自动登录（如果没有token但有记住我凭证）
+    // 保留：自动登录
     if (!userStore.userState.isLoggedIn && userStore.tryAutoLogin) {
       console.log('2. 尝试自动登录...')
       await userStore.tryAutoLogin()
     }
 
-    // 🔴 3. 再次恢复状态（确保自动登录后的状态）
-    userStore.restoreFromStorage()
-
-    // 🔴 4. 最后才做状态检查（此时状态应该已经稳定）
-    console.log('3. 最终状态检查')
-    globalAuthCheck()
-
-    // 显示问候
+    // 保留：问候
     showGreetingMessage()
   } catch (error) {
     console.error('初始化失败:', error)
   } finally {
-    // 关闭加载动画
     loadingInstance.close()
-
-    // 使用 nextTick 确保所有响应式更新完成
     await nextTick()
-
-    // 标记应用就绪
     appReady.value = true
     console.log('4. 应用就绪，appReady = true')
-
-    // 最终安全检查
-    const token =
-      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
-    if (token && !userStore.userState.isLoggedIn) {
-      console.log('🛡️ 最终保护性恢复')
-      userStore.restoreFromStorage()
-    }
   }
 
-  // 添加storage事件监听
   window.addEventListener('storage', handleStorageChange)
-  window.addEventListener('error', (event) => {
-    console.error('🌐 全局错误:', event.error)
-  })
 })
 
-// 清理事件监听
 onBeforeUnmount(() => {
   window.removeEventListener('storage', handleStorageChange)
 })
