@@ -101,6 +101,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
@@ -114,10 +115,8 @@ const isMobile = ref(false)
 
 // 检查是否有token（核心逻辑）
 const hasToken = computed(() => {
-  const token = localStorage.getItem('userToken')
-  return !!token && token !== 'undefined' && token !== 'null'
+  return userStore.userState.isLoggedIn && !!userStore.userState.userInfo?.token
 })
-
 // 检查屏幕尺寸
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
@@ -186,24 +185,7 @@ const handleUserMenuClick = (item: string) => {
       type: 'warning',
     })
       .then(() => {
-        // 清除所有存储
-        const keysToRemove = [
-          'userToken',
-          'userInfo',
-          'refreshToken',
-          'username',
-          'userId',
-          'redirectAfterLogin',
-        ]
-
-        keysToRemove.forEach((key) => {
-          localStorage.removeItem(key)
-          sessionStorage.removeItem(key)
-        })
-
-        // 清除store状态
-        userStore.userState.isLoggedIn = false
-        userStore.userState.userInfo = null
+        userStore.logout(true)
 
         // 关闭菜单
         showUserCenter.value = false
