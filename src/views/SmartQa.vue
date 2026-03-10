@@ -3,7 +3,6 @@ import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUserStore } from '../stores/user'
 import { api, type ConversationSession, type SessionHistoryItem } from '../api/index'
-import { ElMessage } from 'element-plus'
 
 interface ChatMessage {
   id: number

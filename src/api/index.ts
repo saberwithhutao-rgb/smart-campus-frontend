@@ -1,6 +1,6 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios'
-import type { ReviewItem, StudyPlan } from '@/stores/studyPlan'
+import type { AxiosInstance, AxiosRequestConfig } from 'axios'
+import type { ReviewItem, StudyPlan, StudyTask } from '@/stores/studyPlan'
 import type { ExamCountdown } from '../types/user'
 import { ElMessage } from 'element-plus'
 import type {
@@ -28,7 +28,7 @@ import type {
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
-  baseURL: import.meta.env.PROD ? '' : '/api', // 生产环境空路径，开发环境用/api
+  baseURL: '',
   timeout: import.meta.env.PROD ? 30000 : 600000, // 生产30秒，开发10分钟
   headers: {
     'Content-Type': 'application/json;charset=utf-8',
@@ -45,6 +45,17 @@ export interface ApiResponse<T = unknown> {
 export interface GeneratePlanResponse {
   plan: string
   detailId: number
+}
+
+export interface ReviewPlanDetail {
+  id: number
+  studyPlanId: number
+  title: string
+  content: string
+  reviewStage: number
+  createdAt: string
+  updatedAt: string
+  status: 'active' | 'completed'
 }
 
 // 新增类型定义
@@ -313,12 +324,56 @@ export const api = {
       method: 'GET',
       url: `/api/study/plans/${id}`,
     }),
+  getReviewPlanDetail: (planId: number) =>
+    request<ApiResponse<ReviewPlanDetail>>({
+      method: 'GET',
+      url: `/api/study/review-plans/${planId}`,
+    }),
+
+  // 获取复习计划历史列表
+  getReviewPlanHistory: (studyPlanId: number) =>
+    request<ApiResponse<ReviewPlanDetail>>({
+      method: 'GET',
+      url: `/api/study/review-plans/${studyPlanId}/history`,
+    }),
 
   batchGenerateReviewPlans: (taskIds: number[]) =>
     request<ApiResponse<null>>({
       method: 'POST',
       url: '/api/study/tasks/batch-generate',
       data: taskIds,
+    }),
+
+  // 获取已生成的复习计划列表
+  getGeneratedReviewPlans: () =>
+    request<ApiResponse<StudyTask[]>>({
+      method: 'GET',
+      url: '/api/study/review-plans',
+    }),
+
+  // 获取复习任务详情（用于复习详情页）
+  getReviewTaskDetail: (taskId: number) =>
+    request<ApiResponse<StudyTask>>({
+      method: 'GET',
+      url: `/api/study/tasks/review/${taskId}`, // 注意路径是 /review/{id}
+    }),
+
+  // 获取某个学习计划的历史复习任务
+  getReviewTaskHistory: (planId: number) =>
+    request<ApiResponse<StudyTask[]>>({
+      method: 'GET',
+      url: `/api/study/tasks/plan/${planId}/history`,
+    }),
+
+  // 更新复习任务内容
+  updateReviewTaskContent: (taskId: number, content: string) =>
+    request<ApiResponse<StudyTask>>({
+      method: 'PUT',
+      url: `/api/study/tasks/${taskId}/content`,
+      data: content,
+      headers: {
+        'Content-Type': 'text/plain',
+      },
     }),
 
   createStudyPlan: (data: {

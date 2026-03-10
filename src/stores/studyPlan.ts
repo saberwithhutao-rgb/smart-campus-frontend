@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '@/api'
-import type { StudyPlanDetail } from './studyPlanDetail'
+import * as studyApi from '@/api/study'
 
 export interface StudyPlan {
   id: number
@@ -18,12 +18,23 @@ export interface StudyPlan {
   endDate: string | null
   createdAt: string
   updatedAt: string
-
-  // 关联的学习计划详情（一对多）
-  studyPlanDetails?: StudyPlanDetail[]
-
-  // 最新的详情ID（用于快速访问）
+  studyPlanDetails?: any[]
   latestDetailId?: number
+}
+
+export interface StudyTask {
+  id: number
+  planId: number
+  userId: number
+  title: string
+  description: string | null
+  taskDate: string
+  scheduledTime: string | null
+  durationMinutes: number
+  status: 'pending' | 'in_progress' | 'completed'
+  reviewStage: number
+  completedAt: string | null
+  createdAt: string
 }
 
 export interface ReviewItem {
@@ -64,7 +75,8 @@ export interface StudyPlanQueryParams {
 export const useStudyPlanStore = defineStore('studyPlan', () => {
   // ----- 状态 -----
   const studyPlans = ref<StudyPlan[]>([])
-  const reviewItems = ref<ReviewItem[]>([])
+  const reviewItems = ref<StudyTask[]>([])
+  const allReviewTasks = ref<StudyTask[]>([])
   const isLoading = ref(false)
   const currentPage = ref(1)
   const pageSize = ref(10)
@@ -91,6 +103,19 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     return studyPlans.value.filter((plan) => plan.latestDetailId)
   })
 
+  // 新增：待复习任务（pending 且 日期 <= 今天）
+  const pendingTasks = computed(() =>
+    allReviewTasks.value.filter(
+      (task) =>
+        task.status === 'pending' && task.reviewStage >= 1 && new Date(task.taskDate) <= new Date(),
+    ),
+  )
+
+  // 已完成的任务
+  const completedTasks = computed(() =>
+    allReviewTasks.value.filter((task) => task.reviewStage >= 1),
+  )
+
   // ----- 复习任务相关方法 -----
   const fetchPendingTasks = async () => {
     isLoading.value = true
@@ -99,12 +124,36 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       if (response.code === 200) {
         const today = new Date().toISOString().split('T')[0] ?? ''
         reviewItems.value = response.data.filter(
-          (item: ReviewItem) => item.taskDate <= today || item.reviewStage === 0,
+          (item: StudyTask) => item.taskDate <= today || item.reviewStage === 0,
         )
       }
-    } catch {
+    } catch (error) {
+      console.error('获取待复习任务失败:', error)
     } finally {
       isLoading.value = false
+    }
+  }
+
+  // 新增：获取所有复习任务
+  const fetchAllReviewTasks = async () => {
+    try {
+      const response = await studyApi.getAllReviewTasks()
+      // 直接判断 response 是否是数组
+      if (Array.isArray(response)) {
+        allReviewTasks.value = response
+      }
+      // 如果是标准的 {code, data} 格式
+      else if (response && response.code === 200) {
+        allReviewTasks.value = response.data.data as unknown as StudyTask[]
+      }
+      // 如果数据直接就在 response 里
+      else if (response && response.data) {
+        allReviewTasks.value = response.data.data as unknown as StudyTask[]
+      } else {
+        console.log('【fetchAllReviewTasks】未知的响应格式:', response)
+      }
+    } catch (error) {
+      console.error('【fetchAllReviewTasks】捕获错误:', error)
     }
   }
 
@@ -112,7 +161,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     const taskIndex = reviewItems.value.findIndex((item) => item.id === id)
     if (taskIndex === -1 || !reviewItems.value[taskIndex]) return
 
-    const originalTask: ReviewItem = { ...reviewItems.value[taskIndex] }
+    const originalTask: StudyTask = { ...reviewItems.value[taskIndex] }
 
     reviewItems.value[taskIndex] = {
       ...reviewItems.value[taskIndex],
@@ -131,8 +180,9 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         reviewItems.value[taskIndex] = originalTask
         ElMessage.error(response.message || '操作失败')
       }
-    } catch {
+    } catch (error) {
       reviewItems.value[taskIndex] = originalTask
+      console.error('完成任务失败:', error)
     }
   }
 
@@ -155,7 +205,8 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         pageSize.value = response.data.size
       }
       return studyPlans.value
-    } catch {
+    } catch (error) {
+      console.error('获取学习计划失败:', error)
     } finally {
       isLoading.value = false
     }
@@ -169,7 +220,8 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         selectedPlan.value = response.data as StudyPlan
         return response.data
       }
-    } catch {
+    } catch (error) {
+      console.error('获取学习计划详情失败:', error)
     } finally {
       isLoading.value = false
     }
@@ -193,7 +245,8 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         await fetchStudyPlans()
         return response.data
       }
-    } catch {
+    } catch (error) {
+      console.error('创建学习计划失败:', error)
     } finally {
       isLoading.value = false
     }
@@ -218,7 +271,8 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         await fetchStudyPlans()
         return response.data
       }
-    } catch {
+    } catch (error) {
+      console.error('更新学习计划失败:', error)
     } finally {
       isLoading.value = false
     }
@@ -232,7 +286,8 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         ElMessage.success('删除学习计划成功')
         await fetchStudyPlans()
       }
-    } catch {
+    } catch (error) {
+      console.error('删除学习计划失败:', error)
     } finally {
       isLoading.value = false
     }
@@ -267,10 +322,11 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
           }
         }
       }
-    } catch {
+    } catch (error) {
       if (planIndex !== -1 && originalPlan) {
         studyPlans.value[planIndex] = originalPlan
       }
+      console.error('切换计划状态失败:', error)
     } finally {
       isLoading.value = false
     }
@@ -298,6 +354,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     // 状态
     studyPlans,
     reviewItems,
+    allReviewTasks,
     isLoading,
     currentPage,
     pageSize,
@@ -309,9 +366,12 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     activeCount,
     completedPlans,
     plansWithDetails,
+    pendingTasks,
+    completedTasks,
 
     // 复习任务方法
     fetchPendingTasks,
+    fetchAllReviewTasks,
     completeTask,
 
     // 学习计划方法

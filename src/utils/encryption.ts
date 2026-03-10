@@ -1,8 +1,7 @@
 // utils/encryption.ts
 import CryptoJS from 'crypto-js'
 
-// 简单的加密工具，避免循环依赖
-const SECRET_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'your-fallback-key-2024'
+const SECRET_KEY = import.meta.env.VITE_ENCRYPTION_KEY
 
 export const encryptPassword = (password: string): string | null => {
   try {

@@ -1,6 +1,12 @@
 // src/utils/request.d.ts
 declare module '@/utils/request' {
-  import { AxiosInstance } from 'axios'
-  const request: AxiosInstance
+  import { AxiosRequestConfig } from 'axios'
+
+  // 声明 request 函数的类型
+  interface RequestFunction {
+    <T = unknown>(config: AxiosRequestConfig): Promise<T>
+  }
+
+  const request: RequestFunction
   export default request
 }

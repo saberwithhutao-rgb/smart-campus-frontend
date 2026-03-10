@@ -1,5 +1,55 @@
 // src/api/study.ts
 import request from '@/utils/request'
+import type { StudyTask } from '@/stores/studyPlan'
+
+// 获取所有复习任务
+export const getAllReviewTasks = () => {
+  return request<StudyTask[]>({
+    method: 'GET',
+    url: '/api/study/tasks/all',
+  })
+}
+
+// 获取复习任务详情
+export const getReviewTaskDetail = (taskId: number) => {
+  return request<StudyTask>({
+    method: 'GET',
+    url: `/api/study/tasks/review/${taskId}`,
+  })
+}
+
+// 获取某个学习计划的历史复习任务
+export const getReviewTaskHistory = (planId: number) => {
+  return request<StudyTask[]>({
+    method: 'GET',
+    url: `/api/study/tasks/plan/${planId}/history`,
+  })
+}
+
+// 更新复习任务内容（AI生成的复习计划）
+export const updateReviewTaskContent = (taskId: number, content: string) => {
+  return request<StudyTask>({
+    method: 'PUT',
+    url: `/api/study/tasks/${taskId}/content`,
+    data: content,
+    headers: {
+      'Content-Type': 'text/plain',
+    },
+  })
+}
+
+// AI生成复习建议
+export const generateReviewAdvice = (data: {
+  taskId: number
+  title: string
+  reviewStage: number
+}) => {
+  return request<string>({
+    method: 'POST',
+    url: '/api/ai/review/advice',
+    data,
+  })
+}
 
 /**
  * 学习计划统计分析接口

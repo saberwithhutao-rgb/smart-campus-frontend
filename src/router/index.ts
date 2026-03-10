@@ -152,6 +152,12 @@ const router = createRouter({
       path: '/:pathMatch(.*)*',
       redirect: '/index',
     },
+    {
+      path: '/ai/study/review/detail/:id',
+      name: 'ReviewDetail',
+      component: () => import('@/views/ReviewDetail.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
@@ -225,7 +231,6 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
-// 【修改】简化 afterEach，删除状态检查
 router.afterEach((to, from) => {
   console.log('路由跳转完成:', to.path)
   // 删除 forceCheckLoginStatus 调用
