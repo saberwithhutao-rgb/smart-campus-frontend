@@ -488,7 +488,7 @@ export const api = {
   // 简单问答接口（兼容旧版本）
   sendAiMessage: (message: string, chanId?: string) =>
     request<string>({
-      method: 'GET',
+      method: 'POST',
       url: '/ai/chat/openai',
       params: { message, chanId },
     }),
