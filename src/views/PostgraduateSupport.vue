@@ -190,69 +190,19 @@
         <div class="school-selection">
           <h2 class="section-title">院校选择</h2>
 
-          <!-- 筛选条件 -->
+          <!-- 按院校名称搜索 -->
           <div class="filter-section">
-            <div class="filter-row">
-              <div class="filter-item">
-                <label>地区：</label>
-                <select class="filter-select" v-model="filterParams.province">
-                  <option value="">全部地区</option>
-                  <option value="北京市">北京市</option>
-                  <option value="上海市">上海市</option>
-                  <option value="广东省">广东省</option>
-                  <option value="深圳市">深圳市</option>
-                </select>
-              </div>
-              <div class="filter-item">
-                <label>学科：</label>
-                <select class="filter-select" v-model="filterParams.institutionType">
-                  <option value="">全部学科</option>
-                  <option value="综合类">综合类</option>
-                  <option value="理工类">理工类</option>
-                  <option value="文史类">文史类</option>
-                  <option value="医学类">医学类</option>
-                </select>
-              </div>
-              <div class="filter-item">
-                <label>学校类型：</label>
-                <select class="filter-select" v-model="filterParams.is985">
-                  <option value="">全部类型</option>
-                  <option value="true">985工程</option>
-                  <option value="false">非985</option>
-                </select>
-              </div>
-            </div>
-            <div class="filter-row">
-              <div class="filter-item">
-                <label>211工程：</label>
-                <select class="filter-select" v-model="filterParams.is211">
-                  <option value="">全部</option>
-                  <option value="true">211工程</option>
-                  <option value="false">非211</option>
-                </select>
-              </div>
-              <div class="filter-item">
-                <label>双一流：</label>
-                <select class="filter-select" v-model="filterParams.isDoubleFirstClass">
-                  <option value="">全部</option>
-                  <option value="true">双一流</option>
-                  <option value="false">非双一流</option>
-                </select>
-              </div>
-              <div class="filter-item">
-                <label>专业：</label>
+            <div class="filter-row filter-row-single">
+              <div class="filter-item filter-item-search">
                 <input
                   type="text"
-                  class="filter-input"
-                  placeholder="输入专业名称..."
-                  v-model="filterParams.keyword"
+                  class="filter-input search-input"
+                  placeholder="按院校名称搜索..."
+                  v-model="schoolNameKeyword"
                   @keyup.enter="handleSearch"
                 />
+                <button class="filter-btn" @click="handleSearch">搜索</button>
               </div>
-            </div>
-            <div class="filter-actions">
-              <button class="filter-btn" @click="handleSearch">搜索院校</button>
-              <button class="reset-btn" @click="handleReset">重置筛选</button>
             </div>
           </div>
 
@@ -444,7 +394,16 @@ const isMobile = ref(false)
 const showUserCenter = ref(false)
 
 // 院校数据
-const universities = ref<University[]>([])
+// 根据院校名称关键词过滤后的院校列表（用于展示）
+const universities = computed(() => {
+  const keyword = schoolNameKeyword.value.trim().toLowerCase()
+  if (!keyword) return allUniversities.value
+  return allUniversities.value.filter(
+    (u: University) =>
+      (u.name && u.name.toLowerCase().includes(keyword)) ||
+      (u.shortName && u.shortName.toLowerCase().includes(keyword)),
+  )
+})
 const loading = ref(false)
 const error = ref('')
 
@@ -471,16 +430,11 @@ const editingProgressId = ref<number | null>(null)
 const editProgressName = ref('')
 const editProgressPercent = ref(0)
 
-// 筛选参数
-const filterParams = ref({
-  province: '',
-  city: '',
-  institutionType: '',
-  is985: '',
-  is211: '',
-  isDoubleFirstClass: '',
-  keyword: '',
-})
+// 院校名称搜索关键词
+const schoolNameKeyword = ref('')
+
+// 全部院校列表（接口返回的完整数据）
+const allUniversities = ref<University[]>([])
 
 // 计算属性 - 获取已收藏院校数量
 const favoriteCount = computed(() => favoriteUniversityIds.value.length)
@@ -578,7 +532,7 @@ const fetchUniversities = async () => {
   try {
     const response = await api.getUniversities()
     if (response.code === 1) {
-      universities.value = response.data
+      allUniversities.value = response.data
     } else {
       error.value = response.msg || '获取院校列表失败'
     }
@@ -608,15 +562,40 @@ const fetchLearningProgressSummary = async () => {
   progressError.value = ''
   try {
     const response = await api.getLearningProgressSummary()
-    const code = (response as { code?: number }).code ?? response.code
-    if (code === 1) {
-      learningProgressSummary.value = response.data
+    const res: any = response
+    const rawCode = res.code
+    const numericCode =
+      typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
+
+    // 兼容多种后端风格：
+    // - code 为 1 / '1'（常见业务成功码）
+    // - code 为 200 / '200'（有些后端把 HTTP 200 也作为业务码返回）
+    // - 未返回 code 但 data 结构正确
+    const hasValidData =
+      res.data &&
+      typeof res.data.overallPercent === 'number' &&
+      Array.isArray(res.data.items)
+
+    const successByCode =
+      numericCode === 1 || numericCode === 200 || numericCode === 0
+
+    if (successByCode || (numericCode == null && hasValidData)) {
+      learningProgressSummary.value = res.data || { overallPercent: 0, items: [] }
+      progressError.value = ''
     } else {
-      const msg = (response as { msg?: string }).msg ?? (response as { message?: string }).message
+      const msg = (res.msg as string | undefined) ?? (res.message as string | undefined)
       progressError.value = msg || '获取学习进度失败'
     }
   } catch (err) {
-    progressError.value = err instanceof Error ? err.message : '网络错误，请稍后重试'
+    const status = (err as Error & { status?: number }).status
+    const is404 = status === 404 || (err instanceof Error && err.message === '请求资源不存在')
+    // 404 表示学习进度服务未部署或未启动，显示空状态并保留“添加”按钮
+    if (is404) {
+      learningProgressSummary.value = { overallPercent: 0, items: [] }
+      progressError.value = ''
+    } else {
+      progressError.value = err instanceof Error ? err.message : '网络错误，请稍后重试'
+    }
     console.error('获取学习进度失败:', err)
   } finally {
     progressLoading.value = false
@@ -641,8 +620,10 @@ const submitUpdateProgress = async (id: number) => {
       ...(name ? { name } : {}),
       progressPercent: percent,
     })
-    const code = (response as { code?: number }).code ?? response.code
-    if (code === 1) {
+    const rawCode = (response as { code?: number | string }).code ?? (response as any).code
+    const numericCode =
+      typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
+    if (numericCode === 1 || numericCode === 200 || numericCode === 0) {
       editingProgressId.value = null
       await fetchLearningProgressSummary()
     } else {
@@ -668,8 +649,10 @@ const submitAddProgress = async () => {
   }
   try {
     const response = await api.addLearningProgress({ name, progressPercent: percent })
-    const code = (response as { code?: number }).code ?? response.code
-    if (code === 1) {
+    const rawCode = (response as { code?: number | string }).code ?? (response as any).code
+    const numericCode =
+      typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
+    if (numericCode === 1 || numericCode === 200 || numericCode === 0) {
       showAddProgress.value = false
       newProgressName.value = ''
       newProgressPercent.value = 0
@@ -688,8 +671,10 @@ const deleteProgressItem = async (id: number) => {
   if (!confirm('确定要删除该学习进度吗？')) return
   try {
     const response = await api.deleteLearningProgress(id)
-    const code = (response as { code?: number }).code ?? response.code
-    if (code === 1) {
+    const rawCode = (response as { code?: number | string }).code ?? (response as any).code
+    const numericCode =
+      typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
+    if (numericCode === 1 || numericCode === 200 || numericCode === 0) {
       await fetchLearningProgressSummary()
     } else {
       const msg = (response as { msg?: string }).msg ?? (response as { message?: string }).message
@@ -708,7 +693,7 @@ const fetchFavoriteUniversities = async () => {
   try {
     const response = await api.getFavoriteUniversities()
     if (response.code === 1) {
-      favoriteUniversities.value = universities.value.filter((u) =>
+      favoriteUniversities.value = allUniversities.value.filter((u: University) =>
         response.data.some((f: UniversityListDetail) => f.universityId === u.id),
       )
     } else {
@@ -759,23 +744,9 @@ const parseTags = (tags: string) => {
   }
 }
 
-// 处理搜索
+// 按院校名称搜索（列表由 computed 根据 schoolNameKeyword 自动过滤，此处仅用于按钮触发时保持一致性）
 const handleSearch = () => {
-  fetchUniversities()
-}
-
-// 处理重置
-const handleReset = () => {
-  filterParams.value = {
-    province: '',
-    city: '',
-    institutionType: '',
-    is985: '',
-    is211: '',
-    isDoubleFirstClass: '',
-    keyword: '',
-  }
-  fetchUniversities()
+  // 列表已通过 universities 计算属性实时过滤，无需额外逻辑
 }
 
 // 跳转到官网
@@ -1517,6 +1488,24 @@ watch(showFavorites, (newVal) => {
 .filter-input:focus {
   outline: none;
   border-color: #409eff;
+}
+
+.filter-row-single {
+  margin-bottom: 0;
+}
+
+.filter-item-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  max-width: 480px;
+}
+
+.filter-item-search .search-input {
+  flex: 1;
+  width: 100%;
+  min-width: 200px;
 }
 
 .filter-actions {
