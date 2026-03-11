@@ -4,11 +4,33 @@ import { ElMessage, ElLoading } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
+import { api } from '@/api'
 
 const userStore = useUserStore()
 const router = useRouter()
 const appReady = ref(false)
 
+const validateToken = async (): Promise<boolean> => {
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+  if (!token) return false
+
+  try {
+    // 调用验证接口
+    await api.verifyToken()
+    return true
+  } catch (error: any) {
+    // 如果是 401 或其他认证错误，说明 token 无效
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.log('Token 无效，清除本地存储')
+      localStorage.clear()
+
+      userStore.userState.isLoggedIn = false
+      userStore.userState.userInfo = null
+    }
+    return false
+  }
+}
 // 保留：时段问候功能
 const showGreetingMessage = () => {
   const GREETING_KEY = 'system_greeting_shown'
@@ -77,14 +99,20 @@ onMounted(async () => {
   })
 
   try {
-    // 【修改】只保留一次恢复调用（有 isInitialized 标记，多次调用也无害）
     console.log('1. 开始恢复状态...')
     userStore.restoreFromStorage()
 
-    // 保留：自动登录
-    if (!userStore.userState.isLoggedIn && userStore.tryAutoLogin) {
-      console.log('2. 尝试自动登录...')
-      await userStore.tryAutoLogin()
+    // 【新增】先验证 token 是否有效
+    console.log('2. 验证 token 有效性...')
+    const isValid = await validateToken()
+
+    if (!isValid) {
+      console.log('3. Token 无效，已清除，不再尝试自动登录')
+      // 已经清除了，不需要额外操作
+    } else {
+      // 只有 token 有效时才尝试自动登录
+      console.log('3. Token 有效，尝试自动登录...')
+      await userStore.tryAutoLogin?.()
     }
 
     // 保留：问候

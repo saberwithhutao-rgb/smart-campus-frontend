@@ -36,270 +36,394 @@
         <!-- 页面标题 -->
         <h1 class="page-title">职业导航</h1>
 
-        <!-- AI对话区域 -->
-        <div class="ai-chat-section">
+        <!-- AI 咨询区域（置顶突出） -->
+        <div class="ai-chat-section" ref="aiSectionRef">
           <div class="chat-header">
-            <h2 class="chat-title">AI 职业咨询</h2>
-            <button class="new-chat-btn" @click="startNewChat" :disabled="loading">
-              <span class="btn-icon">✨</span>
-              <span class="btn-text">新对话</span>
-            </button>
-          </div>
-          <div class="chat-messages" ref="chatMessagesRef">
-            <div
-              v-for="(msg, index) in chatMessages"
-              :key="index"
-              class="message-item"
-              :class="msg.role"
-            >
-              <div class="message-avatar">
-                <span v-if="msg.role === 'user'" class="user-avatar">👤</span>
-                <span v-else class="ai-avatar">🤖</span>
+            <div class="chat-header-left">
+              <span class="chat-header-icon">💬</span>
+              <div>
+                <h2 class="chat-title">AI 职业咨询</h2>
+                <p class="chat-subtitle">专业职业建议与规划，随时为您解答</p>
               </div>
-              <div class="message-content">
-                <div v-if="msg.role === 'ai' && msg.isThinking" class="thinking-indicator">
-                  <div class="thinking-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                  <span class="thinking-text">AI 正在思考中...</span>
+            </div>
+            <div class="chat-header-actions">
+              <button class="history-btn" @click="toggleHistoryPanel" :disabled="loading">
+                <span class="btn-icon">🕘</span>
+                <span class="btn-text">历史记录</span>
+              </button>
+              <button class="new-chat-btn" @click="startNewChat" :disabled="loading">
+                <span class="btn-icon">✨</span>
+                <span class="btn-text">新对话</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="chat-body">
+            <!-- 历史会话面板 -->
+            <aside v-show="showHistoryPanel" class="chat-history-panel">
+              <div class="history-header">
+                <div class="history-title">历史会话</div>
+                <button
+                  class="history-refresh-btn"
+                  @click="refreshSessionIds"
+                  :disabled="sessionIdsLoading"
+                >
+                  {{ sessionIdsLoading ? '刷新中...' : '刷新' }}
+                </button>
+              </div>
+
+              <div v-if="sessionIdsLoading" class="history-loading">加载中...</div>
+              <div v-else-if="sessionIdsError" class="history-error">
+                <div class="history-error-text">{{ sessionIdsError }}</div>
+                <button class="history-retry-btn" @click="refreshSessionIds">重试</button>
+              </div>
+              <div v-else class="history-list">
+                <div
+                  v-for="sid in sessionIds"
+                  :key="sid"
+                  class="history-item"
+                  :class="{ active: sid === chanId }"
+                  @click="loadSessionHistory(sid)"
+                >
+                  <div class="history-item-title">{{ sid }}</div>
                 </div>
-                <div class="message-text" v-html="formatMessage(msg.content)"></div>
+                <div v-if="sessionIds.length === 0" class="history-empty">暂无历史会话</div>
               </div>
-            </div>
-          </div>
-          <div class="chat-input-area">
-            <textarea
-              class="chat-input"
-              v-model="inputMessage"
-              placeholder="请输入您的问题..."
-              @keydown.enter.prevent="sendMessage"
-              rows="3"
-            ></textarea>
-            <button
-              class="send-btn"
-              @click="sendMessage"
-              :disabled="!inputMessage.trim() || loading"
-            >
-              <span v-if="loading" class="loading-icon"></span>
-              <span>{{ loading ? '发送中...' : '发送' }}</span>
-            </button>
-          </div>
-        </div>
+            </aside>
 
-        <!-- 顶部功能卡片区域 -->
-        <div class="top-cards">
-          <!-- AI智能对话卡片 -->
-          <div class="card ai-chat-card">
-            <h3 class="card-title">AI职业咨询</h3>
-            <p class="card-description">与AI智能助手对话，获取专业的职业建议和指导</p>
-          </div>
+            <!-- 聊天主区域 -->
+            <section class="chat-main">
+              <div class="chat-messages" ref="chatMessagesRef">
+                <!-- 空状态：无消息时显示欢迎与示例 -->
+                <div v-if="chatMessages.length === 0" class="chat-empty-state">
+                  <div class="empty-state-icon">🎯</div>
+                  <p class="empty-state-title">开始您的职业咨询</p>
+                  <p class="empty-state-desc">输入您的问题，或从下方选择一个话题开始</p>
+                  <div class="empty-state-suggestions">
+                    <button
+                      v-for="(s, i) in suggestionQuestions"
+                      :key="i"
+                      class="suggestion-chip"
+                      @click="setSuggestionAndFocus(s)"
+                    >
+                      {{ s }}
+                    </button>
+                  </div>
+                </div>
+                <template v-else>
+                  <div
+                    v-for="(msg, index) in chatMessages"
+                    :key="index"
+                    class="message-item"
+                    :class="msg.role"
+                  >
+                    <div class="message-avatar">
+                      <span v-if="msg.role === 'user'" class="user-avatar">👤</span>
+                      <span v-else class="ai-avatar">🤖</span>
+                    </div>
+                    <div class="message-content">
+                      <!-- 仅在没有内容时显示“思考中”；有内容则显示流式/最终回复 -->
+                      <div v-if="msg.role === 'ai' && msg.isThinking && !msg.content" class="thinking-indicator">
+                        <div class="thinking-dots">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </div>
+                        <span class="thinking-text">{{ msg.statusHint || waitingTip }}</span>
+                      </div>
+                      <div v-if="msg.content" class="message-text" v-html="formatMessage(msg.content)"></div>
+                    </div>
+                  </div>
+                </template>
+              </div>
 
-          <!-- 职业测评卡片 -->
-          <div class="card">
-            <h3 class="card-title">职业测评</h3>
-            <p class="card-description">了解你的职业兴趣和能力倾向，探索适合的职业方向</p>
-            <div class="assessment-buttons">
-              <button class="btn-secondary">兴趣测评</button>
-              <button class="btn-secondary">能力测评</button>
-              <button class="btn-secondary">性格测评</button>
-            </div>
-            <button class="btn-primary">开始测评</button>
-          </div>
+              <!-- 等待 AI 时的全局提示条 -->
+              <div v-if="loading" class="chat-waiting-hint">
+                <span class="waiting-hint-dot"></span>
+                <span class="waiting-hint-text">{{ waitingTip }}</span>
+              </div>
 
-          <!-- 职业路径规划卡片 -->
-          <div class="card">
-            <h3 class="card-title">职业路径规划</h3>
-            <p class="card-description">定制你的职业发展路线，设定短期和长期目标</p>
-            <div class="path-steps">
-              <div class="step">
-                <div class="step-number">1</div>
-                <div class="step-text">自我评估</div>
+              <div class="chat-input-area">
+                <textarea
+                  ref="chatInput"
+                  class="chat-input"
+                  v-model="inputMessage"
+                  placeholder="输入职业相关问题，如：适合我的方向、如何准备面试..."
+                  @keydown.enter.prevent="sendMessage"
+                  rows="3"
+                ></textarea>
+                <button
+                  class="send-btn"
+                  @click="sendMessage"
+                  :disabled="!inputMessage.trim() || loading || historyLoading"
+                >
+                  <span v-if="loading" class="loading-icon"></span>
+                  <span>{{ loading ? '处理中...' : '发送' }}</span>
+                </button>
               </div>
-              <div class="step">
-                <div class="step-number">2</div>
-                <div class="step-text">目标设定</div>
-              </div>
-              <div class="step">
-                <div class="step-number">3</div>
-                <div class="step-text">行动规划</div>
-              </div>
-            </div>
-            <button class="btn-primary">制定计划</button>
-          </div>
-
-          <!-- 岗位推荐卡片 -->
-          <div class="card">
-            <h3 class="card-title">岗位推荐</h3>
-            <p class="card-description">根据你的技能和兴趣推荐合适的职业岗位</p>
-            <div class="recommendation-stats">
-              <div class="stat-item">
-                <div class="stat-number">25</div>
-                <div class="stat-label">匹配岗位</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-number">8</div>
-                <div class="stat-label">今日更新</div>
-              </div>
-            </div>
-            <button class="btn-primary">查看推荐</button>
+            </section>
           </div>
         </div>
 
         <!-- 热门职业方向 -->
-        <h2 class="section-title">热门职业方向</h2>
-        <div class="career-directions">
-          <!-- 软件开发工程师 -->
-          <div class="career-card">
+        <h2 class="section-title" ref="directionSectionRef">热门职业方向</h2>
+        <div class="career-direction-tabs">
+          <button
+            type="button"
+            class="tab-btn"
+            :class="{ active: selectedDirectionCategory === '' }"
+            @click="selectDirectionCategory('')"
+          >
+            全部
+          </button>
+          <button
+            v-for="cat in directionCategories"
+            :key="cat"
+            type="button"
+            class="tab-btn"
+            :class="{ active: selectedDirectionCategory === cat }"
+            @click="selectDirectionCategory(cat)"
+          >
+            {{ cat }}
+          </button>
+        </div>
+        <div v-if="directionsLoading" class="career-directions-loading">加载中...</div>
+        <div v-else-if="directionsError" class="career-directions-error">
+          {{ directionsError }}
+          <button type="button" class="btn-secondary" @click="fetchCareerDirections">重试</button>
+        </div>
+        <div v-else class="career-directions">
+          <div
+            v-for="item in careerDirectionList"
+            :key="item.id"
+            class="career-card"
+          >
             <div class="career-icon">
-              <span class="icon">💻</span>
+              <span class="icon">{{ getDefaultCareerIcon(item.category) }}</span>
             </div>
-            <h3 class="career-title">软件开发工程师</h3>
-            <p class="career-description">开发和维护软件应用系统，包括前端和后端开发</p>
+            <h3 class="career-title">{{ item.title }}</h3>
+            <p class="career-description">{{ item.description }}</p>
             <div class="skills">
-              <span class="skill-tag">Java</span>
-              <span class="skill-tag">Python</span>
-              <span class="skill-tag">前端</span>
+              <span v-for="skill in item.skills" :key="skill" class="skill-tag">{{ skill }}</span>
             </div>
-            <div class="salary">
+            <div v-if="formatSalary(item)" class="salary">
               <span class="salary-icon">💰</span>
-              <span class="salary-text">平均薪资: 15-25K</span>
+              <span class="salary-text">平均薪资: {{ formatSalary(item) }}</span>
             </div>
-            <button class="btn-secondary">了解详情</button>
+            <button type="button" class="btn-secondary" @click="openCareerDetail(item.id)">了解详情</button>
           </div>
+          <div v-if="careerDirectionList.length === 0" class="career-directions-empty">暂无该分类下的职业方向</div>
+        </div>
 
-          <!-- 数据分析师 -->
-          <div class="career-card">
-            <div class="career-icon">
-              <span class="icon">📊</span>
-            </div>
-            <h3 class="career-title">数据分析师</h3>
-            <p class="career-description">分析和解读数据，支持业务决策，发现数据价值</p>
-            <div class="skills">
-              <span class="skill-tag">SQL</span>
-              <span class="skill-tag">Python</span>
-              <span class="skill-tag">统计学</span>
-            </div>
-            <div class="salary">
-              <span class="salary-icon">💰</span>
-              <span class="salary-text">平均薪资: 12-20K</span>
-            </div>
-            <button class="btn-secondary">了解详情</button>
-          </div>
-
-          <!-- 人工智能工程师 -->
-          <div class="career-card">
-            <div class="career-icon">
-              <span class="icon">🤖</span>
-            </div>
-            <h3 class="career-title">人工智能工程师</h3>
-            <p class="career-description">开发和应用人工智能技术，包括机器学习和深度学习</p>
-            <div class="skills">
-              <span class="skill-tag">机器学习</span>
-              <span class="skill-tag">深度学习</span>
-              <span class="skill-tag">Python</span>
-            </div>
-            <div class="salary">
-              <span class="salary-icon">💰</span>
-              <span class="salary-text">平均薪资: 20-35K</span>
-            </div>
-            <button class="btn-secondary">了解详情</button>
-          </div>
-
-          <!-- 网络安全工程师 -->
-          <div class="career-card">
-            <div class="career-icon">
-              <span class="icon">🔒</span>
-            </div>
-            <h3 class="career-title">网络安全工程师</h3>
-            <p class="career-description">保护网络系统安全，防范黑客攻击和数据泄露</p>
-            <div class="skills">
-              <span class="skill-tag">网络安全</span>
-              <span class="skill-tag">渗透测试</span>
-              <span class="skill-tag">加密技术</span>
-            </div>
-            <div class="salary">
-              <span class="salary-icon">💰</span>
-              <span class="salary-text">平均薪资: 18-30K</span>
-            </div>
-            <button class="btn-secondary">了解详情</button>
-          </div>
-
-          <!-- 移动开发工程师 -->
-          <div class="career-card">
-            <div class="career-icon">
-              <span class="icon">📱</span>
-            </div>
-            <h3 class="career-title">移动开发工程师</h3>
-            <p class="career-description">开发移动应用程序，包括iOS和Android平台</p>
-            <div class="skills">
-              <span class="skill-tag">iOS</span>
-              <span class="skill-tag">Android</span>
-              <span class="skill-tag">Flutter</span>
-            </div>
-            <div class="salary">
-              <span class="salary-icon">💰</span>
-              <span class="salary-text">平均薪资: 15-28K</span>
-            </div>
-            <button class="btn-secondary">了解详情</button>
-          </div>
-
-          <!-- 云计算工程师 -->
-          <div class="career-card">
-            <div class="career-icon">
-              <span class="icon">☁️</span>
-            </div>
-            <h3 class="career-title">云计算工程师</h3>
-            <p class="career-description">设计和管理云计算基础设施，包括公有云和私有云</p>
-            <div class="skills">
-              <span class="skill-tag">AWS</span>
-              <span class="skill-tag">阿里云</span>
-              <span class="skill-tag">Docker</span>
-            </div>
-            <div class="salary">
-              <span class="salary-icon">💰</span>
-              <span class="salary-text">平均薪资: 18-32K</span>
-            </div>
-            <button class="btn-secondary">了解详情</button>
+        <!-- 职业方向详情弹窗 -->
+        <div v-if="showCareerDetailModal" class="modal-overlay" @click.self="closeCareerDetail">
+          <div class="modal-box modal-detail modal-career-detail">
+            <div v-if="careerDetailLoading" class="detail-loading">加载中...</div>
+            <template v-else-if="careerDetailData">
+              <div class="modal-header">
+                <h3 class="modal-title">{{ careerDetailData.title }}</h3>
+                <button type="button" class="modal-close" aria-label="关闭" @click="closeCareerDetail">×</button>
+              </div>
+              <div class="modal-body">
+                <p v-if="careerDetailData.description" class="career-detail-desc">{{ careerDetailData.description }}</p>
+                <div v-if="careerDetailData.skills?.length" class="career-detail-skills">
+                  <span v-for="s in careerDetailData.skills" :key="s" class="skill-tag">{{ s }}</span>
+                </div>
+                <p v-if="formatSalary(careerDetailData)" class="career-detail-salary">
+                  <span class="salary-icon">💰</span> 平均薪资: {{ formatSalary(careerDetailData) }}
+                </p>
+                <div v-if="careerDetailData.workContent" class="career-detail-block">
+                  <h4 class="career-detail-label">工作内容</h4>
+                  <p class="career-detail-text">{{ careerDetailData.workContent }}</p>
+                </div>
+                <div v-if="careerDetailData.growthPath" class="career-detail-block">
+                  <h4 class="career-detail-label">发展路径</h4>
+                  <p class="career-detail-text">{{ careerDetailData.growthPath }}</p>
+                </div>
+                <div v-if="careerDetailData.entryRequirements" class="career-detail-block">
+                  <h4 class="career-detail-label">入行要求</h4>
+                  <p class="career-detail-text">{{ careerDetailData.entryRequirements }}</p>
+                </div>
+                <div
+                  v-if="careerDetailData.fullContent"
+                  class="career-detail-content detail-content-html"
+                  v-html="careerDetailData.fullContent"
+                ></div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn-secondary" @click="closeCareerDetail">关闭</button>
+              </div>
+            </template>
+            <div v-else class="detail-loading">{{ careerDetailError || '加载失败' }}</div>
           </div>
         </div>
 
         <!-- 职业资讯 -->
-        <h2 class="section-title">职业资讯</h2>
-        <div class="career-news">
-          <div class="news-card">
-            <h3 class="news-title">2024年IT行业就业趋势分析</h3>
-            <p class="news-summary">
-              随着人工智能技术的快速发展，IT行业就业市场呈现出新的趋势和机遇...
-            </p>
-            <div class="news-meta">
-              <span class="news-date">2024-03-15</span>
-              <span class="news-source">IT行业观察</span>
+        <h2 class="section-title" ref="newsSectionRef">职业资讯</h2>
+        <div class="career-news-tabs">
+          <button
+            type="button"
+            class="tab-btn"
+            :class="{ active: careerArticleTab === 'all' }"
+            @click="switchCareerTab('all')"
+          >
+            全部资讯
+          </button>
+          <button
+            v-if="userStore.userState?.userInfo"
+            type="button"
+            class="tab-btn"
+            :class="{ active: careerArticleTab === 'my' }"
+            @click="switchCareerTab('my')"
+          >
+            我发表的资讯
+          </button>
+        </div>
+        <template v-if="careerArticleTab === 'all'">
+          <div class="career-news-toolbar">
+            <div class="news-filter">
+              <label class="filter-label">分类筛选：</label>
+              <select
+                v-model="articleCategoryFilter"
+                class="filter-select"
+                @change="onCategoryChange"
+              >
+                <option value="">全部</option>
+                <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
             </div>
-            <button class="btn-secondary">阅读全文</button>
+            <button
+              v-if="userStore.userState?.userInfo"
+              type="button"
+              class="btn-primary publish-btn"
+              @click="openPublishModal"
+            >
+              发表资讯
+            </button>
           </div>
-
-          <div class="news-card">
-            <h3 class="news-title">程序员必备的10项核心技能</h3>
-            <p class="news-summary">在竞争激烈的职场中，掌握这些核心技能将帮助你脱颖而出...</p>
-            <div class="news-meta">
-              <span class="news-date">2024-03-10</span>
-              <span class="news-source">技术博客</span>
-            </div>
-            <button class="btn-secondary">阅读全文</button>
+          <div v-if="articleListLoading" class="career-news-loading">加载中...</div>
+          <div v-else-if="articleListError" class="career-news-error">
+            {{ articleListError }}
+            <button type="button" class="btn-secondary" @click="fetchCareerArticles">重试</button>
           </div>
-
-          <div class="news-card">
-            <h3 class="news-title">如何制定有效的职业发展计划</h3>
-            <p class="news-summary">
-              一个好的职业发展计划可以帮助你明确目标，规划路径，实现职业成功...
-            </p>
-            <div class="news-meta">
-              <span class="news-date">2024-03-05</span>
-              <span class="news-source">职业发展指南</span>
+          <div v-else class="career-news">
+            <div
+              v-for="article in articleList"
+              :key="article.id"
+              class="news-card"
+            >
+              <h3 class="news-title">{{ article.title }}</h3>
+              <p class="news-summary">{{ article.summary }}</p>
+              <div class="news-meta">
+                <span class="news-date">{{ article.publishDate }}</span>
+                <span class="news-source">{{ article.category }}</span>
+              </div>
+              <button type="button" class="btn-secondary" @click="openArticleDetail(article.id)">
+                阅读全文
+              </button>
             </div>
-            <button class="btn-secondary">阅读全文</button>
+            <div v-if="articleList.length === 0" class="career-news-empty">暂无资讯，去发表一条吧~</div>
+          </div>
+        </template>
+        <template v-else-if="careerArticleTab === 'my'">
+          <div class="career-news-toolbar career-news-toolbar--my">
+            <button type="button" class="btn-primary publish-btn" @click="openPublishModal">
+              发表资讯
+            </button>
+          </div>
+          <div v-if="myArticleListLoading" class="career-news-loading">加载中...</div>
+          <div v-else-if="myArticleListError" class="career-news-error">
+            {{ myArticleListError }}
+            <button type="button" class="btn-secondary" @click="fetchMyCareerArticles">重试</button>
+          </div>
+          <div v-else class="career-news">
+            <div
+              v-for="article in myArticleList"
+              :key="article.id"
+              class="news-card news-card--my"
+            >
+              <h3 class="news-title">{{ article.title }}</h3>
+              <p class="news-summary">{{ article.summary }}</p>
+              <div class="news-meta">
+                <span class="news-date">{{ article.publishDate }}</span>
+                <span class="news-source">{{ article.category }}</span>
+              </div>
+              <div class="news-card-actions">
+                <button type="button" class="btn-secondary btn-sm" @click="openArticleDetail(article.id)">
+                  阅读全文
+                </button>
+                <button type="button" class="btn-secondary btn-sm" @click="openEditModalByArticle(article)">
+                  编辑
+                </button>
+                <button type="button" class="btn-danger btn-sm" @click="confirmDeleteMyArticle(article.id)">
+                  删除
+                </button>
+              </div>
+            </div>
+            <div v-if="myArticleList.length === 0" class="career-news-empty">您还没有发表过资讯，点击上方「发表资讯」发布一条吧~</div>
+          </div>
+        </template>
+
+        <!-- 资讯详情弹窗 -->
+        <div v-if="detailArticle !== null" class="modal-overlay" @click.self="closeDetail">
+          <div class="modal-box modal-detail">
+            <div v-if="detailLoading" class="detail-loading">加载中...</div>
+            <template v-else-if="detailArticleData">
+              <div class="modal-header">
+                <h3 class="modal-title">{{ detailArticleData.title }}</h3>
+                <button type="button" class="modal-close" aria-label="关闭" @click="closeDetail">×</button>
+              </div>
+              <div class="modal-body">
+                <div class="detail-meta">
+                  <span>{{ detailArticleData.category }}</span>
+                  <span>{{ detailArticleData.publishDate }}</span>
+                </div>
+                <div class="detail-content">{{ detailArticleData.fullContent }}</div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn-secondary" @click="closeDetail">关闭</button>
+                <template v-if="isCurrentUserAuthor(detailArticleData)">
+                  <button type="button" class="btn-secondary" @click="openEditModal(detailArticleData)">
+                    编辑
+                  </button>
+                  <button type="button" class="btn-danger" @click="confirmDeleteArticle">删除</button>
+                </template>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 发表/编辑资讯弹窗 -->
+        <div v-if="showPublishModal" class="modal-overlay" @click.self="closePublishModal">
+          <div class="modal-box modal-form">
+            <div class="modal-header">
+              <h3 class="modal-title">{{ editArticleId ? '编辑资讯' : '发表资讯' }}</h3>
+              <button type="button" class="modal-close" aria-label="关闭" @click="closePublishModal">×</button>
+            </div>
+            <form class="modal-body publish-form" @submit.prevent="submitPublishOrEdit">
+              <div class="form-group">
+                <label>标题 <span class="required">*</span></label>
+                <input v-model="publishForm.title" type="text" required placeholder="请输入标题" />
+              </div>
+              <div class="form-group">
+                <label>分类 <span class="required">*</span></label>
+                <input v-model="publishForm.category" type="text" required placeholder="如：IT行业观察" />
+              </div>
+              <div class="form-group">
+                <label>摘要（选填，不填将自动从正文截取）</label>
+                <textarea v-model="publishForm.summary" rows="2" placeholder="可选"></textarea>
+              </div>
+              <div class="form-group">
+                <label>正文 <span class="required">*</span></label>
+                <textarea v-model="publishForm.fullContent" rows="6" required placeholder="请输入正文"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-secondary" @click="closePublishModal">取消</button>
+                <button type="submit" class="btn-primary" :disabled="publishSubmitting">
+                  {{ publishSubmitting ? '提交中...' : (editArticleId ? '保存' : '发表') }}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </main>
@@ -309,10 +433,17 @@
 
 <script setup lang="ts">
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { api } from '../api'
+import type {
+  CareerArticle,
+  CareerArticleDetail,
+  CareerArticleCreateDto,
+  CareerDirectionItem,
+  CareerDirectionDetail,
+} from '../types/career'
 
 // 路由实例
 const router = useRouter()
@@ -324,14 +455,154 @@ const userStore = useUserStore()
 const isMobile = ref(false)
 const showUserCenter = ref(false)
 
-// AI对话相关
+// 页面内三个主要区域的 DOM 引用，用于滚动定位
+const aiSectionRef = ref<HTMLElement | null>(null)
+const directionSectionRef = ref<HTMLElement | null>(null)
+const newsSectionRef = ref<HTMLElement | null>(null)
+
+// AI 对话相关
 const inputMessage = ref('')
-const chatMessages = ref<Array<{ role: string; content: string; isThinking?: boolean }>>([])
+type UiChatMessage = { role: 'user' | 'ai'; content: string; isThinking?: boolean; statusHint?: string }
+const chatMessages = ref<UiChatMessage[]>([])
 const loading = ref(false)
 const chatMessagesRef = ref<HTMLElement | null>(null)
+const chatInput = ref<HTMLTextAreaElement | null>(null)
 const chanId = ref('')
 const streamingResponse = ref('')
 const isStreaming = ref(false)
+
+// 等待时的轮播提示文案
+const waitingTips = [
+  '正在连接 AI 服务，请稍候…',
+  '正在分析您的问题…',
+  '正在生成专业建议…',
+  '请稍候，马上就好…',
+]
+const waitingTip = ref(waitingTips[0])
+let waitingTipTimer: ReturnType<typeof setInterval> | null = null
+
+function startWaitingTipRotation() {
+  let i = 0
+  waitingTip.value = waitingTips[0]
+  waitingTipTimer = setInterval(() => {
+    i = (i + 1) % waitingTips.length
+    waitingTip.value = waitingTips[i]
+  }, 2200)
+}
+
+function stopWaitingTipRotation() {
+  if (waitingTipTimer) {
+    clearInterval(waitingTipTimer)
+    waitingTipTimer = null
+  }
+  waitingTip.value = waitingTips[0]
+}
+
+// 空状态下的示例问题
+const suggestionQuestions = [
+  '我适合做技术还是产品？',
+  '如何准备技术面试？',
+  '职业发展路径有哪些选择？',
+]
+
+function setSuggestionAndFocus(s: string) {
+  inputMessage.value = s
+  nextTick(() => chatInput.value?.focus())
+}
+
+// 历史记录相关
+const showHistoryPanel = ref(false)
+const sessionIds = ref<string[]>([])
+const sessionIdsLoading = ref(false)
+const sessionIdsError = ref('')
+const historyLoading = ref(false)
+
+const toggleHistoryPanel = () => {
+  showHistoryPanel.value = !showHistoryPanel.value
+  if (showHistoryPanel.value && sessionIds.value.length === 0 && !sessionIdsLoading.value) {
+    refreshSessionIds()
+  }
+}
+
+const refreshSessionIds = async () => {
+  sessionIdsLoading.value = true
+  sessionIdsError.value = ''
+  try {
+    const list = await api.getOpenAiSessionIdList('chat')
+    sessionIds.value = Array.isArray(list) ? list : []
+  } catch (e) {
+    sessionIdsError.value = e instanceof Error ? e.message : '加载历史会话失败'
+  } finally {
+    sessionIdsLoading.value = false
+  }
+}
+
+const normalizeHistoryToUiMessages = (items: any[]): UiChatMessage[] => {
+  const messages: UiChatMessage[] = []
+
+  for (const it of items) {
+    if (!it) continue
+
+    // 最常见：{ role, content }
+    if (typeof it.role === 'string') {
+      const rawRole = it.role.toLowerCase()
+      const role: UiChatMessage['role'] =
+        rawRole === 'user'
+          ? 'user'
+          : rawRole === 'assistant' || rawRole === 'ai'
+            ? 'ai'
+            : 'ai'
+      const content = String(it.content ?? it.message ?? it.text ?? '')
+      if (content.trim()) messages.push({ role, content })
+      continue
+    }
+
+    // 兼容：{ isUser, content }
+    if (typeof it.isUser === 'boolean') {
+      const role: UiChatMessage['role'] = it.isUser ? 'user' : 'ai'
+      const content = String(it.content ?? it.message ?? it.text ?? '')
+      if (content.trim()) messages.push({ role, content })
+      continue
+    }
+
+    // 兼容：{ question, answer }
+    if (it.question != null || it.answer != null) {
+      const q = String(it.question ?? '').trim()
+      const a = String(it.answer ?? '').trim()
+      if (q) messages.push({ role: 'user', content: q })
+      if (a) messages.push({ role: 'ai', content: a })
+      continue
+    }
+  }
+
+  return messages
+}
+
+const loadSessionHistory = async (sid: string) => {
+  if (!sid || loading.value || historyLoading.value || isStreaming.value) return
+  historyLoading.value = true
+  try {
+    const history = await api.getOpenAiSessionHistory('chat', sid)
+    chanId.value = sid
+    chatMessages.value = normalizeHistoryToUiMessages(Array.isArray(history) ? history : [])
+
+    if (chatMessages.value.length === 0) {
+      chatMessages.value.push({
+        role: 'ai',
+        content: '这个会话暂无历史消息。你可以继续提问，我会接着聊。',
+      })
+    }
+  } catch (e) {
+    console.error('加载会话历史失败:', e)
+    chatMessages.value.push({
+      role: 'ai',
+      content: e instanceof Error ? `加载历史失败：${e.message}` : '加载历史失败，请稍后重试。',
+    })
+  } finally {
+    historyLoading.value = false
+    scrollToBottom()
+  }
+}
 
 // 开始新对话
 const startNewChat = () => {
@@ -342,44 +613,77 @@ const startNewChat = () => {
 
   chatMessages.value.push({
     role: 'ai',
-    content: '我是职业导航智能顾问，你有任何职业上的问题都能来问我',
-  })
+    content: '我是职业导航智能顾问，我可帮你进行职业测评，职业路径规划，岗位推荐等，你有任何职业上的问题都能来问我',
+  } as UiChatMessage)
 }
 
-// 发送消息（支持流式输出）
+// 发送消息（支持流式输出）；先显示“等待 AI”占位，再请求接口
 const sendMessage = async () => {
   const message = inputMessage.value.trim()
   if (!message || loading.value || isStreaming.value) return
 
-  const userMsg = { role: 'user', content: message }
+  const userMsg: UiChatMessage = { role: 'user', content: message }
   chatMessages.value.push(userMsg)
   inputMessage.value = ''
   loading.value = true
   isStreaming.value = true
   streamingResponse.value = ''
+  startWaitingTipRotation()
+
+  // 立即推送“等待中”的 AI 占位消息，让用户看到反馈
+  const placeholderMsg: UiChatMessage = {
+    role: 'ai',
+    content: '',
+    isThinking: true,
+    statusHint: waitingTips[0],
+  }
+  chatMessages.value.push(placeholderMsg)
+  const aiMsgIndex = chatMessages.value.length - 1
+  scrollToBottom()
 
   try {
     const response = await api.sendAiMessage(message, chanId.value)
-    if (response) {
-      const aiMsg = { role: 'ai', content: '', isThinking: true }
-      chatMessages.value.push(aiMsg)
-
-      const aiMsgIndex = chatMessages.value.length - 1
+    if (response && chatMessages.value[aiMsgIndex]) {
+      chatMessages.value[aiMsgIndex].statusHint = '正在生成回复…'
+      chatMessages.value[aiMsgIndex].content = ''
       await simulateStreaming(response, aiMsgIndex)
+    } else if (chatMessages.value[aiMsgIndex]) {
+      chatMessages.value[aiMsgIndex].content = '暂无回复，请换个方式提问试试。'
+      chatMessages.value[aiMsgIndex].isThinking = false
+      delete chatMessages.value[aiMsgIndex].statusHint
+    }
+
+    if (chanId.value && !sessionIds.value.includes(chanId.value)) {
+      sessionIds.value = [chanId.value, ...sessionIds.value]
     }
   } catch (err) {
     console.error('AI对话失败:', err)
-    const errorMsg = { role: 'ai', content: '抱歉，我遇到了一些问题，请稍后重试。' }
-    chatMessages.value.push(errorMsg)
+    if (chatMessages.value[aiMsgIndex]) {
+      chatMessages.value[aiMsgIndex].role = 'ai'
+      chatMessages.value[aiMsgIndex].content = '抱歉，我遇到了一些问题，请稍后重试。'
+      chatMessages.value[aiMsgIndex].isThinking = false
+      delete chatMessages.value[aiMsgIndex].statusHint
+    } else {
+      chatMessages.value.push({
+        role: 'ai',
+        content: '抱歉，我遇到了一些问题，请稍后重试。',
+      })
+    }
   } finally {
+    stopWaitingTipRotation()
     loading.value = false
     isStreaming.value = false
     scrollToBottom()
   }
 }
 
-// 模拟流式输出效果
+// 流式输出：逐字追加到同一条 AI 消息，用户可见打字效果
 const simulateStreaming = async (text: string, msgIndex: number) => {
+  const msg = chatMessages.value[msgIndex]
+  if (!msg) return
+  msg.isThinking = false
+  msg.content = ''
+  delete msg.statusHint
   const chars = text.split('')
   for (let i = 0; i < chars.length; i++) {
     if (chatMessages.value[msgIndex]) {
@@ -387,10 +691,6 @@ const simulateStreaming = async (text: string, msgIndex: number) => {
     }
     scrollToBottom()
     await new Promise((resolve) => setTimeout(resolve, 30 + Math.random() * 20))
-  }
-
-  if (chatMessages.value[msgIndex]) {
-    chatMessages.value[msgIndex].isThinking = false
   }
 }
 
@@ -412,12 +712,408 @@ const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
 }
 
+// 根据 section 标识滚动到指定区域
+const scrollToSection = (section?: string | null) => {
+  const key = section || 'ai'
+  let target: HTMLElement | null = null
+
+  if (key === 'direction') {
+    target = directionSectionRef.value
+  } else if (key === 'news') {
+    target = newsSectionRef.value
+  } else {
+    target = aiSectionRef.value
+  }
+
+  if (target) {
+    // 顶部有固定导航栏，预留一点偏移
+    const top = target.getBoundingClientRect().top + window.scrollY - 80
+    window.scrollTo({ top, behavior: 'smooth' })
+  }
+}
+
+// ---------- 热门职业方向 ----------
+const directionCategories = ref<string[]>([])
+const careerDirectionList = ref<CareerDirectionItem[]>([])
+const selectedDirectionCategory = ref('')
+const directionsLoading = ref(false)
+const directionsError = ref('')
+const showCareerDetailModal = ref(false)
+const careerDetailId = ref<number | null>(null)
+const careerDetailData = ref<CareerDirectionDetail | null>(null)
+const careerDetailLoading = ref(false)
+const careerDetailError = ref('')
+
+/** 职业方向大类默认图标（按文档中的大类） */
+const CATEGORY_ICONS: Record<string, string> = {
+  '互联网/AI': '💻',
+  '电子/通信/半导体': '📡',
+  '服务业': '🏪',
+  '管理类': '📋',
+  '房地产': '🏢',
+  '设计': '🎨',
+  '制造业': '🏭',
+  '教育行业': '📚',
+  '医学': '⚕️',
+  '药学': '💊',
+  '建筑': '🏗️',
+  '交通': '🚗',
+  '金融': '💰',
+}
+
+function getDefaultCareerIcon(category: string): string {
+  return CATEGORY_ICONS[category] ?? '💼'
+}
+
+function formatSalary(item: { minSalary?: number | null; maxSalary?: number | null }): string {
+  const min = item.minSalary
+  const max = item.maxSalary
+  if (min != null && max != null) return `${min / 1000}-${max / 1000}K`
+  if (min != null) return `${min / 1000}K+`
+  if (max != null) return `≤${max / 1000}K`
+  return ''
+}
+
+async function fetchDirectionCategories() {
+  try {
+    const res = await api.getCareerDirectionCategories()
+    const code = (res as { code?: number }).code
+    if (code === 1 && Array.isArray((res as { data?: string[] }).data)) {
+      directionCategories.value = (res as { data: string[] }).data
+    } else {
+      directionCategories.value = []
+    }
+  } catch {
+    directionCategories.value = []
+  }
+}
+
+async function fetchCareerDirections() {
+  directionsLoading.value = true
+  directionsError.value = ''
+  const category = selectedDirectionCategory.value.trim() || undefined
+  try {
+    const res = await api.getCareerDirections(category ? { category } : undefined)
+    const code = (res as { code?: number }).code
+    if (code === 1 && Array.isArray((res as { data?: CareerDirectionItem[] }).data)) {
+      careerDirectionList.value = (res as { data: CareerDirectionItem[] }).data
+    } else {
+      careerDirectionList.value = []
+    }
+  } catch (e) {
+    directionsError.value = e instanceof Error ? e.message : '加载职业方向列表失败'
+    careerDirectionList.value = []
+  } finally {
+    directionsLoading.value = false
+  }
+}
+
+function selectDirectionCategory(cat: string) {
+  selectedDirectionCategory.value = cat
+  fetchCareerDirections()
+}
+
+async function openCareerDetail(id: number) {
+  careerDetailId.value = id
+  showCareerDetailModal.value = true
+  careerDetailData.value = null
+  careerDetailError.value = ''
+  careerDetailLoading.value = true
+  try {
+    const res = await api.getCareerDirectionDetail(id)
+    const code = (res as { code?: number }).code ?? (res as { code?: number }).code
+    const msg = (res as { msg?: string }).msg ?? (res as { message?: string }).message
+    if (code === 1 && (res as { data?: CareerDirectionDetail }).data) {
+      careerDetailData.value = (res as { data: CareerDirectionDetail }).data
+    } else {
+      careerDetailError.value = msg || '职业方向不存在'
+    }
+  } catch (e) {
+    careerDetailError.value = e instanceof Error ? e.message : '加载详情失败'
+  } finally {
+    careerDetailLoading.value = false
+  }
+}
+
+function closeCareerDetail() {
+  showCareerDetailModal.value = false
+  careerDetailId.value = null
+  careerDetailData.value = null
+  careerDetailError.value = ''
+}
+
+// ---------- 职业资讯 ----------
+const articleList = ref<CareerArticle[]>([])
+const articleListLoading = ref(false)
+const articleListError = ref('')
+const articleCategoryFilter = ref('')
+/** 下拉选项：从已加载的资讯中收集到的分类（“全部”不传筛选参数时更新） */
+const allCategories = ref<string[]>([])
+
+/** 职业资讯标签：all=全部资讯，my=我发表的资讯 */
+const careerArticleTab = ref<'all' | 'my'>('all')
+const myArticleList = ref<CareerArticle[]>([])
+const myArticleListLoading = ref(false)
+const myArticleListError = ref('')
+
+const categoryOptions = computed(() => [...allCategories.value])
+
+const detailArticle = ref<number | null>(null) // 当前查看的资讯 id
+const detailArticleData = ref<CareerArticleDetail | null>(null)
+const detailLoading = ref(false)
+
+const showPublishModal = ref(false)
+const editArticleId = ref<number | null>(null)
+const publishForm = ref<CareerArticleCreateDto>({
+  title: '',
+  fullContent: '',
+  category: '',
+  summary: '',
+})
+const publishSubmitting = ref(false)
+
+/** 当前登录用户 ID（用于判断是否为作者） */
+const currentUserId = computed(() => {
+  const state = userStore.userState as { value?: { userInfo?: { userId?: number } }; userInfo?: { userId?: number } }
+  const info = state?.value?.userInfo ?? state?.userInfo
+  return info?.userId != null ? Number(info.userId) : null
+})
+
+function isCurrentUserAuthor(article: { authorId: number }) {
+  if (currentUserId.value == null) return false
+  return article.authorId === currentUserId.value
+}
+
+async function fetchCareerArticles() {
+  articleListLoading.value = true
+  articleListError.value = ''
+  const category = articleCategoryFilter.value.trim() || undefined
+  try {
+    const res = await api.getCareerArticles(category ? { category } : undefined)
+    const code = (res as { code?: number }).code ?? res.code
+    if (code === 1 && Array.isArray((res as { data?: CareerArticle[] }).data)) {
+      const list = (res as { data: CareerArticle[] }).data
+      articleList.value = list
+      if (!category) {
+        const set = new Set(list.map((a) => a.category).filter(Boolean))
+        allCategories.value = [...set].sort()
+      } else {
+        if (!allCategories.value.includes(category)) {
+          allCategories.value = [...allCategories.value, category].sort()
+        }
+      }
+    } else {
+      articleList.value = []
+    }
+  } catch (e) {
+    articleListError.value = e instanceof Error ? e.message : '加载资讯列表失败'
+    articleList.value = []
+  } finally {
+    articleListLoading.value = false
+  }
+}
+
+function onCategoryChange() {
+  fetchCareerArticles()
+}
+
+function switchCareerTab(tab: 'all' | 'my') {
+  careerArticleTab.value = tab
+  if (tab === 'my') {
+    fetchMyCareerArticles()
+  }
+}
+
+async function fetchMyCareerArticles() {
+  myArticleListLoading.value = true
+  myArticleListError.value = ''
+  try {
+    const res = await api.getMyCareerArticles()
+    const code = (res as { code?: number }).code ?? res.code
+    if (code === 1 && Array.isArray((res as { data?: CareerArticle[] }).data)) {
+      myArticleList.value = (res as { data: CareerArticle[] }).data
+    } else {
+      myArticleList.value = []
+    }
+  } catch (e) {
+    myArticleListError.value = e instanceof Error ? e.message : '加载失败'
+    myArticleList.value = []
+  } finally {
+    myArticleListLoading.value = false
+  }
+}
+
+/** 从列表项打开编辑（先拉详情拿到 fullContent 再打开编辑弹窗） */
+async function openEditModalByArticle(article: CareerArticle) {
+  try {
+    const res = await api.getCareerArticleById(article.id)
+    const code = (res as { code?: number }).code ?? res.code
+    if (code === 1 && (res as { data?: CareerArticleDetail }).data) {
+      const detail = (res as { data: CareerArticleDetail }).data
+      openEditModal(detail)
+    }
+  } catch {
+    alert('获取资讯详情失败')
+  }
+}
+
+function confirmDeleteMyArticle(id: number) {
+  if (!confirm('确定要删除这条资讯吗？')) return
+  api
+    .deleteCareerArticle(id)
+    .then((res) => {
+      const code = (res as { code?: number }).code ?? res.code
+      if (code === 1) {
+        fetchMyCareerArticles()
+        if (detailArticleData.value?.id === id) closeDetail()
+      } else {
+        const msg = (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
+        alert(msg || '删除失败')
+      }
+    })
+    .catch((e) => {
+      alert(e instanceof Error ? e.message : '删除失败')
+    })
+}
+
+function openArticleDetail(id: number) {
+  detailArticle.value = id
+  detailArticleData.value = null
+  detailLoading.value = true
+  api
+    .getCareerArticleById(id)
+    .then((res) => {
+      const code = (res as { code?: number }).code ?? res.code
+      if (code === 1 && (res as { data?: CareerArticleDetail }).data) {
+        detailArticleData.value = (res as { data: CareerArticleDetail }).data
+      }
+    })
+    .catch(() => {
+      detailArticleData.value = null
+    })
+    .finally(() => {
+      detailLoading.value = false
+    })
+}
+
+function closeDetail() {
+  detailArticle.value = null
+  detailArticleData.value = null
+}
+
+function openPublishModal() {
+  editArticleId.value = null
+  publishForm.value = { title: '', fullContent: '', category: '', summary: '' }
+  showPublishModal.value = true
+}
+
+function closePublishModal() {
+  showPublishModal.value = false
+  editArticleId.value = null
+}
+
+function openEditModal(article: CareerArticleDetail) {
+  editArticleId.value = article.id
+  publishForm.value = {
+    title: article.title,
+    fullContent: article.fullContent,
+    category: article.category,
+    summary: article.summary || '',
+  }
+  showPublishModal.value = true
+}
+
+async function submitPublishOrEdit() {
+  const { title, fullContent, category, summary } = publishForm.value
+  if (!title.trim() || !fullContent.trim() || !category.trim()) return
+  publishSubmitting.value = true
+  try {
+    const id = editArticleId.value
+    const payload: CareerArticleCreateDto = { title: title.trim(), fullContent: fullContent.trim(), category: category.trim() }
+    const summaryVal = summary?.trim()
+    if (summaryVal) payload.summary = summaryVal
+
+    if (id != null) {
+      const res = await api.updateCareerArticle(id, payload)
+      const code = (res as { code?: number }).code ?? res.code
+      if (code === 1) {
+        closePublishModal()
+        closeDetail()
+        await fetchCareerArticles()
+        if (careerArticleTab.value === 'my') await fetchMyCareerArticles()
+      } else {
+        const msg = (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
+        alert(msg || '更新失败')
+      }
+    } else {
+      const res = await api.createCareerArticle(payload)
+      const code = (res as { code?: number }).code ?? res.code
+      if (code === 1) {
+        closePublishModal()
+        await fetchCareerArticles()
+        if (careerArticleTab.value === 'my') await fetchMyCareerArticles()
+      } else {
+        const msg = (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
+        alert(msg || '发表失败')
+      }
+    }
+  } catch (e) {
+    alert(e instanceof Error ? e.message : '操作失败')
+  } finally {
+    publishSubmitting.value = false
+  }
+}
+
+function confirmDeleteArticle() {
+  if (!detailArticleData.value) return
+  if (!confirm('确定要删除这条资讯吗？')) return
+  const id = detailArticleData.value.id
+  api
+    .deleteCareerArticle(id)
+    .then((res) => {
+      const code = (res as { code?: number }).code ?? res.code
+      if (code === 1) {
+        closeDetail()
+        fetchCareerArticles()
+        if (careerArticleTab.value === 'my') fetchMyCareerArticles()
+      } else {
+        const msg = (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
+        alert(msg || '删除失败')
+      }
+    })
+    .catch((e) => {
+      alert(e instanceof Error ? e.message : '删除失败')
+    })
+}
+
 // 生命周期钩子 - 初始化和窗口大小监听
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
   startNewChat()
+  refreshSessionIds()
+  fetchDirectionCategories()
+  fetchCareerDirections()
+  fetchCareerArticles()
+
+  // 进入页面时，根据路由参数 section 定位到对应区域
+  const initialSection = router.currentRoute.value.query.section as string | undefined
+  nextTick(() => {
+    if (initialSection) {
+      scrollToSection(initialSection)
+    }
+  })
 })
+
+// 监听路由参数 section 变化（从其他页面点击导航再次进入时触发）
+watch(
+  () => router.currentRoute.value.query.section,
+  (val) => {
+    nextTick(() => {
+      scrollToSection(val as string | undefined)
+    })
+  },
+)
 </script>
 
 <style scoped>
@@ -767,108 +1463,6 @@ onMounted(() => {
   margin: 0 0 24px 0;
 }
 
-/* 顶部功能卡片区域 */
-.top-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-bottom: 32px;
-}
-
-.card {
-  background-color: white;
-  border: 1px solid #e0e6ed;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-}
-
-.card-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 8px 0;
-}
-
-.card-description {
-  font-size: 14px;
-  color: #646b7a;
-  margin: 0 0 20px 0;
-  line-height: 1.5;
-}
-
-/* 评估按钮 */
-.assessment-buttons {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-/* 路径步骤 */
-.path-steps {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-}
-
-.step-number {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #409eff;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.step-text {
-  font-size: 12px;
-  color: #646b7a;
-  text-align: center;
-}
-
-/* 推荐统计 */
-.recommendation-stats {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 20px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.stat-number {
-  font-size: 24px;
-  font-weight: 600;
-  color: #409eff;
-  margin-bottom: 4px;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #646b7a;
-}
-
 /* 按钮样式 */
 .btn-primary {
   width: 100%;
@@ -903,16 +1497,17 @@ onMounted(() => {
   background-color: #f0f9ff;
 }
 
-/* AI对话区域 */
+/* AI 咨询区域 */
 .ai-chat-section {
   background-color: white;
-  border: 1px solid #e0e6ed;
-  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
   padding: 0;
   margin-bottom: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(85, 104, 211, 0.04);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .chat-header {
@@ -920,15 +1515,69 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #e0e6ed;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #5568d3 0%, #6b4ba2 100%);
+  box-shadow: 0 2px 12px rgba(85, 104, 211, 0.25);
+}
+
+.chat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.chat-header-icon {
+  font-size: 28px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 
 .chat-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: white;
+  letter-spacing: 0.3px;
+}
+
+.chat-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 400;
+}
+
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.history-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.history-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .new-chat-btn {
@@ -966,13 +1615,202 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.chat-body {
+  display: flex;
+  min-height: 380px;
+}
+
+.chat-history-panel {
+  width: 260px;
+  border-right: 1px solid #e0e6ed;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px;
+  border-bottom: 1px solid #eef2f7;
+  background: #fbfcff;
+}
+
+.history-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.history-refresh-btn,
+.history-retry-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #dcdfe6;
+  background: #fff;
+  color: #409eff;
+  cursor: pointer;
+}
+
+.history-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.history-loading,
+.history-empty {
+  padding: 14px;
+  font-size: 13px;
+  color: #909399;
+}
+
+.history-error {
+  padding: 14px;
+  color: #f56c6c;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-error-text {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.history-list {
+  padding: 10px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.history-item {
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.history-item:hover {
+  background: #f5f7fa;
+}
+
+.history-item.active {
+  background: #ecf5ff;
+  border-color: #b3d8ff;
+}
+
+.history-item-title {
+  font-size: 12px;
+  color: #606266;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
-  background-color: #fafafa;
-  min-height: 300px;
-  max-height: calc(100vh - 300px);
+  padding: 24px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  min-height: 320px;
+  max-height: calc(100vh - 320px);
+}
+
+/* 空状态 */
+.chat-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  padding: 32px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 8px 0;
+}
+
+.empty-state-desc {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.empty-state-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 480px;
+}
+
+.suggestion-chip {
+  padding: 10px 18px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #475569;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.suggestion-chip:hover {
+  border-color: #5568d3;
+  color: #5568d3;
+  background: #f8fafc;
+  box-shadow: 0 2px 8px rgba(85, 104, 211, 0.15);
+}
+
+/* 等待 AI 时的提示条 */
+.chat-waiting-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #eef2ff 0%, #e0e7ff 100%);
+  border-top: 1px solid #c7d2fe;
+  font-size: 13px;
+  color: #4338ca;
+  font-weight: 500;
+}
+
+.waiting-hint-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6366f1;
+  animation: waiting-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes waiting-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.waiting-hint-text {
+  flex: 1;
 }
 
 .message-item {
@@ -1010,13 +1848,15 @@ onMounted(() => {
 }
 
 .user-avatar {
-  background-color: #409eff;
+  background: linear-gradient(135deg, #6366f1 0%, #5568d3 100%);
   color: white;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
 }
 
 .ai-avatar {
-  background-color: #67c23a;
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
   color: white;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
 }
 
 .message-content {
@@ -1045,39 +1885,41 @@ onMounted(() => {
 }
 
 .message-item.user .message-text {
-  background-color: #409eff;
+  background: linear-gradient(135deg, #6366f1 0%, #5568d3 100%);
   color: white;
   border-bottom-right-radius: 4px;
   border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
 }
 
 .message-item.ai .message-text {
   background-color: white;
-  color: #333;
-  border: 1px solid #e0e6ed;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .thinking-indicator {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf3 100%);
-  border-radius: 12px;
-  border: 1px solid #d4e4f7;
-  margin-bottom: 8px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border-radius: 14px;
+  border: 1px solid #c7d2fe;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
 }
 
 .thinking-dots {
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .thinking-dots span {
   width: 8px;
   height: 8px;
-  background-color: #409eff;
+  background-color: #6366f1;
   border-radius: 50%;
   animation: thinking-bounce 1.4s infinite ease-in-out both;
 }
@@ -1099,22 +1941,24 @@ onMounted(() => {
   80%,
   100% {
     transform: scale(0);
+    opacity: 0.5;
   }
   40% {
     transform: scale(1);
+    opacity: 1;
   }
 }
 
 .thinking-text {
   font-size: 14px;
-  color: #606266;
+  color: #4338ca;
   font-weight: 500;
 }
 
 .chat-input-area {
-  padding: 16px;
-  border-top: 1px solid #e0e6ed;
-  background-color: white;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   display: flex;
   gap: 12px;
   align-items: flex-end;
@@ -1122,35 +1966,43 @@ onMounted(() => {
 
 .chat-input {
   flex: 1;
-  padding: 12px;
-  border: 1px solid #dcdfe6;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 14px;
   resize: none;
   font-family: inherit;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 52px;
 }
 
 .chat-input:focus {
   outline: none;
-  border-color: #409eff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.chat-input::placeholder {
+  color: #94a3b8;
 }
 
 .send-btn {
-  padding: 10px 24px;
-  background-color: #409eff;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #6366f1 0%, #5568d3 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
 .send-btn:hover:not(:disabled) {
-  background-color: #66b1ff;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }
 
 .send-btn:disabled {
@@ -1183,9 +2035,60 @@ onMounted(() => {
   margin: 0 0 20px 0;
 }
 
+.career-direction-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.career-direction-tabs .tab-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color-secondary, #646b7a);
+  background: #fff;
+  border: 1px solid var(--border-color, #e0e6ed);
+  border-radius: var(--border-radius-md, 6px);
+  cursor: pointer;
+  transition: var(--transition, all 0.2s);
+}
+
+.career-direction-tabs .tab-btn:hover {
+  color: var(--primary-color, #409eff);
+  border-color: var(--primary-color-light, #79bbff);
+}
+
+.career-direction-tabs .tab-btn.active {
+  color: #fff;
+  background: var(--primary-color, #409eff);
+  border-color: var(--primary-color, #409eff);
+}
+
+.career-directions-loading,
+.career-directions-error {
+  padding: 24px;
+  text-align: center;
+  color: #646b7a;
+}
+
+.career-directions-error .btn-secondary {
+  margin-top: 12px;
+}
+
+.career-directions-empty {
+  grid-column: 1 / -1;
+  padding: 40px 24px;
+  text-align: center;
+  color: #646b7a;
+  font-size: 14px;
+}
+
+/* 横向排列，一行 3～5 个职业卡片 */
 .career-directions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 24px;
 }
 
@@ -1268,10 +2171,306 @@ onMounted(() => {
 }
 
 /* 职业资讯 */
+.career-news-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.career-news-tabs .tab-btn {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.career-news-tabs .tab-btn:hover {
+  color: var(--primary-color);
+  border-color: var(--primary-color-light);
+}
+
+.career-news-tabs .tab-btn.active {
+  color: #fff;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.career-news-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.career-news-toolbar--my {
+  margin-top: 0;
+}
+
+.news-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+}
+
+.filter-select {
+  padding: 8px 32px 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  min-width: 160px;
+  background-color: #fff;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.publish-btn {
+  flex-shrink: 0;
+}
+
+.career-news-loading,
+.career-news-error {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-color-secondary);
+}
+
+.career-news-error {
+  color: var(--accent-color);
+}
+
+.career-news-empty {
+  grid-column: 1 / -1;
+  padding: 32px;
+  text-align: center;
+  color: var(--text-color-light);
+  font-size: 14px;
+}
+
 .career-news {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* 资讯详情/发表弹窗 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-detail {
+  max-width: 640px;
+}
+
+.modal-career-detail {
+  max-width: 720px;
+}
+
+.modal-career-detail .career-detail-desc {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #646b7a;
+  line-height: 1.6;
+}
+
+.modal-career-detail .career-detail-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.modal-career-detail .career-detail-salary {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #67c23a;
+  font-weight: 500;
+}
+
+.modal-career-detail .career-detail-block {
+  margin-bottom: 16px;
+}
+
+.modal-career-detail .career-detail-label {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-career-detail .career-detail-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.modal-career-detail .detail-content-html {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #333;
+}
+
+.modal-career-detail .detail-content-html :deep(p) {
+  margin: 0 0 8px 0;
+}
+
+.modal-form {
+  max-width: 560px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.modal-close:hover {
+  color: var(--text-color);
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.detail-loading {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-color-secondary);
+}
+
+.detail-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+}
+
+.detail-content {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-color);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-danger {
+  padding: 8px 16px;
+  background: var(--accent-color);
+  color: #fff;
+  border: 1px solid var(--accent-color);
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: var(--accent-color-dark);
+  border-color: var(--accent-color-dark);
+}
+
+.publish-form .form-group {
+  margin-bottom: 16px;
+}
+
+.publish-form .form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.publish-form .form-group .required {
+  color: var(--accent-color);
+}
+
+.publish-form .form-group input,
+.publish-form .form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.publish-form .form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
   margin-top: 20px;
 }
 
@@ -1304,6 +2503,7 @@ onMounted(() => {
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1323,12 +2523,40 @@ onMounted(() => {
   align-items: center;
 }
 
+.news-card--my .news-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.news-card-actions .btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
 /* 响应式设计 */
+@media (max-width: 1400px) {
+  .career-directions {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 @media (max-width: 1200px) {
-  .top-cards,
-  .career-directions,
+  .career-directions {
+    grid-template-columns: repeat(3, 1fr);
+  }
   .career-news {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .career-directions {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .career-news {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -1367,6 +2595,17 @@ onMounted(() => {
     display: none;
   }
 
+  .chat-body {
+    flex-direction: column;
+  }
+
+  .chat-history-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e0e6ed;
+    max-height: 220px;
+  }
+
   .message-item {
     gap: 8px;
   }
@@ -1397,6 +2636,10 @@ onMounted(() => {
     padding: 8px 16px;
     font-size: 13px;
   }
+
+  .career-directions {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .sidebar {
@@ -1410,10 +2653,8 @@ onMounted(() => {
   padding: 16px;
 }
 
-.top-cards,
-.career-directions,
 .career-news {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .navbar-container {

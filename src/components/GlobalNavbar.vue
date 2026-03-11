@@ -29,12 +29,10 @@
           <div v-if="showSubMenu === '个性化学习伴侣' && !isMobile" class="submenu">
             <div class="submenu-item" @click="goToSmartQA">智能问答</div>
             <div class="submenu-item" @click="goToPersonalStudy">个性化规划</div>
-            <div class="submenu-item" @click="goToStudyManagement">学习管理</div>
           </div>
           <div v-if="showSubMenu === '个性化学习伴侣' && isMobile" class="mobile-submenu">
             <div class="mobile-submenu-item" @click="goToSmartQA">智能问答</div>
             <div class="mobile-submenu-item" @click="goToPersonalStudy">个性化规划</div>
-            <div class="mobile-submenu-item" @click="goToStudyManagement">学习管理</div>
           </div>
         </div>
 
@@ -46,45 +44,48 @@
         >
           校园生活
           <div v-if="showSubMenu === '校园生活' && !isMobile" class="submenu">
+            <div class="submenu-item" @click="goToStudyManagement">学习管理</div>
             <div class="submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
           </div>
           <div v-if="showSubMenu === '校园生活' && isMobile" class="mobile-submenu">
+            <div class="mobile-submenu-item" @click="goToStudyManagement">学习管理</div>
             <div class="mobile-submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
           </div>
         </div>
 
+        <div class="nav-item" @click="goToCompetitionManagement">竞赛管理</div>
+
         <div
           class="nav-item has-submenu"
-          @mouseenter="showSubMenuHandler('竞赛相关')"
+          @mouseenter="showSubMenuHandler('职业导航')"
           @mouseleave="hideSubMenu"
-          @click="handleMenuClick('竞赛相关')"
+          @click="handleMenuClick('职业导航')"
         >
-          竞赛相关
-          <div v-if="showSubMenu === '竞赛相关' && !isMobile" class="submenu">
-            <div class="submenu-item" @click="goToCompetitionManagement">竞赛管理</div>
-            <div class="submenu-item" @click="goToCareerNavigation">职业导航</div>
-            <div class="submenu-item" @click="goToExamSupport">考研支持</div>
+          职业导航
+          <div v-if="showSubMenu === '职业导航' && !isMobile" class="submenu">
+            <div class="submenu-item" @click="goToAiCareerInfo">AI职业资讯</div>
+            <div class="submenu-item" @click="goToCareerDirections">热门职业方向</div>
+            <div class="submenu-item" @click="goToCareerNews">职业资讯</div>
           </div>
-          <div v-if="showSubMenu === '竞赛相关' && isMobile" class="mobile-submenu">
-            <div class="mobile-submenu-item" @click="goToCompetitionManagement">竞赛管理</div>
-            <div class="mobile-submenu-item" @click="goToCareerNavigation">职业导航</div>
-            <div class="mobile-submenu-item" @click="goToExamSupport">考研支持</div>
+          <div v-if="showSubMenu === '职业导航' && isMobile" class="mobile-submenu">
+            <div class="mobile-submenu-item" @click="goToAiCareerInfo">AI职业资讯</div>
+            <div class="mobile-submenu-item" @click="goToCareerDirections">热门职业方向</div>
+            <div class="mobile-submenu-item" @click="goToCareerNews">职业资讯</div>
           </div>
         </div>
+
+        <div class="nav-item" @click="goToExamSupport">考研支持</div>
       </div>
 
-      <!-- 右侧操作区 - 关键：在所有页面都能使用 -->
+      <!-- 右侧操作区 -->
       <div class="nav-actions">
-        <!-- 登录按钮 - 未登录时显示 -->
         <button v-if="!hasToken" class="btn-login" @click="goToLogin">
           <span class="login-icon">👤</span>
           登录
         </button>
 
-        <!-- 个人中心 - 已登录时显示 -->
         <div v-if="hasToken" class="user-center">
           <button class="btn-user-center" @click="toggleUserCenter">个人中心</button>
-          <!-- 个人中心下拉菜单 -->
           <div v-if="showUserCenter" class="user-center-dropdown">
             <div class="dropdown-item" @click="handleUserMenuClick('个人信息')">个人信息</div>
             <div class="dropdown-item logout" @click="handleUserMenuClick('退出登录')">
@@ -112,10 +113,11 @@ const activeMenu = ref('')
 const showSubMenu = ref('')
 const isMobile = ref(false)
 
-// 检查是否有token（核心逻辑）
+// ✅ 用你的 hasToken 计算逻辑（更规范）
 const hasToken = computed(() => {
   return userStore.userState.isLoggedIn && !!userStore.userState.userInfo?.token
 })
+
 // 检查屏幕尺寸
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
@@ -128,8 +130,18 @@ const goToSmartQA = () => router.push('/ai/chat')
 const goToPersonalStudy = () => router.push('/ai/study')
 const goToStudyManagement = () => router.push('/campus/analysis')
 const goToCompetitionManagement = () => router.push('/career/competitions')
-const goToCareerNavigation = () => router.push('/career/position')
 const goToExamSupport = () => router.push('/career/pee')
+
+// 职业导航子模块 - 从同学那边复制
+const goToAiCareerInfo = () => {
+  router.push({ path: '/career/position', query: { section: 'ai' } })
+}
+const goToCareerDirections = () => {
+  router.push({ path: '/career/position', query: { section: 'direction' } })
+}
+const goToCareerNews = () => {
+  router.push({ path: '/career/position', query: { section: 'news' } })
+}
 
 const toggleUserCenter = () => {
   showUserCenter.value = !showUserCenter.value
@@ -163,7 +175,7 @@ const handleMenuClick = (menu: string) => {
       showSubMenu.value = menu
     }
   } else {
-    if (['个性化学习伴侣', '校园生活', '竞赛相关'].includes(menu)) {
+    if (['个性化学习伴侣', '校园生活', '职业导航'].includes(menu)) {
       showSubMenuHandler(menu)
       activeMenu.value = menu
     } else {
@@ -173,7 +185,7 @@ const handleMenuClick = (menu: string) => {
   }
 }
 
-// 处理用户菜单点击 - 全局退出登录
+// 处理用户菜单点击 - 退出登录
 const handleUserMenuClick = (item: string) => {
   if (item === '个人信息') {
     router.push('/profile')
@@ -184,15 +196,14 @@ const handleUserMenuClick = (item: string) => {
       type: 'warning',
     })
       .then(() => {
+        // ✅ 用你的 logout 方法
         userStore.logout(true)
 
         // 关闭菜单
         showUserCenter.value = false
 
-        // 显示成功消息
         ElMessage.success('退出登录成功')
 
-        // 刷新页面确保所有页面状态更新
         setTimeout(() => {
           window.location.reload()
         }, 300)
@@ -204,7 +215,6 @@ const handleUserMenuClick = (item: string) => {
   closeUserCenter()
 }
 
-// 监听窗口大小变化
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)

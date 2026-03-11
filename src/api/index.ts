@@ -25,6 +25,24 @@ import type {
   UniversityListDetailResponse,
   UniversityCountResponse,
 } from '../types/university'
+import type {
+  CareerArticle,
+  CareerArticleDetail,
+  CareerArticleCreateDto,
+  CareerDirectionItem,
+  CareerDirectionDetail,
+} from '../types/career'
+
+export interface OpenAiMessageVo {
+  role?: string
+  content?: string
+  message?: string
+  text?: string
+  isUser?: boolean
+  question?: string
+  answer?: string
+  createdAt?: string
+}
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
@@ -225,6 +243,18 @@ service.interceptors.response.use(
   },
 )
 
+const parsePossiblyJsonText = <T>(data: unknown): T => {
+  if (typeof data === 'string') {
+    const trimmed = data.trim()
+    if (!trimmed) return JSON.parse('null') as T
+    // 后端可能返回 404 等 HTML 页面，解析会报错
+    if (trimmed.startsWith('<')) {
+      throw new Error('接口返回了 HTML，请确认后端服务已启动且地址正确')
+    }
+    return JSON.parse(trimmed) as T
+  }
+  return data as T
+}
 // 通用请求函数
 const request = <T>(config: AxiosRequestConfig): Promise<T> => {
   return service(config)
@@ -242,6 +272,12 @@ const request = <T>(config: AxiosRequestConfig): Promise<T> => {
 
 // API 接口定义
 export const api = {
+  verifyToken: () =>
+    request<ApiResponse<null>>({
+      method: 'GET',
+      url: '/api/auth/verify',
+    }),
+
   clearAuthHeader: () => {
     localStorage.removeItem('userToken')
     localStorage.removeItem('token')
@@ -678,6 +714,99 @@ export const api = {
       method: 'GET',
       url: '/api/learning-progress/summary',
     }),
+
+  createCareerArticle: (data: CareerArticleCreateDto) =>
+    request<ApiResponse<CareerArticleDetail>>({
+      method: 'POST',
+      url: '/api/career-articles',
+      data,
+    }),
+
+  /** 资讯列表，可选按分类筛选 */
+  getCareerArticles: (params?: { category?: string }) =>
+    request<ApiResponse<CareerArticle[]>>({
+      method: 'GET',
+      url: '/api/career-articles',
+      params,
+    }),
+
+  /** 我发表的资讯列表（需登录，按发布日期倒序） */
+  getMyCareerArticles: () =>
+    request<ApiResponse<CareerArticle[]>>({
+      method: 'GET',
+      url: '/api/career-articles/my',
+    }),
+
+  /** 资讯详情（全文） */
+  getCareerArticleById: (id: number) =>
+    request<ApiResponse<CareerArticleDetail>>({
+      method: 'GET',
+      url: `/api/career-articles/${id}`,
+    }),
+
+  /** 更新资讯（仅作者） */
+  updateCareerArticle: (id: number, data: Partial<CareerArticleCreateDto>) =>
+    request<ApiResponse<CareerArticleDetail>>({
+      method: 'PUT',
+      url: `/api/career-articles/${id}`,
+      data,
+    }),
+
+  /** 删除资讯（仅作者） */
+  deleteCareerArticle: (id: number) =>
+    request<ApiResponse<null>>({
+      method: 'DELETE',
+      url: `/api/career-articles/${id}`,
+    }),
+
+  // ===== 热门职业方向模块 =====
+  /** 获取职业方向大类列表（筛选项） */
+  getCareerDirectionCategories: () =>
+    request<ApiResponse<string[]>>({ method: 'GET', url: '/api/career-directions/categories' }),
+
+  /** 获取热门职业方向列表，可选按大类筛选 */
+  getCareerDirections: (params?: { category?: string }) =>
+    request<ApiResponse<CareerDirectionItem[]>>({
+      method: 'GET',
+      url: '/api/career-directions',
+      params,
+    }),
+
+  /** 获取职业方向详情（含职业详情扩展信息） */
+  getCareerDirectionDetail: (id: number) =>
+    request<ApiResponse<CareerDirectionDetail>>({
+      method: 'GET',
+      url: `/api/career-directions/${id}`,
+    }),
+
+  // ===== OpenAI 会话历史（职业导航聊天用）=====
+  getOpenAiSessionIdList: async (type: string = 'chat') => {
+    const data = await request<string>({
+      method: 'GET',
+      url: `/api/chat/openai/${encodeURIComponent(type)}`,
+      responseType: 'text',
+      params: { _t: Date.now() },
+      headers: {
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+    })
+    return parsePossiblyJsonText<string[]>(data)
+  },
+
+  getOpenAiSessionHistory: async (type: string = 'chat', chanId: string) => {
+    const data = await request<string>({
+      method: 'GET',
+      url: `/api/chat/openai/${encodeURIComponent(type)}/${encodeURIComponent(chanId)}`,
+      responseType: 'text',
+      params: { _t: Date.now() },
+      headers: {
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+    })
+    return parsePossiblyJsonText<OpenAiMessageVo[]>(data)
+  },
 }
 
 // 流式请求方法
