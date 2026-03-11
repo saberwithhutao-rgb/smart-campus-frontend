@@ -58,6 +58,11 @@ request.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
+    // ===== 在这里加这两行 =====
+    console.log('[原始URL]', config.url)
+    console.log('[完整URL]', axios.getUri(config))
+    // ========================
+
     console.log('[API Request]', {
       url: config.url,
       method: config.method,
