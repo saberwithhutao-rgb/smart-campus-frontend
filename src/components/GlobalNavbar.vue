@@ -29,10 +29,12 @@
           <div v-if="showSubMenu === '个性化学习伴侣' && !isMobile" class="submenu">
             <div class="submenu-item" @click="goToSmartQA">智能问答</div>
             <div class="submenu-item" @click="goToPersonalStudy">个性化规划</div>
+            <div class="submenu-item" @click="goToStudyManagement">学习管理</div>
           </div>
           <div v-if="showSubMenu === '个性化学习伴侣' && isMobile" class="mobile-submenu">
             <div class="mobile-submenu-item" @click="goToSmartQA">智能问答</div>
             <div class="mobile-submenu-item" @click="goToPersonalStudy">个性化规划</div>
+            <div class="mobile-submenu-item" @click="goToStudyManagement">学习管理</div>
           </div>
         </div>
 
@@ -44,11 +46,9 @@
         >
           校园生活
           <div v-if="showSubMenu === '校园生活' && !isMobile" class="submenu">
-            <div class="submenu-item" @click="goToStudyManagement">学习管理</div>
             <div class="submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
           </div>
           <div v-if="showSubMenu === '校园生活' && isMobile" class="mobile-submenu">
-            <div class="mobile-submenu-item" @click="goToStudyManagement">学习管理</div>
             <div class="mobile-submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
           </div>
         </div>
