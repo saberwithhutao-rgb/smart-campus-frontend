@@ -123,7 +123,10 @@
                     </div>
                     <div class="message-content">
                       <!-- 仅在没有内容时显示“思考中”；有内容则显示流式/最终回复 -->
-                      <div v-if="msg.role === 'ai' && msg.isThinking && !msg.content" class="thinking-indicator">
+                      <div
+                        v-if="msg.role === 'ai' && msg.isThinking && !msg.content"
+                        class="thinking-indicator"
+                      >
                         <div class="thinking-dots">
                           <span></span>
                           <span></span>
@@ -131,7 +134,11 @@
                         </div>
                         <span class="thinking-text">{{ msg.statusHint || waitingTip }}</span>
                       </div>
-                      <div v-if="msg.content" class="message-text" v-html="formatMessage(msg.content)"></div>
+                      <div
+                        v-if="msg.content"
+                        class="message-text"
+                        v-html="formatMessage(msg.content)"
+                      ></div>
                     </div>
                   </div>
                 </template>
@@ -193,11 +200,7 @@
           <button type="button" class="btn-secondary" @click="fetchCareerDirections">重试</button>
         </div>
         <div v-else class="career-directions">
-          <div
-            v-for="item in careerDirectionList"
-            :key="item.id"
-            class="career-card"
-          >
+          <div v-for="item in careerDirectionList" :key="item.id" class="career-card">
             <div class="career-icon">
               <span class="icon">{{ getDefaultCareerIcon(item.category) }}</span>
             </div>
@@ -210,9 +213,13 @@
               <span class="salary-icon">💰</span>
               <span class="salary-text">平均薪资: {{ formatSalary(item) }}</span>
             </div>
-            <button type="button" class="btn-secondary" @click="openCareerDetail(item.id)">了解详情</button>
+            <button type="button" class="btn-secondary" @click="openCareerDetail(item.id)">
+              了解详情
+            </button>
           </div>
-          <div v-if="careerDirectionList.length === 0" class="career-directions-empty">暂无该分类下的职业方向</div>
+          <div v-if="careerDirectionList.length === 0" class="career-directions-empty">
+            暂无该分类下的职业方向
+          </div>
         </div>
 
         <!-- 职业方向详情弹窗 -->
@@ -222,12 +229,23 @@
             <template v-else-if="careerDetailData">
               <div class="modal-header">
                 <h3 class="modal-title">{{ careerDetailData.title }}</h3>
-                <button type="button" class="modal-close" aria-label="关闭" @click="closeCareerDetail">×</button>
+                <button
+                  type="button"
+                  class="modal-close"
+                  aria-label="关闭"
+                  @click="closeCareerDetail"
+                >
+                  ×
+                </button>
               </div>
               <div class="modal-body">
-                <p v-if="careerDetailData.description" class="career-detail-desc">{{ careerDetailData.description }}</p>
+                <p v-if="careerDetailData.description" class="career-detail-desc">
+                  {{ careerDetailData.description }}
+                </p>
                 <div v-if="careerDetailData.skills?.length" class="career-detail-skills">
-                  <span v-for="s in careerDetailData.skills" :key="s" class="skill-tag">{{ s }}</span>
+                  <span v-for="s in careerDetailData.skills" :key="s" class="skill-tag">{{
+                    s
+                  }}</span>
                 </div>
                 <p v-if="formatSalary(careerDetailData)" class="career-detail-salary">
                   <span class="salary-icon">💰</span> 平均薪资: {{ formatSalary(careerDetailData) }}
@@ -307,11 +325,7 @@
             <button type="button" class="btn-secondary" @click="fetchCareerArticles">重试</button>
           </div>
           <div v-else class="career-news">
-            <div
-              v-for="article in articleList"
-              :key="article.id"
-              class="news-card"
-            >
+            <div v-for="article in articleList" :key="article.id" class="news-card">
               <h3 class="news-title">{{ article.title }}</h3>
               <p class="news-summary">{{ article.summary }}</p>
               <div class="news-meta">
@@ -322,7 +336,9 @@
                 阅读全文
               </button>
             </div>
-            <div v-if="articleList.length === 0" class="career-news-empty">暂无资讯，去发表一条吧~</div>
+            <div v-if="articleList.length === 0" class="career-news-empty">
+              暂无资讯，去发表一条吧~
+            </div>
           </div>
         </template>
         <template v-else-if="careerArticleTab === 'my'">
@@ -337,11 +353,7 @@
             <button type="button" class="btn-secondary" @click="fetchMyCareerArticles">重试</button>
           </div>
           <div v-else class="career-news">
-            <div
-              v-for="article in myArticleList"
-              :key="article.id"
-              class="news-card news-card--my"
-            >
+            <div v-for="article in myArticleList" :key="article.id" class="news-card news-card--my">
               <h3 class="news-title">{{ article.title }}</h3>
               <p class="news-summary">{{ article.summary }}</p>
               <div class="news-meta">
@@ -349,18 +361,32 @@
                 <span class="news-source">{{ article.category }}</span>
               </div>
               <div class="news-card-actions">
-                <button type="button" class="btn-secondary btn-sm" @click="openArticleDetail(article.id)">
+                <button
+                  type="button"
+                  class="btn-secondary btn-sm"
+                  @click="openArticleDetail(article.id)"
+                >
                   阅读全文
                 </button>
-                <button type="button" class="btn-secondary btn-sm" @click="openEditModalByArticle(article)">
+                <button
+                  type="button"
+                  class="btn-secondary btn-sm"
+                  @click="openEditModalByArticle(article)"
+                >
                   编辑
                 </button>
-                <button type="button" class="btn-danger btn-sm" @click="confirmDeleteMyArticle(article.id)">
+                <button
+                  type="button"
+                  class="btn-danger btn-sm"
+                  @click="confirmDeleteMyArticle(article.id)"
+                >
                   删除
                 </button>
               </div>
             </div>
-            <div v-if="myArticleList.length === 0" class="career-news-empty">您还没有发表过资讯，点击上方「发表资讯」发布一条吧~</div>
+            <div v-if="myArticleList.length === 0" class="career-news-empty">
+              您还没有发表过资讯，点击上方「发表资讯」发布一条吧~
+            </div>
           </div>
         </template>
 
@@ -371,7 +397,9 @@
             <template v-else-if="detailArticleData">
               <div class="modal-header">
                 <h3 class="modal-title">{{ detailArticleData.title }}</h3>
-                <button type="button" class="modal-close" aria-label="关闭" @click="closeDetail">×</button>
+                <button type="button" class="modal-close" aria-label="关闭" @click="closeDetail">
+                  ×
+                </button>
               </div>
               <div class="modal-body">
                 <div class="detail-meta">
@@ -383,10 +411,16 @@
               <div class="modal-footer">
                 <button type="button" class="btn-secondary" @click="closeDetail">关闭</button>
                 <template v-if="isCurrentUserAuthor(detailArticleData)">
-                  <button type="button" class="btn-secondary" @click="openEditModal(detailArticleData)">
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    @click="openEditModal(detailArticleData)"
+                  >
                     编辑
                   </button>
-                  <button type="button" class="btn-danger" @click="confirmDeleteArticle">删除</button>
+                  <button type="button" class="btn-danger" @click="confirmDeleteArticle">
+                    删除
+                  </button>
                 </template>
               </div>
             </template>
@@ -398,7 +432,14 @@
           <div class="modal-box modal-form">
             <div class="modal-header">
               <h3 class="modal-title">{{ editArticleId ? '编辑资讯' : '发表资讯' }}</h3>
-              <button type="button" class="modal-close" aria-label="关闭" @click="closePublishModal">×</button>
+              <button
+                type="button"
+                class="modal-close"
+                aria-label="关闭"
+                @click="closePublishModal"
+              >
+                ×
+              </button>
             </div>
             <form class="modal-body publish-form" @submit.prevent="submitPublishOrEdit">
               <div class="form-group">
@@ -407,7 +448,12 @@
               </div>
               <div class="form-group">
                 <label>分类 <span class="required">*</span></label>
-                <input v-model="publishForm.category" type="text" required placeholder="如：IT行业观察" />
+                <input
+                  v-model="publishForm.category"
+                  type="text"
+                  required
+                  placeholder="如：IT行业观察"
+                />
               </div>
               <div class="form-group">
                 <label>摘要（选填，不填将自动从正文截取）</label>
@@ -415,12 +461,17 @@
               </div>
               <div class="form-group">
                 <label>正文 <span class="required">*</span></label>
-                <textarea v-model="publishForm.fullContent" rows="6" required placeholder="请输入正文"></textarea>
+                <textarea
+                  v-model="publishForm.fullContent"
+                  rows="6"
+                  required
+                  placeholder="请输入正文"
+                ></textarea>
               </div>
               <div class="form-actions">
                 <button type="button" class="btn-secondary" @click="closePublishModal">取消</button>
                 <button type="submit" class="btn-primary" :disabled="publishSubmitting">
-                  {{ publishSubmitting ? '提交中...' : (editArticleId ? '保存' : '发表') }}
+                  {{ publishSubmitting ? '提交中...' : editArticleId ? '保存' : '发表' }}
                 </button>
               </div>
             </form>
@@ -453,7 +504,6 @@ const userStore = useUserStore()
 
 // 检查屏幕尺寸 - 响应式设计
 const isMobile = ref(false)
-const showUserCenter = ref(false)
 
 // 页面内三个主要区域的 DOM 引用，用于滚动定位
 const aiSectionRef = ref<HTMLElement | null>(null)
@@ -462,7 +512,12 @@ const newsSectionRef = ref<HTMLElement | null>(null)
 
 // AI 对话相关
 const inputMessage = ref('')
-type UiChatMessage = { role: 'user' | 'ai'; content: string; isThinking?: boolean; statusHint?: string }
+type UiChatMessage = {
+  role: 'user' | 'ai'
+  content: string
+  isThinking?: boolean
+  statusHint?: string
+}
 const chatMessages = ref<UiChatMessage[]>([])
 const loading = ref(false)
 const chatMessagesRef = ref<HTMLElement | null>(null)
@@ -547,11 +602,7 @@ const normalizeHistoryToUiMessages = (items: any[]): UiChatMessage[] => {
     if (typeof it.role === 'string') {
       const rawRole = it.role.toLowerCase()
       const role: UiChatMessage['role'] =
-        rawRole === 'user'
-          ? 'user'
-          : rawRole === 'assistant' || rawRole === 'ai'
-            ? 'ai'
-            : 'ai'
+        rawRole === 'user' ? 'user' : rawRole === 'assistant' || rawRole === 'ai' ? 'ai' : 'ai'
       const content = String(it.content ?? it.message ?? it.text ?? '')
       if (content.trim()) messages.push({ role, content })
       continue
@@ -613,7 +664,8 @@ const startNewChat = () => {
 
   chatMessages.value.push({
     role: 'ai',
-    content: '我是职业导航智能顾问，我可帮你进行职业测评，职业路径规划，岗位推荐等，你有任何职业上的问题都能来问我',
+    content:
+      '我是职业导航智能顾问，我可帮你进行职业测评，职业路径规划，岗位推荐等，你有任何职业上的问题都能来问我',
   } as UiChatMessage)
 }
 
@@ -748,17 +800,17 @@ const careerDetailError = ref('')
 const CATEGORY_ICONS: Record<string, string> = {
   '互联网/AI': '💻',
   '电子/通信/半导体': '📡',
-  '服务业': '🏪',
-  '管理类': '📋',
-  '房地产': '🏢',
-  '设计': '🎨',
-  '制造业': '🏭',
-  '教育行业': '📚',
-  '医学': '⚕️',
-  '药学': '💊',
-  '建筑': '🏗️',
-  '交通': '🚗',
-  '金融': '💰',
+  服务业: '🏪',
+  管理类: '📋',
+  房地产: '🏢',
+  设计: '🎨',
+  制造业: '🏭',
+  教育行业: '📚',
+  医学: '⚕️',
+  药学: '💊',
+  建筑: '🏗️',
+  交通: '🚗',
+  金融: '💰',
 }
 
 function getDefaultCareerIcon(category: string): string {
@@ -874,7 +926,10 @@ const publishSubmitting = ref(false)
 
 /** 当前登录用户 ID（用于判断是否为作者） */
 const currentUserId = computed(() => {
-  const state = userStore.userState as { value?: { userInfo?: { userId?: number } }; userInfo?: { userId?: number } }
+  const state = userStore.userState as {
+    value?: { userInfo?: { userId?: number } }
+    userInfo?: { userId?: number }
+  }
   const info = state?.value?.userInfo ?? state?.userInfo
   return info?.userId != null ? Number(info.userId) : null
 })
@@ -967,7 +1022,8 @@ function confirmDeleteMyArticle(id: number) {
         fetchMyCareerArticles()
         if (detailArticleData.value?.id === id) closeDetail()
       } else {
-        const msg = (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
+        const msg =
+          (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
         alert(msg || '删除失败')
       }
     })
@@ -1029,7 +1085,11 @@ async function submitPublishOrEdit() {
   publishSubmitting.value = true
   try {
     const id = editArticleId.value
-    const payload: CareerArticleCreateDto = { title: title.trim(), fullContent: fullContent.trim(), category: category.trim() }
+    const payload: CareerArticleCreateDto = {
+      title: title.trim(),
+      fullContent: fullContent.trim(),
+      category: category.trim(),
+    }
     const summaryVal = summary?.trim()
     if (summaryVal) payload.summary = summaryVal
 
@@ -1042,7 +1102,8 @@ async function submitPublishOrEdit() {
         await fetchCareerArticles()
         if (careerArticleTab.value === 'my') await fetchMyCareerArticles()
       } else {
-        const msg = (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
+        const msg =
+          (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
         alert(msg || '更新失败')
       }
     } else {
@@ -1053,7 +1114,8 @@ async function submitPublishOrEdit() {
         await fetchCareerArticles()
         if (careerArticleTab.value === 'my') await fetchMyCareerArticles()
       } else {
-        const msg = (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
+        const msg =
+          (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
         alert(msg || '发表失败')
       }
     }
@@ -1077,7 +1139,8 @@ function confirmDeleteArticle() {
         fetchCareerArticles()
         if (careerArticleTab.value === 'my') fetchMyCareerArticles()
       } else {
-        const msg = (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
+        const msg =
+          (res as { msg?: string; message?: string }).msg ?? (res as { message?: string }).message
         alert(msg || '删除失败')
       }
     })
@@ -1504,7 +1567,9 @@ watch(
   border-radius: 16px;
   padding: 0;
   margin-bottom: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(85, 104, 211, 0.04);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(85, 104, 211, 0.04);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1805,8 +1870,15 @@ watch(
 }
 
 @keyframes waiting-pulse {
-  0%, 100% { opacity: 0.4; transform: scale(0.9); }
-  50% { opacity: 1; transform: scale(1.1); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
 }
 
 .waiting-hint-text {
@@ -1972,7 +2044,9 @@ watch(
   font-size: 14px;
   resize: none;
   font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   min-height: 52px;
 }
 

@@ -113,7 +113,6 @@ const activeMenu = ref('')
 const showSubMenu = ref('')
 const isMobile = ref(false)
 
-// ✅ 用你的 hasToken 计算逻辑（更规范）
 const hasToken = computed(() => {
   return userStore.userState.isLoggedIn && !!userStore.userState.userInfo?.token
 })

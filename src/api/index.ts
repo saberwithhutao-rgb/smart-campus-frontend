@@ -167,18 +167,6 @@ service.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
-    // 开发环境下生成随机userId用于测试
-    if (import.meta.env.DEV && !localStorage.getItem('userId')) {
-      const userId = Math.floor(Math.random() * 1000000).toString()
-      localStorage.setItem('userId', userId)
-      console.log(
-        '%c[Test Mode]',
-        'color: #FF9800; font-weight: bold;',
-        `Generated random userId: ${userId}`,
-      )
-      config.headers['X-User-Id'] = userId
-    }
-
     // 开发环境下添加调试日志
     if (import.meta.env.DEV) {
       console.log('%c[API Request]', 'color: #4CAF50; font-weight: bold;', {
@@ -204,7 +192,6 @@ service.interceptors.request.use(
 )
 
 // 响应拦截器
-// 文件B有，文件A没有
 service.interceptors.response.use(
   (response) => {
     // ✅ 响应日志
@@ -501,7 +488,7 @@ export const api = {
   // 简单问答接口（兼容旧版本）
   sendAiMessage: (message: string, chanId?: string) =>
     request<string>({
-      method: 'POST',
+      method: 'GET',
       url: '/ai/chat/openai',
       params: { message, chanId },
     }),
