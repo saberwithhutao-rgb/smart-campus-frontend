@@ -343,6 +343,75 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     }
   }
 
+  // 已完成的学习计划及其复习状态
+  const completedPlansWithReviewStatus = computed(() => {
+    const completedPlans = studyPlans.value.filter((plan) => plan.status === 'completed')
+
+    return completedPlans.map((plan) => {
+      const planTasks = allReviewTasks.value.filter((task) => task.planId === plan.id)
+
+      if (planTasks.length === 0) {
+        return {
+          ...plan,
+          reviewStatus: {
+            type: 'no-tasks',
+            displayText: '暂无复习任务',
+          },
+        }
+      }
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const ongoingTask = planTasks.find((task) => {
+        if (task.status !== 'pending') return false
+        const taskDate = new Date(task.taskDate)
+        taskDate.setHours(0, 0, 0, 0)
+        return taskDate <= today
+      })
+
+      const futureTask = planTasks.find((task) => {
+        if (task.status !== 'pending') return false
+        const taskDate = new Date(task.taskDate)
+        taskDate.setHours(0, 0, 0, 0)
+        return taskDate > today
+      })
+
+      const allCompleted =
+        planTasks.length > 0 && planTasks.every((task) => task.status === 'completed')
+
+      let type = ''
+      let displayText = ''
+      let daysLeft = 0
+      let stage = 0
+
+      if (ongoingTask) {
+        type = 'ongoing'
+        stage = ongoingTask.reviewStage
+        displayText = `正在进行第${stage}次复习`
+      } else if (futureTask) {
+        type = 'future'
+        stage = futureTask.reviewStage
+        const taskDate = new Date(futureTask.taskDate)
+        taskDate.setHours(0, 0, 0, 0)
+        const diffTime = taskDate.getTime() - today.getTime()
+        daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        displayText = `距离第${stage}次复习还有${daysLeft}天`
+      } else if (allCompleted) {
+        type = 'completed'
+        displayText = '已完成全部复习任务'
+      } else {
+        type = 'unknown'
+        displayText = '复习状态未知'
+      }
+
+      return {
+        ...plan,
+        reviewStatus: { type, stage, daysLeft, displayText },
+      }
+    })
+  })
+
   // 初始化
   const init = async () => {
     await fetchStudyPlans()
@@ -373,6 +442,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     fetchPendingTasks,
     fetchAllReviewTasks,
     completeTask,
+    completedPlansWithReviewStatus,
 
     // 学习计划方法
     fetchStudyPlans,

@@ -375,10 +375,10 @@ export const api = {
     }),
 
   // 获取复习任务详情（用于复习详情页）
-  getReviewTaskDetail: (taskId: number) =>
-    request<ApiResponse<StudyTask>>({
+  getReviewTaskDetail: (planId: number) =>
+    request<StudyTask>({
       method: 'GET',
-      url: `/api/study/tasks/review/${taskId}`, // 注意路径是 /review/{id}
+      url: `/api/study/tasks/review/${planId}`,
     }),
 
   // 获取某个学习计划的历史复习任务
@@ -484,6 +484,14 @@ export const api = {
       data: formData,
     })
   },
+
+  // 简单问答接口（兼容旧版本）
+  sendAiMessage: (message: string, chanId?: string) =>
+    request<string>({
+      method: 'POST',
+      url: '/ai/chat/openai',
+      params: { message, chanId },
+    }),
 
   // 查询任务状态
   getTaskStatus: (taskId: string) =>

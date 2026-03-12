@@ -35,15 +35,14 @@
               v-for="task in pendingTasks"
               :key="task.id"
               class="task-card"
-              @click="goToReviewDetail(task.id)"
+              @click="goToReviewDetail(task.planId)"
             >
-              <!-- 卡片内容，不需要复选框了 -->
               <div class="task-card-left">
                 <div class="task-icon">⏰</div>
                 <div class="task-info">
                   <div class="task-title">{{ task.title }}</div>
                   <div class="task-meta">
-                    <span class="task-subject">{{ task.subject || '未分类' }}</span>
+                    <span class="task-subject">{{ getTaskSubject(task) || '未分类' }}</span>
                     <span class="task-stage">
                       <el-tag :type="getStageTagType(task.reviewStage)" size="small">
                         第 {{ task.reviewStage }} 次复习
@@ -68,25 +67,27 @@
         <div class="review-section generated-section">
           <div class="section-header">
             <h3 class="section-title">📚 我的复习计划</h3>
-            <div class="section-stats">总数: {{ completedTasks.length }}</div>
+            <div class="section-stats">
+              总数: {{ studyPlanStore.completedPlansWithReviewStatus.length }}
+            </div>
           </div>
 
           <div class="plan-list">
             <div
-              v-for="task in completedTasks"
-              :key="task.id"
+              v-for="plan in studyPlanStore.completedPlansWithReviewStatus"
+              :key="plan.id"
               class="plan-card"
-              @click="goToReviewDetail(task.id)"
+              @click="goToReviewDetail(plan.id)"
             >
               <div class="plan-card-left">
                 <div class="plan-icon">📖</div>
                 <div class="plan-info">
-                  <div class="plan-title">{{ task.title }}</div>
+                  <div class="plan-title">{{ plan.title }}</div>
                   <div class="plan-meta">
-                    <span class="plan-subject">{{ task.subject || '未分类' }}</span>
-                    <span class="plan-stage">
-                      <el-tag :type="getStageTagType(task.reviewStage)" size="small">
-                        第 {{ task.reviewStage }} 次复习
+                    <span class="plan-subject">{{ plan.subject || '未分类' }}</span>
+                    <span class="plan-review-status">
+                      <el-tag :type="getReviewStatusTagType(plan.reviewStatus.type)" size="small">
+                        {{ plan.reviewStatus.displayText }}
                       </el-tag>
                     </span>
                   </div>
@@ -94,11 +95,9 @@
               </div>
 
               <div class="plan-card-right">
-                <div class="plan-time">{{ formatDate(task.taskDate) }}</div>
+                <div class="plan-time">{{ formatDate(plan.endDate || plan.startDate) }}</div>
                 <div class="plan-status">
-                  <el-tag size="small" :type="task.status === 'completed' ? 'success' : 'primary'">
-                    {{ task.status === 'completed' ? '已完成' : '进行中' }}
-                  </el-tag>
+                  <el-tag size="small" type="success">已完成</el-tag>
                 </div>
                 <el-icon class="arrow-icon"><ArrowRight /></el-icon>
               </div>
@@ -107,47 +106,6 @@
         </div>
       </main>
     </div>
-
-    <!-- 艾宾浩斯遗忘曲线弹窗（保持不变） -->
-    <el-dialog
-      v-model="showEbbinghausModal"
-      title="艾宾浩斯遗忘曲线"
-      width="600px"
-      :close-on-click-modal="false"
-    >
-      <!-- 原有弹窗内容保持不变 -->
-      <div class="ebbinghaus-container">
-        <div class="curve-image-container">
-          <img
-            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Crect width='800' height='400' fill='%23f5f7fa'/%3E%3Cpath d='M100 300 L700 300' stroke='%23ccc' stroke-width='2'/%3E%3Cpath d='M100 300 L100 50' stroke='%23ccc' stroke-width='2'/%3E%3Ctext x='80' y='320' fill='%23666' font-size='12'%3E0%3C/text%3E%3Ctext x='180' y='320' fill='%23666' font-size='12'%3E1%3C/text%3E%3Ctext x='280' y='320' fill='%23666' font-size='12'%3E2%3C/text%3E%3Ctext x='380' y='320' fill='%23666' font-size='12'%3E3%3C/text%3E%3Ctext x='480' y='320' fill='%23666' font-size='12'%3E4%3C/text%3E%3Ctext x='580' y='320' fill='%23666' font-size='12'%3E5%3C/text%3E%3Ctext x='680' y='320' fill='%23666' font-size='12'%3E6%3C/text%3E%3Ctext x='60' y='300' fill='%23666' font-size='12'%3E100%25%3C/text%3E%3Ctext x='60' y='250' fill='%23666' font-size='12'%3E75%25%3C/text%3E%3Ctext x='60' y='200' fill='%23666' font-size='12'%3E50%25%3C/text%3E%3Ctext x='60' y='150' fill='%23666' font-size='12'%3E25%25%3C/text%3E%3Ctext x='60' y='100' fill='%23666' font-size='12'%3E0%25%3C/text%3E%3Cpath d='M100 100 Q200 180 300 200 Q400 220 500 250 Q600 280 700 300' stroke='%23165dff' stroke-width='4' fill='none'/%3E%3Ccircle cx='100' cy='100' r='6' fill='%23165dff'/%3E%3Ccircle cx='200' cy='180' r='6' fill='%23165dff'/%3E%3Ccircle cx='300' cy='200' r='6' fill='%23165dff'/%3E%3Ccircle cx='400' cy='220' r='6' fill='%23165dff'/%3E%3Ccircle cx='500' cy='250' r='6' fill='%23165dff'/%3E%3Ccircle cx='600' cy='280' r='6' fill='%23165dff'/%3E%3Ccircle cx='700' cy='300' r='6' fill='%23165dff'/%3E%3Ctext x='80' y='80' fill='%23165dff' font-size='14'%3E刚刚记忆%3C/text%3E%3Ctext x='180' y='160' fill='%23165dff' font-size='14'%3E1天后%3C/text%3E%3Ctext x='280' y='180' fill='%23165dff' font-size='14'%3E2天后%3C/text%3E%3Ctext x='380' y='200' fill='%23165dff' font-size='14'%3E3天后%3C/text%3E%3Ctext x='480' y='230' fill='%23165dff' font-size='14'%3E4天后%3C/text%3E%3Ctext x='580' y='260' fill='%23165dff' font-size='14'%3E5天后%3C/text%3E%3Ctext x='680' y='280' fill='%23165dff' font-size='14'%3E6天后%3C/text%3E%3C/svg%3E"
-            alt="艾宾浩斯遗忘曲线"
-            class="curve-image"
-          />
-        </div>
-
-        <div class="curve-description">
-          <h4>艾宾浩斯遗忘曲线复习计划</h4>
-          <p>根据遗忘曲线规律，您将在以下时间点进行复习：</p>
-          <ul>
-            <li><span class="dot"></span> 第1天（记忆保留约44%）</li>
-            <li><span class="dot"></span> 第3天（记忆保留约33%）</li>
-            <li><span class="dot"></span> 第7天（记忆保留约25%）</li>
-            <li><span class="dot"></span> 第15天（记忆保留约21%）</li>
-            <li><span class="dot"></span> 第30天（记忆保留约19%）</li>
-          </ul>
-          <p class="note">每次复习后，记忆保留率会大幅提升，最终形成长期记忆。</p>
-        </div>
-      </div>
-
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showEbbinghausModal = false">取消</el-button>
-          <el-button type="primary" @click="confirmGenerate" :loading="generating">
-            开始生成 ({{ selectedTaskIds.length }}个任务)
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -156,46 +114,34 @@ import GlobalNavbar from '../components/GlobalNavbar.vue'
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStudyPlanStore } from '../stores/studyPlan'
-import { useReviewDetailStore } from '@/stores/reviewDetail'
-import { ElMessage } from 'element-plus'
+import type { StudyTask } from '@/stores/studyPlan'
 import { ArrowRight } from '@element-plus/icons-vue'
 import { nextTick } from 'vue'
 
 const router = useRouter()
-const reviewDetailStore = useReviewDetailStore()
 const studyPlanStore = useStudyPlanStore()
 const pendingTasks = computed(() => studyPlanStore.pendingTasks)
-const completedTasks = computed(() => studyPlanStore.completedTasks)
-const goToReviewDetail = (taskId: number) => {
-  router.push(`/ai/study/review/detail/${taskId}`)
+const goToReviewDetail = (planId: number) => {
+  router.push(`/ai/study/review/detail/${planId}`)
 }
 const isMobile = ref(false)
 const showSidebar = ref(true)
 const selectedTaskIds = ref<number[]>([])
-const showEbbinghausModal = ref(false)
-const generating = ref(false)
 
-const confirmGenerate = async () => {
-  if (selectedTaskIds.value.length === 0) {
-    ElMessage.warning('请至少选择一个任务')
-    return
+const getReviewStatusTagType = (type: string) => {
+  const map: Record<string, string> = {
+    ongoing: 'warning', // 进行中 - 黄色
+    future: 'info', // 未来 - 蓝色
+    completed: 'success', // 全部完成 - 绿色
+    'no-tasks': 'info', // 无任务 - 灰色
+    unknown: 'danger', // 未知 - 红色
   }
-  generating.value = true
-  try {
-    await reviewDetailStore.generateReviewPlan(selectedTaskIds.value)
+  return map[type] || 'info'
+}
 
-    ElMessage.success(`已为 ${selectedTaskIds.value.length} 个任务生成复习计划`)
-    showEbbinghausModal.value = false
-    selectedTaskIds.value = []
-
-    // 刷新待办任务和已生成的复习计划
-    await Promise.all([studyPlanStore.fetchPendingTasks(), studyPlanStore.fetchGeneratedPlans()])
-  } catch (error) {
-    console.error('生成复习计划失败:', error)
-    ElMessage.error('生成复习计划失败')
-  } finally {
-    generating.value = false
-  }
+const getTaskSubject = (task: StudyTask) => {
+  const plan = studyPlanStore.studyPlans.find((p) => p.id === task.planId)
+  return plan?.subject || '未分类'
 }
 
 const getStageTagType = (stage: number) => {

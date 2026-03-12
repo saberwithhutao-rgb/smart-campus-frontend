@@ -2,6 +2,13 @@
 import request from '@/utils/request'
 import type { StudyTask } from '@/stores/studyPlan'
 
+export const completeReviewTask = (taskId: number) => {
+  return request<StudyTask>({
+    method: 'POST',
+    url: `/api/study/tasks/${taskId}/complete`,
+  })
+}
+
 // 获取所有复习任务
 export const getAllReviewTasks = () => {
   return request<StudyTask[]>({
