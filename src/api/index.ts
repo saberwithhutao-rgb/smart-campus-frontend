@@ -365,7 +365,7 @@ export const api = {
 
   // 获取复习任务详情（用于复习详情页）
   getReviewTaskDetail: (planId: number) =>
-    request<StudyTask>({
+    request<ApiResponse<StudyTask>>({
       method: 'GET',
       url: `/api/study/tasks/review/${planId}`,
     }),
