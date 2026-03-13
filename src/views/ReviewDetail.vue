@@ -305,6 +305,8 @@ const confirmCompleteReview = () => {
 // 完成复习
 const completeReview = async () => {
   if (!taskDetail.value) return
+  console.log('准备完成复习，taskDetail.value:', taskDetail.value)
+  console.log('taskDetail.value.id:', taskDetail.value.id)
 
   isCompleting.value = true
   try {
