@@ -208,9 +208,9 @@
                         type="button"
                         class="subject-btn cancel-btn"
                         @click="
-                          showAddProgress = false
-                          newProgressName = ''
-                          newProgressPercent = 0
+                          ((showAddProgress = false),
+                          (newProgressName = ''),
+                          (newProgressPercent = 0))
                         "
                       >
                         取消
