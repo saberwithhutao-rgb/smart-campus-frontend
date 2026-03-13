@@ -2,32 +2,20 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '@/api'
 import type { StudyTask } from './studyPlan'
-// 复习计划详情接口
-export interface ReviewPlanDetail {
-  id: number
-  studyPlanId: number // 关联的学习计划ID
-  title: string // 复习计划标题（通常是原任务标题）
-  content: string // Markdown格式的复习计划内容
-  reviewStage: number // 当前复习阶段（1,2,3,4,5）
-  createdAt: string // 生成时间
-  updatedAt: string
-  status: 'active' | 'completed' // 复习状态
-}
 
 export const useReviewDetailStore = defineStore('reviewDetail', () => {
-  // 状态
   const currentReviewPlan = ref<StudyTask | null>(null)
   const historyPlans = ref<StudyTask[]>([])
   const isLoading = ref(false)
   const isGenerating = ref(false)
   const showHistoryDialog = ref(false)
-  const currentHistoryPlan = ref<ReviewPlanDetail | null>(null)
+  const currentHistoryPlan = ref<StudyTask | null>(null) // 改为 StudyTask
 
   const fetchReviewPlanDetail = async (planId: number) => {
     isLoading.value = true
     try {
-      const response = await api.getReviewTaskDetail(planId)
-      currentReviewPlan.value = response.data
+      const task = await api.getReviewTaskDetail(planId)
+      currentReviewPlan.value = task // task 已经是 StudyTask
     } catch (error) {
       console.error('获取复习计划详情失败:', error)
     } finally {
@@ -69,7 +57,8 @@ export const useReviewDetailStore = defineStore('reviewDetail', () => {
   }
 
   // 查看单个历史计划
-  const viewHistoryPlan = (plan: ReviewPlanDetail) => {
+  const viewHistoryPlan = (plan: StudyTask) => {
+    // 改为 StudyTask
     currentHistoryPlan.value = plan
   }
 

@@ -65,17 +65,6 @@ export interface GeneratePlanResponse {
   detailId: number
 }
 
-export interface ReviewPlanDetail {
-  id: number
-  studyPlanId: number
-  title: string
-  content: string
-  reviewStage: number
-  createdAt: string
-  updatedAt: string
-  status: 'active' | 'completed'
-}
-
 // 新增类型定义
 interface LoginData {
   token: string
@@ -348,14 +337,14 @@ export const api = {
       url: `/api/study/plans/${id}`,
     }),
   getReviewPlanDetail: (planId: number) =>
-    request<ApiResponse<ReviewPlanDetail>>({
+    request<ApiResponse<StudyTask>>({
       method: 'GET',
       url: `/api/study/review-plans/${planId}`,
     }),
 
   // 获取复习计划历史列表
   getReviewPlanHistory: (studyPlanId: number) =>
-    request<ApiResponse<ReviewPlanDetail>>({
+    request<ApiResponse<StudyTask[]>>({
       method: 'GET',
       url: `/api/study/review-plans/${studyPlanId}/history`,
     }),

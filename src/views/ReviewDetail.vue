@@ -274,9 +274,12 @@ const formatDateTime = (dateStr: string) => {
 onMounted(async () => {
   isLoading.value = true
   try {
-    // 一次性获取当前应该显示的复习任务详情
-    const task = await api.getReviewTaskDetail(planId)
-    taskDetail.value = task
+    const response = await api.getReviewTaskDetail(planId)
+    console.log('api返回原始数据:', response)
+    console.log('是否有id:', response?.id)
+
+    taskDetail.value = response
+    console.log('赋值后的taskDetail:', taskDetail.value)
   } catch (error) {
     console.error('获取复习详情失败:', error)
     ElMessage.error('获取复习详情失败')
