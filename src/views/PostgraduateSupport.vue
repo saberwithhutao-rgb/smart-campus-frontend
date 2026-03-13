@@ -106,12 +106,21 @@
               </div>
               <template v-else-if="progressError">
                 <p class="progress-error">{{ progressError }}</p>
-                <button type="button" class="retry-progress-btn" @click="fetchLearningProgressSummary">重试</button>
+                <button
+                  type="button"
+                  class="retry-progress-btn"
+                  @click="fetchLearningProgressSummary"
+                >
+                  重试
+                </button>
               </template>
               <template v-else>
                 <p class="current-progress">当前学习进度</p>
                 <div class="progress-bar">
-                  <div class="progress-fill" :style="{ width: (learningProgressSummary?.overallPercent ?? 0) + '%' }"></div>
+                  <div
+                    class="progress-fill"
+                    :style="{ width: (learningProgressSummary?.overallPercent ?? 0) + '%' }"
+                  ></div>
                 </div>
                 <p class="overall-percent">{{ learningProgressSummary?.overallPercent ?? 0 }}%</p>
                 <div class="subject-progress">
@@ -136,8 +145,20 @@
                           class="subject-percent-input"
                         />
                         <span class="percent-suffix">%</span>
-                        <button type="button" class="subject-btn save-btn" @click="submitUpdateProgress(item.id)">保存</button>
-                        <button type="button" class="subject-btn cancel-btn" @click="editingProgressId = null">取消</button>
+                        <button
+                          type="button"
+                          class="subject-btn save-btn"
+                          @click="submitUpdateProgress(item.id)"
+                        >
+                          保存
+                        </button>
+                        <button
+                          type="button"
+                          class="subject-btn cancel-btn"
+                          @click="editingProgressId = null"
+                        >
+                          取消
+                        </button>
                       </div>
                     </template>
                     <template v-else>
@@ -146,8 +167,20 @@
                         <span class="subject-value">{{ item.progressPercent }}%</span>
                       </div>
                       <div class="subject-actions">
-                        <button type="button" class="subject-btn edit-btn" @click="startEditProgress(item)">编辑</button>
-                        <button type="button" class="subject-btn delete-btn" @click="deleteProgressItem(item.id)">删除</button>
+                        <button
+                          type="button"
+                          class="subject-btn edit-btn"
+                          @click="startEditProgress(item)"
+                        >
+                          编辑
+                        </button>
+                        <button
+                          type="button"
+                          class="subject-btn delete-btn"
+                          @click="deleteProgressItem(item.id)"
+                        >
+                          删除
+                        </button>
                       </div>
                     </template>
                   </div>
@@ -168,8 +201,20 @@
                         placeholder="0"
                       />
                       <span class="percent-suffix">%</span>
-                      <button type="button" class="subject-btn save-btn" @click="submitAddProgress">添加</button>
-                      <button type="button" class="subject-btn cancel-btn" @click="showAddProgress = false; newProgressName = ''; newProgressPercent = 0">取消</button>
+                      <button type="button" class="subject-btn save-btn" @click="submitAddProgress">
+                        添加
+                      </button>
+                      <button
+                        type="button"
+                        class="subject-btn cancel-btn"
+                        @click="
+                          showAddProgress = false
+                          newProgressName = ''
+                          newProgressPercent = 0
+                        "
+                      >
+                        取消
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -378,7 +423,6 @@
 import GlobalNavbar from '../components/GlobalNavbar.vue'
 import { ref, onMounted, onUnmounted, computed, watch, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
 import { api } from '../api'
 import type { University, UniversityListDetail } from '../types/university'
 import type { ExamCountdown, LearningProgressItem, LearningProgressSummary } from '../types/user'
@@ -386,12 +430,8 @@ import type { ExamCountdown, LearningProgressItem, LearningProgressSummary } fro
 // 路由实例
 const router = useRouter()
 
-// 用户状态管理
-const userStore = useUserStore()
-
 // 检查屏幕尺寸 - 响应式设计
 const isMobile = ref(false)
-const showUserCenter = ref(false)
 
 // 院校数据
 // 根据院校名称关键词过滤后的院校列表（用于展示）
@@ -562,28 +602,27 @@ const fetchLearningProgressSummary = async () => {
   progressError.value = ''
   try {
     const response = await api.getLearningProgressSummary()
-    const res: any = response
-    const rawCode = res.code
-    const numericCode =
-      typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
+
+    // 现在 response 是 ApiResponse<LearningProgressSummary> 类型
+    const rawCode = response.code
+    const numericCode = typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
 
     // 兼容多种后端风格：
     // - code 为 1 / '1'（常见业务成功码）
     // - code 为 200 / '200'（有些后端把 HTTP 200 也作为业务码返回）
     // - 未返回 code 但 data 结构正确
     const hasValidData =
-      res.data &&
-      typeof res.data.overallPercent === 'number' &&
-      Array.isArray(res.data.items)
+      response.data &&
+      typeof response.data.overallPercent === 'number' &&
+      Array.isArray(response.data.items)
 
-    const successByCode =
-      numericCode === 1 || numericCode === 200 || numericCode === 0
+    const successByCode = numericCode === 1 || numericCode === 200 || numericCode === 0
 
     if (successByCode || (numericCode == null && hasValidData)) {
-      learningProgressSummary.value = res.data || { overallPercent: 0, items: [] }
+      learningProgressSummary.value = response.data || { overallPercent: 0, items: [] }
       progressError.value = ''
     } else {
-      const msg = (res.msg as string | undefined) ?? (res.message as string | undefined)
+      const msg = response.message
       progressError.value = msg || '获取学习进度失败'
     }
   } catch (err) {
@@ -621,8 +660,7 @@ const submitUpdateProgress = async (id: number) => {
       progressPercent: percent,
     })
     const rawCode = (response as { code?: number | string }).code ?? (response as any).code
-    const numericCode =
-      typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
+    const numericCode = typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
     if (numericCode === 1 || numericCode === 200 || numericCode === 0) {
       editingProgressId.value = null
       await fetchLearningProgressSummary()
@@ -650,8 +688,7 @@ const submitAddProgress = async () => {
   try {
     const response = await api.addLearningProgress({ name, progressPercent: percent })
     const rawCode = (response as { code?: number | string }).code ?? (response as any).code
-    const numericCode =
-      typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
+    const numericCode = typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
     if (numericCode === 1 || numericCode === 200 || numericCode === 0) {
       showAddProgress.value = false
       newProgressName.value = ''
@@ -672,8 +709,7 @@ const deleteProgressItem = async (id: number) => {
   try {
     const response = await api.deleteLearningProgress(id)
     const rawCode = (response as { code?: number | string }).code ?? (response as any).code
-    const numericCode =
-      typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
+    const numericCode = typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
     if (numericCode === 1 || numericCode === 200 || numericCode === 0) {
       await fetchLearningProgressSummary()
     } else {
@@ -734,12 +770,28 @@ const isFavorite = (universityId: number) => {
   return favoriteUniversityIds.value.includes(universityId)
 }
 
-// 解析标签字符串
-const parseTags = (tags: string) => {
+// 解析标签字符串 - 处理各种边界情况
+const parseTags = (tags: string | undefined | null): string[] => {
+  // 处理 null、undefined 或空字符串
+  if (tags == null || tags === '') {
+    return []
+  }
+
   try {
-    const parsed = JSON.parse(tags.replace(/\\/g, '"'))
+    // 尝试直接解析
+    let parsed
+    try {
+      parsed = JSON.parse(tags)
+    } catch {
+      // 如果解析失败，尝试处理转义字符
+      const cleaned = tags.replace(/\\/g, '"')
+      parsed = JSON.parse(cleaned)
+    }
+
+    // 确保返回的是数组
     return Array.isArray(parsed) ? parsed : []
-  } catch {
+  } catch (error) {
+    console.warn('解析标签失败:', tags, error)
     return []
   }
 }

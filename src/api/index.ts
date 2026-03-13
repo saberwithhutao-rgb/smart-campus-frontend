@@ -652,7 +652,11 @@ export const api = {
       data,
     }),
 
-  getExamCountdowns: () => request<ExamCountdown>({ method: 'GET', url: '/api/exams' }),
+  getExamCountdowns: () =>
+    request<ApiResponse<ExamCountdown[]>>({
+      method: 'GET',
+      url: '/api/exams',
+    }),
 
   /** 添加学习科目/知识点 */
   addLearningProgress: (data: { name: string; progressPercent?: number }) =>

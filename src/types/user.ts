@@ -76,10 +76,14 @@ export interface ApiResponse<T = unknown> {
 }
 
 // 验证码类型
-export type CaptchaResponse =
-  | string
-  | { id: string; code: string }
-  | { captchaId: string; imageBase64: string; message: string }
+export interface CaptchaResponse {
+  code: number
+  data: string // 验证码文本
+  captchaId?: string // 会话ID
+  captchaBase64?: string // 验证码图片Base64
+  message?: string // 消息
+  expiresIn?: number // 过期时间（秒）
+}
 
 // 登录响应类型
 // 后端返回的用户数据结构

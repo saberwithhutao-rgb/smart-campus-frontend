@@ -2,18 +2,10 @@
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
 
 // 路由实例
 const router = useRouter()
 
-// 用户状态管理
-const userStore = useUserStore()
-
-// 响应式数据
-const showUserCenter = ref(false) // 显示个人中心菜单
-const activeMenu = ref('') // 当前激活的菜单
-const showSubMenu = ref('') // 显示子菜单
 const isMobile = ref(false) // 移动端标识
 
 // 检查屏幕尺寸
@@ -21,24 +13,9 @@ const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 768
 }
 
-// 跳转登录页面
-const goToLogin = () => {
-  router.push('/login')
-}
-
-// 跳转注册页面
-const goToRegister = () => {
-  router.push('/register')
-}
-
 // 跳转到智能问答页面
 const goToSmartQA = () => {
   router.push('/ai/chat')
-}
-
-// 跳转到个性化规划页面
-const goToPersonalStudy = () => {
-  router.push('/ai/study')
 }
 
 // 跳转到学习管理页面
@@ -49,104 +26,6 @@ const goToStudyManagement = () => {
 // 跳转到竞赛管理页面
 const goToCompetitionManagement = () => {
   router.push('/career/competitions')
-}
-
-// 跳转到职业导航页面
-const goToCareerNavigation = () => {
-  router.push('/career/position')
-}
-
-// 跳转到考研支持页面
-const goToExamSupport = () => {
-  router.push('/career/pee')
-}
-
-// 跳转到图书馆馆藏实况页面
-const goToLibraryStatus = () => {
-  router.push('/campus/library')
-}
-
-// 切换个人中心菜单
-const toggleUserCenter = () => {
-  showUserCenter.value = !showUserCenter.value
-}
-
-// 关闭个人中心菜单
-const closeUserCenter = () => {
-  showUserCenter.value = false
-}
-
-// 鼠标悬浮子菜单
-const showSubMenuHandler = (menu: string) => {
-  if (!isMobile.value) {
-    showSubMenu.value = menu
-  }
-}
-
-// 隐藏子菜单
-const hideSubMenu = () => {
-  showSubMenu.value = ''
-}
-
-// 处理登录
-const handleLogin = async () => {
-  try {
-    // 正确的调用方式：传入4个单独参数
-    const result = await userStore.login(
-      'testuser123', // username
-      '123456', // password
-      '123456', // captcha
-      'test', // captchaId（可选）
-    )
-
-    if (result.success) {
-      alert('登录成功！')
-      // 根据用户角色跳转到相应页面
-      const user = userStore.userState.userInfo
-      if (user?.role === 'admin') {
-        router.push('/user-manage')
-      } else {
-        router.push('/') // 跳转到首页
-      }
-    }
-  } catch (error) {
-    alert('登录失败，请检查用户名和密码')
-  }
-}
-
-// 菜单点击处理
-const handleMenuClick = (menu: string) => {
-  if (isMobile.value) {
-    if (showSubMenu.value === menu) {
-      showSubMenu.value = ''
-    } else {
-      showSubMenu.value = menu
-    }
-  } else {
-    // 桌面端显示子菜单
-    if (['个性化学习伴侣', '校园生活', '竞赛相关'].includes(menu)) {
-      showSubMenuHandler(menu)
-    } else {
-      // 其他菜单项点击处理
-      if (menu === '首页') {
-        // 当前页面，无需跳转
-        hideSubMenu()
-      } else {
-        alert(`${menu}功能开发中...`)
-        hideSubMenu()
-      }
-    }
-  }
-}
-
-// 个人中心菜单项点击
-const handleUserMenuClick = (item: string) => {
-  if (item === '个人信息') {
-    router.push('/profile')
-  } else if (item === '退出登录') {
-    router.push('/login')
-  }
-  closeUserCenter()
 }
 
 // 监听窗口大小变化

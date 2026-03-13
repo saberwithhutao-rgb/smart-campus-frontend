@@ -533,7 +533,6 @@ const loading = ref(false)
 const chatMessagesRef = ref<HTMLElement | null>(null)
 const chatInput = ref<HTMLTextAreaElement | null>(null)
 const chanId = ref('')
-const streamingResponse = ref('')
 const isStreaming = ref(false)
 
 // 等待时的轮播提示文案
@@ -899,17 +898,38 @@ const sendMessage = async () => {
 
   try {
     const response = await api.sendAiMessage(message, chanId.value)
-    const result = handleApiResponse<string>(response)
 
-    console.log('AI返回内容:', result.data)
-    console.log('包含特殊字符:', result.data.includes('<'))
+    // 处理响应 - 可能是包装后的对象，也可能是直接返回的字符串
+    let aiResponse = ''
 
-    if (result.success && result.data && chatMessages.value[aiMsgIndex]) {
+    if (response && typeof response === 'object') {
+      // 如果是包装后的响应对象
+      const result = handleApiResponse<string>(response)
+      if (result.success && result.data) {
+        aiResponse = result.data
+      } else {
+        aiResponse = result.message || '暂无回复，请换个方式提问试试。'
+      }
+    } else if (typeof response === 'string') {
+      // 如果是直接返回的字符串
+      aiResponse = response
+    } else {
+      aiResponse = '暂无回复，请换个方式提问试试。'
+    }
+
+    console.log('AI返回内容:', aiResponse)
+
+    if (aiResponse && chatMessages.value[aiMsgIndex]) {
       chatMessages.value[aiMsgIndex].statusHint = '正在生成回复…'
       chatMessages.value[aiMsgIndex].content = ''
-      await simulateStreaming(result.data, aiMsgIndex)
+
+      // 安全地检查是否包含特殊字符
+      const hasSpecialChars = aiResponse.includes && aiResponse.includes('<')
+      console.log('包含特殊字符:', hasSpecialChars)
+
+      await simulateStreaming(aiResponse, aiMsgIndex)
     } else if (chatMessages.value[aiMsgIndex]) {
-      chatMessages.value[aiMsgIndex].content = result.message || '暂无回复，请换个方式提问试试。'
+      chatMessages.value[aiMsgIndex].content = '暂无回复，请换个方式提问试试。'
       chatMessages.value[aiMsgIndex].isThinking = false
       delete chatMessages.value[aiMsgIndex].statusHint
     }

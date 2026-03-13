@@ -159,17 +159,37 @@ const userStore = useUserStore()
 const studyPlanStore = useStudyPlanStore()
 const studyPlanDetailStore = useStudyPlanDetailStore()
 
-// 配置 marked
+// 设置基本选项
 marked.setOptions({
-  highlight: function (code: string, lang?: string) {
-    if (lang && hljs.getLanguage(lang)) {
-      return hljs.highlight(code, { language: lang }).value
-    }
-    return hljs.highlightAuto(code).value
-  },
   breaks: true,
   gfm: true,
 })
+
+// 自定义代码块渲染器
+const renderer = new marked.Renderer()
+
+// 正确的类型：renderer.code 接收一个对象参数
+renderer.code = ({ text, lang }) => {
+  // text: 代码内容
+  // lang: 语言标识
+  // escaped: 是否已转义
+
+  const validLang = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
+
+  try {
+    const highlightedCode = hljs.highlight(text, {
+      language: validLang,
+    }).value
+
+    return `<pre><code class="hljs language-${validLang}">${highlightedCode}</code></pre>`
+  } catch {
+    // 如果高亮失败，返回普通文本
+    return `<pre><code class="language-${validLang}">${text}</code></pre>`
+  }
+}
+
+// 使用自定义渲染器
+marked.use({ renderer })
 
 const planId = Number(route.params.id)
 const currentPlan = computed(() => studyPlanStore.studyPlans.find((p) => p.id === planId))

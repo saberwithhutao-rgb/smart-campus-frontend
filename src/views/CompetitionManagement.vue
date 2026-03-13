@@ -180,20 +180,12 @@
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
 import { api } from '../api'
 import type { Competition, CompetitionListParams } from '../types/competition'
 
 // 路由实例
 const router = useRouter()
 
-// 用户状态管理
-const userStore = useUserStore()
-
-// 响应式数据 - 导航栏相关
-const showUserCenter = ref(false)
-const activeMenu = ref('')
-const showSubMenu = ref('')
 const isMobile = ref(false)
 
 // 竞赛数据
@@ -371,31 +363,6 @@ const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
 }
 
-// 导航栏菜单处理
-const goToIndex = () => {
-  router.push('/index')
-}
-
-const goToLogin = () => {
-  router.push('/login')
-}
-
-const goToSmartQA = () => {
-  router.push('/ai/chat')
-}
-
-const goToPersonalStudy = () => {
-  router.push('/ai/study')
-}
-
-const goToStudyManagement = () => {
-  router.push('/campus/analysis')
-}
-
-const goToCompetitionManagement = () => {
-  router.push('/career/competitions')
-}
-
 // 跳转到职业导航页面
 const goToCareerNavigation = () => {
   router.push('/career/position')
@@ -404,57 +371,6 @@ const goToCareerNavigation = () => {
 // 跳转到考研支持页面
 const goToExamSupport = () => {
   router.push('/career/pee')
-}
-
-const toggleUserCenter = () => {
-  showUserCenter.value = !showUserCenter.value
-}
-
-const closeUserCenter = () => {
-  showUserCenter.value = false
-}
-
-const showSubMenuHandler = (menu: string) => {
-  if (!isMobile.value) {
-    showSubMenu.value = menu
-  }
-}
-
-const hideSubMenu = () => {
-  showSubMenu.value = ''
-}
-
-const handleMenuClick = (menu: string) => {
-  if (menu === '首页') {
-    goToIndex()
-    activeMenu.value = '首页'
-    return
-  }
-
-  if (isMobile.value) {
-    if (showSubMenu.value === menu) {
-      showSubMenu.value = ''
-    } else {
-      showSubMenu.value = menu
-    }
-  } else {
-    if (['个性化学习伴侣', '校园生活', '竞赛相关'].includes(menu)) {
-      showSubMenuHandler(menu)
-      activeMenu.value = menu
-    } else {
-      hideSubMenu()
-      activeMenu.value = ''
-    }
-  }
-}
-
-const handleUserMenuClick = (item: string) => {
-  if (item === '个人信息') {
-    router.push('/profile')
-  } else if (item === '退出登录') {
-    router.push('/login')
-  }
-  closeUserCenter()
 }
 
 // 生命周期钩子 - 初始化和窗口大小监听

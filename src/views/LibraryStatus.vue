@@ -98,25 +98,17 @@
 
 <script setup lang="ts">
 import GlobalNavbar from '../components/GlobalNavbar.vue'
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 路由实例
-const router = useRouter()
-
-// 用户状态管理
-const userStore = useUserStore()
 
 // 响应式数据
 const isMobile = ref(false)
-const showUserCenter = ref(false)
 const selectedMenu = ref('status')
 const showModal = ref(false)
 const modalText = ref('')
-const actionType = ref<'enter' | 'leave'>('enter')
-
+let closingTimer: number | null = null
 // 座位状态数据
 const totalSeats = ref(0)
 const occupiedSeats = ref(0)
@@ -377,22 +369,22 @@ const checkLibraryClosingTime = () => {
   const hour = now.getHours()
   const minute = now.getMinutes()
 
-  // 检查是否是22:30
+  // 检查是否是 22:30
   if (hour === 22 && minute === 30) {
     const hasShownClosingReminder = localStorage.getItem('libraryClosingReminder')
 
     if (!hasShownClosingReminder) {
-      ElMessageBox.warning('图书馆即将闭馆，请及时离开', '闭馆提醒', {
+      // 修复：将 warning 改为 confirm
+      ElMessageBox.confirm('图书馆即将闭馆，请及时离开', '闭馆提醒', {
         confirmButtonText: '知道了',
         cancelButtonText: '稍后提醒',
         type: 'warning',
-        duration: 0,
-        showClose: true,
+        distinguishCancelAndClose: true, // 区分取消和关闭
       })
         .then(() => {
           // 标记已显示提醒
           localStorage.setItem('libraryClosingReminder', 'true')
-          // 10分钟后可以再次提醒
+          // 10 分钟后可以再次提醒
           setTimeout(
             () => {
               localStorage.removeItem('libraryClosingReminder')
@@ -400,20 +392,22 @@ const checkLibraryClosingTime = () => {
             10 * 60 * 1000,
           )
         })
-        .catch(() => {
-          // 取消提醒，10分钟后再次提醒
-          setTimeout(
-            () => {
-              localStorage.removeItem('libraryClosingReminder')
-            },
-            10 * 60 * 1000,
-          )
+        .catch((action) => {
+          // 取消提醒，10 分钟后再次提醒
+          // 区分用户是点击取消还是关闭弹窗
+          if (action === 'cancel') {
+            setTimeout(
+              () => {
+                localStorage.removeItem('libraryClosingReminder')
+              },
+              10 * 60 * 1000,
+            )
+          }
         })
     }
   }
 }
 
-// 生命周期钩子
 onMounted(async () => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
@@ -424,8 +418,16 @@ onMounted(async () => {
   // 页面加载时获取座位状态
   await fetchSeatStatus()
 
-  // 启动22:30弹窗检查
-  setInterval(checkLibraryClosingTime, 60000) // 每分钟检查一次
+  // 启动 22:30 弹窗检查
+  closingTimer = window.setInterval(checkLibraryClosingTime, 60000) // 每分钟检查一次
+})
+
+onUnmounted(() => {
+  if (closingTimer) {
+    clearInterval(closingTimer)
+    closingTimer = null
+  }
+  window.removeEventListener('resize', checkScreenSize)
 })
 </script>
 

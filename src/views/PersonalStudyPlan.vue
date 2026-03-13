@@ -51,12 +51,24 @@ const subjectOptions = [
 ]
 
 const showAddModal = ref(false)
-const newPlan = ref({
+
+interface NewPlan {
+  title: string
+  description: string
+  planType: 'learning' | 'review' | 'project' // 明确指定为联合类型
+  subject: string
+  difficulty: 'easy' | 'medium' | 'hard' // 明确指定为联合类型
+  startDate: string
+  endDate: string
+}
+
+// 修改 newPlan 的定义，使用明确的类型
+const newPlan = ref<NewPlan>({
   title: '',
   description: '',
-  planType: '',
+  planType: 'learning', // 现在类型正确
   subject: '',
-  difficulty: 'medium',
+  difficulty: 'medium', // 现在类型正确
   startDate: '',
   endDate: '',
 })
@@ -445,7 +457,14 @@ onMounted(() => {
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3 class="modal-title">创建新学习计划</h3>
-          <button class="modal-close" @click="closeAddModalHandler">&times;</button>
+          <button
+            class="modal-close"
+            @click="closeEditModalHandler"
+            aria-label="关闭弹窗"
+            type="button"
+          >
+            &times;
+          </button>
         </div>
 
         <div class="modal-body">
@@ -534,7 +553,14 @@ onMounted(() => {
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3 class="modal-title">编辑学习计划</h3>
-          <button class="modal-close" @click="closeEditModalHandler">&times;</button>
+          <button
+            class="modal-close"
+            @click="closeEditModalHandler"
+            aria-label="关闭弹窗"
+            type="button"
+          >
+            &times;
+          </button>
         </div>
 
         <div class="modal-body">
@@ -628,8 +654,7 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
-/* 全局变量 - 保持不变 */
+<style>
 :root {
   /* 主色调：科技蓝 */
   --primary-color: #165dff;
@@ -669,7 +694,9 @@ onMounted(() => {
   /* 过渡 */
   --transition: all 0.3s ease;
 }
+</style>
 
+<style scoped>
 /* 主容器 */
 .smart-qa-container {
   min-height: 100vh;
@@ -1570,6 +1597,33 @@ onMounted(() => {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(22, 93, 255, 0.12);
   transform: translateY(-1px);
+}
+
+/* 优化日期输入框字体样式 */
+.form-input[type='date'] {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-color);
+  letter-spacing: 0.5px;
+}
+
+.form-input[type='date']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+}
+
+.form-input[type='date']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+#edit-plan-start-date,
+#edit-plan-end-date,
+#plan-start-date,
+#plan-end-date {
+  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+  font-size: 15px;
+  color: var(--text-color);
 }
 
 .form-row {
