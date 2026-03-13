@@ -276,9 +276,9 @@ onMounted(async () => {
   try {
     const response = await api.getReviewTaskDetail(planId)
     console.log('api返回原始数据:', response)
-    console.log('是否有id:', response?.id)
+    console.log('是否有id:', response?.data?.id)
 
-    taskDetail.value = response
+    taskDetail.value = response?.data || null
     console.log('赋值后的taskDetail:', taskDetail.value)
   } catch (error) {
     console.error('获取复习详情失败:', error)
