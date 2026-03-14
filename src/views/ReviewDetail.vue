@@ -90,47 +90,76 @@
       :fullscreen="isMobile"
       destroy-on-close
       @close="clearSearch"
+      class="history-dialog"
     >
-      <!-- 下拉选择框 -->
-      <div class="search-bar">
+      <!-- 下拉选择框 - 美化后 -->
+      <div class="filter-section">
+        <div class="filter-label">筛选阶段：</div>
         <el-select
           v-model="selectedStage"
-          placeholder="请选择复习阶段"
+          placeholder="全部阶段"
           clearable
           @clear="clearSearch"
-          style="width: 100%"
+          class="stage-select"
+          size="large"
         >
           <el-option
             v-for="stage in availableStages"
             :key="stage"
             :label="`第 ${stage} 次复习`"
             :value="stage"
-          />
+          >
+            <div class="custom-option">
+              <el-tag :type="getStageTagType(stage)" size="small" effect="plain">
+                第 {{ stage }} 次
+              </el-tag>
+              <span class="option-count"> {{ getStageSuggestions(stage).length }} 个版本 </span>
+            </div>
+          </el-option>
         </el-select>
-        <div class="stage-tips" v-if="availableStages.length">
-          共有 {{ availableStages.length }} 个复习阶段
-        </div>
+      </div>
+
+      <!-- 统计信息 -->
+      <div class="stats-info" v-if="planSuggestions.length">
+        <el-alert :closable="false" type="info" show-icon>
+          <template #title>
+            共 {{ planSuggestions.length }} 条复习建议，{{ availableStages.length }} 个复习阶段
+          </template>
+        </el-alert>
       </div>
 
       <!-- 按阶段分组显示 -->
       <div class="suggestions-container" v-if="planSuggestions.length">
         <div v-for="stage in filteredStages" :key="stage" class="stage-group">
-          <h3>第 {{ stage }} 次复习</h3>
+          <div class="stage-header">
+            <h3>
+              第 {{ stage }} 次复习
+              <el-tag :type="getStageTagType(stage)" size="small" effect="light">
+                {{ getStageSuggestions(stage).length }} 个版本
+              </el-tag>
+            </h3>
+          </div>
           <el-timeline>
             <el-timeline-item
               v-for="suggestion in getStageSuggestions(stage)"
               :key="suggestion.id"
               :timestamp="formatDateTime(suggestion.createdAt)"
               :type="suggestion.isCurrent ? 'primary' : 'info'"
+              placement="top"
+              size="large"
             >
               <el-card
                 class="suggestion-card"
                 :class="{ 'current-version': suggestion.isCurrent }"
                 @click="viewSuggestion(suggestion)"
+                shadow="hover"
               >
                 <div class="version-badge">
-                  版本 {{ suggestion.version }}
-                  <el-tag v-if="suggestion.isCurrent" size="small" type="success">当前</el-tag>
+                  <span class="version-number">版本 {{ suggestion.version }}</span>
+                  <el-tag v-if="suggestion.isCurrent" size="small" type="success" effect="dark"
+                    >当前使用</el-tag
+                  >
+                  <el-tag v-else size="small" type="info" effect="plain">历史版本</el-tag>
                 </div>
                 <div class="preview">{{ getPlainTextPreview(suggestion.content, 150) }}</div>
               </el-card>
@@ -406,46 +435,131 @@ const goBack = () => router.go(-1)
 </script>
 
 <style scoped>
-.search-bar {
-  margin-bottom: 20px;
+/* ==================== 全局弹窗样式 ==================== */
+.history-dialog :deep(.el-dialog__body) {
+  padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
-.stage-tips {
-  margin-top: 8px;
+/* 版本详情弹窗 - 调宽 */
+:deep(.suggestion-detail-dialog) {
+  width: 90% !important;
+  max-width: 1000px !important;
+}
+
+:deep(.suggestion-detail-dialog .el-message-box__message) {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 0 20px;
+}
+
+:deep(.suggestion-detail-dialog .markdown-body) {
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+/* ==================== 筛选区域 ==================== */
+.filter-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.filter-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+/* 选择框 - 缩短宽度 */
+.stage-select {
+  width: 280px !important; /* 固定宽度，不要太长 */
+}
+
+.stage-select :deep(.el-input__wrapper) {
+  background-color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.stage-select :deep(.el-input__inner) {
+  height: 40px;
+  font-size: 14px;
+}
+
+/* 自定义选项样式 */
+.custom-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 0;
+}
+
+.option-count {
   font-size: 13px;
   color: var(--text-color-light);
 }
 
+/* ==================== 统计信息 ==================== */
+.stats-info {
+  margin-bottom: 20px;
+}
+
+.stats-info :deep(.el-alert) {
+  background-color: #ecf5ff;
+  border: none;
+  border-radius: 8px;
+}
+
+/* ==================== 阶段分组 ==================== */
 .stage-group {
-  margin-top: 24px;
+  margin-bottom: 32px;
 }
 
-.stage-group:first-child {
-  margin-top: 0;
+.stage-group:last-child {
+  margin-bottom: 0;
 }
 
-.stage-group h3 {
+.stage-header {
   margin-bottom: 16px;
-  font-size: 16px;
+}
+
+.stage-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-color);
-  padding-left: 8px;
-  border-left: 3px solid var(--primary-color);
+  margin: 0;
 }
 
+/* ==================== 建议卡片 ==================== */
 .suggestion-card {
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
 }
 
 .suggestion-card:hover {
   transform: translateX(4px);
   border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .suggestion-card.current-version {
-  background-color: #e8f0fe;
-  border-color: #a0c0f0;
+  background-color: #f0f9eb;
+  border-color: #67c23a;
+}
+
+.suggestion-card.current-version:hover {
+  background-color: #e1f3d8;
 }
 
 .version-badge {
@@ -453,7 +567,11 @@ const goBack = () => router.go(-1)
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
-  font-weight: 500;
+}
+
+.version-number {
+  font-weight: 600;
+  color: var(--text-color);
 }
 
 .preview {
@@ -468,22 +586,32 @@ const goBack = () => router.go(-1)
   -webkit-box-orient: vertical;
 }
 
-:deep(.suggestion-detail-dialog) {
-  width: 80%;
-  max-width: 800px;
+/* ==================== 时间线样式 ==================== */
+:deep(.el-timeline-item__timestamp) {
+  color: var(--text-color-light);
+  font-size: 13px;
+  font-weight: normal;
 }
 
-:deep(.suggestion-detail-dialog .el-message-box__message) {
-  max-height: 60vh;
-  overflow-y: auto;
-  padding: 0 10px;
+:deep(.el-timeline-item__wrapper) {
+  padding-left: 20px;
 }
 
-:deep(.suggestion-detail-dialog .markdown-body) {
-  font-size: 14px;
-  line-height: 1.8;
+:deep(.el-timeline-item__tail) {
+  border-left: 2px solid #e4e7ed;
 }
 
+:deep(.el-timeline-item__node--primary) {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+:deep(.el-timeline-item__node--info) {
+  background-color: #909399;
+  border-color: #909399;
+}
+
+/* ==================== 确认完成对话框 ==================== */
 .complete-confirm {
   text-align: center;
   padding: 20px 0;
@@ -503,361 +631,27 @@ const goBack = () => router.go(-1)
   margin-bottom: 10px;
 }
 
-.smart-qa-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  color: #333;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.main-content {
-  padding: 30px;
-  max-width: 1200px;
-  margin: 0 auto;
-  margin-top: 80px;
-}
-
-.plan-detail-container {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
-
-.header-actions {
-  margin-bottom: 25px;
-}
-
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.plan-header h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.plan-badges {
-  display: flex;
-  gap: 12px;
-}
-
-.plan-info {
-  display: flex;
-  gap: 30px;
-  margin-bottom: 25px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 12px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-}
-
-.label {
-  font-weight: 600;
-  color: #34495e;
-  margin-right: 8px;
-}
-
-.value {
-  color: #7f8c8d;
-}
-
-.action-section {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 35px;
-}
-
-.plan-card {
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.card-header h2 {
-  font-size: 20px;
-  margin: 0;
-}
-
-.plan-content.markdown-body {
-  padding: 25px;
-  line-height: 1.9;
-}
-
-.history-list {
-  max-height: 65vh;
-  overflow-y: auto;
-  padding: 15px;
-}
-
-.history-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 15px;
-}
-
-.history-card:hover {
-  transform: translateX(8px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
-.history-preview {
-  padding: 15px;
-}
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.history-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.history-content {
-  font-size: 14px;
-  color: #7f8c8d;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.history-detail {
-  position: relative;
-}
-
-.back-btn {
-  margin-bottom: 25px;
-}
-
-.empty-content {
-  padding: 40px;
-  text-align: center;
-}
-
+/* ==================== 移动端适配 ==================== */
 @media (max-width: 768px) {
-  .main-content {
-    padding: 15px;
-    margin-top: 70px;
-  }
-
-  .plan-detail-container {
-    padding: 20px;
-  }
-
-  .plan-header {
+  .filter-section {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: stretch;
+    gap: 8px;
   }
 
-  .plan-header h1 {
-    font-size: 24px;
+  /* 移动端选择框宽度自适应 */
+  .stage-select {
+    width: 100% !important;
   }
 
-  .plan-info {
-    flex-direction: column;
-    gap: 12px;
+  .stage-header h3 {
+    font-size: 16px;
   }
 
-  .action-section {
-    flex-direction: column;
-  }
-}
-
-.main-content {
-  padding: 30px;
-  max-width: 1200px;
-  margin: 0 auto;
-  margin-top: 80px;
-}
-
-.plan-detail-container {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
-
-.header-actions {
-  margin-bottom: 25px;
-}
-
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.plan-header h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.plan-badges {
-  display: flex;
-  gap: 12px;
-}
-
-.plan-info {
-  display: flex;
-  gap: 30px;
-  margin-bottom: 25px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 12px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-}
-
-.label {
-  font-weight: 600;
-  color: #34495e;
-  margin-right: 8px;
-}
-
-.value {
-  color: #7f8c8d;
-}
-
-.action-section {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 35px;
-}
-
-.plan-card {
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.card-header h2 {
-  font-size: 20px;
-  margin: 0;
-}
-
-.plan-content.markdown-body {
-  padding: 25px;
-  line-height: 1.9;
-}
-
-/* 历史弹窗样式 */
-.history-list {
-  max-height: 65vh;
-  overflow-y: auto;
-  padding: 15px;
-}
-
-.history-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 15px;
-}
-
-.history-card:hover {
-  transform: translateX(8px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
-.history-preview {
-  padding: 15px;
-}
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.history-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.history-content {
-  font-size: 14px;
-  color: #7f8c8d;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.history-detail {
-  position: relative;
-}
-
-.back-btn {
-  margin-bottom: 25px;
-}
-
-.empty-content {
-  padding: 40px;
-  text-align: center;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding: 15px;
-    margin-top: 70px;
-  }
-
-  .plan-detail-container {
-    padding: 20px;
-  }
-
-  .plan-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .plan-header h1 {
-    font-size: 24px;
-  }
-
-  .plan-info {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .action-section {
-    flex-direction: column;
+  /* 移动端弹窗宽度 */
+  :deep(.suggestion-detail-dialog) {
+    width: 95% !important;
+    max-width: 95% !important;
   }
 }
 </style>
