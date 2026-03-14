@@ -248,6 +248,42 @@ const request = <T>(config: AxiosRequestConfig): Promise<T> => {
 
 // API 接口定义
 export const api = {
+  // 在 api 对象中添加
+  updateUserProfile: (data: Partial<UserProfile>) =>
+    request<ApiResponse<UserProfile>>({
+      method: 'PUT',
+      url: '/api/user/profile',
+      data,
+    }),
+
+  // 或者分开的接口（更细粒度）
+  updateUserAvatar: (file: File) => {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    return request<ApiResponse<{ avatarUrl: string }>>({
+      method: 'POST',
+      url: '/api/user/avatar',
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  },
+
+  updateUserBasicInfo: (data: {
+    username?: string
+    gender?: number
+    studentId?: string
+    major?: string
+    college?: string
+    grade?: string
+  }) =>
+    request<ApiResponse<UserProfile>>({
+      method: 'PUT',
+      url: '/api/user/basic-info',
+      data,
+    }),
+
   getUserProfile: () =>
     request<ApiResponse<UserProfile>>({
       method: 'GET',

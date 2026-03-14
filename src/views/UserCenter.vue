@@ -67,7 +67,7 @@
               </div>
               <div class="info-item">
                 <span class="info-label">角色：</span>
-                <span class="info-value">{{ userInfo.roleText }}</span>
+                <span class="info-value">{{ userInfo.role }}</span>
               </div>
             </div>
 
@@ -191,7 +191,6 @@ const refreshUserInfo = async () => {
 const goToEditProfile = () => {
   router.push('/profile/edit')
 }
-
 // 跳转到学习统计页面
 const goToStudyStats = () => {
   router.push('/campus/analysis')
