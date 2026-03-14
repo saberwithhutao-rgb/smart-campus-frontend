@@ -201,9 +201,8 @@ service.interceptors.response.use(
           break
         case 401:
           message = '未授权，请登录'
-          // ✅ 自动清除存储并跳转登录页
-          localStorage.removeItem('userToken')
-          window.location.href = '/login'
+          localStorage.removeItem(STORAGE_KEYS.TOKEN)
+          localStorage.removeItem(STORAGE_KEYS.TOKEN_ALT)
           break
         case 403:
           message = '拒绝访问'
