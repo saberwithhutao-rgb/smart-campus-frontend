@@ -15,7 +15,7 @@ export const useReviewDetailStore = defineStore('reviewDetail', () => {
     isLoading.value = true
     try {
       const task = await api.getReviewTaskDetail(planId)
-      currentReviewPlan.value = task // task 已经是 StudyTask
+      currentReviewPlan.value = task.data // task 改为 StudyTask
     } catch (error) {
       console.error('获取复习计划详情失败:', error)
     } finally {

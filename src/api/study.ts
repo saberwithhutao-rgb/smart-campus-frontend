@@ -2,6 +2,19 @@
 import request from '@/utils/request'
 import type { StudyTask } from '@/stores/studyPlan'
 
+export interface ReviewSuggestion {
+  id: number
+  taskId: number
+  planId: number
+  userId: number
+  reviewStage: number
+  content: string
+  version: number
+  isCurrent: boolean
+  generatedAt: string
+  createdAt: string
+}
+
 export const completeReviewTask = (taskId: number) => {
   return request<StudyTask>({
     method: 'POST',
@@ -35,13 +48,47 @@ export const getReviewTaskHistory = (planId: number) => {
 
 // 更新复习任务内容（AI生成的复习计划）
 export const updateReviewTaskContent = (taskId: number, content: string) => {
-  return request<StudyTask>({
+  return request<ReviewSuggestion>({
     method: 'PUT',
     url: `/api/study/tasks/${taskId}/content`,
     data: content,
     headers: {
       'Content-Type': 'text/plain',
     },
+  })
+}
+export const createSuggestion = (taskId: number, content: string) => {
+  return request<ReviewSuggestion>({
+    method: 'POST',
+    url: `/api/study/tasks/${taskId}/suggestions`,
+    data: content,
+    headers: {
+      'Content-Type': 'text/plain',
+    },
+  })
+}
+
+export const getTaskSuggestions = (taskId: number) => {
+  return request<ReviewSuggestion[]>({
+    method: 'GET',
+    url: `/api/study/tasks/${taskId}/suggestions`,
+  })
+}
+
+export const getPlanSuggestions = (planId: number) => {
+  return request<ReviewSuggestion[]>({
+    method: 'GET',
+    url: `/api/study/tasks/plan/${planId}/suggestions`,
+  })
+}
+
+/**
+ * 获取任务的当前建议
+ */
+export const getCurrentSuggestion = (taskId: number) => {
+  return request<ReviewSuggestion>({
+    method: 'GET',
+    url: `/api/study/tasks/${taskId}/suggestions/current`,
   })
 }
 

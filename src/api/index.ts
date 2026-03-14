@@ -364,10 +364,10 @@ export const api = {
     }),
 
   // 获取复习任务详情（用于复习详情页）
-  getReviewTaskDetail: (planId: number) =>
+  getReviewTaskDetail: (taskId: number) =>
     request<ApiResponse<StudyTask>>({
       method: 'GET',
-      url: `/api/study/tasks/review/${planId}`,
+      url: `/api/study/tasks/review/${taskId}`,
     }),
 
   // 获取某个学习计划的历史复习任务
@@ -774,18 +774,37 @@ export const api = {
     return parsePossiblyJsonText<string[]>(data)
   },
 
+  // 在 api.ts 中修改
   getOpenAiSessionHistory: async (type: string = 'chat', chanId: string) => {
-    const data = await request<string>({
-      method: 'GET',
-      url: `/api/chat/openai/${encodeURIComponent(type)}/${encodeURIComponent(chanId)}`,
-      responseType: 'text',
-      params: { _t: Date.now() },
-      headers: {
-        'Cache-Control': 'no-cache',
-        Pragma: 'no-cache',
-      },
-    })
-    return parsePossiblyJsonText<OpenAiMessageVo[]>(data)
+    try {
+      const response = await request<OpenAiMessageVo[]>({
+        method: 'GET',
+        url: `/api/chat/openai/${encodeURIComponent(type)}/${encodeURIComponent(chanId)}`,
+        params: { _t: Date.now() },
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
+        // 移除 responseType: 'text'，让 axios 自动处理 JSON
+      })
+
+      console.log('会话历史响应:', response)
+
+      // 如果 response 已经是数组，直接返回
+      if (Array.isArray(response)) {
+        return response
+      }
+
+      // 如果 response 是 ApiResponse 格式
+      if (response && typeof response === 'object' && 'data' in response) {
+        return (response as any).data
+      }
+
+      return []
+    } catch (error) {
+      console.error('获取会话历史失败:', error)
+      return []
+    }
   },
 }
 
