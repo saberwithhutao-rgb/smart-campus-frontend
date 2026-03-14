@@ -67,7 +67,7 @@
               </div>
               <div class="info-item">
                 <span class="info-label">角色：</span>
-                <span class="info-value">{{ userInfo.role }}</span>
+                <span class="info-value">{{ userInfo.roleText }}</span>
               </div>
             </div>
 
@@ -140,6 +140,7 @@ const userInfo = computed(() => {
     gender: profile?.gender || 0,
     genderText: profile?.genderText || '未知',
     role: profile?.role || 'user',
+    roleText: getRoleText(profile?.role),
     status: profile?.status || 1,
     statusText: profile?.statusText || '正常',
     createdAt: profile?.createdAt || '',
@@ -186,7 +187,6 @@ const refreshUserInfo = async () => {
     console.error('刷新用户信息失败:', error)
   }
 }
-
 // 跳转到编辑资料页面
 const goToEditProfile = () => {
   router.push('/profile/edit')
@@ -230,6 +230,20 @@ const getUserGenderText = (gender?: number) => {
   }
 }
 
+const getRoleText = (role?: string) => {
+  switch (role) {
+    case 'admin':
+      return '管理员'
+    case 'user':
+      return '普通用户'
+    case 'student':
+      return '学生'
+    case 'teacher':
+      return '教师'
+    default:
+      return role || '用户'
+  }
+}
 // 辅助函数：获取角色文本
 const getUserRoleText = (role?: string) => {
   switch (role) {
