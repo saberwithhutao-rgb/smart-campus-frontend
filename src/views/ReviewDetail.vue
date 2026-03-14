@@ -91,20 +91,24 @@
       destroy-on-close
       @close="clearSearch"
     >
-      <!-- 搜索框 -->
+      <!-- 下拉选择框 -->
       <div class="search-bar">
-        <el-input
-          v-model="searchStage"
-          placeholder="输入复习阶段搜索（如：1,2,3...）"
+        <el-select
+          v-model="selectedStage"
+          placeholder="请选择复习阶段"
           clearable
           @clear="clearSearch"
+          style="width: 100%"
         >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
+          <el-option
+            v-for="stage in availableStages"
+            :key="stage"
+            :label="`第 ${stage} 次复习`"
+            :value="stage"
+          />
+        </el-select>
         <div class="stage-tips" v-if="availableStages.length">
-          可用阶段：第 {{ availableStages.join('、第 ') }} 次
+          共有 {{ availableStages.length }} 个复习阶段
         </div>
       </div>
 
@@ -172,7 +176,6 @@ import type { StudyTask } from '@/stores/studyPlan'
 import * as studyApi from '@/api/study'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { WarningFilled } from '@element-plus/icons-vue'
-import { Search } from '@element-plus/icons-vue'
 import type { ReviewSuggestion } from '@/api/study'
 import { marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
@@ -192,7 +195,7 @@ const showHistoryDialog = ref(false)
 const showCompleteDialog = ref(false)
 const isMobile = ref(window.innerWidth <= 768)
 const planSuggestions = ref<ReviewSuggestion[]>([])
-const searchStage = ref('')
+const selectedStage = ref<number | null>(null)
 
 // 配置 marked
 marked.use(
@@ -214,11 +217,8 @@ const availableStages = computed(() => {
 
 // 按阶段过滤
 const filteredStages = computed(() => {
-  if (!searchStage.value) return availableStages.value
-
-  const stageNum = parseInt(searchStage.value)
-  if (isNaN(stageNum)) return []
-  return availableStages.value.filter((s) => s === stageNum)
+  if (!selectedStage.value) return availableStages.value
+  return availableStages.value.filter((s) => s === selectedStage.value)
 })
 
 // 获取某个阶段的所有建议（按版本倒序）
@@ -259,7 +259,7 @@ const openHistory = async () => {
 
 // 清空搜索
 const clearSearch = () => {
-  searchStage.value = ''
+  selectedStage.value = null
 }
 const handleResize = () => {
   isMobile.value = window.innerWidth <= 768
@@ -444,8 +444,8 @@ const goBack = () => router.go(-1)
 }
 
 .suggestion-card.current-version {
-  background-color: var(--primary-color-light);
-  border-color: var(--primary-color);
+  background-color: #e8f0fe;
+  border-color: #a0c0f0;
 }
 
 .version-badge {
