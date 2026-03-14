@@ -3,6 +3,7 @@ import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUserStore } from '../stores/user'
 import { api, type ConversationSession, type SessionHistoryItem } from '../api/index'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 
 interface ChatMessage {
   id: number
@@ -275,7 +276,8 @@ const processTongyiStream = async (
   let buffer = ''
   let hasReceivedContent = false
 
-  const token = localStorage.getItem('userToken')
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
   if (!token) {
     console.error('❌ 未找到用户令牌，请重新登录')
     safeUpdateMessage(aiMessageIndex, '请先登录', false)
@@ -392,7 +394,8 @@ const sendMessage = async () => {
   scrollToBottom()
 
   try {
-    const token = localStorage.getItem('userToken')
+    const token =
+      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
     if (!token) {
       safeUpdateMessage(aiMessageIndex, '请先登录', false)
       return
@@ -510,7 +513,8 @@ const uploadFile = async () => {
   scrollToBottom()
 
   try {
-    const token = localStorage.getItem('userToken')
+    const token =
+      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
     if (!token) {
       safeUpdateMessage(aiMessageIndex, '请先登录', false)
       return

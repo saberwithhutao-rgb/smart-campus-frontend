@@ -20,8 +20,6 @@ export interface User {
 }
 
 export interface UserInfo {
-  token: string // 必须
-  refreshToken?: string // 可选
   role: string // 必须
   username: string // 必须
   userId?: number // 可选
@@ -43,6 +41,13 @@ export interface ExtendedUser {
   username: string
   userId: number
   createdAt: string
+}
+
+export interface TokenInfo {
+  token: string
+  refreshToken?: string
+  expiresIn?: number
+  tokenType?: string
 }
 
 // 用户状态类型
@@ -100,11 +105,34 @@ export interface LoginResponse {
   }
 }
 
+// 登录接口返回的数据结构（轻量级）
 export interface LoginData {
   token: string
   role: string
   username: string
   refreshToken?: string
+  // 登录接口只返回这些基础字段
+}
+
+// 完整的用户资料（通过 /user/profile 获取）
+export interface UserProfile {
+  id: number
+  username: string
+  email: string
+  gender: number
+  genderText: string
+  avatarUrl?: string
+  avatar?: string
+  status: number
+  statusText: string
+  role: string
+  studentId?: string
+  major?: string
+  college?: string
+  grade?: string
+  createdAt: string
+  lastLoginAt?: string
+  metadata?: Record<string, unknown>
 }
 
 // 认证相关类型

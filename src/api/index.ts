@@ -1,8 +1,9 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig } from 'axios'
 import type { ReviewItem, StudyPlan, StudyTask } from '@/stores/studyPlan'
-import type { ExamCountdown } from '../types/user'
+import type { ExamCountdown, UserProfile } from '../types/user'
 import { ElMessage } from 'element-plus'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 import type {
   QaMessage,
   FileItem,
@@ -150,8 +151,8 @@ export interface ChatStats {
 // 请求拦截器
 service.interceptors.request.use(
   (config) => {
-    // 使用userToken作为主token
-    const token = localStorage.getItem('userToken') || localStorage.getItem('token')
+    const token =
+      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -248,6 +249,12 @@ const request = <T>(config: AxiosRequestConfig): Promise<T> => {
 
 // API 接口定义
 export const api = {
+  getUserProfile: () =>
+    request<ApiResponse<UserProfile>>({
+      method: 'GET',
+      url: '/api/user/profile',
+    }),
+
   verifyToken: () =>
     request<ApiResponse<null>>({
       method: 'GET',
@@ -814,7 +821,8 @@ export const askQuestionStream = async (params: {
   file?: File
   sessionId?: string
 }): Promise<ReadableStream<Uint8Array> | null> => {
-  const token = localStorage.getItem('userToken') || localStorage.getItem('token') || ''
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
 
   const formData = new FormData()
   formData.append('question', params.question)

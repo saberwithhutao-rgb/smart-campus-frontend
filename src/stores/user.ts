@@ -1,8 +1,8 @@
 // stores/user.ts
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { api } from '@/api'
-import type { UserState, UserInfo } from '@/types/user'
+import { type UserState, type UserInfo, type UserProfile } from '@/types/user'
 import { encryptPassword, decryptPassword } from '@/utils/encryption'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 
@@ -12,12 +12,11 @@ export const useUserStore = defineStore('user', () => {
     userInfo: null,
   })
 
-  // 【新增】初始化标记，防止重复恢复
+  const userProfile = ref<UserProfile | null>(null)
+
   let isInitialized = false
 
-  // 从 localStorage 恢复状态
   function restoreFromStorage() {
-    // 【新增】如果已初始化，直接返回
     if (isInitialized) {
       return true
     }
@@ -39,7 +38,7 @@ export const useUserStore = defineStore('user', () => {
       const userInfo = JSON.parse(userInfoStr)
       userState.value = {
         isLoggedIn: true,
-        userInfo: { ...userInfo, token },
+        userInfo: userInfo,
       }
       isInitialized = true
       console.log('✅ 状态恢复成功')
@@ -107,34 +106,6 @@ export const useUserStore = defineStore('user', () => {
       const name = cookie.trim().split('=')[0]
       document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
     })
-  }
-
-  /**
-   * 保存自动登录凭证（记住我功能）
-   */
-  function saveAutoLoginCredentials(username: string, password: string): void {
-    try {
-      const encryptedPwd = encryptPassword(password)
-      if (encryptedPwd) {
-        localStorage.setItem(STORAGE_KEYS.SAVED_USERNAME, username)
-        localStorage.setItem(STORAGE_KEYS.SAVED_PASSWORD, encryptedPwd)
-        localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true')
-        console.log('✅ 自动登录凭证已保存')
-        console.log('保存的用户名:', username)
-        console.log('保存的密码:', encryptedPwd.substring(0, 20) + '...')
-      }
-    } catch (error) {
-      console.error('保存自动登录凭证失败:', error)
-    }
-  }
-
-  /**
-   * 获取保存的密码
-   */
-  function getSavedPassword(): string | null {
-    const encrypted = localStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD)
-    if (!encrypted) return null
-    return decryptPassword(encrypted)
   }
 
   /**
@@ -238,15 +209,22 @@ export const useUserStore = defineStore('user', () => {
       const token = response.data.token
       console.log('登录成功，token:', token ? '已获取' : '无')
 
-      localStorage.setItem(STORAGE_KEYS.TOKEN, token)
-      localStorage.setItem(STORAGE_KEYS.TOKEN_ALT, token)
-
+      //保存基本的用户信息
       const userInfo = {
         username: response.data.username,
         role: response.data.role || 'user',
-        userId: response.data.userId,
+        token: token,
       }
-      localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userInfo))
+
+      localStorage.setItem(STORAGE_KEYS.TOKEN, token)
+      localStorage.setItem(STORAGE_KEYS.TOKEN_ALT, token)
+      localStorage.setItem(
+        STORAGE_KEYS.USER_INFO,
+        JSON.stringify({
+          username: userInfo.username,
+          role: userInfo.role,
+        }),
+      )
 
       if (rememberMe) {
         console.log('保存自动登录凭证...')
@@ -255,9 +233,9 @@ export const useUserStore = defineStore('user', () => {
           localStorage.setItem(STORAGE_KEYS.SAVED_USERNAME, username)
           localStorage.setItem(STORAGE_KEYS.SAVED_PASSWORD, encryptedPwd)
           localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true')
-          console.log('✅ 凭证已保存')
+          console.log('凭证已保存')
         } else {
-          console.error('❌ 密码加密失败')
+          console.error('❌密码加密失败')
         }
       } else {
         console.log('未选择记住我，清除已有凭证')
@@ -266,8 +244,10 @@ export const useUserStore = defineStore('user', () => {
 
       userState.value = {
         isLoggedIn: true,
-        userInfo: { ...userInfo, token },
+        userInfo: userInfo,
       }
+
+      await fetchUserProfile()
 
       return { success: true }
     } catch (error: any) {
@@ -275,6 +255,33 @@ export const useUserStore = defineStore('user', () => {
       return { success: false, error: error.message }
     }
   }
+
+  // 获取完整用户资料
+  async function fetchUserProfile() {
+    if (!userState.value.isLoggedIn) {
+      return null
+    }
+
+    try {
+      const response = await api.getUserProfile()
+      if (response.code === 200) {
+        userProfile.value = response.data
+        return response.data
+      }
+    } catch (error) {
+      console.error('获取用户资料失败:', error)
+    }
+    return null
+  }
+
+  // 获取完整资料（计算属性，方便在组件中使用）
+  const fullUserInfo = computed(() => {
+    if (!userProfile.value) return null
+    return {
+      ...userProfile.value,
+      nickname: userProfile.value.username, // 兼容旧字段
+    }
+  })
 
   async function register(data: {
     username: string
@@ -300,69 +307,41 @@ export const useUserStore = defineStore('user', () => {
 
   function setUserInfo(info: Partial<UserInfo>) {
     const currentUserInfo = userState.value.userInfo
-    if (!currentUserInfo) {
-      console.warn('setUserInfo: 无法更新，用户未登录')
-      return
+    if (!currentUserInfo) return
+
+    // 只处理非 token 字段
+    const updatedUserInfo = {
+      ...currentUserInfo,
+      ...info,
     }
 
-    try {
-      const { token: newToken, refreshToken: newRefreshToken, ...otherInfo } = info
+    userState.value.userInfo = updatedUserInfo
 
-      const updatedUserInfo: UserInfo = {
-        ...currentUserInfo,
-        ...otherInfo,
-      }
-
-      userState.value.userInfo = updatedUserInfo
-
-      if (newToken !== undefined) {
-        localStorage.setItem(STORAGE_KEYS.TOKEN, newToken)
-        updatedUserInfo.token = newToken
-      }
-      if (newRefreshToken !== undefined) {
-        localStorage.setItem('refreshToken', newRefreshToken)
-        updatedUserInfo.refreshToken = newRefreshToken
-      }
-
-      const { token: _token, refreshToken: _refreshToken, ...storageInfo } = updatedUserInfo
-      localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(storageInfo))
-    } catch (error) {
-      console.error('更新用户信息失败:', error)
-    }
+    // 只保存非 token 信息到 localStorage
+    localStorage.setItem(
+      STORAGE_KEYS.USER_INFO,
+      JSON.stringify({
+        username: updatedUserInfo.username,
+        role: updatedUserInfo.role,
+        // 不存 token
+      }),
+    )
   }
 
-  function validateLoginStatus(): boolean {
-    const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
-    const userInfoStr = localStorage.getItem(STORAGE_KEYS.USER_INFO)
-
-    if (!token || token === 'undefined' || token === 'null') {
-      return false
-    }
-
-    if (!userInfoStr) {
-      return false
-    }
-
-    try {
-      JSON.parse(userInfoStr)
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  // 【修改】简化 forceCheckLoginStatus，不再内部调用 restoreFromStorage
   function forceCheckLoginStatus(): boolean {
-    return userState.value.isLoggedIn
+    const token =
+      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+    return userState.value.isLoggedIn && !!token
   }
-
-  // 【删除】删除底部的自动调用 restoreFromStorage()
 
   return {
     userState,
+    userProfile,
+    fullUserInfo,
     login,
     register,
     logout,
+    fetchUserProfile,
     logoutComplete,
     setUserInfo,
     restoreFromStorage,

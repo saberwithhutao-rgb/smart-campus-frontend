@@ -181,7 +181,8 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const isLoggedIn = userStore.userState.isLoggedIn
-  const token = userStore.userState.userInfo?.token
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
 
   console.log('当前状态:', { token: !!token, isLoggedIn })
 

@@ -134,9 +134,7 @@ const getUserIdFromToken = () => {
   try {
     // 优先从 userStore 获取 token
     const token =
-      userStore.userState?.userInfo?.token ||
-      localStorage.getItem('userToken') ||
-      localStorage.getItem('token')
+      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
 
     if (!token) {
       console.log('未找到 token')

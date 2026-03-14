@@ -103,6 +103,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -114,7 +115,9 @@ const showSubMenu = ref('')
 const isMobile = ref(false)
 
 const hasToken = computed(() => {
-  return userStore.userState.isLoggedIn && !!userStore.userState.userInfo?.token
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+  return userStore.userState.isLoggedIn && !!token
 })
 
 // 检查屏幕尺寸

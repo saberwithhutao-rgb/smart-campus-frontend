@@ -283,6 +283,7 @@ import { useUserStore } from '../stores/user'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import * as echarts from 'echarts'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 
 interface StatisticsData {
   totalPlanCount?: number
@@ -339,7 +340,8 @@ let pieChartInstance: echarts.ECharts | null = null
 // ✨ 从 token 解析 userId 的工具函数
 const getUserIdFromToken = (): number | null => {
   try {
-    const token = localStorage.getItem('userToken') || localStorage.getItem('token')
+    const token =
+      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
 
     if (!token) {
       console.log('未找到 token')
@@ -847,7 +849,8 @@ const showAlert = (message: string) => {
 
 onBeforeMount(() => {
   console.log('组件挂载前检查登录状态')
-  const token = localStorage.getItem('userToken')
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
   console.log('当前token:', token)
 
   if (!token) {
@@ -860,7 +863,8 @@ onBeforeMount(() => {
 onMounted(async () => {
   console.log('组件挂载，最终检查登录状态')
 
-  const token = localStorage.getItem('userToken')
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
   if (!token) {
     console.log('最终检查未登录，重定向到登录页')
     router.replace('/login')

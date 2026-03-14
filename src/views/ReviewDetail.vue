@@ -17,14 +17,14 @@
           <div class="plan-header">
             <h1>{{ taskDetail.title }}</h1>
             <div class="plan-badges">
+              <!-- 复习阶段标签不变 -->
               <el-tag :type="getStageTagType(taskDetail.reviewStage)" size="large">
                 第 {{ taskDetail.reviewStage }} 次复习
               </el-tag>
-              <el-tag
-                :type="taskDetail.status === 'completed' ? 'success' : 'primary'"
-                size="large"
-              >
-                {{ taskDetail.status === 'completed' ? '已完成' : '进行中' }}
+
+              <!-- 状态标签 - 根据复习状态显示不同内容 -->
+              <el-tag :type="getReviewStatusTagType(reviewStatus.type)" size="large">
+                {{ reviewStatus.displayText }}
               </el-tag>
             </div>
           </div>
@@ -348,6 +348,55 @@ const formatDateTime = (dateStr: string) => {
   } catch {
     return '未知时间'
   }
+}
+
+const reviewStatus = computed(() => {
+  if (!taskDetail.value) return { type: 'unknown', displayText: '未知状态' }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const taskDate = new Date(taskDetail.value.taskDate)
+  taskDate.setHours(0, 0, 0, 0)
+
+  // 已完成状态
+  if (taskDetail.value.status === 'completed') {
+    return {
+      type: 'completed',
+      displayText: '已完成',
+    }
+  }
+
+  // 待复习 - 日期 <= 今天
+  if (taskDetail.value.status === 'pending' && taskDate <= today) {
+    return {
+      type: 'ongoing',
+      displayText: '待复习',
+    }
+  }
+
+  // 未来复习 - 日期 > 今天
+  if (taskDetail.value.status === 'pending' && taskDate > today) {
+    const diffTime = taskDate.getTime() - today.getTime()
+    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return {
+      type: 'future',
+      displayText: `距离复习还有 ${daysLeft} 天`,
+    }
+  }
+
+  return { type: 'unknown', displayText: '未知状态' }
+})
+
+// 获取状态标签类型（复用 SmartReview.vue 的逻辑）
+const getReviewStatusTagType = (type: string) => {
+  const map: Record<string, string> = {
+    ongoing: 'warning', // 待复习 - 黄色
+    future: 'info', // 未来 - 蓝色
+    completed: 'success', // 已完成 - 绿色
+    unknown: 'danger', // 未知 - 红色
+  }
+  return map[type] || 'info'
 }
 
 onMounted(async () => {

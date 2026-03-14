@@ -1,7 +1,8 @@
 // utils/auth.js
 export function checkAuthStatus() {
   const userStore = useUserStore()
-  const token = localStorage.getItem('userToken')
+  const token =
+    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
 
   console.log('检查认证状态:', {
     token: !!token,
