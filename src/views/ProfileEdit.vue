@@ -837,23 +837,6 @@ onMounted(() => {
   width: 100%;
 }
 
-:deep(.custom-input .el-input__wrapper) {
-  border-radius: 30px;
-  padding: 4px 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-:deep(.custom-input .el-input__wrapper:hover) {
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-  border-color: #667eea;
-}
-
-:deep(.custom-input .el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-  border-color: #667eea;
-}
-
 .input-icon {
   color: #999;
   transition: color 0.3s ease;
@@ -989,6 +972,36 @@ onMounted(() => {
 /* 选中项高亮 */
 :deep(.el-autocomplete-suggestion__list li.highlighted) {
   background-color: #ecf5ff;
+}
+
+:deep(.el-autocomplete .el-input__wrapper),
+:deep(.custom-input .el-input__wrapper) {
+  border-radius: 30px;
+  padding: 4px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  background-color: #fff;
+  border: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+:deep(.el-autocomplete .el-input__wrapper:hover),
+:deep(.custom-input .el-input__wrapper:hover) {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+:deep(.el-autocomplete .el-input__wrapper.is-focus),
+:deep(.custom-input .el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+:deep(.el-autocomplete .el-input__inner),
+:deep(.custom-input .el-input__inner) {
+  height: 40px;
+  line-height: 40px;
+  border: none;
+  background: transparent;
 }
 
 /* 响应式设计 */

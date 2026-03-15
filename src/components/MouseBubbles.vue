@@ -91,7 +91,7 @@ const createBubble = (x: number, y: number) => {
   bubbles.value.push({
     x: x,
     y: y,
-    radius: Math.random() * 12 + 4, // 4-16px
+    radius: Math.random() * 6 + 2, // 4-16px
     speedY: -(Math.random() * 0.8 + 0.4), // 向上飘
     speedX: (Math.random() - 0.5) * 0.3, // 左右飘动
     opacity: Math.random() * 0.5 + 0.3, // 0.3-0.8
