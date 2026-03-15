@@ -108,12 +108,10 @@ onMounted(async () => {
     const isValid = await validateToken()
 
     if (!isValid) {
-      console.log('3. Token 无效，已清除，不再尝试自动登录')
-      // 已经清除了，不需要额外操作
-    } else {
-      // 只有 token 有效时才尝试自动登录
-      console.log('3. Token 有效，尝试自动登录...')
+      console.log('3. Token 无效，尝试自动登录...')
       await userStore.tryAutoLogin?.()
+    } else {
+      console.log('3. Token 有效，已有登录状态')
     }
 
     // 保留：问候
