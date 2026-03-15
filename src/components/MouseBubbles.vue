@@ -121,23 +121,13 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
     const bubble = bubbles.value[i]
     if (!bubble) continue
 
-    console.log('气泡状态:', {
-      life: bubble.life,
-      scale: bubble.scale,
-      radius: bubble.radius,
-      currentRadius: bubble.radius * bubble.scale,
-      opacity: bubble.opacity,
-    })
-
     // 更新生命周期
     bubble.life += 0.005
 
     // 更新缩放比例：0.2 -> 1.0 -> 1.5
     if (bubble.life < 0.5) {
-      // 前50%生命周期：0.2 -> 1.0
       bubble.scale = 0.2 + bubble.life * 1.6
     } else {
-      // 后50%生命周期：1.0 -> 1.5
       bubble.scale = 1.0 + (bubble.life - 0.5) * 1.0
     }
 
@@ -181,15 +171,17 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
       bubble.y,
       currentRadius * 1.2,
     )
-
-    // 主颜色
-    const mainColor = `${bubble.color} ${bubble.opacity})`
-
-    // 高光颜色
+    1
+    const mainColor = `${bubble.color} ${bubble.opacity})` // 直接拼接
     const lightColor = `rgba(255, 255, 255, ${bubble.opacity * 0.8})`
+    const darkColor = `${bubble.color} ${bubble.opacity * 0.6})`
 
-    // 暗部颜色
-    const darkColor = bubble.color.replace(')', ` ${bubble.opacity * 0.6})`)
+    console.log('颜色测试:', {
+      // 添加调试日志
+      mainColor,
+      lightColor,
+      darkColor,
+    })
 
     gradient.addColorStop(0, lightColor)
     gradient.addColorStop(0.4, mainColor)
