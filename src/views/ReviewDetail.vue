@@ -486,6 +486,84 @@ const goBack = () => router.go(-1)
 </script>
 
 <style scoped>
+/* ==================== 主内容区域样式 ==================== */
+.main-content {
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-top: 80px;
+}
+
+.plan-detail-container {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.header-actions {
+  margin-bottom: 25px;
+}
+
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.plan-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.plan-badges {
+  display: flex;
+  gap: 12px;
+}
+
+.plan-info {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.action-section {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 35px;
+}
+
+.plan-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.card-header h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.plan-content.markdown-body {
+  padding: 25px;
+  line-height: 1.9;
+}
+
+.empty-content {
+  padding: 40px;
+  text-align: center;
+}
 /* ==================== 全局弹窗样式 ==================== */
 .history-dialog :deep(.el-dialog__body) {
   padding: var(--spacing-lg);
