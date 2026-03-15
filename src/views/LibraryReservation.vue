@@ -15,7 +15,13 @@ console.log('request 导入成功:', typeof request, request)
 
 // 响应式数据
 const userStore = useUserStore()
-const { activeCount, isLoading: isCountLoading, isAtMaxLimit, fetchActiveReservationCount, checkReservationLimit } = useReservationCount()
+const {
+  activeCount,
+  isLoading: isCountLoading,
+  isAtMaxLimit,
+  fetchActiveReservationCount,
+  checkReservationLimit,
+} = useReservationCount()
 const currentFloor = ref<any>(null) // 当前楼层
 const selectedRoom = ref<string>('') // 选中的教室
 const selectedClassroom = ref(null) // 存储当前选中的教室
@@ -43,22 +49,27 @@ const reservationInfo = ref({
 
 // 计算属性：获取当前登录用户的ID
 const currentUserId = computed(() => {
-  const userId = userStore.userId || 1;
-  console.log('当前登录用户ID:', userId);
-  return userId;
-});
+  const userId = computed(() => userStore.userProfile?.id)
+  console.log('当前登录用户ID:', userId)
+  return userId
+})
 
 // 打印当前登录用户ID
 console.log('当前登录用户ID:', currentUserId.value)
 
 // 座位使用状态管理
-const seatUsageInfo = ref<Map<string, {
-  isUsing: boolean
-  hasEntered: boolean
-  enterTime: number
-  duration: number
-  timer: number | null
-}>>(new Map())
+const seatUsageInfo = ref<
+  Map<
+    string,
+    {
+      isUsing: boolean
+      hasEntered: boolean
+      enterTime: number
+      duration: number
+      timer: number | null
+    }
+  >
+>(new Map())
 
 // 楼层列表
 const floors = ref<number[]>([])
@@ -93,8 +104,8 @@ interface Seat {
 onMounted(async () => {
   try {
     // 打印当前登录用户ID
-    console.log('当前登录用户ID:', userStore.userState.userInfo?.userId);
-    console.log('currentUserId.value:', currentUserId.value);
+    console.log('当前登录用户ID:', userStore.userState.userInfo?.userId)
+    console.log('currentUserId.value:', currentUserId.value)
 
     // 获取楼层列表
     const floorList = await getFloors()
@@ -114,39 +125,39 @@ onMounted(async () => {
 
       // 校验转换结果
       if (isNaN(floorId)) {
-        console.error("初始化楼层ID转换失败:", firstFloor.id || firstFloor.floorNum)
+        console.error('初始化楼层ID转换失败:', firstFloor.id || firstFloor.floorNum)
         ElMessage.error('初始化失败，请刷新页面')
         return
       }
 
-      console.log("初始化加载楼层ID:", floorId)
+      console.log('初始化加载楼层ID:', floorId)
       await loadClassrooms(floorId)
     } else {
       // 如果没有楼层数据，默认加载1楼
       currentFloor.value = { id: 1, floorNum: 1 }
-      console.log("默认加载楼层ID: 1")
+      console.log('默认加载楼层ID: 1')
       await loadClassrooms(1)
     }
 
     // 检查用户活跃状态
-    await checkUserActiveStatus();
+    await checkUserActiveStatus()
     // 查询用户活跃预约数量
-    await fetchActiveReservationCount(currentUserId.value);
+    await fetchActiveReservationCount(currentUserId.value)
 
     // 刷新教室数据
-    await refreshAllClassroomData();
+    await refreshAllClassroomData()
 
     // 设置定时器，每30秒刷新一次教室数据
     setInterval(async () => {
-      await refreshAllClassroomData();
-    }, 30000);
+      await refreshAllClassroomData()
+    }, 30000)
 
     // 设置定时器，每3秒刷新一次座位状态
     setInterval(async () => {
       if (selectedRoom.value) {
-        await loadSeats(selectedRoom.value);
+        await loadSeats(selectedRoom.value)
       }
-    }, 3000);
+    }, 3000)
   } catch (error) {
     console.error('初始化数据失败:', error)
     ElMessage.error('获取数据失败，请刷新页面重试')
@@ -159,28 +170,28 @@ const loadClassrooms = async (floorId: number | string) => {
     // 确保 floorId 是数字类型
     const numericFloorId = Number(floorId)
     if (isNaN(numericFloorId)) {
-      console.error("楼层ID格式错误:", floorId)
+      console.error('楼层ID格式错误:', floorId)
       ElMessage.error('楼层ID格式错误')
       return
     }
 
-    console.log("加载教室 - 楼层ID:", numericFloorId)
+    console.log('加载教室 - 楼层ID:', numericFloorId)
     const classroomList = await getClassroomsByFloor(numericFloorId)
 
     // 直接将 res.data 赋值给 rooms 变量，只获取基本信息
-    rooms.value = (classroomList || []).map(room => ({
+    rooms.value = (classroomList || []).map((room) => ({
       ...room,
       // 初始化为 null，等待 available-seats 接口返回
       availableSeats: null,
       totalSeats: null,
       // 初始化为 0，等待 available-seats 接口返回
-      occupancyRate: 0
+      occupancyRate: 0,
     }))
 
-    console.log("修正后的教室数据:", rooms.value)
+    console.log('修正后的教室数据:', rooms.value)
 
     if (rooms.value.length === 0) {
-      ElMessage.warning("该楼层暂无教室数据")
+      ElMessage.warning('该楼层暂无教室数据')
     }
   } catch (error) {
     console.error('加载教室失败:', error)
@@ -191,89 +202,85 @@ const loadClassrooms = async (floorId: number | string) => {
 
 // 加载座位列表
 const loadSeats = async (classroomId) => {
-  console.log("开始加载座位，教室ID:", classroomId);
+  console.log('开始加载座位，教室ID:', classroomId)
 
   try {
-    const numericClassroomId = Number(classroomId);
-    console.log("发起请求，教室ID:", numericClassroomId);
+    const numericClassroomId = Number(classroomId)
+    console.log('发起请求，教室ID:', numericClassroomId)
 
     // 使用 request 直接请求
-    const response = await request.get(`/api/library/seats/classroom/${numericClassroomId}`);
-    console.log("请求成功，响应:", response);
+    const response = await request.get(`/api/library/seats/classroom/${numericClassroomId}`)
+    console.log('请求成功，响应:', response)
 
     // 正确处理响应数据结构：{code: 200, msg: 'success', data: Array(32)}
-    const seatData = response.data.data || [];
-    console.log("座位数据:", seatData);
-    console.log("座位数据类型:", typeof seatData);
-    console.log("是否为数组:", Array.isArray(seatData));
+    const seatData = response.data.data || []
+    console.log('座位数据:', seatData)
+    console.log('座位数据类型:', typeof seatData)
+    console.log('是否为数组:', Array.isArray(seatData))
 
     // 🔴 关键：把后端返回的数据赋值给 seats
-    seats.value = seatData;
-    console.log("✅ 座位数据已赋值:", seats.value);
+    seats.value = seatData
+    console.log('✅ 座位数据已赋值:', seats.value)
 
     // 同时更新 roomSeats 用于渲染
-    const seatMap: Record<string, SeatStatus> = {};
+    const seatMap: Record<string, SeatStatus> = {}
 
     // 确保 seatData 是数组再调用 forEach
     if (Array.isArray(seatData)) {
-      console.log("开始处理座位数据，长度:", seatData.length);
+      console.log('开始处理座位数据，长度:', seatData.length)
       for (const seat of seatData) {
-        console.log(`处理座位:`, seat);
-        const seatCode = seat.seatCode || seat.seatNumber;
-        console.log(`座位编码:`, seatCode);
-        const seatId = `${numericClassroomId}-${seatCode}`;
-        console.log(`生成的 seatId:`, seatId);
+        console.log(`处理座位:`, seat)
+        const seatCode = seat.seatCode || seat.seatNumber
+        console.log(`座位编码:`, seatCode)
+        const seatId = `${numericClassroomId}-${seatCode}`
+        console.log(`生成的 seatId:`, seatId)
 
         // 严格的状态映射，排除任何模糊判断
-        let seatStatus = seat.status || 'available';
+        let seatStatus = seat.status || 'available'
         // 确保状态值有效
         if (!['available', 'occupied', 'reserved'].includes(seatStatus)) {
-          seatStatus = 'available';
+          seatStatus = 'available'
         }
-        seatMap[seatId] = seatStatus;
-        console.log(`座位状态:`, seatStatus);
+        seatMap[seatId] = seatStatus
+        console.log(`座位状态:`, seatStatus)
 
         // 获取座位的预约人数
         try {
-          const reservationResponse = await request.get(`/api/library/reservations/seat/${seat.id}`);
+          const reservationResponse = await request.get(`/api/library/reservations/seat/${seat.id}`)
           if (reservationResponse.data.code === 200) {
-            const reservations = reservationResponse.data.data;
-            let activeReservationCount = 0;
+            const reservations = reservationResponse.data.data
+            let activeReservationCount = 0
             if (Array.isArray(reservations)) {
-              activeReservationCount = reservations.filter(r => r.status === 'active').length;
+              activeReservationCount = reservations.filter((r) => r.status === 'active').length
             } else if (reservations && reservations.status === 'active') {
-              activeReservationCount = 1;
+              activeReservationCount = 1
             }
-            seatReservationCounts.value[seat.seatCode] = activeReservationCount;
-            console.log(`座位 ${seat.seatCode} 预约人数:`, activeReservationCount);
+            seatReservationCounts.value[seat.seatCode] = activeReservationCount
+            console.log(`座位 ${seat.seatCode} 预约人数:`, activeReservationCount)
           }
         } catch (error) {
-          console.error(`获取座位 ${seat.seatCode} 预约人数失败:`, error);
-          seatReservationCounts.value[seat.seatCode] = 0;
+          console.error(`获取座位 ${seat.seatCode} 预约人数失败:`, error)
+          seatReservationCounts.value[seat.seatCode] = 0
         }
       }
-      console.log("seatMap 生成完成:", seatMap);
-      console.log("seatMap 键数量:", Object.keys(seatMap).length);
+      console.log('seatMap 生成完成:', seatMap)
+      console.log('seatMap 键数量:', Object.keys(seatMap).length)
     } else {
-      console.error("座位数据不是数组:", seatData);
+      console.error('座位数据不是数组:', seatData)
     }
 
-    const classroomKey = numericClassroomId.toString();
-    console.log("教室键:", classroomKey);
-    roomSeats.value[classroomKey] = seatMap;
-    console.log("roomSeats 更新完成:", roomSeats.value);
-    console.log("当前教室的座位数据:", roomSeats.value[classroomKey]);
-    console.log("当前教室的座位数量:", Object.keys(roomSeats.value[classroomKey] || {}).length);
+    const classroomKey = numericClassroomId.toString()
+    console.log('教室键:', classroomKey)
+    roomSeats.value[classroomKey] = seatMap
+    console.log('roomSeats 更新完成:', roomSeats.value)
+    console.log('当前教室的座位数据:', roomSeats.value[classroomKey])
+    console.log('当前教室的座位数量:', Object.keys(roomSeats.value[classroomKey] || {}).length)
   } catch (error) {
-    console.error("❌ 加载座位失败:", error);
-    seats.value = []; // 失败也要清空
-    ElMessage.error("加载座位图失败");
+    console.error('❌ 加载座位失败:', error)
+    seats.value = [] // 失败也要清空
+    ElMessage.error('加载座位图失败')
   }
-};
-
-
-
-
+}
 
 // 获取当前楼层的教室
 const currentFloorRooms = computed(() => {
@@ -284,17 +291,19 @@ const currentFloorRooms = computed(() => {
 
 // 按空闲率排序的当前楼层教室
 const sortedRooms = computed(() => {
-  return [...currentFloorRooms.value].sort((a, b) => (b.occupancyRate || 0) - (a.occupancyRate || 0))
+  return [...currentFloorRooms.value].sort(
+    (a, b) => (b.occupancyRate || 0) - (a.occupancyRate || 0),
+  )
 })
 
 // 推荐教室（当前楼层空闲率最高的教室）
 const recommendedRooms = computed(() => {
   // 按空闲率排序，取当前楼层的教室
   const floorNumber = currentFloor.value?.id || currentFloor.value?.floorNum
-  console.log("当前楼层:", floorNumber)
-  console.log("教室列表:", rooms.value)
-  const filteredRooms = rooms.value.filter(room => room.floorId === floorNumber)
-  console.log("过滤后的教室:", filteredRooms)
+  console.log('当前楼层:', floorNumber)
+  console.log('教室列表:', rooms.value)
+  const filteredRooms = rooms.value.filter((room) => room.floorId === floorNumber)
+  console.log('过滤后的教室:', filteredRooms)
   return filteredRooms.sort((a, b) => (b.occupancyRate || 0) - (a.occupancyRate || 0))
 })
 
@@ -311,12 +320,12 @@ const handleFloorChange = async (floor: any) => {
 
     // 校验转换结果，防止 NaN
     if (isNaN(floorId)) {
-      console.error("楼层ID转换失败:", floor.id || floor.floorNum)
-      ElMessage.error("楼层ID格式错误，请刷新页面")
+      console.error('楼层ID转换失败:', floor.id || floor.floorNum)
+      ElMessage.error('楼层ID格式错误，请刷新页面')
       return
     }
 
-    console.log("请求楼层ID(数字):", floorId)
+    console.log('请求楼层ID(数字):', floorId)
 
     // 更新当前楼层
     currentFloor.value = { id: floorId, floorNum: floorId }
@@ -330,8 +339,8 @@ const handleFloorChange = async (floor: any) => {
     // 刷新教室数据
     await refreshAllClassroomData()
   } catch (error) {
-    console.error("切换楼层失败:", error)
-    ElMessage.error("切换楼层失败，请重试")
+    console.error('切换楼层失败:', error)
+    ElMessage.error('切换楼层失败，请重试')
   }
 }
 
@@ -341,16 +350,16 @@ const refreshClassroomList = async () => {
     // 获取当前楼层ID
     const floorId = Number(currentFloor.value?.id || currentFloor.value?.floorNum)
     if (isNaN(floorId)) {
-      console.error("刷新教室列表失败: 楼层ID无效")
+      console.error('刷新教室列表失败: 楼层ID无效')
       return
     }
 
-    console.log("刷新教室列表，楼层ID:", floorId)
-    // 重新加载当前楼层的教室数据
+    console.log('刷新教室列表，楼层ID:', floorId)
+cons  // 重新加载当前楼层的教室数据
     await loadClassrooms(floorId)
-    console.log("教室列表刷新完成")
+    console.log('教室列表刷新完成')
   } catch (error) {
-    console.error("刷新教室列表失败:", error)
+    console.error('刷新教室列表失败:', error)
   }
 }
 
@@ -371,15 +380,15 @@ const refreshAllClassroomData = async () => {
     // 获取当前楼层ID
     const floorId = Number(currentFloor.value?.id || currentFloor.value?.floorNum)
     if (isNaN(floorId)) {
-      console.error("刷新教室数据失败: 楼层ID无效")
+      console.error('刷新教室数据失败: 楼层ID无效')
       return
     }
 
-    console.log("刷新当前楼层的教室数据，楼层ID:", floorId)
+    console.log('刷新当前楼层的教室数据，楼层ID:', floorId)
 
     // 获取当前楼层的教室
-    const floorRooms = rooms.value.filter(room => room.floorId === floorId)
-    console.log("当前楼层的教室数量:", floorRooms.length)
+    const floorRooms = rooms.value.filter((room) => room.floorId === floorId)
+    console.log('当前楼层的教室数量:', floorRooms.length)
 
     // 并行获取所有教室的可用座位数，但等待全部完成
     const promises = floorRooms.map(async (room) => {
@@ -389,7 +398,7 @@ const refreshAllClassroomData = async () => {
 
       try {
         const response = await request.get(`/api/library/classrooms/${room.id}/available-seats`, {
-          signal: controller.signal
+          signal: controller.signal,
         })
 
         // 移除已完成的请求
@@ -402,14 +411,16 @@ const refreshAllClassroomData = async () => {
           const occupancyRate = totalSeats > 0 ? availableSeats / totalSeats : 1
 
           // 更新教室数据
-          const roomIndex = rooms.value.findIndex(r => r.id === room.id)
+          const roomIndex = rooms.value.findIndex((r) => r.id === room.id)
           if (roomIndex !== -1) {
             rooms.value[roomIndex].availableSeats = availableSeats
             rooms.value[roomIndex].totalSeats = totalSeats
             rooms.value[roomIndex].occupancyRate = occupancyRate
           }
 
-          console.log(`教室 ${room.classroomName || room.name} 可用座位数: ${availableSeats}, 总座位数: ${totalSeats}, 占用率: ${occupancyRate}`)
+          console.log(
+            `教室 ${room.classroomName || room.name} 可用座位数: ${availableSeats}, 总座位数: ${totalSeats}, 占用率: ${occupancyRate}`,
+          )
         }
       } catch (error) {
         // 移除已失败的请求
@@ -421,9 +432,9 @@ const refreshAllClassroomData = async () => {
     // 等待所有请求完成
     await Promise.all(promises)
 
-    console.log("教室数据刷新完成")
+    console.log('教室数据刷新完成')
   } catch (error) {
-    console.error("刷新教室数据失败:", error)
+    console.error('刷新教室数据失败:', error)
   } finally {
     isLoading.value = false
   }
@@ -433,18 +444,17 @@ const refreshAllClassroomData = async () => {
 const handleRoomSelect = async (classroom) => {
   try {
     // 记录选中的教室
-    selectedClassroom.value = classroom;
-    selectedRoom.value = classroom.id.toString();
-    selectedSeats.value = [];
+    selectedClassroom.value = classroom
+    selectedRoom.value = classroom.id.toString()
+    selectedSeats.value = []
 
     // 调用 loadSeats 函数加载座位数据
-    await loadSeats(classroom.id);
-
+    await loadSeats(classroom.id)
   } catch (error) {
-    console.error("选择教室失败:", error);
-    ElMessage.error("选择教室失败");
+    console.error('选择教室失败:', error)
+    ElMessage.error('选择教室失败')
   }
-};
+}
 
 // 时间段列表
 const timeSlots = [
@@ -472,7 +482,7 @@ const maxDuration = ref(4) // 最大可预约时长
 // 监听预约时间变化，动态计算最大可预约时长
 watch(selectedTimeSlot, (newSlotId) => {
   // 找到选中的时间槽
-  const selectedSlot = timeSlots.find(slot => slot.id === newSlotId)
+  const selectedSlot = timeSlots.find((slot) => slot.id === newSlotId)
   if (selectedSlot) {
     // 提取开始时间的小时数
     const startHour = parseInt(selectedSlot.start.split(':')[0])
@@ -493,26 +503,22 @@ watch(selectedTimeSlot, (newSlotId) => {
 // 座位状态类型
 type SeatStatus = 'available' | 'occupied' | 'selected' | 'podium' | 'door' | 'empty'
 
-
-
 // 所有教室的座位数据
 const roomSeats = ref<Record<string, Record<string, SeatStatus>>>({})
 
-
-
 // 获取当前教室的座位
 const currentRoomSeats = computed(() => {
-  console.log("计算 currentRoomSeats");
-  console.log("selectedRoom.value:", selectedRoom.value);
-  console.log("roomSeats.value:", roomSeats.value);
+  console.log('计算 currentRoomSeats')
+  console.log('selectedRoom.value:', selectedRoom.value)
+  console.log('roomSeats.value:', roomSeats.value)
   if (!selectedRoom.value) {
-    console.log("selectedRoom 为空，返回空对象");
+    console.log('selectedRoom 为空，返回空对象')
     return {}
   }
-  const result = roomSeats.value[selectedRoom.value] || {};
-  console.log("currentRoomSeats 结果:", result);
-  console.log("currentRoomSeats 长度:", Object.keys(result).length);
-  return result;
+  const result = roomSeats.value[selectedRoom.value] || {}
+  console.log('currentRoomSeats 结果:', result)
+  console.log('currentRoomSeats 长度:', Object.keys(result).length)
+  return result
 })
 
 // 获取座位的显示标签
@@ -537,7 +543,7 @@ const groupSeatsByRow = () => {
   const seats = currentRoomSeats.value
   const grouped: Record<string, string[]> = {}
 
-  Object.keys(seats).forEach(seatId => {
+  Object.keys(seats).forEach((seatId) => {
     const parts = seatId.split('-')
     if (parts.length === 3) {
       // 格式: roomId-seatCode (如 A1, B2)
@@ -553,11 +559,13 @@ const groupSeatsByRow = () => {
 
   // 按行标签排序
   const sorted: Record<string, string[]> = {}
-  Object.keys(grouped).sort().forEach(rowLabel => {
-    // 按座位编码排序
-    grouped[rowLabel].sort()
-    sorted[rowLabel] = grouped[rowLabel]
-  })
+  Object.keys(grouped)
+    .sort()
+    .forEach((rowLabel) => {
+      // 按座位编码排序
+      grouped[rowLabel].sort()
+      sorted[rowLabel] = grouped[rowLabel]
+    })
 
   return sorted
 }
@@ -567,7 +575,7 @@ const getMaxColumn = () => {
   const seats = currentRoomSeats.value
   let maxColumn = 0
 
-  Object.keys(seats).forEach(seatId => {
+  Object.keys(seats).forEach((seatId) => {
     const parts = seatId.split('-')
     if (parts.length === 3) {
       // 格式: roomId-seatCode (如 A1, B2)
@@ -633,108 +641,110 @@ const handleSeatClick = async (seatId: string, status: SeatStatus) => {
 
   // 从座位ID中提取座位代码
   const parts = seatId.split('-')
-  let seatCode = '未知座位';
+  let seatCode = '未知座位'
 
   if (parts.length >= 2) {
     // 格式: roomId-seatCode
-    seatCode = parts[1];
+    seatCode = parts[1]
   }
 
   // 获取教室信息
-  const classroom = rooms.value.find(r => r.id === parseInt(selectedRoom.value));
-  const classroomName = classroom?.classroomName || classroom?.name || '未知教室';
-  currentClassroomName.value = classroomName;
+  const classroom = rooms.value.find((r) => r.id === parseInt(selectedRoom.value))
+  const classroomName = classroom?.classroomName || classroom?.name || '未知教室'
+  currentClassroomName.value = classroomName
 
   // 获取座位详情和预约列表
-  await getSeatDetails(seatCode);
+  await getSeatDetails(seatCode)
 
   // 弹出座位详情弹窗
-  seatDetailDialogVisible.value = true;
+  seatDetailDialogVisible.value = true
 }
 
 // 根据座位ID查询预约记录
 const getReservationBySeatId = async (seatId: number) => {
   try {
-    console.log('查询座位预约记录，座位ID:', seatId);
+    console.log('查询座位预约记录，座位ID:', seatId)
 
     // 从当前座位数据中查找有效预约
     // 直接使用座位的 id 属性来匹配
-    const currentSeat = seats.value.find(seat => seat.id === seatId);
+    const currentSeat = seats.value.find((seat) => seat.id === seatId)
 
     if (currentSeat && currentSeat.activeReservation) {
       // 找到有效预约
-      console.log('找到有效预约:', currentSeat.activeReservation);
-      return currentSeat.activeReservation;
+      console.log('找到有效预约:', currentSeat.activeReservation)
+      return currentSeat.activeReservation
     }
 
     // 如果座位数据中没有，尝试调用后端接口获取
     try {
-      console.log('调用预约记录接口');
-      const response = await request.get(`/api/library/reservations/seat/${seatId}`);
-      console.log('预约记录接口响应:', response.data);
+      console.log('调用预约记录接口')
+      const response = await request.get(`/api/library/reservations/seat/${seatId}`)
+      console.log('预约记录接口响应:', response.data)
 
       if (response.data.code === 200) {
         // 如果 data 是 null，就返回 null
-        const reservationData = response.data.data;
-        console.log('从接口获取预约记录:', reservationData);
-        return reservationData || null;
+        const reservationData = response.data.data
+        console.log('从接口获取预约记录:', reservationData)
+        return reservationData || null
       } else {
-        console.error('查询预约记录失败:', response.data.msg);
-        return null;
-      }
+        console.error('查询预约记录失败:', response.data.msg)
     } catch (error: any) {
-      console.error('调用查询接口失败:', error);
-      ElMessage.error('查询座位信息失败，请稍后重试');
-      return null;
+      console.error('调用查询接口失败:', error)
+      ElMessage.error('查询座位信息失败，请稍后重试')
+      return null
     }
 
-    console.log('未找到预约记录，返回null');
-    return null;
+    console.log('未找到预约记录，返回null')
+    return null
   } catch (error: any) {
-    console.error('查询预约记录失败:', error.message || error);
-    ElMessage.error('查询座位信息失败，请稍后重试');
-    return null;
+    console.error('查询预约记录失败:', error.message || error)
+    ElMessage.error('查询座位信息失败，请稍后重试')
+    return null
   }
 }
 
 // 占用座位
 const handleOccupySeat = async (reservationId: number) => {
   try {
-    const userId = currentUserId.value;
+    const userId = currentUserId.value
 
     // 检查用户是否达到最大预约数量
     if (!checkReservationLimit()) {
-      return;
+      return
     }
 
     console.log('调用占用座位接口，参数:', {
       reservationId: reservationId,
-      userId: userId
-    });
+      userId: userId,
+    })
 
     // 调用占用座位接口
-    const res = await request.post(`/api/library/reservations/${reservationId}/occupy`, {}, {
-      params: {
-        userId: userId
-      }
-    });
+    const res = await request.post(
+      `/api/library/reservations/${reservationId}/occupy`,
+      {},
+      {
+        params: {
+          userId: userId,
+        },
+      },
+    )
 
-    console.log('占用座位接口响应:', res.data);
+    console.log('占用座位接口响应:', res.data)
 
     if (res.data.code === 200) {
-      ElMessage.success('占用座位成功！');
+      ElMessage.success('占用座位成功！')
       // 刷新座位列表
-      await loadSeats(parseInt(selectedRoom.value));
+      await loadSeats(parseInt(selectedRoom.value))
       // 更新用户活跃状态
-      await checkUserActiveStatus();
+      await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      await fetchActiveReservationCount(userId);
+      await fetchActiveReservationCount(userId)
     } else {
-      ElMessage.error(`占用失败：${res.data.msg}`);
+      ElMessage.error(`占用失败：${res.data.msg}`)
     }
   } catch (error: any) {
-    console.error('占用座位异常:', error);
-    ElMessage.error('系统内部错误，请稍后重试');
+    console.error('占用座位异常:', error)
+    ElMessage.error('系统内部错误，请稍后重试')
   }
 }
 
@@ -769,7 +779,7 @@ const directSeatIn = (seatId: string) => {
       cancelButtonText: '取消',
       dangerouslyUseHTMLString: true,
       type: 'success',
-    }
+    },
   )
     .then(() => {
       // 直接进入座位，开始计时
@@ -785,32 +795,33 @@ const directSeatIn = (seatId: string) => {
           hasEntered: true,
           enterTime,
           duration,
-          timer: null
+          timer: null,
         })
 
         // 设置定时器，时间到自动离开
-        const timer = window.setTimeout(() => {
-          autoLeaveSeat(seatId)
-        }, duration * 60 * 60 * 1000) // 毫秒转小时
+        const timer = window.setTimeout(
+          () => {
+            autoLeaveSeat(seatId)
+          },
+          duration * 60 * 60 * 1000,
+        ) // 毫秒转小时
 
         seatUsageInfo.value.set(seatId, {
           isUsing: true,
           hasEntered: true,
           enterTime,
           duration,
-          timer
+          timer,
         })
       }
 
-            const room = rooms.value.find((r) => r.id === selectedRoom.value)
+      const room = rooms.value.find((r) => r.id === selectedRoom.value)
       ElMessage.success(`成功进入${room?.name || ''}座位 ${getSeatLabel(seatId)}`)
     })
     .catch(() => {
       ElMessage.info('已取消进入')
     })
 }
-
-
 
 // 进入座位
 const enterSeat = (seatId: string) => {
@@ -842,7 +853,7 @@ const enterSeat = (seatId: string) => {
       cancelButtonText: '取消',
       dangerouslyUseHTMLString: true,
       type: 'success',
-    }
+    },
   )
     .then(() => {
       // 开始使用座位
@@ -852,9 +863,12 @@ const enterSeat = (seatId: string) => {
       usage.enterTime = enterTime
 
       // 设置定时器，时间到自动离开
-      const timer = window.setTimeout(() => {
-        autoLeaveSeat(seatId)
-      }, usage.duration * 60 * 60 * 1000) // 毫秒转小时
+      const timer = window.setTimeout(
+        () => {
+          autoLeaveSeat(seatId)
+        },
+        usage.duration * 60 * 60 * 1000,
+      ) // 毫秒转小时
 
       usage.timer = timer
 
@@ -878,15 +892,11 @@ const autoLeaveSeat = (seatId: string) => {
   }
 
   // 弹出提示框
-  ElMessageBox.alert(
-    '您的预约时间已经到了，系统为您自动释放了座位。',
-    '时间到提醒',
-    {
-      confirmButtonText: '我知道了',
-      type: 'warning',
-      center: true,
-    }
-  )
+  ElMessageBox.alert('您的预约时间已经到了，系统为您自动释放了座位。', '时间到提醒', {
+    confirmButtonText: '我知道了',
+    type: 'warning',
+    center: true,
+  })
 
   // 释放座位
   releaseSeat(seatId)
@@ -894,15 +904,11 @@ const autoLeaveSeat = (seatId: string) => {
 
 // 手动离开座位
 const leaveSeat = (seatId: string) => {
-  ElMessageBox.confirm(
-    '确定要离开座位吗？',
-    '确认离开',
-    {
-      confirmButtonText: '确定离开',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  )
+  ElMessageBox.confirm('确定要离开座位吗？', '确认离开', {
+    confirmButtonText: '确定离开',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
     .then(() => {
       const usage = seatUsageInfo.value.get(seatId)
       if (usage) {
@@ -965,8 +971,6 @@ const formatTime = (minutes: number) => {
   return `${mins}分钟`
 }
 
-
-
 // 格式化日期
 const formatDate = (date: Date | string | null | undefined) => {
   // 类型校验
@@ -1020,7 +1024,7 @@ const confirmReservation = () => {
     selectedDate: selectedDate.value,
     selectedTimeSlot: selectedTimeSlot.value,
     selectedSeats: selectedSeats.value,
-    duration: reservationInfo.value.duration
+    duration: reservationInfo.value.duration,
   })
 
   reservationInfo.value = {
@@ -1035,75 +1039,84 @@ const confirmReservation = () => {
 }
 
 // 模拟用户ID（实际从登录获取）
-const userId = computed(() => currentUserId.value);
+const userId = computed(() => currentUserId.value)
 
 // 检查用户是否有活跃的预约或占用记录
-const activeReservation = ref<any>(null);
+const activeReservation = ref<any>(null)
 
 const checkUserActiveStatus = async () => {
   try {
-    const userId = currentUserId.value;
-    console.log('查询用户活跃状态，用户ID:', userId);
+    const userId = currentUserId.value
+    console.log('查询用户活跃状态，用户ID:', userId)
 
     // 调用查询用户预约记录的接口
-    const response = await request.get(`/api/library/reservations/user/${userId}`);
-    console.log('用户预约记录接口响应:', response.data);
+    const response = await request.get(`/api/library/reservations/user/${userId}`)
+    console.log('用户预约记录接口响应:', response.data)
 
     if (response.data.code === 200) {
-      const reservations = response.data.data || [];
+      const reservations = response.data.data || []
       // 过滤出状态为 active 或 reserved 的记录
-      const activeList = reservations.filter((item: any) => item.status === 'active' || item.status === 'reserved');
-      hasActiveReservation.value = activeList.length > 0;
-      activeReservation.value = activeList[0] || null;
-      console.log('用户活跃状态:', hasActiveReservation.value);
-      console.log('用户活跃预约:', activeReservation.value);
+      const activeList = reservations.filter(
+        (item: any) => item.status === 'active' || item.status === 'reserved',
+      )
+      hasActiveReservation.value = activeList.length > 0
+      activeReservation.value = activeList[0] || null
+      console.log('用户活跃状态:', hasActiveReservation.value)
+      console.log('用户活跃预约:', activeReservation.value)
     } else {
-      console.error('查询用户预约记录失败:', response.data.msg);
-      hasActiveReservation.value = false;
-      activeReservation.value = null;
+      console.error('查询用户预约记录失败:', response.data.msg)
+      hasActiveReservation.value = false
+      activeReservation.value = null
     }
   } catch (error: any) {
-    console.error('调用查询用户预约记录接口失败:', error);
-    hasActiveReservation.value = false;
-    activeReservation.value = null;
+    console.error('调用查询用户预约记录接口失败:', error)
+    hasActiveReservation.value = false
+    activeReservation.value = null
   }
-};
+}
 
 // 创建预约接口
 const createReservation = async (...args: any[]) => {
   try {
-    let seatId: number, reserveDate: string, startTime: string, duration: number, endTime: string, classroomId: number, user_id: number, type: string;
+    let seatId: number,
+      reserveDate: string,
+      startTime: string,
+      duration: number,
+      endTime: string,
+      classroomId: number,
+      user_id: number,
+      type: string
 
     // 处理两种不同的调用方式
     if (args.length === 1 && typeof args[0] === 'object') {
       // 从 submitReservation 调用，传入的是对象
-      const params = args[0];
-      seatId = params.seatId;
-      reserveDate = params.reserveDate;
-      startTime = params.startTime;
-      duration = params.duration; // 已经是分钟
-      endTime = params.endTime;
-      classroomId = params.classroomId;
-      user_id = params.userId;
-      type = params.type;
+      const params = args[0]
+      seatId = params.seatId
+      reserveDate = params.reserveDate
+      startTime = params.startTime
+      duration = params.duration // 已经是分钟
+      endTime = params.endTime
+      classroomId = params.classroomId
+      user_id = params.userId
+      type = params.type
     } else {
       // 从 handleSeatClick 调用，传入的是多个参数
-      [seatId, reserveDate, startTime, duration, endTime] = args;
-      classroomId = parseInt(selectedRoom.value);
-      user_id = currentUserId.value;
-      type = 'reservation';
-      duration = duration * 60; // 转换为分钟
+      ;[seatId, reserveDate, startTime, duration, endTime] = args
+      classroomId = parseInt(selectedRoom.value)
+      user_id = currentUserId.value
+      type = 'reservation'
+      duration = duration * 60 // 转换为分钟
     }
 
     // 确保 seatId 是有效的数字
     if (!seatId || isNaN(seatId)) {
-      ElMessage.error('座位ID无效');
-      return;
+      ElMessage.error('座位ID无效')
+      return
     }
 
     // 检查用户是否达到最大预约数量
     if (!checkReservationLimit()) {
-      return;
+      return
     }
 
     console.log('调用预约接口，参数:', {
@@ -1114,8 +1127,8 @@ const createReservation = async (...args: any[]) => {
       startTime,
       duration,
       endTime,
-      type
-    });
+      type,
+    })
 
     const res = await request.post('/api/library/reservations', {
       userId: user_id,
@@ -1125,34 +1138,34 @@ const createReservation = async (...args: any[]) => {
       startTime,
       duration,
       endTime,
-      type
-    });
+      type,
+    })
 
-    console.log('预约接口响应:', res.data);
+    console.log('预约接口响应:', res.data)
 
     if (res.data.code === 200) {
-      ElMessage.success("预约成功！");
-      console.log("预约成功，准备刷新座位数据，教室ID:", classroomId);
-      console.log("当前选中的教室ID:", selectedRoom.value);
+      ElMessage.success('预约成功！')
+      console.log('预约成功，准备刷新座位数据，教室ID:', classroomId)
+      console.log('当前选中的教室ID:', selectedRoom.value)
       // 刷新座位状态，确保获取最新的座位数据和有效预约信息
-      await loadSeats(classroomId);
-      console.log("座位数据刷新完成，seats.value长度:", seats.value.length);
-      console.log("第一个座位状态:", seats.value[0]?.status);
+      await loadSeats(classroomId)
+      console.log('座位数据刷新完成，seats.value长度:', seats.value.length)
+      console.log('第一个座位状态:', seats.value[0]?.status)
       // 更新用户活跃状态
-      await checkUserActiveStatus();
+      await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      await fetchActiveReservationCount(user_id);
-      console.log("用户活跃状态更新完成，hasActiveReservation:", hasActiveReservation.value);
+      await fetchActiveReservationCount(user_id)
+      console.log('用户活跃状态更新完成，hasActiveReservation:', hasActiveReservation.value)
       // 刷新教室卡片的可用座位数
-      await refreshAllClassroomData();
+      await refreshAllClassroomData()
     } else {
-      ElMessage.error("预约失败：" + (res.data.msg || '未知错误'));
+      ElMessage.error('预约失败：' + (res.data.msg || '未知错误'))
     }
   } catch (err: any) {
-    console.log('预约接口调用失败:', err);
-    ElMessage.error("预约失败：" + (err.response?.data?.msg || '网络错误'));
+    console.log('预约接口调用失败:', err)
+    ElMessage.error('预约失败：' + (err.response?.data?.msg || '网络错误'))
   }
-};
+}
 
 // 提交预约
 const submitReservation = async () => {
@@ -1170,7 +1183,7 @@ const submitReservation = async () => {
       cancelButtonText: '取消',
       dangerouslyUseHTMLString: true,
       type: 'warning',
-    }
+    },
   )
     .then(async () => {
       try {
@@ -1200,8 +1213,8 @@ const submitReservation = async () => {
           const seatCode = parts.length === 3 ? parts[2] : `${parts[2]}-${parts[3]}`
 
           // 从当前座位数据中获取真实的座位ID
-          const currentSeatData = seats.value.find(seat => seat.seatCode === seatCode);
-          const realSeatId = currentSeatData ? currentSeatData.id : 0;
+          const currentSeatData = seats.value.find((seat) => seat.seatCode === seatCode)
+          const realSeatId = currentSeatData ? currentSeatData.id : 0
 
           // 调用创建预约API
           await createReservation({
@@ -1212,7 +1225,7 @@ const submitReservation = async () => {
             startTime,
             duration,
             endTime,
-            type: 'normal'
+            type: 'normal',
           })
         }
 
@@ -1220,11 +1233,11 @@ const submitReservation = async () => {
         selectedSeats.value = []
 
         // 刷新当前教室的座位数据（核心修复）
-        await loadSeats(classroomId);
+        await loadSeats(classroomId)
         // 刷新用户有效预约状态
-        await checkUserActiveStatus();
+        await checkUserActiveStatus()
         // 刷新教室列表，更新可用座位数
-        await refreshClassroomList();
+        await refreshClassroomList()
 
         ElMessage.success('预约成功！')
 
@@ -1261,15 +1274,19 @@ const handleLeaveConfirm = async () => {
 
     console.log('调用离开座位接口，参数:', {
       reservationId: currentSeat.value.id,
-      userId: userId
+      userId: userId,
     })
 
     // 调用离开座位接口
-    const res = await request.post(`/api/library/reservations/${currentSeat.value.id}/leave`, {}, {
-      params: {
-        userId: userId
-      }
-    })
+    const res = await request.post(
+      `/api/library/reservations/${currentSeat.value.id}/leave`,
+      {},
+      {
+        params: {
+          userId: userId,
+        },
+      },
+    )
 
     console.log('离开座位接口响应:', res.data)
 
@@ -1277,9 +1294,9 @@ const handleLeaveConfirm = async () => {
       ElMessage.success('离开座位成功！座位已释放')
       handleCloseLeaveDialog()
       // 更新用户活跃状态
-      await checkUserActiveStatus();
+      await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      await fetchActiveReservationCount(userId);
+      await fetchActiveReservationCount(userId)
       // 刷新座位列表
       await loadSeats(classroomId)
     } else {
@@ -1299,15 +1316,19 @@ const handleLeaveSeatFromDetail = async (reservationId, seatCode) => {
 
     console.log('从详情弹窗调用离开座位接口，参数:', {
       reservationId: reservationId,
-      userId: userId
+      userId: userId,
     })
 
     // 调用离开座位接口
-    const res = await request.post(`/api/library/reservations/${reservationId}/leave`, {}, {
-      params: {
-        userId: userId
-      }
-    })
+    const res = await request.post(
+      `/api/library/reservations/${reservationId}/leave`,
+      {},
+      {
+        params: {
+          userId: userId,
+        },
+      },
+    )
 
     console.log('离开座位接口响应:', res.data)
 
@@ -1315,13 +1336,13 @@ const handleLeaveSeatFromDetail = async (reservationId, seatCode) => {
       ElMessage.success('离开座位成功！座位已释放')
       seatDetailDialogVisible.value = false
       // 更新用户活跃状态
-      await checkUserActiveStatus();
+      await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      await fetchActiveReservationCount(userId);
+      await fetchActiveReservationCount(userId)
       // 刷新座位列表
       await loadSeats(classroomId)
       // 刷新教室卡片的可用座位数
-      await refreshAllClassroomData();
+      await refreshAllClassroomData()
     } else {
       ElMessage.error(`离开失败：${res.data.msg}`)
     }
@@ -1334,9 +1355,9 @@ const handleLeaveSeatFromDetail = async (reservationId, seatCode) => {
 // 从详情弹窗占用座位
 const handleOccupySeatFromDetail = (reservationId, seatCode) => {
   // 保存当前要占用的预约ID
-  currentOccupyReservationId.value = reservationId;
+  currentOccupyReservationId.value = reservationId
   // 打开占用确认弹窗
-  occupyDialogVisible.value = true;
+  occupyDialogVisible.value = true
 }
 
 // 确认占用座位
@@ -1348,20 +1369,24 @@ const handleOccupyConfirm = async () => {
 
     // 检查用户是否达到最大预约数量
     if (!checkReservationLimit()) {
-      return;
+      return
     }
 
     console.log('调用占用座位接口，参数:', {
       reservationId: reservationId,
-      userId: userId
+      userId: userId,
     })
 
     // 调用占用座位接口
-    const res = await request.post(`/api/library/reservations/${reservationId}/occupy`, {}, {
-      params: {
-        userId: userId
-      }
-    })
+    const res = await request.post(
+      `/api/library/reservations/${reservationId}/occupy`,
+      {},
+      {
+        params: {
+          userId: userId,
+        },
+      },
+    )
 
     console.log('占用座位接口响应:', res.data)
 
@@ -1374,11 +1399,11 @@ const handleOccupyConfirm = async () => {
       // 刷新座位列表
       await loadSeats(classroomId)
       // 更新用户活跃状态
-      await checkUserActiveStatus();
+      await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      await fetchActiveReservationCount(userId);
+      await fetchActiveReservationCount(userId)
       // 刷新教室卡片的可用座位数
-      await refreshAllClassroomData();
+      await refreshAllClassroomData()
     } else {
       ElMessage.error(`占用失败：${res.data.msg}`)
     }
@@ -1398,20 +1423,22 @@ const handleReserveSeatFromDetail = async () => {
   seatDetailDialogVisible.value = false
 
   // 从当前座位数据中获取真实的座位ID
-  const currentSeatData = seats.value.find(seat => seat.seatCode === currentSeatDetails.value.seatCode);
-  const seatNumber = currentSeatData ? currentSeatData.id : 0;
+  const currentSeatData = seats.value.find(
+    (seat) => seat.seatCode === currentSeatDetails.value.seatCode,
+  )
+  const seatNumber = currentSeatData ? currentSeatData.id : 0
 
   // 获取预约信息
-  const reserveDate = formatDate(selectedDate.value);
-  const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value);
-  const startTime = slot?.start || '09:00';
-  const duration = reservationInfo.value.duration; // 使用用户选择的时长
+  const reserveDate = formatDate(selectedDate.value)
+  const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value)
+  const startTime = slot?.start || '09:00'
+  const duration = reservationInfo.value.duration // 使用用户选择的时长
 
   // 计算结束时间
-  const [hours, minutes] = startTime.split(':').map(Number);
-  const endHours = hours + Math.floor((minutes + duration * 60) / 60);
-  const endMinutes = (minutes + duration * 60) % 60;
-  const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+  const [hours, minutes] = startTime.split(':').map(Number)
+  const endHours = hours + Math.floor((minutes + duration * 60) / 60)
+  const endMinutes = (minutes + duration * 60) % 60
+  const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
 
   // 弹出确认预约弹窗
   ElMessageBox.confirm(
@@ -1447,71 +1474,76 @@ const handleReserveSeatFromDetail = async () => {
       confirmButtonText: '确认预约',
       cancelButtonText: '取消',
       dangerouslyUseHTMLString: true,
-      type: 'info'
-    }
-  ).then(async () => {
-    // 调用预约接口
-    await createReservation(seatNumber, reserveDate, startTime, duration, endTime);
-  }).catch(() => {
-    ElMessage.info('已取消预约');
-  });
+      type: 'info',
+    },
+  )
+    .then(async () => {
+      // 调用预约接口
+      await createReservation(seatNumber, reserveDate, startTime, duration, endTime)
+    })
+    .catch(() => {
+      ElMessage.info('已取消预约')
+    })
 }
 
 // 获取座位详情和预约列表
 const getSeatDetails = async (seatId) => {
   try {
-    console.log('查询座位详情，座位ID:', seatId);
+    console.log('查询座位详情，座位ID:', seatId)
 
     // 首先尝试从座位数据中查找对应的座位信息
-    let currentSeatData = seats.value.find(seat => seat.seatCode === seatId);
+    let currentSeatData = seats.value.find((seat) => seat.seatCode === seatId)
 
     // 如果没找到，尝试重新加载座位数据
     if (!currentSeatData) {
-      console.log('未找到座位数据，重新加载');
-      await loadSeats(selectedRoom.value);
-      currentSeatData = seats.value.find(seat => seat.seatCode === seatId);
+      console.log('未找到座位数据，重新加载')
+      await loadSeats(selectedRoom.value)
+      currentSeatData = seats.value.find((seat) => seat.seatCode === seatId)
     }
 
     if (currentSeatData) {
-      currentSeatDetails.value = currentSeatData;
-      console.log('座位详情:', currentSeatDetails.value);
+      currentSeatDetails.value = currentSeatData
+      console.log('座位详情:', currentSeatDetails.value)
 
       // 调用后端接口获取该座位的所有有效预约信息
-      const response = await request.get(`/api/library/reservations/seat/${currentSeatData.id}`);
-      console.log('预约记录接口响应:', response.data);
+      const response = await request.get(`/api/library/reservations/seat/${currentSeatData.id}`)
+      console.log('预约记录接口响应:', response.data)
 
       if (response.data.code === 200) {
         // 如果 data 是数组，直接使用；如果是单个对象，包装成数组
-        const reservationData = response.data.data;
-        let allReservations = [];
+        const reservationData = response.data.data
+        let allReservations = []
         if (Array.isArray(reservationData)) {
-          allReservations = reservationData;
+          allReservations = reservationData
         } else if (reservationData) {
-          allReservations = [reservationData];
+          allReservations = [reservationData]
         }
 
         // 过滤出 active 状态的预约
-        currentSeatReservations.value = allReservations.filter(reservation => reservation.status === 'active');
+        currentSeatReservations.value = allReservations.filter(
+          (reservation) => reservation.status === 'active',
+        )
 
-        console.log('预约列表:', currentSeatReservations.value);
-        console.log('当前登录用户ID:', currentUserId.value);
+        console.log('预约列表:', currentSeatReservations.value)
+        console.log('当前登录用户ID:', currentUserId.value)
         // 检查每条预约记录的 userId 与当前用户ID是否匹配
         currentSeatReservations.value.forEach((reservation, index) => {
-          console.log(`预约 ${index + 1} - userId: ${reservation.userId}, 当前用户ID: ${currentUserId.value}, 是否匹配: ${reservation.userId === currentUserId.value}`);
-        });
+          console.log(
+            `预约 ${index + 1} - userId: ${reservation.userId}, 当前用户ID: ${currentUserId.value}, 是否匹配: ${reservation.userId === currentUserId.value}`,
+          )
+        })
 
         // 使用 nextTick 强制刷新组件，确保模板使用最新的 currentUserId
-        await nextTick();
-        console.log('组件已刷新，按钮应正确显示');
-
+        await nextTick()
+        console.log('组件已刷新，按钮应正确显示')
       } else {
-        console.error('查询预约记录失败:', response.data.msg);
-        currentSeatReservations.value = [];
+        console.error('查询预约记录失败:', response.data.msg)
+        currentSeatReservations.value = []
       }
     }
   } catch (error: any) {
-    console.error('获取座位详情失败:', error);
-    ElMessage.error('获取座位信息失败，请重试');
+    console.error('获取座位详情失败:', error)
+    ElMessage.error('获取座位信息失败，请重试')
   }
 }
 
@@ -1548,60 +1580,61 @@ const getColCount = () => {
 // 检查是否为一楼的101-104教室
 const isFirstFloorRoom = computed(() => {
   // 检查当前选中的教室名称
-  const classroomName = selectedClassroom.value?.classroomName || selectedClassroom.value?.name;
-  return classroomName &&
-    (classroomName === '101' || classroomName === '102' || classroomName === '103' || classroomName === '104');
-});
+  const classroomName = selectedClassroom.value?.classroomName || selectedClassroom.value?.name
+  return (
+    classroomName &&
+    (classroomName === '101' ||
+      classroomName === '102' ||
+      classroomName === '103' ||
+      classroomName === '104')
+  )
+})
 
 // 获取座位编号
 const getSeatNumber = (rowIndex: number, colIndex: number): string => {
   // 所有教室统一使用字母+数字的组合格式（如A1、B2等）
-  const colLetter = String.fromCharCode(65 + rowIndex);
-  const rowNumber = colIndex + 1;
-  return `${colLetter}${rowNumber}`;
-};
+  const colLetter = String.fromCharCode(65 + rowIndex)
+  const rowNumber = colIndex + 1
+  return `${colLetter}${rowNumber}`
+}
 
 // 生成座位矩阵，确保按正确顺序排列
 const generateSeatMap = (seats) => {
   // 定义行标签
-  const rows = isFirstFloorRoom.value ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C', 'D', 'E', 'F'];
-  const cols = isFirstFloorRoom.value ? 8 : 10;
-  const map = {};
+  const rows = isFirstFloorRoom.value ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C', 'D', 'E', 'F']
+  const cols = isFirstFloorRoom.value ? 8 : 10
+  const map = {}
 
   // 初始化每一行
-  rows.forEach(row => {
-    map[row] = Array(cols).fill(null); // 每行固定列数
-  });
+  rows.forEach((row) => {
+    map[row] = Array(cols).fill(null) // 每行固定列数
+  })
 
   // 填充座位到对应位置
-  seats.forEach(individualSeat => {
-    const code = individualSeat.seatCode;
+  seats.forEach((individualSeat) => {
+    const code = individualSeat.seatCode
     if (code) {
-      const row = code.charAt(0); // A, B, C...
-      const colStr = code.slice(1); // 提取数字部分
-      const col = parseInt(colStr) - 1; // 转换为0-based索引
+      const row = code.charAt(0) // A, B, C...
+      const colStr = code.slice(1) // 提取数字部分
+      const col = parseInt(colStr) - 1 // 转换为0-based索引
       if (rows.includes(row) && col >= 0 && col < cols) {
         // 直接赋值独立的座位对象，避免复用
-        map[row][col] = { ...individualSeat };
+        map[row][col] = { ...individualSeat }
       }
     }
-  });
+  })
 
   // 转换为数组，保持A-F的顺序
-  return rows.map(row => ({
+  return rows.map((row) => ({
     rowLabel: row,
-    seats: map[row]
-  }));
-};
+    seats: map[row],
+  }))
+}
 
 // 网格布局：根据教室类型确定布局
 const grid = computed(() => {
-  return generateSeatMap(seats.value);
-});
-
-
-
-
+  return generateSeatMap(seats.value)
+})
 </script>
 
 <template>
@@ -1614,7 +1647,12 @@ const grid = computed(() => {
 
         <!-- 预约信息卡片 -->
         <div class="info-card">
-          <h3 class="card-title">预约信息 <span style="font-size: 14px; color: #666; font-weight: normal; margin-left: 10px;">（开放时间：每天7:00-23:00，节假日除外）</span></h3>
+          <h3 class="card-title">
+            预约信息
+            <span style="font-size: 14px; color: #666; font-weight: normal; margin-left: 10px"
+              >（开放时间：每天7:00-23:00，节假日除外）</span
+            >
+          </h3>
           <div class="info-grid">
             <div class="info-item">
               <label>选择日期：</label>
@@ -1622,16 +1660,18 @@ const grid = computed(() => {
                 v-model="selectedDate"
                 type="date"
                 placeholder="选择日期"
-                :disabled-date="(date: Date) => {
-                  // 创建一个只包含年月日的今天日期对象
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  // 创建一个只包含年月日的传入日期对象
-                  const compareDate = new Date(date);
-                  compareDate.setHours(0, 0, 0, 0);
-                  // 禁用今天之前的日期
-                  return compareDate < today;
-                }"
+                :disabled-date="
+                  (date: Date) => {
+                    // 创建一个只包含年月日的今天日期对象
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    // 创建一个只包含年月日的传入日期对象
+                    const compareDate = new Date(date)
+                    compareDate.setHours(0, 0, 0, 0)
+                    // 禁用今天之前的日期
+                    return compareDate < today
+                  }
+                "
                 format="YYYY-MM-DD"
                 value-format="YYYY-MM-DD"
               />
@@ -1669,7 +1709,13 @@ const grid = computed(() => {
               <button
                 v-for="floor in floors"
                 :key="floor.id || floor.floorNum"
-                :class="['floor-btn', { active: currentFloor.id === floor.id || currentFloor.floorNum === floor.floorNum }]"
+                :class="[
+                  'floor-btn',
+                  {
+                    active:
+                      currentFloor.id === floor.id || currentFloor.floorNum === floor.floorNum,
+                  },
+                ]"
                 @click="handleFloorChange(floor)"
               >
                 {{ floor.floorNum || floor.id }}楼
@@ -1697,7 +1743,10 @@ const grid = computed(() => {
                 <div
                   v-for="room in recommendedRooms"
                   :key="room.id"
-                  :class="['room-card recommended', { active: selectedRoom === room.id.toString() }]"
+                  :class="[
+                    'room-card recommended',
+                    { active: selectedRoom === room.id.toString() },
+                  ]"
                   @click="handleRoomSelect(room)"
                 >
                   <div class="room-header">
@@ -1712,15 +1761,22 @@ const grid = computed(() => {
                   <div class="room-info">
                     <div class="room-stat">
                       <span class="stat-label">总座位：</span>
-                      <span class="stat-value">{{ room.totalSeats !== null ? room.totalSeats : '加载中...' }}</span>
+                      <span class="stat-value">{{
+                        room.totalSeats !== null ? room.totalSeats : '加载中...'
+                      }}</span>
                     </div>
                     <div class="room-stat">
                       <span class="stat-label">可用：</span>
-                      <span class="stat-value">{{ room.availableSeats !== null ? room.availableSeats : '加载中...' }}</span>
+                      <span class="stat-value">{{
+                        room.availableSeats !== null ? room.availableSeats : '加载中...'
+                      }}</span>
                     </div>
                   </div>
                   <div class="occupancy-bar">
-                    <div class="occupancy-fill" :style="{ width: `${room.occupancyRate * 100}%` }"></div>
+                    <div
+                      class="occupancy-fill"
+                      :style="{ width: `${room.occupancyRate * 100}%` }"
+                    ></div>
                   </div>
                 </div>
               </div>
@@ -1748,11 +1804,15 @@ const grid = computed(() => {
                   <div class="room-info">
                     <div class="room-stat">
                       <span class="stat-label">总座位：</span>
-                      <span class="stat-value">{{ room.totalSeats !== null ? room.totalSeats : '加载中...' }}</span>
+                      <span class="stat-value">{{
+                        room.totalSeats !== null ? room.totalSeats : '加载中...'
+                      }}</span>
                     </div>
                     <div class="room-stat">
                       <span class="stat-label">可用：</span>
-                      <span class="stat-value">{{ room.availableSeats !== null ? room.availableSeats : '加载中...' }}</span>
+                      <span class="stat-value">{{
+                        room.availableSeats !== null ? room.availableSeats : '加载中...'
+                      }}</span>
                     </div>
                   </div>
                 </div>
@@ -1808,78 +1868,117 @@ const grid = computed(() => {
             </div>
           </div>
 
-<!-- 教室座位图区域 -->
-<div class="seat-map" v-if="seats.length > 0">
-  <!-- 教室标题 -->
-  <div class="classroom-title">
-    教室座位图 - {{ rooms.find(r => r.id === parseInt(selectedRoom))?.classroomName || rooms.find(r => r.id === parseInt(selectedRoom))?.name || selectedClassroom?.classroomName || selectedClassroom?.name || '请选择教室' }}
-  </div>
+          <!-- 教室座位图区域 -->
+          <div class="seat-map" v-if="seats.length > 0">
+            <!-- 教室标题 -->
+            <div class="classroom-title">
+              教室座位图 -
+              {{
+                rooms.find((r) => r.id === parseInt(selectedRoom))?.classroomName ||
+                rooms.find((r) => r.id === parseInt(selectedRoom))?.name ||
+                selectedClassroom?.classroomName ||
+                selectedClassroom?.name ||
+                '请选择教室'
+              }}
+            </div>
 
-  <!-- 讲台区域 -->
-  <div class="lectern-area">
-    <div class="lectern podium">
-      <span class="lectern-icon">📝</span>
-      <span>讲台</span>
-    </div>
-  </div>
+            <!-- 讲台区域 -->
+            <div class="lectern-area">
+              <div class="lectern podium">
+                <span class="lectern-icon">📝</span>
+                <span>讲台</span>
+              </div>
+            </div>
 
-  <!-- 门区域 -->
-  <div class="door-area">
-    <div class="door">
-      <span class="door-icon">🚪</span>
-      <span>门</span>
-    </div>
-  </div>
+            <!-- 门区域 -->
+            <div class="door-area">
+              <div class="door">
+                <span class="door-icon">🚪</span>
+                <span>门</span>
+              </div>
+            </div>
 
-  <!-- 窗户区域 -->
-  <div class="window-area">
-    <div class="window">
-      <span class="window-icon">🪟</span>
-      <span>窗</span>
-    </div>
-  </div>
+            <!-- 窗户区域 -->
+            <div class="window-area">
+              <div class="window">
+                <span class="window-icon">🪟</span>
+                <span>窗</span>
+              </div>
+            </div>
 
-  <!-- 座位区域 -->
-  <div class="seats-container">
-    <!-- 横排数字 1-8 或 1-10 -->
-    <div class="cols-header">
-      <div class="row-label-placeholder"></div>
-      <span v-for="n in (isFirstFloorRoom ? 8 : 10)" :key="n" class="col-label">{{ n }}</span>
-    </div>
+            <!-- 座位区域 -->
+            <div class="seats-container">
+              <!-- 横排数字 1-8 或 1-10 -->
+              <div class="cols-header">
+                <div class="row-label-placeholder"></div>
+                <span v-for="n in isFirstFloorRoom ? 8 : 10" :key="n" class="col-label">{{
+                  n
+                }}</span>
+              </div>
 
-    <!-- 座位行 -->
-    <div class="seat-rows">
-      <div class="seat-row" v-for="row in grid" :key="row.rowLabel">
-        <!-- 列标签：A-D 或 A-F -->
-        <span class="row-label">{{ row.rowLabel }}</span>
-        <div class="row-seats">
-          <div
-            v-for="(seat, colIndex) in row.seats"
-            :key="seat ? `${selectedRoom}-${seat.id}` : `empty-${selectedRoom}-${row.rowLabel}-${colIndex}`"
-            class="seat"
-            :class="{
-              available: seat && currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'available' && (!seatReservationCounts[seat.seatCode] || seatReservationCounts[seat.seatCode] === 0),
-              occupied: seat && (currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'occupied' || currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'reserved' || (seatReservationCounts[seat.seatCode] && seatReservationCounts[seat.seatCode] > 0)),
-              reserved: seat && (currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'reserved' || (seatReservationCounts[seat.seatCode] && seatReservationCounts[seat.seatCode] > 0)),
-              selected: seat && selectedSeats.includes(`${selectedRoom}-${seat.seatCode}`),
-              empty: !seat
-            }"
-            @click="seat && handleSeatClick(`${selectedRoom}-${seat.seatCode}`, currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] || 'available')"
-            :title="seat ? `座位 ${seat.seatCode} - ${(currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'available' && (!seatReservationCounts[seat.seatCode] || seatReservationCounts[seat.seatCode] === 0)) ? '可选' : '已占用'}` : ''"
-          >
-            {{ seat ? seat.seatCode : '' }}
-            <span v-if="seat && seatReservationCounts[seat.seatCode] > 0" class="occupancy-count">({{ seatReservationCounts[seat.seatCode] }}条预约)</span>
+              <!-- 座位行 -->
+              <div class="seat-rows">
+                <div class="seat-row" v-for="row in grid" :key="row.rowLabel">
+                  <!-- 列标签：A-D 或 A-F -->
+                  <span class="row-label">{{ row.rowLabel }}</span>
+                  <div class="row-seats">
+                    <div
+                      v-for="(seat, colIndex) in row.seats"
+                      :key="
+                        seat
+                          ? `${selectedRoom}-${seat.id}`
+                          : `empty-${selectedRoom}-${row.rowLabel}-${colIndex}`
+                      "
+                      class="seat"
+                      :class="{
+                        available:
+                          seat &&
+                          currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'available' &&
+                          (!seatReservationCounts[seat.seatCode] ||
+                            seatReservationCounts[seat.seatCode] === 0),
+                        occupied:
+                          seat &&
+                          (currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'occupied' ||
+                            currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'reserved' ||
+                            (seatReservationCounts[seat.seatCode] &&
+                              seatReservationCounts[seat.seatCode] > 0)),
+                        reserved:
+                          seat &&
+                          (currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'reserved' ||
+                            (seatReservationCounts[seat.seatCode] &&
+                              seatReservationCounts[seat.seatCode] > 0)),
+                        selected:
+                          seat && selectedSeats.includes(`${selectedRoom}-${seat.seatCode}`),
+                        empty: !seat,
+                      }"
+                      @click="
+                        seat &&
+                        handleSeatClick(
+                          `${selectedRoom}-${seat.seatCode}`,
+                          currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] || 'available',
+                        )
+                      "
+                      :title="
+                        seat
+                          ? `座位 ${seat.seatCode} - ${currentRoomSeats[`${selectedRoom}-${seat.seatCode}`] === 'available' && (!seatReservationCounts[seat.seatCode] || seatReservationCounts[seat.seatCode] === 0) ? '可选' : '已占用'}`
+                          : ''
+                      "
+                    >
+                      {{ seat ? seat.seatCode : '' }}
+                      <span
+                        v-if="seat && seatReservationCounts[seat.seatCode] > 0"
+                        class="occupancy-count"
+                        >({{ seatReservationCounts[seat.seatCode] }}条预约)</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- 加载中状态 -->
-<div v-else class="loading-placeholder">
-  正在加载座位数据...
-</div>
+          <!-- 加载中状态 -->
+          <div v-else class="loading-placeholder">正在加载座位数据...</div>
 
           <!-- 选中的座位信息 -->
           <div v-if="selectedSeats.length > 0" class="selected-info">
@@ -1899,8 +1998,6 @@ const grid = computed(() => {
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
 
@@ -1935,21 +2032,22 @@ const grid = computed(() => {
       </div>
       <template #footer>
         <el-button @click="cancelReservation">取消</el-button>
-        <el-button type="primary" @click="submitReservation" :disabled="isAtMaxLimit">确认预约</el-button>
+        <el-button type="primary" @click="submitReservation" :disabled="isAtMaxLimit"
+          >确认预约</el-button
+        >
       </template>
     </el-dialog>
 
     <!-- 离开座位弹窗 -->
-    <el-dialog
-      v-model="leaveDialogVisible"
-      title="离开座位"
-      width="400px"
-    >
+    <el-dialog v-model="leaveDialogVisible" title="离开座位" width="400px">
       <div v-if="currentSeat">
         <p><strong>座位编号：</strong>{{ currentSeat.seatCode }}</p>
         <p><strong>教室：</strong>{{ currentClassroomName }}</p>
-        <p><strong>预约信息：</strong> {{ formatDate(selectedDate) }} {{ timeSlots.find(t => t.id === selectedTimeSlot)?.start || '09:00' }}</p>
-        <p style="color: red; margin-top: 10px;">你确定要离开当前座位吗？</p>
+        <p>
+          <strong>预约信息：</strong> {{ formatDate(selectedDate) }}
+          {{ timeSlots.find((t) => t.id === selectedTimeSlot)?.start || '09:00' }}
+        </p>
+        <p style="color: red; margin-top: 10px">你确定要离开当前座位吗？</p>
       </div>
       <template #footer>
         <span class="dialog-footer">
@@ -1960,18 +2058,16 @@ const grid = computed(() => {
     </el-dialog>
 
     <!-- 占用确认弹窗 -->
-    <el-dialog
-      v-model="occupyDialogVisible"
-      title="占用确认"
-      width="400px"
-    >
+    <el-dialog v-model="occupyDialogVisible" title="占用确认" width="400px">
       <div>
         <p>请确保当前预约用户在30分钟内不在该座位上</p>
       </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="occupyDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleOccupyConfirm" :disabled="isAtMaxLimit">确认</el-button>
+          <el-button type="primary" @click="handleOccupyConfirm" :disabled="isAtMaxLimit"
+            >确认</el-button
+          >
         </span>
       </template>
     </el-dialog>
@@ -1988,22 +2084,29 @@ const grid = computed(() => {
           <p><strong>教室：</strong>{{ currentClassroomName }}</p>
         </div>
 
-        <div class="reservation-list" style="margin-top: 20px;">
-          <h4 style="margin-bottom: 12px;">预约列表</h4>
+        <div class="reservation-list" style="margin-top: 20px">
+          <h4 style="margin-bottom: 12px">预约列表</h4>
           <el-empty v-if="currentSeatReservations.length === 0" description="暂无有效预约" />
-          <el-card v-for="(reservation, index) in currentSeatReservations" :key="reservation.id" style="margin-bottom: 10px;">
+          <el-card
+            v-for="(reservation, index) in currentSeatReservations"
+            :key="reservation.id"
+            style="margin-bottom: 10px"
+          >
             <div class="reservation-item">
               <div class="reservation-info">
                 <p><strong>预约人ID：</strong>{{ reservation.userId }}</p>
                 <p><strong>预约日期：</strong>{{ reservation.reserveDate }}</p>
-                <p><strong>预约时间段：</strong>{{ reservation.startTime }} - {{ reservation.endTime }}</p>
+                <p>
+                  <strong>预约时间段：</strong>{{ reservation.startTime }} -
+                  {{ reservation.endTime }}
+                </p>
               </div>
               <el-button
                 v-if="reservation.userId === userStore.userState.userInfo?.userId"
                 type="danger"
                 size="small"
                 @click="handleLeaveSeatFromDetail(reservation.id, currentSeatDetails.seatCode)"
-                style="display: block !important; z-index: 9999;"
+                style="display: block !important; z-index: 9999"
               >
                 离开座位
               </el-button>
@@ -2012,7 +2115,7 @@ const grid = computed(() => {
                 type="warning"
                 size="small"
                 @click="handleOccupySeatFromDetail(reservation.id, currentSeatDetails.seatCode)"
-                style="display: block !important; z-index: 9999;"
+                style="display: block !important; z-index: 9999"
               >
                 占用
               </el-button>
@@ -2023,7 +2126,9 @@ const grid = computed(() => {
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="seatDetailDialogVisible = false">关闭</el-button>
-          <el-button type="primary" @click="handleReserveSeatFromDetail" :disabled="isAtMaxLimit">预约此座位</el-button>
+          <el-button type="primary" @click="handleReserveSeatFromDetail" :disabled="isAtMaxLimit"
+            >预约此座位</el-button
+          >
         </span>
       </template>
     </el-dialog>
@@ -2629,7 +2734,8 @@ const grid = computed(() => {
   border-color: #389e0d;
 }
 
-.occupied, .reserved {
+.occupied,
+.reserved {
   background: #f5222d;
   color: #fff;
   border-color: #cf1322;
@@ -2807,8 +2913,12 @@ const grid = computed(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .no-data {
@@ -2995,8 +3105,6 @@ const grid = computed(() => {
   gap: 8px;
   flex-wrap: wrap;
 }
-
-
 
 .confirm-info {
   padding: 16px;

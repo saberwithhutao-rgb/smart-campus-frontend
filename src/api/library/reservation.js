@@ -6,8 +6,8 @@ import request from '@/utils/request'
  */
 export const getFloors = () => {
   return request({
-    url: '/library/floors',
-    method: 'GET'
+    url: '/api/library/floors',
+    method: 'GET',
   })
 }
 
@@ -21,10 +21,10 @@ export const getClassroomsByFloor = (floorId) => {
   if (!floorId || typeof floorId !== 'number') {
     return Promise.reject(new Error('楼层ID必须是数字'))
   }
-  
+
   return request({
     url: `/library/classrooms/floor/${floorId}`,
-    method: 'GET'
+    method: 'GET',
   })
 }
 
@@ -38,10 +38,10 @@ export const getSeatsByClassroom = (classroomId) => {
   if (!classroomId || typeof classroomId !== 'number') {
     return Promise.reject(new Error('教室ID必须是数字'))
   }
-  
+
   return request({
     url: `/library/seats/classroom/${classroomId}`,
-    method: 'GET'
+    method: 'GET',
   })
 }
 
@@ -63,18 +63,27 @@ export const createReservation = (data) => {
   if (!data || typeof data !== 'object') {
     return Promise.reject(new Error('预约数据必须是对象'))
   }
-  
-  const requiredFields = ['userId', 'seatId', 'classroomId', 'reserveDate', 'startTime', 'duration', 'endTime', 'type']
+
+  const requiredFields = [
+    'userId',
+    'seatId',
+    'classroomId',
+    'reserveDate',
+    'startTime',
+    'duration',
+    'endTime',
+    'type',
+  ]
   for (const field of requiredFields) {
     if (data[field] === undefined || data[field] === null) {
       return Promise.reject(new Error(`缺少必填字段：${field}`))
     }
   }
-  
+
   return request({
-    url: '/library/reservations',
+    url: '/api/library/reservations',
     method: 'POST',
-    data
+    data,
   })
 }
 
@@ -88,10 +97,10 @@ export const occupySeat = (reservationId) => {
   if (!reservationId || typeof reservationId !== 'number') {
     return Promise.reject(new Error('预约ID必须是数字'))
   }
-  
+
   return request({
     url: `/library/reservations/${reservationId}/occupy`,
-    method: 'POST'
+    method: 'POST',
   })
 }
 
@@ -105,10 +114,10 @@ export const cancelReservation = (reservationId) => {
   if (!reservationId || typeof reservationId !== 'number') {
     return Promise.reject(new Error('预约ID必须是数字'))
   }
-  
+
   return request({
     url: `/library/reservations/${reservationId}/cancel`,
-    method: 'POST'
+    method: 'POST',
   })
 }
 
@@ -122,9 +131,9 @@ export const getUserReservations = (userId) => {
   if (!userId || typeof userId !== 'number') {
     return Promise.reject(new Error('用户ID必须是数字'))
   }
-  
+
   return request({
     url: `/library/reservations/user/${userId}`,
-    method: 'GET'
+    method: 'GET',
   })
 }

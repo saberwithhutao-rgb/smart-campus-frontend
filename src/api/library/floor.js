@@ -6,8 +6,8 @@ import request from '@/utils/request'
  */
 export const getFloors = () => {
   return request({
-    url: '/library/floors',
-    method: 'GET'
+    url: '/api/library/floors',
+    method: 'GET',
   })
 }
 
@@ -24,6 +24,6 @@ export const getClassroomsByFloor = (floorId) => {
 
   return request({
     url: `/library/classrooms/floor/${floorId}`,
-    method: 'GET'
+    method: 'GET',
   })
 }
