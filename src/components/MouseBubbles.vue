@@ -1,5 +1,5 @@
 <template>
-  <div class="bubbles-container">
+  <div class="bubbles-container" v-if="isEnabled">
     <canvas ref="canvasRef" class="bubbles-canvas"></canvas>
   </div>
 </template>
@@ -13,12 +13,12 @@ interface Bubble {
   x: number
   y: number
   radius: number
-  scale: number // 当前缩放比例
-  speedY: number // 上升速度
-  speedX: number // 水平飘动速度
-  opacity: number // 透明度
-  color: string // 颜色
-  life: number // 生命周期 0-1
+  scale: number
+  speedY: number
+  speedX: number
+  opacity: number
+  color: string
+  life: number
 }
 
 const bubbles = ref<Bubble[]>([])
@@ -27,6 +27,27 @@ let mouseX = 0
 let mouseY = 0
 let canvasWidth = 0
 let canvasHeight = 0
+
+// 从 localStorage 读取设置
+const loadSettings = () => {
+  try {
+    const saved = localStorage.getItem('userSettings')
+    if (saved) {
+      const settings = JSON.parse(saved)
+      return {
+        enabled: settings.bubbleEffect ?? true,
+        maxCount: settings.bubbleCount ?? 60,
+        sizeScale: (settings.bubbleSize ?? 100) / 100,
+      }
+    }
+  } catch (e) {
+    console.error('读取设置失败:', e)
+  }
+  return { enabled: true, maxCount: 60, sizeScale: 1 }
+}
+
+const settings = ref(loadSettings())
+const isEnabled = ref(settings.value.enabled)
 
 // 淡蓝色系颜色池
 const blueColors = [
@@ -61,10 +82,10 @@ const initCanvas = () => {
 
   // 监听鼠标移动
   const handleMouseMove = (e: MouseEvent) => {
+    if (!isEnabled.value) return // 如果禁用，不生成气泡
+
     mouseX = e.clientX
     mouseY = e.clientY
-
-    // 在鼠标位置生成气泡
     createBubble(mouseX, mouseY)
   }
 
@@ -72,10 +93,14 @@ const initCanvas = () => {
 
   // 动画循环
   const animate = () => {
+    if (!canvasRef.value || !ctx) return
+
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // 更新和绘制气泡
-    updateBubbles(ctx)
+    // 只有在启用时才更新和绘制气泡
+    if (isEnabled.value) {
+      updateBubbles(ctx)
+    }
 
     animationFrame = requestAnimationFrame(animate)
   }
@@ -91,26 +116,25 @@ const initCanvas = () => {
 
 // 创建气泡
 const createBubble = (x: number, y: number) => {
-  // 随机选择颜色
-  const color = blueColors[Math.floor(Math.random() * blueColors.length)]
+  if (!isEnabled.value) return // 再次检查，确保禁用时不创建
 
-  // 基础半径 8-16px
-  const baseRadius = Math.random() * 8 + 8
+  const color = blueColors[Math.floor(Math.random() * blueColors.length)]
+  const baseRadius = (Math.random() * 8 + 8) * settings.value.sizeScale
 
   bubbles.value.push({
     x: x,
     y: y,
     radius: baseRadius,
-    scale: 0.2, // 初始缩放 0.2 倍
-    speedY: -(Math.random() * 0.6 + 0.3), // 向上飘，速度稍慢
-    speedX: (Math.random() - 0.5) * 0.2, // 轻微左右飘动
-    opacity: 0.7, // 初始透明度
+    scale: 0.2,
+    speedY: -(Math.random() * 0.6 + 0.3),
+    speedX: (Math.random() - 0.5) * 0.2,
+    opacity: 0.7,
     color: color,
-    life: 0, // 初始生命周期
+    life: 0,
   })
 
-  // 限制气泡数量
-  if (bubbles.value.length > 60) {
+  // 根据设置限制气泡数量
+  if (bubbles.value.length > settings.value.maxCount) {
     bubbles.value.shift()
   }
 }
@@ -124,13 +148,11 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
     // 更新生命周期
     bubble.life += 0.005
 
-    // 更新缩放比例：0.2 -> 0.6 -> 1.0（原来是 0.2 -> 1.0 -> 1.5）
+    // 更新缩放比例：0.2 -> 0.35 -> 0.5
     if (bubble.life < 0.5) {
-      // 前50%生命周期：0.2 -> 0.6
-      bubble.scale = 0.2 + bubble.life * 0.8 // 0.2 + 0.5*0.8 = 0.6
+      bubble.scale = 0.2 + bubble.life * 0.3
     } else {
-      // 后50%生命周期：0.6 -> 1.0
-      bubble.scale = 0.6 + (bubble.life - 0.5) * 0.8 // 0.6 + 0.5*0.8 = 1.0
+      bubble.scale = 0.35 + (bubble.life - 0.5) * 0.3
     }
 
     // 更新位置
@@ -164,7 +186,7 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
     ctx.beginPath()
     ctx.arc(bubble.x, bubble.y, currentRadius, 0, Math.PI * 2)
 
-    // 创建径向渐变，实现光泽感
+    // 创建径向渐变
     const gradient = ctx.createRadialGradient(
       bubble.x - currentRadius * 0.3,
       bubble.y - currentRadius * 0.3,
@@ -174,7 +196,7 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
       currentRadius * 1.2,
     )
 
-    const mainColor = `${bubble.color} ${bubble.opacity})` // 直接拼接
+    const mainColor = `${bubble.color} ${bubble.opacity})`
     const lightColor = `rgba(255, 255, 255, ${bubble.opacity * 0.8})`
     const darkColor = `${bubble.color} ${bubble.opacity * 0.6})`
 
@@ -186,7 +208,7 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
     ctx.fillStyle = gradient
     ctx.fill()
 
-    // 添加描边，增加光泽感
+    // 添加描边
     ctx.strokeStyle = `rgba(255, 255, 255, ${bubble.opacity * 0.5})`
     ctx.lineWidth = 1.5
     ctx.stroke()
@@ -207,8 +229,71 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
   }
 }
 
+// 监听设置变化
+const handleSettingsChange = (event: CustomEvent) => {
+  const newSettings = event.detail
+  settings.value = {
+    enabled: newSettings.bubbleEffect ?? true,
+    maxCount: newSettings.bubbleCount ?? 60,
+    sizeScale: (newSettings.bubbleSize ?? 100) / 100,
+  }
+
+  // 如果从禁用变为启用，不清除现有气泡
+  // 如果从启用变为禁用，清除所有气泡
+  if (isEnabled.value && !settings.value.enabled) {
+    // 禁用时清除所有气泡
+    bubbles.value = []
+  }
+
+  isEnabled.value = settings.value.enabled
+}
+
+// 单独监听特效开关
+const handleBubbleEffectChange = (event: CustomEvent) => {
+  const enabled = event.detail
+  isEnabled.value = enabled
+  settings.value.enabled = enabled
+
+  if (!enabled) {
+    // 关闭时清除所有气泡
+    bubbles.value = []
+  }
+}
+
+// 监听数量变化
+const handleBubbleCountChange = (event: CustomEvent) => {
+  const count = event.detail
+  settings.value.maxCount = count
+
+  // 如果当前气泡数量超过新限制，移除多余的气泡
+  while (bubbles.value.length > count) {
+    bubbles.value.shift()
+  }
+}
+
+// 监听大小变化
+const handleBubbleSizeChange = (event: CustomEvent) => {
+  const size = event.detail
+  settings.value.sizeScale = size / 100
+
+  // 不需要立即调整现有气泡，新气泡会使用新大小
+}
+
 onMounted(() => {
   initCanvas()
+
+  // 监听设置变更事件
+  window.addEventListener('settings-changed', handleSettingsChange as EventListener)
+  window.addEventListener('bubble-effect-change', handleBubbleEffectChange as EventListener)
+  window.addEventListener('bubble-count-change', handleBubbleCountChange as EventListener)
+  window.addEventListener('bubble-size-change', handleBubbleSizeChange as EventListener)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('settings-changed', handleSettingsChange as EventListener)
+  window.removeEventListener('bubble-effect-change', handleBubbleEffectChange as EventListener)
+  window.removeEventListener('bubble-count-change', handleBubbleCountChange as EventListener)
+  window.removeEventListener('bubble-size-change', handleBubbleSizeChange as EventListener)
 })
 </script>
 

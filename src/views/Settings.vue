@@ -220,28 +220,6 @@ const loadSettings = () => {
   }
 }
 
-// 保存设置
-const saveSettings = async () => {
-  isSaving.value = true
-  try {
-    localStorage.setItem('userSettings', JSON.stringify(settings))
-
-    // 触发特效设置变更事件
-    window.dispatchEvent(
-      new CustomEvent('settings-changed', {
-        detail: { ...settings },
-      }),
-    )
-
-    ElMessage.success('设置保存成功')
-    setTimeout(() => router.back(), 1500)
-  } catch {
-    ElMessage.error('保存失败')
-  } finally {
-    isSaving.value = false
-  }
-}
-
 // 恢复默认
 const resetSettings = () => {
   settings.darkMode = false
@@ -264,17 +242,41 @@ const handleThemeColorChange = (val: string) => {
   document.documentElement.style.setProperty('--primary-color', val)
 }
 
+// 处理特效开关
 const handleBubbleEffectChange = (val: boolean) => {
-  // 触发气泡特效开关事件
   window.dispatchEvent(new CustomEvent('bubble-effect-change', { detail: val }))
 }
 
+// 处理数量变化
 const handleBubbleCountChange = (val: number) => {
   window.dispatchEvent(new CustomEvent('bubble-count-change', { detail: val }))
 }
 
+// 处理大小变化
 const handleBubbleSizeChange = (val: number) => {
   window.dispatchEvent(new CustomEvent('bubble-size-change', { detail: val }))
+}
+
+// 保存设置时触发总事件
+const saveSettings = async () => {
+  isSaving.value = true
+  try {
+    localStorage.setItem('userSettings', JSON.stringify(settings))
+
+    // 触发总设置变更事件
+    window.dispatchEvent(
+      new CustomEvent('settings-changed', {
+        detail: { ...settings },
+      }),
+    )
+
+    ElMessage.success('设置保存成功')
+    setTimeout(() => router.back(), 1500)
+  } catch {
+    ElMessage.error('保存失败')
+  } finally {
+    isSaving.value = false
+  }
 }
 
 onMounted(() => {
