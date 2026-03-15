@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MouseBubbles from '@/components/MouseBubbles.vue'
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { ElMessage, ElLoading } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -145,6 +146,7 @@ onBeforeUnmount(() => {
   <div v-else class="app-content" :class="{ 'content-ready': appReady }">
     <router-view />
   </div>
+  <MouseBubbles />
 </template>
 
 <style>

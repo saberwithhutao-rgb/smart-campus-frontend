@@ -134,41 +134,37 @@
             </el-form-item>
 
             <!-- 学院 -->
-            <el-form-item label="学院" prop="college" class="form-item">
-              <el-input
+            <el-form-item label="学院" prop="college">
+              <el-autocomplete
                 v-model="form.college"
-                placeholder="请输入学院"
+                :fetch-suggestions="querySearchCollege"
+                :trigger-on-focus="true"
+                placeholder="请输入学院名称"
                 clearable
-                class="custom-input"
+                @select="handleCollegeSelect"
+                class="autocomplete-input"
               >
-                <template #prefix>
-                  <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18">
-                    <path
-                      d="M12 3L1 9l11 6 11-6-11-6zm0 11.5L3 9.5l9 5 9-5-9 5zm0 2L3 11.5l9 5 9-5-9 5z"
-                      fill="currentColor"
-                    />
-                  </svg>
+                <template #default="{ item }">
+                  <div class="autocomplete-item">{{ item.value }}</div>
                 </template>
-              </el-input>
+              </el-autocomplete>
             </el-form-item>
 
-            <!-- 专业 -->
-            <el-form-item label="专业" prop="major" class="form-item">
-              <el-input
+            <!-- 专业 - 改为自动补全 -->
+            <el-form-item label="专业" prop="major">
+              <el-autocomplete
                 v-model="form.major"
-                placeholder="请输入专业"
+                :fetch-suggestions="querySearchMajor"
+                :trigger-on-focus="true"
+                placeholder="请输入专业名称"
                 clearable
-                class="custom-input"
+                @select="handleMajorSelect"
+                class="autocomplete-input"
               >
-                <template #prefix>
-                  <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18">
-                    <path
-                      d="M20 6h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM10 4h4v2h-4V4zm10 16H4V8h16v12z"
-                      fill="currentColor"
-                    />
-                  </svg>
+                <template #default="{ item }">
+                  <div class="autocomplete-item">{{ item.value }}</div>
                 </template>
-              </el-input>
+              </el-autocomplete>
             </el-form-item>
 
             <!-- 年级 -->
@@ -252,6 +248,11 @@ const fileInput = ref<HTMLInputElement>()
 // 头像预览
 const avatarPreview = ref('')
 
+// 定义选项类型
+interface SuggestItem {
+  value: string
+}
+
 // 年级选项
 const gradeOptions = [
   { label: '大一', value: '大一' },
@@ -260,6 +261,127 @@ const gradeOptions = [
   { label: '大四', value: '大四' },
   { label: '研究生', value: '研究生' },
 ]
+
+// 学院预设数据（可以从后端获取，这里先预设常用学院）
+const collegeOptions = ref([
+  { value: '计算机科学与技术学院' },
+  { value: '软件学院' },
+  { value: '电子信息工程学院' },
+  { value: '信息科学与工程学院' },
+  { value: '人工智能学院' },
+  { value: '数据科学与工程学院' },
+  { value: '网络空间安全学院' },
+  { value: '微电子学院' },
+  { value: '通信工程学院' },
+  { value: '自动化学院' },
+  { value: '机械工程学院' },
+  { value: '材料科学与工程学院' },
+  { value: '能源与动力工程学院' },
+  { value: '土木工程学院' },
+  { value: '建筑学院' },
+  { value: '环境科学与工程学院' },
+  { value: '化学化工学院' },
+  { value: '生命科学学院' },
+  { value: '数学与统计学院' },
+  { value: '物理科学与技术学院' },
+  { value: '经济与管理学院' },
+  { value: '工商管理学院' },
+  { value: '公共管理学院' },
+  { value: '外国语学院' },
+  { value: '马克思主义学院' },
+  { value: '法学院' },
+  { value: '人文学院' },
+  { value: '艺术学院' },
+  { value: '体育学院' },
+  { value: '医学院' },
+  { value: '药学院' },
+  { value: '护理学院' },
+])
+
+// 专业预设数据（根据常见专业）
+const majorOptions = ref([
+  { value: '计算机科学与技术' },
+  { value: '软件工程' },
+  { value: '人工智能' },
+  { value: '数据科学与大数据技术' },
+  { value: '物联网工程' },
+  { value: '网络工程' },
+  { value: '信息安全' },
+  { value: '电子与计算机工程' },
+  { value: '电子信息工程' },
+  { value: '通信工程' },
+  { value: '微电子科学与工程' },
+  { value: '光电信息科学与工程' },
+  { value: '信息工程' },
+  { value: '自动化' },
+  { value: '机器人工程' },
+  { value: '机械工程' },
+  { value: '机械设计制造及其自动化' },
+  { value: '车辆工程' },
+  { value: '材料科学与工程' },
+  { value: '能源与动力工程' },
+  { value: '电气工程及其自动化' },
+  { value: '土木工程' },
+  { value: '建筑学' },
+  { value: '城乡规划' },
+  { value: '环境工程' },
+  { value: '化学工程与工艺' },
+  { value: '生物工程' },
+  { value: '生物医学工程' },
+  { value: '药学' },
+  { value: '临床医学' },
+  { value: '口腔医学' },
+  { value: '护理学' },
+  { value: '数学与应用数学' },
+  { value: '信息与计算科学' },
+  { value: '应用物理学' },
+  { value: '应用化学' },
+  { value: '统计学' },
+  { value: '经济学' },
+  { value: '金融学' },
+  { value: '国际经济与贸易' },
+  { value: '工商管理' },
+  { value: '市场营销' },
+  { value: '会计学' },
+  { value: '财务管理' },
+  { value: '人力资源管理' },
+  { value: '行政管理' },
+  { value: '英语' },
+  { value: '日语' },
+  { value: '法学' },
+  { value: '新闻学' },
+  { value: '广告学' },
+])
+
+// 学院搜索方法 - 明确类型
+const querySearchCollege = (queryString: string, cb: (results: SuggestItem[]) => void) => {
+  const results = queryString
+    ? collegeOptions.value.filter((option: SuggestItem) =>
+        option.value.toLowerCase().includes(queryString.toLowerCase()),
+      )
+    : collegeOptions.value
+  cb(results)
+}
+
+// 专业搜索方法 - 明确类型
+const querySearchMajor = (queryString: string, cb: (results: SuggestItem[]) => void) => {
+  const results = queryString
+    ? majorOptions.value.filter((option: SuggestItem) =>
+        option.value.toLowerCase().includes(queryString.toLowerCase()),
+      )
+    : majorOptions.value
+  cb(results)
+}
+
+// 学院选择回调 - 明确类型
+const handleCollegeSelect = (item: SuggestItem) => {
+  console.log('选中学院:', item.value)
+}
+
+// 专业选择回调 - 明确类型
+const handleMajorSelect = (item: SuggestItem) => {
+  console.log('选中专业:', item.value)
+}
 
 // 从 store 获取用户信息
 const userInfo = computed(() => {
@@ -831,6 +953,42 @@ onMounted(() => {
   color: #f56c6c;
   transform: translateY(-2px);
   background: rgba(245, 108, 108, 0.05);
+}
+
+/* 自动补全输入框样式 */
+.autocomplete-input {
+  width: 100%;
+}
+
+:deep(.el-autocomplete) {
+  width: 100%;
+}
+
+:deep(.el-input__inner) {
+  width: 100%;
+}
+
+/* 下拉选项样式 */
+.autocomplete-item {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #333;
+}
+
+/* 下拉框容器样式 */
+:deep(.el-popper.is-light) {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* 选项悬停效果 */
+:deep(.el-autocomplete-suggestion__list li:hover) {
+  background-color: #f5f7fa;
+}
+
+/* 选中项高亮 */
+:deep(.el-autocomplete-suggestion__list li.highlighted) {
+  background-color: #ecf5ff;
 }
 
 /* 响应式设计 */

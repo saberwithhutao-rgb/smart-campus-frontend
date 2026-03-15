@@ -44,10 +44,10 @@
             <el-button
               type="primary"
               @click="confirmCompleteReview"
-              :disabled="taskDetail.status === 'completed'"
+              :disabled="!hasOngoingTask || taskDetail?.status === 'completed'"
               :loading="isCompleting"
             >
-              {{ taskDetail.status === 'completed' ? '已完成复习' : '复习完成' }}
+              {{ getCompleteButtonText() }}
             </el-button>
             <el-button @click="openHistory" :loading="isLoadingHistory">
               查看历史复习建议
@@ -412,6 +412,25 @@ const getReviewStatusTagType = (type: string) => {
   return map[type] || 'info'
 }
 
+const hasOngoingTask = computed(() => {
+  if (!taskDetail.value) return false
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const taskDate = new Date(taskDetail.value.taskDate)
+  taskDate.setHours(0, 0, 0, 0)
+
+  return taskDetail.value.status === 'pending' && taskDate <= today
+})
+
+// 获取按钮文本
+const getCompleteButtonText = () => {
+  if (!hasOngoingTask.value) return '暂无进行中的任务'
+  if (taskDetail.value?.status === 'completed') return '已完成复习'
+  return '复习完成'
+}
+
 onMounted(async () => {
   isLoading.value = true
   try {
@@ -432,10 +451,18 @@ onUnmounted(() => {
 // 显示确认完成对话框
 const confirmCompleteReview = () => {
   if (!taskDetail.value) return
+
+  // 如果没有正在进行的任务，弹出提示
+  if (!hasOngoingTask.value) {
+    ElMessage.warning('当前没有进行中的复习任务')
+    return
+  }
+
   if (taskDetail.value.status === 'completed') {
     ElMessage.info('该复习已完成')
     return
   }
+
   showCompleteDialog.value = true
 }
 
