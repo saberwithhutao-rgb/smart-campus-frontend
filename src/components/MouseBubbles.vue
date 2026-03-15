@@ -183,7 +183,7 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
     )
 
     // 主颜色
-    const mainColor = bubble.color.replace(')', ` ${bubble.opacity})`)
+    const mainColor = `${bubble.color} ${bubble.opacity})`
 
     // 高光颜色
     const lightColor = `rgba(255, 255, 255, ${bubble.opacity * 0.8})`
