@@ -183,39 +183,39 @@ service.interceptors.request.use(
 
 // 响应拦截器
 service.interceptors.response.use(
-  (response) => {
-    // ✅ 响应日志
-    if (import.meta.env.DEV) {
-      console.log('%c[API Response]', 'color: #2196F3;', response)
-    }
-    return response
-  },
-  (error) => {
-    // ✅ 详细的HTTP状态码处理（400,401,403,404,500）
-    let message = '请求失败'
-    if (error.response) {
-      const { status } = error.response
-      switch (status) {
-        case 400:
-          message = '请求参数错误'
-          break
-        case 401:
-          message = '未授权，请登录'
-          localStorage.removeItem(STORAGE_KEYS.TOKEN)
-          localStorage.removeItem(STORAGE_KEYS.TOKEN_ALT)
-          break
-        case 403:
-          message = '拒绝访问'
-          break
-        case 404:
-          message = '请求资源不存在'
-          break
-        case 500:
-          message = '服务器内部错误'
-          break
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
+
+    if (error.response?.status === 401 && !originalRequest?._retry) {
+      originalRequest._retry = true
+
+      // 清除无效 token
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.TOKEN_ALT)
+
+      try {
+        const { useUserStore } = await import('@/stores/user')
+        const userStore = useUserStore()
+
+        const success = await userStore.tryAutoLogin()
+
+        if (success) {
+          const newToken =
+            localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+
+          originalRequest.headers.Authorization = `Bearer ${newToken}`
+          return service(originalRequest)
+        }
+      } catch (error) {
+        console.error('自动登录失败:', error)
       }
+
+      // 自动登录失败，跳转登录页
+      window.location.href = '/login'
     }
-    return Promise.reject(new Error(message))
+
+    return Promise.reject(error)
   },
 )
 
