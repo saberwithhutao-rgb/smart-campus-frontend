@@ -172,6 +172,17 @@
       <el-empty v-else description="暂无历史复习建议" />
     </el-dialog>
 
+    <el-dialog
+      v-model="showSuggestionDialog"
+      :title="suggestionDialogTitle"
+      width="80%"
+      :fullscreen="isMobile"
+      destroy-on-close
+      class="suggestion-dialog"
+    >
+      <div class="markdown-body" v-html="renderMarkdown(currentSuggestion?.content || '')"></div>
+    </el-dialog>
+
     <!-- 确认完成复习对话框 -->
     <el-dialog
       v-model="showCompleteDialog"
@@ -203,7 +214,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useStudyPlanStore } from '@/stores/studyPlan'
 import type { StudyTask } from '@/stores/studyPlan'
 import * as studyApi from '@/api/study'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { WarningFilled } from '@element-plus/icons-vue'
 import type { ReviewSuggestion } from '@/api/study'
 import { marked } from 'marked'
@@ -225,6 +236,12 @@ const showCompleteDialog = ref(false)
 const isMobile = ref(window.innerWidth <= 768)
 const planSuggestions = ref<ReviewSuggestion[]>([])
 const selectedStage = ref<number | null>(null)
+const showSuggestionDialog = ref(false)
+const currentSuggestion = ref<ReviewSuggestion | null>(null)
+const suggestionDialogTitle = computed(() => {
+  if (!currentSuggestion.value) return '复习建议'
+  return `第 ${currentSuggestion.value.reviewStage} 次复习 - 版本 ${currentSuggestion.value.version}`
+})
 
 const MOBILE_BREAKPOINT = 768
 
@@ -261,14 +278,8 @@ const getStageSuggestions = (stage: number) => {
 
 // 查看建议详情
 const viewSuggestion = (suggestion: ReviewSuggestion) => {
-  ElMessageBox.alert(
-    `<div class="markdown-body">${renderMarkdown(suggestion.content)}</div>`,
-    `第 ${suggestion.reviewStage} 次复习 - 版本 ${suggestion.version}`,
-    {
-      dangerouslyUseHTMLString: true,
-      customClass: 'suggestion-detail-dialog',
-    },
-  )
+  currentSuggestion.value = suggestion
+  showSuggestionDialog.value = true
 }
 
 const openHistory = async () => {
@@ -723,6 +734,17 @@ const goBack = () => router.go(-1)
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+.suggestion-dialog :deep(.el-dialog__body) {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.suggestion-dialog .markdown-body {
+  font-size: 15px;
+  line-height: 1.8;
 }
 
 /* ==================== 时间线样式 ==================== */
