@@ -4,7 +4,7 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '@/api'
 import * as studyApi from '@/api/study'
-
+import type { ReviewSuggestion } from '@/api/study'
 export interface StudyPlan {
   id: number
   userId: number
@@ -28,6 +28,7 @@ export interface StudyTask {
   userId: number
   title: string
   description: string | null
+  currentSuggestion?: ReviewSuggestion | null
   taskDate: string
   scheduledTime: string | null
   durationMinutes: number

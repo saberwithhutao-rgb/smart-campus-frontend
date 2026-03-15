@@ -66,9 +66,9 @@
             </template>
 
             <div
-              v-if="taskDetail.description"
+              v-if="taskDetail?.currentSuggestion?.content"
               class="plan-content markdown-body"
-              v-html="renderMarkdown(taskDetail.description)"
+              v-html="renderMarkdown(taskDetail.currentSuggestion.content)"
             ></div>
             <div v-else class="empty-content">
               <el-empty description="暂无复习内容，点击AI生成复习建议" />
@@ -415,12 +415,8 @@ const getReviewStatusTagType = (type: string) => {
 onMounted(async () => {
   isLoading.value = true
   try {
-    const response = await studyApi.getReviewTaskDetail(taskId)
-    console.log('api返回原始数据:', response)
-    console.log('是否有id:', response?.id)
-
-    taskDetail.value = response || null
-    console.log('赋值后的taskDetail:', taskDetail.value)
+    const taskResponse = await studyApi.getReviewTaskDetail(taskId)
+    taskDetail.value = taskResponse || null
   } catch (error) {
     console.error('获取复习详情失败:', error)
     ElMessage.error('获取复习详情失败')
@@ -475,14 +471,18 @@ const generateReviewAdvice = async () => {
 
   isGenerating.value = true
   try {
-    // 只需要这一个请求
-    const advice = await studyApi.generateReviewAdvice({
+    // 只需要调用生成接口，不需要接收返回值
+    await studyApi.generateReviewAdvice({
       taskId: taskDetail.value.id,
       title: taskDetail.value.title,
       reviewStage: taskDetail.value.reviewStage,
     })
 
-    taskDetail.value.description = advice // 直接更新页面显示
+    // 生成成功后，重新获取当前建议
+    const suggestion = await studyApi.getCurrentSuggestion(taskDetail.value.id)
+    if (suggestion) {
+      taskDetail.value.currentSuggestion = suggestion
+    }
 
     ElMessage.success('复习建议生成成功')
   } catch (error) {
@@ -575,6 +575,7 @@ const goBack = () => router.go(-1)
   padding: 40px;
   text-align: center;
 }
+
 /* ==================== 全局弹窗样式 ==================== */
 .history-dialog {
   border-radius: 16px;
@@ -587,59 +588,37 @@ const goBack = () => router.go(-1)
   overflow-y: auto;
 }
 
-/* 版本详情弹窗 */
-:deep(.suggestion-detail-dialog) {
-  width: 90%;
-  max-width: 1000px;
-  border-radius: 16px;
-}
-
-:deep(.suggestion-detail-dialog .el-message-box__content) {
-  padding: 20px;
-}
-
-:deep(.suggestion-detail-dialog .el-message-box__message) {
-  max-height: 70vh;
-  overflow-y: auto;
-  padding: 0 20px;
-}
-
-:deep(.suggestion-detail-dialog .markdown-body) {
-  font-size: 15px;
-  line-height: 1.8;
-}
-
 /* ==================== 筛选区域 ==================== */
 .filter-section {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  background-color: var(--background-light);
-  border-radius: var(--radius-md);
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
 }
 
 .filter-label {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
   white-space: nowrap;
 }
 
 /* 选择框样式 */
 .stage-select {
-  width: var(--select-width);
+  width: 280px;
 }
 
 .stage-select :deep(.el-input__wrapper) {
-  background-color: var(--background-white);
-  box-shadow: var(--shadow-light);
+  background-color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .stage-select :deep(.el-input__inner) {
   height: 40px;
-  font-size: var(--font-size-md);
+  font-size: 14px;
 }
 
 /* 自定义选项 */
@@ -648,28 +627,28 @@ const goBack = () => router.go(-1)
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: var(--spacing-xs) 0;
+  padding: 4px 0;
 }
 
 .option-count {
-  font-size: var(--font-size-sm);
-  color: var(--text-color-light);
+  font-size: 13px;
+  color: #909399;
 }
 
 /* ==================== 统计信息 ==================== */
 .stats-info {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 24px;
 }
 
 .stats-info :deep(.el-alert) {
   background-color: #ecf5ff;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 8px;
 }
 
 /* ==================== 阶段分组 ==================== */
 .stage-group {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: 32px;
 }
 
 .stage-group:last-child {
@@ -677,35 +656,35 @@ const goBack = () => router.go(-1)
 }
 
 .stage-header {
-  margin-bottom: var(--spacing-md);
+  margin-bottom: 16px;
 }
 
 .stage-header h3 {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-color);
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
   margin: 0;
 }
 
 /* ==================== 建议卡片 ==================== */
 .suggestion-card {
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all 0.3s ease;
   border: 1px solid transparent;
 }
 
 .suggestion-card:hover {
   transform: translateX(4px);
-  border-color: var(--primary-color);
-  box-shadow: var(--shadow-medium);
+  border-color: #409eff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .suggestion-card.current-version {
   background-color: #f0f9eb;
-  border-color: var(--success-color);
+  border-color: #67c23a;
 }
 
 .suggestion-card.current-version:hover {
@@ -715,18 +694,18 @@ const goBack = () => router.go(-1)
 .version-badge {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .version-number {
-  font-weight: var(--font-weight-bold);
-  color: var(--text-color);
+  font-weight: 600;
+  color: #303133;
 }
 
 .preview {
-  font-size: var(--font-size-md);
-  color: var(--text-color-secondary);
+  font-size: 14px;
+  color: #606266;
   line-height: 1.6;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -736,60 +715,83 @@ const goBack = () => router.go(-1)
   -webkit-box-orient: vertical;
 }
 
+/* ==================== 建议详情弹窗 ==================== */
+.suggestion-dialog {
+  width: 90% !important;
+  max-width: 1000px !important;
+}
+
+.suggestion-dialog :deep(.el-dialog) {
+  margin: 5vh auto !important;
+  border-radius: 16px;
+}
+
+.suggestion-dialog :deep(.el-dialog__header) {
+  padding: 20px 30px !important;
+  margin-right: 0 !important;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.suggestion-dialog :deep(.el-dialog__title) {
+  font-size: 18px;
+  font-weight: 600;
+}
+
 .suggestion-dialog :deep(.el-dialog__body) {
   max-height: 70vh;
   overflow-y: auto;
-  padding: 20px;
+  padding: 30px !important;
 }
 
 .suggestion-dialog .markdown-body {
   font-size: 15px;
   line-height: 1.8;
+  padding: 0 20px;
 }
 
 /* ==================== 时间线样式 ==================== */
 :deep(.el-timeline-item__timestamp) {
-  color: var(--text-color-light);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-normal);
+  color: #909399;
+  font-size: 13px;
+  font-weight: 400;
 }
 
 :deep(.el-timeline-item__wrapper) {
-  padding-left: var(--spacing-lg);
+  padding-left: 20px;
 }
 
 :deep(.el-timeline-item__tail) {
-  border-left: 2px solid var(--border-color);
+  border-left: 2px solid #e4e7ed;
 }
 
 :deep(.el-timeline-item__node--primary) {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  background-color: #409eff;
+  border-color: #409eff;
 }
 
 :deep(.el-timeline-item__node--info) {
-  background-color: var(--text-color-light);
-  border-color: var(--text-color-light);
+  background-color: #909399;
+  border-color: #909399;
 }
 
 /* ==================== 确认完成对话框 ==================== */
 .complete-confirm {
   text-align: center;
-  padding: var(--spacing-lg) 0;
+  padding: 24px 0;
 }
 
 .complete-confirm p {
-  margin: var(--spacing-sm) 0;
-  font-size: var(--font-size-lg);
+  margin: 8px 0;
+  font-size: 16px;
 }
 
 .complete-confirm .tip {
-  font-size: var(--font-size-md);
-  color: var(--text-color-light);
+  font-size: 14px;
+  color: #909399;
 }
 
 .warning-icon {
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: 8px;
 }
 
 /* ==================== 移动端适配 ==================== */
@@ -797,7 +799,7 @@ const goBack = () => router.go(-1)
   .filter-section {
     flex-direction: column;
     align-items: stretch;
-    gap: var(--spacing-sm);
+    gap: 8px;
   }
 
   .stage-select {
@@ -805,12 +807,16 @@ const goBack = () => router.go(-1)
   }
 
   .stage-header h3 {
-    font-size: var(--font-size-lg);
+    font-size: 16px;
   }
 
-  :deep(.suggestion-detail-dialog) {
-    width: 95%;
-    max-width: 95%;
+  .suggestion-dialog {
+    width: 95% !important;
+    max-width: 95% !important;
+  }
+
+  .suggestion-dialog :deep(.el-dialog) {
+    margin: 2vh auto !important;
   }
 }
 </style>
