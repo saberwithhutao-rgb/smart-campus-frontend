@@ -46,10 +46,14 @@
         >
           校园生活
           <div v-if="showSubMenu === '校园生活' && !isMobile" class="submenu">
-            <div class="submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
+            <div class="submenu-item" @click="goToLibraryReservation">图书馆预约</div>
+            <div class="submenu-item" @click="goToSportsReservation">体育馆预约</div>
+            <div class="submenu-item" @click="goToSecondHandMarket">校园论坛</div>
           </div>
           <div v-if="showSubMenu === '校园生活' && isMobile" class="mobile-submenu">
-            <div class="mobile-submenu-item" @click="router.push('/campus/library')">馆藏实况</div>
+            <div class="mobile-submenu-item" @click="goToLibraryReservation">图书馆预约</div>
+            <div class="mobile-submenu-item" @click="goToSportsReservation">体育馆预约</div>
+            <div class="mobile-submenu-item" @click="goToSecondHandMarket">校园论坛</div>
           </div>
         </div>
 
@@ -134,8 +138,9 @@ const goToPersonalStudy = () => router.push('/ai/study')
 const goToStudyManagement = () => router.push('/campus/analysis')
 const goToCompetitionManagement = () => router.push('/career/competitions')
 const goToExamSupport = () => router.push('/career/pee')
-
-// 职业导航子模块 - 从同学那边复制
+const goToLibraryReservation = () => router.push('/campus/library-reservation')
+const goToSportsReservation = () => router.push('/campus/sports-reservation')
+const goToSecondHandMarket = () => router.push('/campus/secondhand-market') // 职业导航子模块 - 从同学那边复制
 const goToAiCareerInfo = () => {
   router.push({ path: '/career/position', query: { section: 'ai' } })
 }

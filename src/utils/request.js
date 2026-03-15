@@ -11,6 +11,17 @@ const request = axios.create({
   headers: {
     'Content-Type': 'application/json;charset=utf-8',
   },
+  paramsSerializer: (params) => {
+    if (params.page === undefined) {
+      params.page = 0
+    }
+    if (params.size === undefined) {
+      params.size = 10
+    }
+    return Object.entries(params)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join('&')
+  },
 })
 
 // 请求队列，防止多个请求同时自动登录
