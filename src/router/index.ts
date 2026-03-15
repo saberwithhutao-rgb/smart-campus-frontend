@@ -85,30 +85,6 @@ const router = createRouter({
       },
     },
     {
-      path: '/campus/analysis',
-      name: 'campus-analysis',
-      component: () => import('../views/StudyManagement.vue'),
-      meta: {
-        requiresAuth: true,
-      },
-    },
-    {
-      path: '/campus/advice',
-      name: 'campus-advice',
-      component: () => import('../views/StudyManagement.vue'),
-      meta: {
-        requiresAuth: true,
-      },
-    },
-    {
-      path: '/campus/library',
-      name: 'library-status',
-      component: () => import('../views/LibraryStatus.vue'),
-      meta: {
-        requiresAuth: true,
-      },
-    },
-    {
       path: '/career/competitions',
       name: 'competition-management',
       component: () => import('../views/CompetitionManagement.vue'),
