@@ -355,7 +355,7 @@ const refreshClassroomList = async () => {
     }
 
     console.log('刷新教室列表，楼层ID:', floorId)
-cons  // 重新加载当前楼层的教室数据
+    cons // 重新加载当前楼层的教室数据
     await loadClassrooms(floorId)
     console.log('教室列表刷新完成')
   } catch (error) {
@@ -364,7 +364,7 @@ cons  // 重新加载当前楼层的教室数据
 }
 
 // 用于存储当前正在进行的请求
-let currentRequests = new Map()
+const currentRequests = new Map()
 
 // 刷新所有教室数据
 const refreshAllClassroomData = async () => {
@@ -688,14 +688,13 @@ const getReservationBySeatId = async (seatId: number) => {
         return reservationData || null
       } else {
         console.error('查询预约记录失败:', response.data.msg)
+        return null
+      }
     } catch (error: any) {
       console.error('调用查询接口失败:', error)
       ElMessage.error('查询座位信息失败，请稍后重试')
       return null
     }
-
-    console.log('未找到预约记录，返回null')
-    return null
   } catch (error: any) {
     console.error('查询预约记录失败:', error.message || error)
     ElMessage.error('查询座位信息失败，请稍后重试')
