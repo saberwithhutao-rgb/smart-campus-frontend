@@ -150,6 +150,67 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    {
+      path: '/campus/library-reservation',
+      name: 'library-reservation',
+      component: () => import('../views/LibraryReservation.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/campus/sports-reservation',
+      name: 'sports-reservation',
+      component: () => import('../views/SportsReservation.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/campus/secondhand-market',
+      name: 'secondhand-market',
+      component: () => import('../views/SecondHandMarket.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/career/competitions',
+      name: 'competition-management',
+      component: () => import('../views/CompetitionManagement.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/career/competitions/:id',
+      name: 'competition-detail',
+      component: () => import('../views/CompetitionDetail.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/career/position',
+      name: 'career-navigation',
+      component: () => import('../views/CareerNavigation.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/career/pee',
+      name: 'exam-support',
+      component: () => import('../views/PostgraduateSupport.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    // 404路由
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/index',
+    },
   ],
 })
 
@@ -224,9 +285,8 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
-router.afterEach((to, from) => {
+router.afterEach((to) => {
   console.log('路由跳转完成:', to.path)
-  // 删除 forceCheckLoginStatus 调用
 })
 
 export default router

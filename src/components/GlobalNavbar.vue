@@ -140,7 +140,7 @@ const goToCompetitionManagement = () => router.push('/career/competitions')
 const goToExamSupport = () => router.push('/career/pee')
 const goToLibraryReservation = () => router.push('/campus/library-reservation')
 const goToSportsReservation = () => router.push('/campus/sports-reservation')
-const goToSecondHandMarket = () => router.push('/campus/secondhand-market') // 职业导航子模块 - 从同学那边复制
+const goToSecondHandMarket = () => router.push('/campus/secondhand-market')
 const goToAiCareerInfo = () => {
   router.push({ path: '/career/position', query: { section: 'ai' } })
 }
