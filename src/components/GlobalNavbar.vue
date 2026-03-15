@@ -88,6 +88,7 @@
           <button class="btn-user-center" @click="toggleUserCenter">个人中心</button>
           <div v-if="showUserCenter" class="user-center-dropdown">
             <div class="dropdown-item" @click="handleUserMenuClick('个人信息')">个人信息</div>
+            <div class="dropdown-item" @click="handleUserMenuClick('设置')">设置</div>
             <div class="dropdown-item logout" @click="handleUserMenuClick('退出登录')">
               退出登录
             </div>
@@ -191,6 +192,8 @@ const handleMenuClick = (menu: string) => {
 const handleUserMenuClick = (item: string) => {
   if (item === '个人信息') {
     router.push('/profile')
+  } else if (item === '设置') {
+    router.push('/settings')
   } else if (item === '退出登录') {
     ElMessageBox.confirm('确定要退出登录吗？', '提示', {
       confirmButtonText: '确定',
@@ -198,9 +201,7 @@ const handleUserMenuClick = (item: string) => {
       type: 'warning',
     })
       .then(() => {
-        // ✅ 用你的 logout 方法
         userStore.logout(true)
-
         // 关闭菜单
         showUserCenter.value = false
 
