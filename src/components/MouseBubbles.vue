@@ -178,13 +178,6 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
     const lightColor = `rgba(255, 255, 255, ${bubble.opacity * 0.8})`
     const darkColor = `${bubble.color} ${bubble.opacity * 0.6})`
 
-    console.log('颜色测试:', {
-      // 添加调试日志
-      mainColor,
-      lightColor,
-      darkColor,
-    })
-
     gradient.addColorStop(0, lightColor)
     gradient.addColorStop(0.4, mainColor)
     gradient.addColorStop(0.8, darkColor)
