@@ -121,6 +121,14 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
     const bubble = bubbles.value[i]
     if (!bubble) continue
 
+    console.log('气泡状态:', {
+      life: bubble.life,
+      scale: bubble.scale,
+      radius: bubble.radius,
+      currentRadius: bubble.radius * bubble.scale,
+      opacity: bubble.opacity,
+    })
+
     // 更新生命周期
     bubble.life += 0.005
 
