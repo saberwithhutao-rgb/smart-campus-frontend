@@ -565,9 +565,14 @@ const goBack = () => router.go(-1)
   text-align: center;
 }
 /* ==================== 全局弹窗样式 ==================== */
+.history-dialog {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
 .history-dialog :deep(.el-dialog__body) {
-  padding: var(--spacing-lg);
-  max-height: var(--dialog-max-height);
+  padding: 20px;
+  max-height: 70vh;
   overflow-y: auto;
 }
 
@@ -575,16 +580,21 @@ const goBack = () => router.go(-1)
 :deep(.suggestion-detail-dialog) {
   width: 90%;
   max-width: 1000px;
+  border-radius: 16px;
+}
+
+:deep(.suggestion-detail-dialog .el-message-box__content) {
+  padding: 20px;
 }
 
 :deep(.suggestion-detail-dialog .el-message-box__message) {
-  max-height: var(--dialog-max-height);
+  max-height: 70vh;
   overflow-y: auto;
-  padding: 0 var(--spacing-lg);
+  padding: 0 20px;
 }
 
 :deep(.suggestion-detail-dialog .markdown-body) {
-  font-size: var(--font-size-lg);
+  font-size: 15px;
   line-height: 1.8;
 }
 
