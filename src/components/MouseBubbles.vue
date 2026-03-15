@@ -124,11 +124,13 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
     // 更新生命周期
     bubble.life += 0.005
 
-    // 更新缩放比例：0.2 -> 1.0 -> 1.5
+    // 更新缩放比例：0.2 -> 0.35 -> 0.5（原来是 0.2 -> 1.0 -> 1.5）
     if (bubble.life < 0.5) {
-      bubble.scale = 0.2 + bubble.life * 1.6
+      // 前50%生命周期：从 0.2 慢慢变大到 0.35
+      bubble.scale = 0.2 + bubble.life * 0.3 // 0.2 + 0.5*0.3 = 0.35
     } else {
-      bubble.scale = 1.0 + (bubble.life - 0.5) * 1.0
+      // 后50%生命周期：从 0.35 慢慢变大到 0.5
+      bubble.scale = 0.35 + (bubble.life - 0.5) * 0.3 // 0.35 + 0.5*0.3 = 0.5
     }
 
     // 更新位置
