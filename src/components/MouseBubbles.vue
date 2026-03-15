@@ -171,7 +171,7 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
       bubble.y,
       currentRadius * 1.2,
     )
-    1
+
     const mainColor = `${bubble.color} ${bubble.opacity})` // 直接拼接
     const lightColor = `rgba(255, 255, 255, ${bubble.opacity * 0.8})`
     const darkColor = `${bubble.color} ${bubble.opacity * 0.6})`
