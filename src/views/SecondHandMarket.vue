@@ -202,6 +202,11 @@ const handlePostComment = async (postId: number | undefined) => {
     return
   }
 
+  if (!currentUserId.value) {
+    ElMessage.warning('请先登录')
+    return
+  }
+
   commenting.value = true
   try {
     await forumApi.addComment({
@@ -234,6 +239,11 @@ const handlePublish = async () => {
 
   if (!publishCategoryId.value || publishCategoryId.value === '') {
     ElMessage.warning('请选择话题')
+    return
+  }
+
+  if (!currentUserId.value) {
+    ElMessage.warning('请先登录')
     return
   }
 
@@ -276,6 +286,11 @@ const handleDeletePost = async (postId: number | undefined) => {
   })
     .then(async () => {
       try {
+        if (!currentUserId.value) {
+          ElMessage.warning('请先登录')
+          return
+        }
+
         await forumApi.deletePost(postId, currentUserId.value)
 
         // 从列表中移除帖子
@@ -314,6 +329,10 @@ const handleDeleteComment = async (commentId: number | undefined, postId: number
   })
     .then(async () => {
       try {
+        if (!currentUserId.value) {
+          ElMessage.warning('请先登录')
+          return
+        }
         await forumApi.deleteComment(commentId, currentUserId.value)
 
         // 从帖子的评论列表中移除
@@ -483,22 +502,19 @@ const updateArrowVisibility = () => {
                 :class="[
                   'topic-tag',
                   getTopicClass(
-                    post.categoryName ||
-                      getCategoryName(post.categoryId) ||
-                      post.category?.name ||
-                      '未知话题',
+                    post.category?.name || getCategoryName(post.category?.id) || '未知话题',
                   ),
                 ]"
-                v-if="post.categoryName"
-                >#{{ post.categoryName }}</span
+                v-if="post.category?.name"
+                >#{{ post.category?.name }}</span
               >
               <span
                 :class="[
                   'topic-tag',
-                  getTopicClass(getCategoryName(post.categoryId) || '未知话题'),
+                  getTopicClass(getCategoryName(post.category?.id) || '未知话题'),
                 ]"
-                v-else-if="post.categoryId"
-                >#{{ getCategoryName(post.categoryId) }}</span
+                v-else-if="post.category?.id"
+                >#{{ getCategoryName(post.category?.id) }}</span
               >
               <span
                 :class="['topic-tag', getTopicClass(post.category?.name || '未知话题')]"
