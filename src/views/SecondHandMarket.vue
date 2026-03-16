@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, Delete } from '@element-plus/icons-vue'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
@@ -35,7 +35,7 @@ console.log('初始分类列表:', categoryList.value)
 const postList = ref<forumApi.PageResponse<forumApi.Post> | null>(null)
 
 // 当前用户ID（开发模式固定为1）
-const currentUserId = ref(1)
+const currentUserId = computed(() => userStore.userProfile?.id)
 
 // 话题栏滚动相关
 const topicsBarRef = ref<HTMLElement | null>(null)
@@ -90,7 +90,7 @@ const loadPosts = async (page: number = 0) => {
           sort: { empty: true, sorted: false, unsorted: true },
           offset: page * pageSize.value,
           paged: true,
-          unpaged: false
+          unpaged: false,
         },
         totalPages: result.totalPages || 0,
         totalElements: result.totalElements || 0,
@@ -100,7 +100,7 @@ const loadPosts = async (page: number = 0) => {
         sort: result.sort || { empty: true, sorted: false, unsorted: true },
         first: result.first !== undefined ? result.first : page === 0,
         numberOfElements: result.numberOfElements || 0,
-        empty: result.empty !== undefined ? result.empty : true
+        empty: result.empty !== undefined ? result.empty : true,
       }
       totalPosts.value = result.totalElements || 0
       currentPage.value = page
@@ -114,7 +114,7 @@ const loadPosts = async (page: number = 0) => {
           sort: { empty: true, sorted: false, unsorted: true },
           offset: page * pageSize.value,
           paged: true,
-  unpaged: false
+          unpaged: false,
         },
         totalPages: 0,
         totalElements: 0,
@@ -124,10 +124,10 @@ const loadPosts = async (page: number = 0) => {
         sort: { empty: true, sorted: false, unsorted: true },
         first: page === 0,
         numberOfElements: 0,
-        empty: true
+        empty: true,
       }
       totalPosts.value = 0
-   }
+    }
   } catch (error) {
     ElMessage.error('加载帖子失败')
     console.error('加载帖子失败:', error)
@@ -140,7 +140,7 @@ const loadPosts = async (page: number = 0) => {
         sort: { empty: true, sorted: false, unsorted: true },
         offset: page * pageSize.value,
         paged: true,
-        unpaged: false
+        unpaged: false,
       },
       totalPages: 0,
       totalElements: 0,
@@ -150,7 +150,7 @@ const loadPosts = async (page: number = 0) => {
       sort: { empty: true, sorted: false, unsorted: true },
       first: page === 0,
       numberOfElements: 0,
-      empty: true
+      empty: true,
     }
   } finally {
     loading.value = false
@@ -182,7 +182,7 @@ const loadPostComments = async (postId: number) => {
   try {
     const postDetail = await forumApi.getPostDetail(postId)
     if (postList.value) {
-      const postIndex = postList.value.content.findIndex(p => p.id === postId)
+      const postIndex = postList.value.content.findIndex((p) => p.id === postId)
       if (postIndex > -1 && postList.value.content[postIndex]) {
         postList.value.content[postIndex].comments = postDetail.comments || []
       }
@@ -207,7 +207,7 @@ const handlePostComment = async (postId: number | undefined) => {
     await forumApi.addComment({
       postId,
       content: newComment.value,
-      userId: currentUserId.value
+      userId: currentUserId.value,
     })
 
     // 重新加载评论
@@ -243,7 +243,7 @@ const handlePublish = async () => {
       title: postTitle.value,
       content: postContent.value,
       categoryId: publishCategoryId.value ? Number(publishCategoryId.value) : 0,
-      userId: currentUserId.value
+      userId: currentUserId.value,
     })
 
     // 重新加载帖子列表
@@ -271,7 +271,7 @@ const handleDeletePost = async (postId: number | undefined) => {
   ElMessageBox.confirm('确定要删除此帖子吗？删除后将无法恢复', '删除确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning'
+    type: 'warning',
   })
     .then(async () => {
       try {
@@ -279,7 +279,7 @@ const handleDeletePost = async (postId: number | undefined) => {
 
         // 从列表中移除帖子
         if (postList.value) {
-        const index = postList.value.content.findIndex(p => p.id === postId)
+          const index = postList.value.content.findIndex((p) => p.id === postId)
           if (index > -1) {
             postList.value.content.splice(index, 1)
             postList.value.numberOfElements--
@@ -309,7 +309,7 @@ const handleDeleteComment = async (commentId: number | undefined, postId: number
   ElMessageBox.confirm('确定要删除此评论吗？删除后将无法恢复', '删除确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning'
+    type: 'warning',
   })
     .then(async () => {
       try {
@@ -317,9 +317,9 @@ const handleDeleteComment = async (commentId: number | undefined, postId: number
 
         // 从帖子的评论列表中移除
         if (postList.value) {
-          const post = postList.value.content.find(p => p.id === postId)
+          const post = postList.value.content.find((p) => p.id === postId)
           if (post && post.comments) {
-            const commentIndex = post.comments.findIndex(c => c.id === commentId)
+            const commentIndex = post.comments.findIndex((c) => c.id === commentId)
             if (commentIndex > -1) {
               post.comments.splice(commentIndex, 1)
             }
@@ -339,28 +339,28 @@ const handleDeleteComment = async (commentId: number | undefined, postId: number
 
 // 加载更多帖子
 const loadMore = () => {
-  if (!loading.value && currentPage.value < ((postList.value?.totalPages || 0) - 1)) {
+  if (!loading.value && currentPage.value < (postList.value?.totalPages || 0) - 1) {
     loadPosts(currentPage.value + 1)
   }
 }
 
 // 根据 categoryId 获取分类名称
 const getCategoryName = (categoryId: number): string => {
-  const category = categoryList.value.find(item => item.id === categoryId)
+  const category = categoryList.value.find((item) => item.id === categoryId)
   return category ? category.name : '未知话题'
 }
 
 // 根据话题名称获取对应的样式类名
 const getTopicClass = (topicName: string): string => {
   const topicClassMap: Record<string, string> = {
-    '校园日常': 'topic-daily',
-    '学习交流': 'topic-study',
-    '美食推荐': 'topic-food',
-    '校园活动': 'topic-activity',
-    '求助问答': 'topic-help',
-    '失物招领': 'topic-lost',
-    '表白墙': 'topic-love',
-    '二手交易': 'topic-secondhand'
+    校园日常: 'topic-daily',
+    学习交流: 'topic-study',
+    美食推荐: 'topic-food',
+    校园活动: 'topic-activity',
+    求助问答: 'topic-help',
+    失物招领: 'topic-lost',
+    表白墙: 'topic-love',
+    二手交易: 'topic-secondhand',
   }
   return topicClassMap[topicName] || ''
 }
@@ -375,12 +375,12 @@ const scrollTopics = (direction: 'left' | 'right') => {
   if (direction === 'left') {
     topicsBarRef.value.scrollTo({
       left: currentScrollLeft - scrollAmount,
-      behavior: 'smooth'
+      behavior: 'smooth',
     })
   } else {
     topicsBarRef.value.scrollTo({
       left: currentScrollLeft + scrollAmount,
-      behavior: 'smooth'
+      behavior: 'smooth',
     })
   }
 
@@ -434,7 +434,10 @@ const updateArrowVisibility = () => {
               v-for="category in categoryList"
               :key="category.id"
               class="topic-tag"
-              :class="[getTopicClass(category.name), { active: selectedCategoryId === category.id }]"
+              :class="[
+                getTopicClass(category.name),
+                { active: selectedCategoryId === category.id },
+              ]"
               @click="selectCategory(category.id)"
             >
               #{{ category.name }}
@@ -454,29 +457,53 @@ const updateArrowVisibility = () => {
         <!-- 帖子列表 -->
         <div class="posts-container">
           <!-- 加载中状态 -->
-          <div v-if="loading && !((postList?.content && postList.content.length))" class="loading-state">
+          <div
+            v-if="loading && !(postList?.content && postList.content.length)"
+            class="loading-state"
+          >
             <el-icon class="loading-icon"><Loading /></el-icon>
             <span>加载中...</span>
           </div>
 
-          <div
-            v-for="post in (postList?.content || [])"
-            :key="post.id"
-            class="post-card"
-          >
+          <div v-for="post in postList?.content || []" :key="post.id" class="post-card">
             <!-- 帖子头部 -->
             <div class="post-header">
               <div class="author-info">
                 <div class="avatar">👤</div>
                 <div class="author-text">
                   <div class="author-name">用户{{ post.userId || '未知' }}</div>
-                  <div class="post-time">{{ post.createTime ? new Date(post.createTime).toLocaleString() : '未知时间' }}</div>
+                  <div class="post-time">
+                    {{ post.createTime ? new Date(post.createTime).toLocaleString() : '未知时间' }}
+                  </div>
                 </div>
               </div>
               <!-- 话题标签（右上角） -->
-              <span :class="['topic-tag', getTopicClass(post.categoryName || getCategoryName(post.categoryId) || post.category?.name || '未知话题')]" v-if="post.categoryName">#{{ post.categoryName }}</span>
-              <span :class="['topic-tag', getTopicClass(getCategoryName(post.categoryId) || '未知话题')]" v-else-if="post.categoryId">#{{ getCategoryName(post.categoryId) }}</span>
-              <span :class="['topic-tag', getTopicClass(post.category?.name || '未知话题')]" v-else-if="post.category">#{{ post.category.name }}</span>
+              <span
+                :class="[
+                  'topic-tag',
+                  getTopicClass(
+                    post.categoryName ||
+                      getCategoryName(post.categoryId) ||
+                      post.category?.name ||
+                      '未知话题',
+                  ),
+                ]"
+                v-if="post.categoryName"
+                >#{{ post.categoryName }}</span
+              >
+              <span
+                :class="[
+                  'topic-tag',
+                  getTopicClass(getCategoryName(post.categoryId) || '未知话题'),
+                ]"
+                v-else-if="post.categoryId"
+                >#{{ getCategoryName(post.categoryId) }}</span
+              >
+              <span
+                :class="['topic-tag', getTopicClass(post.category?.name || '未知话题')]"
+                v-else-if="post.category"
+                >#{{ post.category.name }}</span
+              >
             </div>
 
             <!-- 帖子内容 -->
@@ -487,10 +514,7 @@ const updateArrowVisibility = () => {
 
             <!-- 帖子操作 -->
             <div class="post-actions">
-              <div
-                class="action-btn"
-                @click="toggleComments(post.id)"
-              >
+              <div class="action-btn" @click="toggleComments(post.id)">
                 <span class="icon">💬</span>
                 <span class="count">{{ post.comments?.length || 0 }}</span>
               </div>
@@ -499,7 +523,9 @@ const updateArrowVisibility = () => {
                 class="action-btn delete-btn"
                 @click="handleDeletePost(post.id)"
               >
-                <span class="icon"><el-icon><Delete /></el-icon></span>
+                <span class="icon"
+                  ><el-icon><Delete /></el-icon
+                ></span>
                 <span class="count">删除</span>
               </div>
             </div>
@@ -513,16 +539,16 @@ const updateArrowVisibility = () => {
               </div>
 
               <div v-else class="comments-list">
-                <div
-                  v-for="comment in post.comments || []"
-                  :key="comment.id"
-                  class="comment-item"
-                >
+                <div v-for="comment in post.comments || []" :key="comment.id" class="comment-item">
                   <div class="comment-avatar">👤</div>
                   <div class="comment-content">
                     <div class="comment-header">
                       <span class="comment-author">用户{{ comment.userId || '未知' }}</span>
-                      <span class="comment-time">{{ comment.createTime ? new Date(comment.createTime).toLocaleString() : '未知时间' }}</span>
+                      <span class="comment-time">{{
+                        comment.createTime
+                          ? new Date(comment.createTime).toLocaleString()
+                          : '未知时间'
+                      }}</span>
                       <span
                         v-if="comment.userId === currentUserId"
                         class="comment-delete"
@@ -547,21 +573,23 @@ const updateArrowVisibility = () => {
                   @keyup.enter="handlePostComment(post.id)"
                 >
                   <template #append>
-                      <el-button @click="handlePostComment(post.id)" :loading="commenting">发送</el-button>
-                    </template>
+                    <el-button @click="handlePostComment(post.id)" :loading="commenting"
+                      >发送</el-button
+                    >
+                  </template>
                 </el-input>
               </div>
             </div>
           </div>
 
           <!-- 空状态 -->
-          <div v-if="!loading && (postList?.content?.length === 0)" class="empty-state">
+          <div v-if="!loading && postList?.content?.length === 0" class="empty-state">
             <div class="empty-icon">💬</div>
             <p class="empty-text">暂无相关帖子</p>
           </div>
 
           <!-- 加载更多 -->
-          <div v-if="!loading && currentPage < ((postList?.totalPages || 0) - 1)" class="load-more">
+          <div v-if="!loading && currentPage < (postList?.totalPages || 0) - 1" class="load-more">
             <el-button @click="loadMore" :loading="loading">加载更多</el-button>
           </div>
         </div>
@@ -601,7 +629,12 @@ const updateArrowVisibility = () => {
             <el-button
               type="primary"
               @click="handlePublish"
-              :disabled="!postTitle.trim() || !postContent.trim() || !publishCategoryId || publishCategoryId === ''"
+              :disabled="
+                !postTitle.trim() ||
+                !postContent.trim() ||
+                !publishCategoryId ||
+                publishCategoryId === ''
+              "
               :loading="publishing"
             >
               发布
@@ -691,7 +724,7 @@ const updateArrowVisibility = () => {
 }
 
 /* 全部标签的默认样式 */
-.topics-bar .topic-tag:not([class*="topic-"]) {
+.topics-bar .topic-tag:not([class*='topic-']) {
   background-color: #ffffff !important;
   color: #000000 !important;
   border: 1px solid #e5e5e5 !important;
@@ -699,14 +732,14 @@ const updateArrowVisibility = () => {
   box-shadow: none !important;
 }
 
-.topics-bar .topic-tag:not([class*="topic-"]):hover {
+.topics-bar .topic-tag:not([class*='topic-']):hover {
   background-color: #f5f5f5 !important;
   color: #000000 !important;
   border-color: #e5e5e5 !important;
   box-shadow: none !important;
 }
 
-.topics-bar .topic-tag:not([class*="topic-"]).active {
+.topics-bar .topic-tag:not([class*='topic-']).active {
   background-color: #f5f5f5 !important;
   color: #000000 !important;
   border-color: #e5e5e5 !important;
@@ -1097,8 +1130,12 @@ const updateArrowVisibility = () => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .load-more {

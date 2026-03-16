@@ -11,7 +11,7 @@ import {
   occupyReservation,
   leaveReservation,
   getCourtReservations,
-  getUserReservations
+  getUserReservations,
 } from '@/api/sports'
 
 // 响应式数据
@@ -39,11 +39,7 @@ const reservationInfo = ref({
 })
 
 // 计算属性：获取当前登录用户的ID
-const currentUserId = computed(() => {
-  const userId = userStore.userId || 1;
-  console.log('当前登录用户ID:', userId);
-  return userId;
-});
+const currentUserId = computed(() => userStore.userProfile?.id)
 
 // 场馆列表
 const venues = ref<any[]>([])
@@ -77,7 +73,7 @@ const maxDuration = ref(4) // 最大可预约时长
 // 监听预约时间变化，动态计算最大可预约时长
 watch(selectedTimeSlot, (newSlotId) => {
   // 找到选中的时间槽
-  const selectedSlot = timeSlots.find(slot => slot.id === newSlotId)
+  const selectedSlot = timeSlots.find((slot) => slot.id === newSlotId)
   if (selectedSlot) {
     // 提取开始时间的小时数
     const startHour = parseInt(selectedSlot.start.split(':')[0])
@@ -105,8 +101,8 @@ const venueCourts = ref<Record<string, Record<string, CourtStatus>>>({})
 onMounted(async () => {
   try {
     // 打印当前登录用户ID
-    console.log('当前登录用户ID:', userStore.userState.userInfo?.userId);
-    console.log('currentUserId.value:', currentUserId.value);
+    console.log('当前登录用户ID:', userStore.userState.userInfo?.userId)
+    console.log('currentUserId.value:', currentUserId.value)
 
     // 获取场馆列表
     const venueList = await getVenues()
@@ -121,14 +117,14 @@ onMounted(async () => {
     }
 
     // 检查用户活跃状态
-    await checkUserActiveStatus();
+    await checkUserActiveStatus()
 
     // 设置定时器，每30秒刷新一次场地数据
     setInterval(async () => {
       if (currentVenue.value) {
-        await loadCourts(currentVenue.value.id);
+        await loadCourts(currentVenue.value.id)
       }
-    }, 30000);
+    }, 30000)
   } catch (error) {
     console.error('初始化数据失败:', error)
     ElMessage.error('获取数据失败，请刷新页面重试')
@@ -145,7 +141,7 @@ const loadCourts = async (venueId: number) => {
 
     // 初始化场地状态
     const courtMap: Record<string, CourtStatus> = {}
-    courtList.forEach(court => {
+    courtList.forEach((court) => {
       const courtId = `${venueId}-${court.id}`
       // 映射场地状态
       let status: CourtStatus = 'available'
@@ -177,7 +173,7 @@ const currentVenueCourts = computed(() => {
       const numB = parseInt(b.split('-')[1])
       return numA - numB
     })
-    .forEach(key => {
+    .forEach((key) => {
       sortedCourts[key] = courts[key]
     })
   return sortedCourts
@@ -206,7 +202,7 @@ const getCourtLabel = (courtId: string) => {
   const parts = courtId.split('-')
   const courtIdNum = parts[1]
   // 从场地列表中查找场地编码
-  const court = courts.value.find(c => c.id === parseInt(courtIdNum))
+  const court = courts.value.find((c) => c.id === parseInt(courtIdNum))
   return court?.courtCode || `场地${courtIdNum}`
 }
 
@@ -299,7 +295,7 @@ const submitReservation = async () => {
       cancelButtonText: '取消',
       dangerouslyUseHTMLString: true,
       type: 'warning',
-    }
+    },
   )
     .then(async () => {
       try {
@@ -336,7 +332,7 @@ const submitReservation = async () => {
             reserveDate: reservationInfo.value.date,
             startTime,
             duration,
-            endTime
+            endTime,
           })
 
           if (response.data.code !== 200) {
@@ -386,123 +382,126 @@ const handleCourtClick = async (courtId: string, status: CourtStatus) => {
   const realCourtId = parseInt(parts[1])
 
   // 获取场地详情和预约列表
-  await getCourtDetails(realCourtId);
+  await getCourtDetails(realCourtId)
 
   // 弹出场地详情弹窗
-  courtDetailDialogVisible.value = true;
+  courtDetailDialogVisible.value = true
 }
 
 // 获取场地详情和预约列表
 const getCourtDetails = async (courtId: number) => {
   try {
-    console.log('查询场地详情，场地ID:', courtId);
+    console.log('查询场地详情，场地ID:', courtId)
 
     // 首先尝试从场地数据中查找对应的场地信息
-    let currentCourtData = courts.value.find(court => court.id === courtId);
+    let currentCourtData = courts.value.find((court) => court.id === courtId)
 
     // 如果没找到，尝试重新加载场地数据
     if (!currentCourtData) {
-      console.log('未找到场地数据，重新加载');
-      await loadCourts(currentVenue.value.id);
-      currentCourtData = courts.value.find(court => court.id === courtId);
+      console.log('未找到场地数据，重新加载')
+      await loadCourts(currentVenue.value.id)
+      currentCourtData = courts.value.find((court) => court.id === courtId)
     }
 
     if (currentCourtData) {
-      currentCourtDetails.value = currentCourtData;
-      console.log('场地详情:', currentCourtDetails.value);
+      currentCourtDetails.value = currentCourtData
+      console.log('场地详情:', currentCourtDetails.value)
 
       // 调用后端接口获取该场地的所有有效预约信息
-      const reservations = await getCourtReservations(courtId);
-      console.log('预约记录:', reservations);
+      const reservations = await getCourtReservations(courtId)
+      console.log('预约记录:', reservations)
 
       // 过滤出 active 状态的预约
-      currentCourtReservations.value = reservations.filter((reservation: any) => reservation.status === 'active');
+      currentCourtReservations.value = reservations.filter(
+        (reservation: any) => reservation.status === 'active',
+      )
 
-      console.log('当前登录用户ID:', currentUserId.value);
+      console.log('当前登录用户ID:', currentUserId.value)
       // 检查每条预约记录的 userId 与当前用户ID是否匹配
       currentCourtReservations.value.forEach((reservation: any, index: number) => {
-        console.log(`预约 ${index + 1} - userId: ${reservation.userId}, 当前用户ID: ${currentUserId.value}, 是否匹配: ${reservation.userId === currentUserId.value}`);
-      });
+        console.log(
+          `预约 ${index + 1} - userId: ${reservation.userId}, 当前用户ID: ${currentUserId.value}, 是否匹配: ${reservation.userId === currentUserId.value}`,
+        )
+      })
 
       // 使用 nextTick 强制刷新组件，确保模板使用最新的 currentUserId
-      await nextTick();
-      console.log('组件已刷新，按钮应正确显示');
-
+      await nextTick()
+      console.log('组件已刷新，按钮应正确显示')
     }
   } catch (error: any) {
-    console.error('获取场地详情失败:', error);
-    ElMessage.error('获取场地信息失败，请重试');
+    console.error('获取场地详情失败:', error)
+    ElMessage.error('获取场地信息失败，请重试')
   }
 }
 
 // 占用场地
 const handleOccupyCourt = async (reservationId: number) => {
   try {
-    const userId = currentUserId.value;
+    const userId = currentUserId.value
 
     console.log('调用占用场地接口，参数:', {
       reservationId: reservationId,
-      userId: userId
-    });
+      userId: userId,
+    })
 
     // 调用占用场地接口
-    const res = await occupyReservation(reservationId, userId);
+    const res = await occupyReservation(reservationId, userId)
 
-    console.log('占用场地接口响应:', res);
+    console.log('占用场地接口响应:', res)
 
     if (res.data.code === 200) {
-      ElMessage.success('占用场地成功！');
+      ElMessage.success('占用场地成功！')
       // 刷新场地列表
-      await loadCourts(currentVenue.value.id);
+      await loadCourts(currentVenue.value.id)
       // 更新用户活跃状态
-      await checkUserActiveStatus();
+      await checkUserActiveStatus()
     } else {
-      ElMessage.error(`占用失败：${res.data.msg}`);
+      ElMessage.error(`占用失败：${res.data.msg}`)
     }
   } catch (error: any) {
-    console.error('占用场地异常:', error);
-    ElMessage.error(`占用失败：${error.response?.data?.msg || '系统内部错误'}`);
+    console.error('占用场地异常:', error)
+    ElMessage.error(`占用失败：${error.response?.data?.msg || '系统内部错误'}`)
   }
 }
 
 // 离开场地
 const handleLeaveCourt = async (reservationId: number) => {
   try {
-    const userId = currentUserId.value;
+    const userId = currentUserId.value
 
     console.log('调用离开场地接口，参数:', {
       reservationId: reservationId,
-      userId: userId
-    });
+      userId: userId,
+    })
 
     // 调用离开场地接口
-    const res = await leaveReservation(reservationId, userId);
+    const res = await leaveReservation(reservationId, userId)
 
-    console.log('离开场地接口响应:', res);
+    console.log('离开场地接口响应:', res)
 
     if (res.data.code === 200) {
-      ElMessage.success('离开场地成功！场地已释放');
+      ElMessage.success('离开场地成功！场地已释放')
       // 关闭场地详情弹窗
-      courtDetailDialogVisible.value = false;
+      courtDetailDialogVisible.value = false
       // 刷新场地列表
-      await loadCourts(currentVenue.value.id);
+      await loadCourts(currentVenue.value.id)
       // 更新用户活跃状态
-      await checkUserActiveStatus();
+      await checkUserActiveStatus()
     } else {
-      ElMessage.error(`离开失败：${res.data.msg}`);
+      ElMessage.error(`离开失败：${res.data.msg}`)
     }
   } catch (error: any) {
-    console.error('离开场地异常:', error);
-    ElMessage.error(`离开失败：${error.response?.data?.msg || '系统内部错误'}`);
+    console.error('离开场地异常:', error)
+    ElMessage.error(`离开失败：${error.response?.data?.msg || '系统内部错误'}`)
   }
 }
 
 // 从详情弹窗占用场地
 const handleOccupyCourtFromDetail = (reservationId: number) => {
   // 保存当前要占用的预约ID
-  currentOccupyReservationId.value = reservationId;
+  currentOccupyReservationId.value = reservationId
   // 打开占用确认弹窗
-  occupyDialogVisible.value = true;
+  occupyDialogVisible.value = true
 }
 
 // 确认占用场地
@@ -513,11 +512,11 @@ const handleOccupyConfirm = async () => {
 
     console.log('调用占用场地接口，参数:', {
       reservationId: reservationId,
-      userId: userId
+      userId: userId,
     })
 
     // 调用占用场地接口
-    const res = await occupyReservation(reservationId, userId);
+    const res = await occupyReservation(reservationId, userId)
 
     console.log('占用场地接口响应:', res)
 
@@ -530,7 +529,7 @@ const handleOccupyConfirm = async () => {
       // 刷新场地列表
       await loadCourts(currentVenue.value.id)
       // 更新用户活跃状态
-      await checkUserActiveStatus();
+      await checkUserActiveStatus()
     } else {
       ElMessage.error(`占用失败：${res.data.msg}`)
     }
@@ -550,16 +549,16 @@ const handleReserveCourtFromDetail = async () => {
   courtDetailDialogVisible.value = false
 
   // 获取预约信息
-  const reserveDate = formatDate(selectedDate.value);
-  const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value);
-  const startTime = slot?.start || '14:00';
-  const duration = reservationInfo.value.duration; // 使用用户选择的时长
+  const reserveDate = formatDate(selectedDate.value)
+  const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value)
+  const startTime = slot?.start || '14:00'
+  const duration = reservationInfo.value.duration // 使用用户选择的时长
 
   // 计算结束时间
-  const [hours, minutes] = startTime.split(':').map(Number);
-  const endHours = hours + Math.floor((minutes + duration * 60) / 60);
-  const endMinutes = (minutes + duration * 60) % 60;
-  const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+  const [hours, minutes] = startTime.split(':').map(Number)
+  const endHours = hours + Math.floor((minutes + duration * 60) / 60)
+  const endMinutes = (minutes + duration * 60) % 60
+  const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
 
   // 弹出确认预约弹窗
   ElMessageBox.confirm(
@@ -595,63 +594,65 @@ const handleReserveCourtFromDetail = async () => {
       confirmButtonText: '确认预约',
       cancelButtonText: '取消',
       dangerouslyUseHTMLString: true,
-      type: 'info'
-    }
-  ).then(async () => {
-    try {
-      // 调用预约接口
-      const response = await createReservation({
-        userId: currentUserId.value,
-        courtId: currentCourtDetails.value.id,
-        venueId: currentVenue.value.id,
-        reserveDate,
-        startTime,
-        duration: duration * 60, // 转换为分钟
-        endTime
-      });
+      type: 'info',
+    },
+  )
+    .then(async () => {
+      try {
+        // 调用预约接口
+        const response = await createReservation({
+          userId: currentUserId.value,
+          courtId: currentCourtDetails.value.id,
+          venueId: currentVenue.value.id,
+          reserveDate,
+          startTime,
+          duration: duration * 60, // 转换为分钟
+          endTime,
+        })
 
-      if (response.data.code === 200) {
-        ElMessage.success('预约成功！');
-        // 刷新场地列表
-        await loadCourts(currentVenue.value.id);
-        // 更新用户活跃状态
-        await checkUserActiveStatus();
-      } else {
-        ElMessage.error(`预约失败：${response.data.msg}`);
+        if (response.data.code === 200) {
+          ElMessage.success('预约成功！')
+          // 刷新场地列表
+          await loadCourts(currentVenue.value.id)
+          // 更新用户活跃状态
+          await checkUserActiveStatus()
+        } else {
+          ElMessage.error(`预约失败：${response.data.msg}`)
+        }
+      } catch (error: any) {
+        console.error('预约失败:', error)
+        ElMessage.error(`预约失败：${error.response?.data?.msg || '网络错误'}`)
       }
-    } catch (error: any) {
-      console.error('预约失败:', error);
-      ElMessage.error(`预约失败：${error.response?.data?.msg || '网络错误'}`);
-    }
-  }).catch(() => {
-    ElMessage.info('已取消预约');
-  });
+    })
+    .catch(() => {
+      ElMessage.info('已取消预约')
+    })
 }
 
 // 检查用户是否有活跃的预约或占用记录
-const activeReservation = ref<any>(null);
+const activeReservation = ref<any>(null)
 
 const checkUserActiveStatus = async () => {
   try {
-    const userId = currentUserId.value;
-    console.log('查询用户活跃状态，用户ID:', userId);
+    const userId = currentUserId.value
+    console.log('查询用户活跃状态，用户ID:', userId)
 
     // 调用查询用户预约记录的接口
-    const reservations = await getUserReservations(userId);
-    console.log('用户预约记录:', reservations);
+    const reservations = await getUserReservations(userId)
+    console.log('用户预约记录:', reservations)
 
     // 过滤出状态为 active 的记录
-    const activeList = reservations.filter((item: any) => item.status === 'active');
-    hasActiveReservation.value = activeList.length > 0;
-    activeReservation.value = activeList[0] || null;
-    console.log('用户活跃状态:', hasActiveReservation.value);
-    console.log('用户活跃预约:', activeReservation.value);
+    const activeList = reservations.filter((item: any) => item.status === 'active')
+    hasActiveReservation.value = activeList.length > 0
+    activeReservation.value = activeList[0] || null
+    console.log('用户活跃状态:', hasActiveReservation.value)
+    console.log('用户活跃预约:', activeReservation.value)
   } catch (error: any) {
-    console.error('调用查询用户预约记录接口失败:', error);
-    hasActiveReservation.value = false;
-    activeReservation.value = null;
+    console.error('调用查询用户预约记录接口失败:', error)
+    hasActiveReservation.value = false
+    activeReservation.value = null
   }
-};
+}
 
 // 获取网格样式
 const getGridStyle = () => {
@@ -671,7 +672,12 @@ const getGridStyle = () => {
 
         <!-- 预约信息卡片 -->
         <div class="info-card">
-          <h3 class="card-title">预约信息 <span style="font-size: 14px; color: #666; font-weight: normal; margin-left: 10px;">（开放时间：每天7:00-23:00，节假日除外）</span></h3>
+          <h3 class="card-title">
+            预约信息
+            <span style="font-size: 14px; color: #666; font-weight: normal; margin-left: 10px"
+              >（开放时间：每天7:00-23:00，节假日除外）</span
+            >
+          </h3>
           <div class="info-grid">
             <div class="info-item">
               <label>选择日期：</label>
@@ -679,16 +685,18 @@ const getGridStyle = () => {
                 v-model="selectedDate"
                 type="date"
                 placeholder="选择日期"
-                :disabled-date="(date: Date) => {
-                  // 创建一个只包含年月日的今天日期对象
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  // 创建一个只包含年月日的传入日期对象
-                  const compareDate = new Date(date);
-                  compareDate.setHours(0, 0, 0, 0);
-                  // 禁用今天之前的日期
-                  return compareDate < today;
-                }"
+                :disabled-date="
+                  (date: Date) => {
+                    // 创建一个只包含年月日的今天日期对象
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    // 创建一个只包含年月日的传入日期对象
+                    const compareDate = new Date(date)
+                    compareDate.setHours(0, 0, 0, 0)
+                    // 禁用今天之前的日期
+                    return compareDate < today
+                  }
+                "
                 format="YYYY-MM-DD"
                 value-format="YYYY-MM-DD"
               />
@@ -729,7 +737,17 @@ const getGridStyle = () => {
                 :class="['venue-btn', { active: currentVenue?.id === venue.id }]"
                 @click="handleVenueChange(venue)"
               >
-                <span class="venue-icon">{{ venue.venueType === 'basketball' ? '🏀' : venue.venueType === 'badminton' ? '🏸' : venue.venueType === 'tennis' ? '🎾' : venue.venueType === 'tabletennis' ? '🏓' : '🏐' }}</span>
+                <span class="venue-icon">{{
+                  venue.venueType === 'basketball'
+                    ? '🏀'
+                    : venue.venueType === 'badminton'
+                      ? '🏸'
+                      : venue.venueType === 'tennis'
+                        ? '🎾'
+                        : venue.venueType === 'tabletennis'
+                          ? '🏓'
+                          : '🏐'
+                }}</span>
                 <span>{{ venue.venueName }}</span>
               </button>
             </div>
@@ -745,13 +763,22 @@ const getGridStyle = () => {
               <span class="legend-court occupied"></span>
               <span>已预约（可占用）</span>
             </div>
-
           </div>
 
           <!-- 场地图 -->
           <div class="court-map">
             <div class="court-title">
-              <span class="venue-icon">{{ currentVenueInfo?.venueType === 'basketball' ? '🏀' : currentVenueInfo?.venueType === 'badminton' ? '🏸' : currentVenueInfo?.venueType === 'tennis' ? '🎾' : currentVenueInfo?.venueType === 'tabletennis' ? '🏓' : '🏐' }}</span>
+              <span class="venue-icon">{{
+                currentVenueInfo?.venueType === 'basketball'
+                  ? '🏀'
+                  : currentVenueInfo?.venueType === 'badminton'
+                    ? '🏸'
+                    : currentVenueInfo?.venueType === 'tennis'
+                      ? '🎾'
+                      : currentVenueInfo?.venueType === 'tabletennis'
+                        ? '🏓'
+                        : '🏐'
+              }}</span>
               <span>{{ currentVenueInfo?.venueName }}场地分布</span>
             </div>
             <div class="court-grid" :style="getGridStyle()">
@@ -800,8 +827,6 @@ const getGridStyle = () => {
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
 
@@ -858,17 +883,25 @@ const getGridStyle = () => {
         </div>
         <div class="detail-item">
           <label>当前状态：</label>
-          <span :class="{
-            'status-available': currentCourtDetails.status === 'available',
-            'status-reserved': currentCourtDetails.status === 'reserved',
-            'status-occupied': currentCourtDetails.status === 'occupied'
-          }">
-            {{ currentCourtDetails.status === 'available' ? '可用' : currentCourtDetails.status === 'reserved' ? '已预约' : '已占用' }}
+          <span
+            :class="{
+              'status-available': currentCourtDetails.status === 'available',
+              'status-reserved': currentCourtDetails.status === 'reserved',
+              'status-occupied': currentCourtDetails.status === 'occupied',
+            }"
+          >
+            {{
+              currentCourtDetails.status === 'available'
+                ? '可用'
+                : currentCourtDetails.status === 'reserved'
+                  ? '已预约'
+                  : '已占用'
+            }}
           </span>
         </div>
 
         <div v-if="currentCourtReservations.length > 0" class="reservation-list">
-          <h4 style="margin-top: 20px; margin-bottom: 10px;">当前有效预约：</h4>
+          <h4 style="margin-top: 20px; margin-bottom: 10px">当前有效预约：</h4>
           <el-table :data="currentCourtReservations" style="width: 100%">
             <el-table-column prop="reserveDate" label="预约日期" width="120" />
             <el-table-column prop="startTime" label="开始时间" width="100" />
@@ -899,18 +932,13 @@ const getGridStyle = () => {
         </div>
 
         <div v-else class="no-reservation">
-          <p style="color: #999; text-align: center; margin-top: 20px;">该场地当前无有效预约</p>
+          <p style="color: #999; text-align: center; margin-top: 20px">该场地当前无有效预约</p>
         </div>
       </div>
 
       <template #footer>
         <el-button @click="courtDetailDialogVisible = false">关闭</el-button>
-        <el-button
-          type="primary"
-          @click="handleReserveCourtFromDetail"
-        >
-          预约场地
-        </el-button>
+        <el-button type="primary" @click="handleReserveCourtFromDetail"> 预约场地 </el-button>
       </template>
     </el-dialog>
 
@@ -922,7 +950,7 @@ const getGridStyle = () => {
       :close-on-click-modal="false"
     >
       <p>确定要占用该场地吗？</p>
-      <p style="color: #faad14; font-size: 12px; margin-top: 10px;">
+      <p style="color: #faad14; font-size: 12px; margin-top: 10px">
         注意：只有在预约开始时间后30分钟才能占用该场地
       </p>
       <template #footer>
@@ -1191,7 +1219,8 @@ const getGridStyle = () => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
@@ -1202,7 +1231,8 @@ const getGridStyle = () => {
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -1220,7 +1250,8 @@ const getGridStyle = () => {
 }
 
 @keyframes selectedPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 6px 16px rgba(24, 144, 255, 0.6);
   }
   50% {

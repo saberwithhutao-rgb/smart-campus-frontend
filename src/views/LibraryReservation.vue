@@ -48,11 +48,7 @@ const reservationInfo = ref({
 })
 
 // 计算属性：获取当前登录用户的ID
-const currentUserId = computed(() => {
-  const userId = computed(() => userStore.userProfile?.id)
-  console.log('当前登录用户ID:', userId)
-  return userId
-})
+const currentUserId = computed(() => userStore.userProfile?.id)
 
 // 打印当前登录用户ID
 console.log('当前登录用户ID:', currentUserId.value)
