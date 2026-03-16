@@ -1060,7 +1060,7 @@ const checkUserActiveStatus = async () => {
     console.log('当前token:', token ? '存在' : '不存在')
 
     // 调用查询用户预约记录的接口
-    const response = await request.get(`/api/library/reservations/user/${userId}`)
+    const response = await request.get('/api/library/reservations/user')
     console.log('用户预约记录接口响应:', response.data)
 
     if (response.data.code === 200) {
