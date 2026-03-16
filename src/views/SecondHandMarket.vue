@@ -254,6 +254,7 @@ const handlePublish = async () => {
     publishCategoryId.value = ''
     ElMessage.success('发布成功！')
   } catch (error: any) {
+    console.error('发布失败:', error)
     if (error.message && error.message.includes('敏感词')) {
       ElMessage.error('内容包含敏感词汇，请修改后再发布')
     } else {
