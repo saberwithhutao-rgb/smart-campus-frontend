@@ -1043,9 +1043,6 @@ const confirmReservation = () => {
   isConfirmDialogVisible.value = true
 }
 
-// 模拟用户ID（实际从登录获取）
-const userId = computed(() => currentUserId.value)
-
 // 检查用户是否有活跃的预约或占用记录
 const activeReservation = ref<any>(null)
 
