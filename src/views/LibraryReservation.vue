@@ -223,8 +223,8 @@ const loadSeats = async (classroomId) => {
     const response = await request.get(`/api/library/seats/classroom/${numericClassroomId}`)
     console.log('请求成功，响应:', response)
 
-    // 正确处理响应数据结构：{code: 200, msg: 'success', data: Array(32)}
-    const seatData = response.data.data || []
+    // ✅ 修改这里：response 直接就是数组，不需要 .data.data
+    const seatData = response || []
     console.log('座位数据:', seatData)
     console.log('座位数据类型:', typeof seatData)
     console.log('是否为数组:', Array.isArray(seatData))
@@ -258,8 +258,9 @@ const loadSeats = async (classroomId) => {
         // 获取座位的预约人数
         try {
           const reservationResponse = await request.get(`/api/library/reservations/seat/${seat.id}`)
-          if (reservationResponse.data.code === 200) {
-            const reservations = reservationResponse.data.data
+          // ✅ 这里也要修改，根据实际返回结构调整
+          if (reservationResponse && reservationResponse.code === 200) {
+            const reservations = reservationResponse.data || []
             let activeReservationCount = 0
             if (Array.isArray(reservations)) {
               activeReservationCount = reservations.filter((r) => r.status === 'active').length
@@ -414,10 +415,11 @@ const refreshAllClassroomData = async () => {
         // 移除已完成的请求
         currentRequests.delete(room.id)
 
-        if (response) {
-          // 直接使用 response，因为它就是数据本身
-          const availableSeats = response.availableSeats || 0
-          const totalSeats = response.totalSeats || 0
+        // ✅ 根据实际返回结构处理
+        if (response && response.code === 200) {
+          // 从 data 字段中获取座位信息
+          const availableSeats = response.data?.availableSeats || 0
+          const totalSeats = response.data?.totalSeats || 0
           const occupancyRate = totalSeats > 0 ? availableSeats / totalSeats : 1
 
           // 更新教室数据
@@ -1048,30 +1050,22 @@ const activeReservation = ref<any>(null)
 
 const checkUserActiveStatus = async () => {
   try {
-    const userId = currentUserId.value
-    console.log('查询用户活跃状态，用户ID:', userId)
+    console.log('查询用户活跃状态')
 
-    // 打印当前token
-    const token =
-      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
-    console.log('当前token:', token ? '存在' : '不存在')
-
-    // 调用查询用户预约记录的接口
     const response = await request.get('/api/library/reservations/user')
     console.log('用户预约记录接口响应:', response.data)
 
-    if (response.data.code === 200) {
+    // ✅ 直接判断 response.data 的结构
+    if (response.data && response.data.code === 200) {
       const reservations = response.data.data || []
-      // 过滤出状态为 active 或 reserved 的记录
       const activeList = reservations.filter(
         (item: any) => item.status === 'active' || item.status === 'reserved',
       )
       hasActiveReservation.value = activeList.length > 0
       activeReservation.value = activeList[0] || null
       console.log('用户活跃状态:', hasActiveReservation.value)
-      console.log('用户活跃预约:', activeReservation.value)
     } else {
-      console.error('查询用户预约记录失败:', response.data.msg)
+      console.error('查询用户预约记录失败:', response.data?.msg)
       hasActiveReservation.value = false
       activeReservation.value = null
     }
