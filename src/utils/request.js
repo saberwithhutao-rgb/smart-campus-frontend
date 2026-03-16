@@ -90,6 +90,7 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
+    console.log('📦 拦截器收到的原始响应:', response.data)
     const duration = Date.now() - response.config.metadata.startTime
     console.log(`请求耗时: ${duration} ms - ${response.config.url}`)
 
