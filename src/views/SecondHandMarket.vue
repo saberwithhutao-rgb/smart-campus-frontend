@@ -5,6 +5,7 @@ import { Loading, Delete } from '@element-plus/icons-vue'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import Select from '@/components/select.vue'
 import * as forumApi from '@/api/forum'
+import { useUserStore } from '@/stores/user'
 
 // 响应式数据
 const selectedCategoryId = ref<number | null>(null)
@@ -33,8 +34,7 @@ console.log('初始分类列表:', categoryList.value)
 
 // 帖子数据
 const postList = ref<forumApi.PageResponse<forumApi.Post> | null>(null)
-
-// 当前用户ID（开发模式固定为1）
+const userStore = useUserStore()
 const currentUserId = computed(() => userStore.userProfile?.id)
 
 // 话题栏滚动相关
