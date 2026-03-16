@@ -68,8 +68,8 @@ export const getCategories = async (): Promise<Category[]> => {
     // 使用相对路径，通过代理访问后端
     const response = await request.get('/api/forum/categories')
     console.log('获取分类列表成功:', response)
-    if (Array.isArray(response.data)) {
-      return response.data
+    if (Array.isArray(response)) {
+      return response
     } else {
       console.error('获取分类失败:', response)
       return []
