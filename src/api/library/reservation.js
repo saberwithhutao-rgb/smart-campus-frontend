@@ -23,7 +23,7 @@ export const getClassroomsByFloor = (floorId) => {
   }
 
   return request({
-    url: `/library/classrooms/floor/${floorId}`,
+    url: `/api/library/classrooms/floor/${floorId}`,
     method: 'GET',
   })
 }
@@ -40,7 +40,7 @@ export const getSeatsByClassroom = (classroomId) => {
   }
 
   return request({
-    url: `/library/seats/classroom/${classroomId}`,
+    url: `/api/library/seats/classroom/${classroomId}`,
     method: 'GET',
   })
 }
@@ -99,7 +99,7 @@ export const occupySeat = (reservationId) => {
   }
 
   return request({
-    url: `/library/reservations/${reservationId}/occupy`,
+    url: `/api/library/reservations/${reservationId}/occupy`,
     method: 'POST',
   })
 }
@@ -116,7 +116,7 @@ export const cancelReservation = (reservationId) => {
   }
 
   return request({
-    url: `/library/reservations/${reservationId}/cancel`,
+    url: `/api/library/reservations/${reservationId}/cancel`,
     method: 'POST',
   })
 }
@@ -133,7 +133,7 @@ export const getUserReservations = (userId) => {
   }
 
   return request({
-    url: `/library/reservations/user/${userId}`,
+    url: `/api/library/reservations/user/${userId}`,
     method: 'GET',
   })
 }

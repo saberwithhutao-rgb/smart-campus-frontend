@@ -23,7 +23,7 @@ export const getClassroomsByFloor = (floorId) => {
   }
 
   return request({
-    url: `/library/classrooms/floor/${floorId}`,
+    url: `/api/library/classrooms/floor/${floorId}`,
     method: 'GET',
   })
 }
