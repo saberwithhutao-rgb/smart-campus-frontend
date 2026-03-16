@@ -89,11 +89,11 @@ export const addPost = async (post: {
 }): Promise<Post> => {
   try {
     const response = await request.post('/api/forum/posts', post)
-    if (response.data.code === 200) {
-      return response.data.data
+    if (response) {
+      return response.data
     } else {
-      console.error('发布帖子失败:', response.data.msg)
-      throw new Error(response.data.msg || '发布帖子失败')
+      console.error('发布帖子失败:', response.msg)
+      throw new Error(response.msg || '发布帖子失败')
     }
   } catch (error) {
     console.error('发布帖子失败:', error)
@@ -102,15 +102,18 @@ export const addPost = async (post: {
 }
 
 // 分页查询所有帖子
-export const getPosts = async (page: number = 0, size: number = 10): Promise<PageResponse<Post>> => {
+export const getPosts = async (
+  page: number = 0,
+  size: number = 10,
+): Promise<PageResponse<Post>> => {
   try {
     const response = await request.get('/api/forum/posts', {
-      params: { page, size }
+      params: { page, size },
     })
-    if (response.data.code === 200) {
-      return response.data.data
+    if (response) {
+      return response.data
     } else {
-      console.error('获取帖子列表失败:', response.data.msg)
+      console.error('获取帖子列表失败:', response.msg)
       return {
         content: [],
         pageable: {
@@ -119,7 +122,7 @@ export const getPosts = async (page: number = 0, size: number = 10): Promise<Pag
           sort: { empty: true, sorted: false, unsorted: true },
           offset: page * size,
           paged: true,
-          unpaged: false
+          unpaged: false,
         },
         totalPages: 0,
         totalElements: 0,
@@ -129,7 +132,7 @@ export const getPosts = async (page: number = 0, size: number = 10): Promise<Pag
         sort: { empty: true, sorted: false, unsorted: true },
         first: page === 0,
         numberOfElements: 0,
-        empty: true
+        empty: true,
       }
     }
   } catch (error) {
@@ -142,7 +145,7 @@ export const getPosts = async (page: number = 0, size: number = 10): Promise<Pag
         sort: { empty: true, sorted: false, unsorted: true },
         offset: page * size,
         paged: true,
-        unpaged: false
+        unpaged: false,
       },
       totalPages: 0,
       totalElements: 0,
@@ -152,7 +155,7 @@ export const getPosts = async (page: number = 0, size: number = 10): Promise<Pag
       sort: { empty: true, sorted: false, unsorted: true },
       first: page === 0,
       numberOfElements: 0,
-      empty: true
+      empty: true,
     }
   }
 }
@@ -161,16 +164,16 @@ export const getPosts = async (page: number = 0, size: number = 10): Promise<Pag
 export const getPostsByCategory = async (
   categoryId: number,
   page: number = 0,
-  size: number = 10
+  size: number = 10,
 ): Promise<PageResponse<Post>> => {
   try {
     const response = await request.get(`/api/forum/posts/category/${categoryId}`, {
-      params: { page, size }
+      params: { page, size },
     })
-    if (response.data.code === 200) {
-      return response.data.data
+    if (response) {
+      return response.data
     } else {
-      console.error('获取分类帖子失败:', response.data.msg)
+      console.error('获取分类帖子失败:', response.msg)
       return {
         content: [],
         pageable: {
@@ -179,7 +182,7 @@ export const getPostsByCategory = async (
           sort: { empty: true, sorted: false, unsorted: true },
           offset: page * size,
           paged: true,
-          unpaged: false
+          unpaged: false,
         },
         totalPages: 0,
         totalElements: 0,
@@ -189,7 +192,7 @@ export const getPostsByCategory = async (
         sort: { empty: true, sorted: false, unsorted: true },
         first: page === 0,
         numberOfElements: 0,
-        empty: true
+        empty: true,
       }
     }
   } catch (error) {
@@ -202,7 +205,7 @@ export const getPostsByCategory = async (
         sort: { empty: true, sorted: false, unsorted: true },
         offset: page * size,
         paged: true,
-        unpaged: false
+        unpaged: false,
       },
       totalPages: 0,
       totalElements: 0,
@@ -212,7 +215,7 @@ export const getPostsByCategory = async (
       sort: { empty: true, sorted: false, unsorted: true },
       first: page === 0,
       numberOfElements: 0,
-      empty: true
+      empty: true,
     }
   }
 }
@@ -221,11 +224,11 @@ export const getPostsByCategory = async (
 export const getPostDetail = async (id: number): Promise<Post> => {
   try {
     const response = await request.get(`/api/forum/posts/${id}`)
-    if (response.data.code === 200) {
-      return response.data.data
+    if (response) {
+      return response.data
     } else {
-      console.error('获取帖子详情失败:', response.data.msg)
-      throw new Error(response.data.msg || '获取帖子详情失败')
+      console.error('获取帖子详情失败:', response.msg)
+      throw new Error(response.msg || '获取帖子详情失败')
     }
   } catch (error) {
     console.error('获取帖子详情失败:', error)
@@ -237,11 +240,11 @@ export const getPostDetail = async (id: number): Promise<Post> => {
 export const deletePost = async (id: number, userId: number): Promise<void> => {
   try {
     const response = await request.delete(`/api/forum/posts/${id}`, {
-      params: { userId }
+      params: { userId },
     })
     if (response.data.code !== 200) {
-      console.error('删除帖子失败:', response.data.msg)
-      throw new Error(response.data.msg || '删除帖子失败')
+      console.error('删除帖子失败:', response.msg)
+      throw new Error(response.msg || '删除帖子失败')
     }
   } catch (error) {
     console.error('删除帖子失败:', error)
@@ -257,11 +260,11 @@ export const addComment = async (comment: {
 }): Promise<Comment> => {
   try {
     const response = await request.post('/api/forum/comments', comment)
-    if (response.data.code === 200) {
-      return response.data.data
+    if (response) {
+      return response.data
     } else {
-      console.error('发表评论失败:', response.data.msg)
-      throw new Error(response.data.msg || '发表评论失败')
+      console.error('发表评论失败:', response.msg)
+      throw new Error(response.msg || '发表评论失败')
     }
   } catch (error) {
     console.error('发表评论失败:', error)
@@ -273,11 +276,11 @@ export const addComment = async (comment: {
 export const deleteComment = async (id: number, userId: number): Promise<void> => {
   try {
     const response = await request.delete(`/api/forum/comments/${id}`, {
-      params: { userId }
+      params: { userId },
     })
     if (response.data.code !== 200) {
-      console.error('删除评论失败:', response.data.msg)
-      throw new Error(response.data.msg || '删除评论失败')
+      console.error('删除评论失败:', response.msg)
+      throw new Error(response.msg || '删除评论失败')
     }
   } catch (error) {
     console.error('删除评论失败:', error)
