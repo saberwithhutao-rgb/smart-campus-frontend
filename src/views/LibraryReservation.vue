@@ -10,6 +10,7 @@ import { getFloors } from '@/api/library/floor'
 import { getClassroomsByFloor, createReservation } from '@/api/library/reservation'
 // 暂时注释掉 getSeatsByClassroom 导入，使用直接 request 请求
 // import { getSeatsByClassroom } from '@/api/library/seat'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 
 console.log('request 导入成功:', typeof request, request)
 
@@ -1052,6 +1053,11 @@ const checkUserActiveStatus = async () => {
   try {
     const userId = currentUserId.value
     console.log('查询用户活跃状态，用户ID:', userId)
+
+    // 打印当前token
+    const token =
+      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+    console.log('当前token:', token ? '存在' : '不存在')
 
     // 调用查询用户预约记录的接口
     const response = await request.get(`/api/library/reservations/user/${userId}`)
