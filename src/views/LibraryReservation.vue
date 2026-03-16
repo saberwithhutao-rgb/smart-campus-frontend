@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { useUserStore } from '@/stores/user'
@@ -38,6 +38,8 @@ const hasActiveReservation = ref(false) // 用户是否有活跃的预约或占�
 const seatReservationCounts = ref<Record<string, number>>({}) // 存储每个座位的预约人数
 const occupyDialogVisible = ref(false) // 占用确认弹窗
 const currentOccupyReservationId = ref<number>(0) // 当前要占用的预约ID
+let classroomRefreshTimer = null
+let seatRefreshTimer = null
 
 const isLoading = ref(false) // 加载状态
 const reservationInfo = ref({
@@ -99,27 +101,28 @@ interface Seat {
 // 组件挂载时，初始化数据
 onMounted(async () => {
   try {
-    // 打印当前登录用户ID
-    console.log('当前登录用户ID:', userStore.userState.userInfo?.userId)
+    // ===== 1. 先确保用户资料加载 =====
+    if (!userStore.userProfile) {
+      await userStore.fetchUserProfile()
+    }
+
+    console.log('当前登录用户ID:', userStore.userProfile?.id)
     console.log('currentUserId.value:', currentUserId.value)
 
-    // 获取楼层列表
+    // ===== 2. 获取楼层列表 =====
     const floorList = await getFloors()
-    // 对楼层列表按楼层编号排序
     floors.value = (floorList || []).sort((a, b) => {
       const floorA = Number(a.floorNum || a.id)
       const floorB = Number(b.floorNum || b.id)
       return floorA - floorB
     })
 
-    // 初始加载第一层的教室
+    // ===== 3. 初始加载第一层的教室 =====
     if (floors.value.length > 0) {
       const firstFloor = floors.value[0]
       currentFloor.value = firstFloor
-      // 从 floor 对象中提取楼层ID
       const floorId = Number(firstFloor.id || firstFloor.floorNum)
 
-      // 校验转换结果
       if (isNaN(floorId)) {
         console.error('初始化楼层ID转换失败:', firstFloor.id || firstFloor.floorNum)
         ElMessage.error('初始化失败，请刷新页面')
@@ -129,27 +132,20 @@ onMounted(async () => {
       console.log('初始化加载楼层ID:', floorId)
       await loadClassrooms(floorId)
     } else {
-      // 如果没有楼层数据，默认加载1楼
       currentFloor.value = { id: 1, floorNum: 1 }
       console.log('默认加载楼层ID: 1')
       await loadClassrooms(1)
     }
 
-    // 检查用户活跃状态
-    await checkUserActiveStatus()
-    // 查询用户活跃预约数量
-    await fetchActiveReservationCount(currentUserId.value)
-
-    // 刷新教室数据
+    // ===== 4. 刷新教室数据 =====
     await refreshAllClassroomData()
 
-    // 设置定时器，每30秒刷新一次教室数据
-    setInterval(async () => {
+    // ===== 5. 设置定时器 =====
+    classroomRefreshTimer = setInterval(async () => {
       await refreshAllClassroomData()
     }, 30000)
 
-    // 设置定时器，每3秒刷新一次座位状态
-    setInterval(async () => {
+    seatRefreshTimer = setInterval(async () => {
       if (selectedRoom.value) {
         await loadSeats(selectedRoom.value)
       }
@@ -159,6 +155,24 @@ onMounted(async () => {
     ElMessage.error('获取数据失败，请刷新页面重试')
   }
 })
+
+onUnmounted(() => {
+  if (classroomRefreshTimer) clearInterval(classroomRefreshTimer)
+  if (seatRefreshTimer) clearInterval(seatRefreshTimer)
+})
+
+// ===== 6. 使用 watch 监听用户ID，处理需要用户ID的操作 =====
+watch(
+  currentUserId,
+  async (newId) => {
+    if (newId) {
+      console.log('用户ID已加载:', newId)
+      await checkUserActiveStatus()
+      await fetchActiveReservationCount(newId)
+    }
+  },
+  { immediate: true },
+)
 
 // 加载教室列表
 const loadClassrooms = async (floorId: number | string) => {
@@ -351,7 +365,6 @@ const refreshClassroomList = async () => {
     }
 
     console.log('刷新教室列表，楼层ID:', floorId)
-    cons // 重新加载当前楼层的教室数据
     await loadClassrooms(floorId)
     console.log('教室列表刷新完成')
   } catch (error) {
@@ -400,10 +413,10 @@ const refreshAllClassroomData = async () => {
         // 移除已完成的请求
         currentRequests.delete(room.id)
 
-        if (response.data.code === 200) {
-          // 更新教室的可用座位数和占用率
-          const availableSeats = response.data.data?.availableSeats || 0
-          const totalSeats = response.data.data?.totalSeats || 0
+        if (response) {
+          // 直接使用 response，因为它就是数据本身
+          const availableSeats = response.availableSeats || 0
+          const totalSeats = response.totalSeats || 0
           const occupancyRate = totalSeats > 0 ? availableSeats / totalSeats : 1
 
           // 更新教室数据
@@ -413,10 +426,6 @@ const refreshAllClassroomData = async () => {
             rooms.value[roomIndex].totalSeats = totalSeats
             rooms.value[roomIndex].occupancyRate = occupancyRate
           }
-
-          console.log(
-            `教室 ${room.classroomName || room.name} 可用座位数: ${availableSeats}, 总座位数: ${totalSeats}, 占用率: ${occupancyRate}`,
-          )
         }
       } catch (error) {
         // 移除已失败的请求
