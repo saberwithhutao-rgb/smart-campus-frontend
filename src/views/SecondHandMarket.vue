@@ -68,6 +68,7 @@ const loadCategories = async () => {
 
     if (categoryList.value.length > 0) {
       selectedCategoryId.value = categoryList.value[0]!.id
+      console.log('默认选中分类:', selectedCategoryId.value)
       await loadPosts(0)
     }
   } catch (error) {

@@ -67,6 +67,29 @@ const timeSlots = [
   { id: 16, label: '22:00', start: '22:00' },
 ]
 
+const disabledDate = (date: Date) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const compareDate = new Date(date)
+  compareDate.setHours(0, 0, 0, 0)
+  return compareDate < today
+}
+
+// 计算当前小时+1的默认时间槽
+const getDefaultTimeSlot = () => {
+  const now = new Date()
+  const currentHour = now.getHours()
+  const defaultHour = currentHour + 1
+
+  // 如果超过22点，选22点
+  const targetHour = Math.min(defaultHour, 22)
+
+  // 找到对应的时间槽
+  const slot = timeSlots.find((s) => parseInt(s.start.split(':')[0]) === targetHour)
+  console.log('默认时间槽:', slot)
+  return slot?.id || 3 // 默认09:00
+}
+
 const selectedTimeSlot = ref(getDefaultTimeSlot()) // 默认选中的时间
 const maxDuration = ref(4) // 最大可预约时长
 
@@ -107,6 +130,9 @@ onMounted(async () => {
     console.log('当前用户ID:', currentUserId.value)
     console.log('当前登录用户ID:', userStore.userState.userInfo?.userId)
 
+    console.log('初始化完成 - selectedDate:', selectedDate.value)
+    console.log('初始化完成 - selectedTimeSlot:', selectedTimeSlot.value)
+
     // 获取场馆列表
     const venueList = await getVenues()
     venues.value = venueList
@@ -133,28 +159,6 @@ onMounted(async () => {
     ElMessage.error('获取数据失败，请刷新页面重试')
   }
 })
-
-const disabledDate = (date: Date) => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const compareDate = new Date(date)
-  compareDate.setHours(0, 0, 0, 0)
-  return compareDate < today
-}
-
-// 计算当前小时+1的默认时间槽
-const getDefaultTimeSlot = () => {
-  const now = new Date()
-  const currentHour = now.getHours()
-  const defaultHour = currentHour + 1
-
-  // 如果超过22点，选22点
-  const targetHour = Math.min(defaultHour, 22)
-
-  // 找到对应的时间槽
-  const slot = timeSlots.find((s) => parseInt(s.start.split(':')[0]) === targetHour)
-  return slot?.id || 3 // 默认09:00
-}
 // 加载场地列表
 const loadCourts = async (venueId: number) => {
   try {

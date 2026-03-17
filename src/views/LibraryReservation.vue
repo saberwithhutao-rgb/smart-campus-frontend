@@ -85,6 +85,9 @@ onMounted(async () => {
     console.log('当前登录用户ID:', userStore.userProfile?.id)
     console.log('currentUserId.value:', currentUserId.value)
 
+    console.log('初始化完成 - selectedDate:', selectedDate.value)
+    console.log('初始化完成 - selectedTimeSlot:', selectedTimeSlot.value)
+
     // ===== 2. 获取楼层列表 =====
     const floorList = await getFloors()
     floors.value = (floorList || []).sort((a, b) => {
@@ -172,6 +175,7 @@ const getDefaultTimeSlot = () => {
   const targetHour = Math.min(defaultHour, 22)
 
   const slot = timeSlots.find((s) => parseInt(s.start.split(':')[0]) === targetHour)
+  console.log('默认时间槽:', slot)
   return slot?.id || 3 // 默认09:00
 }
 
