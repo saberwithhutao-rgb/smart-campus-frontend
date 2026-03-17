@@ -135,26 +135,12 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     }
   }
 
-  // 新增：获取所有复习任务
   const fetchAllReviewTasks = async () => {
     try {
-      const response = await studyApi.getAllReviewTasks()
-      // 直接判断 response 是否是数组
-      if (Array.isArray(response)) {
-        allReviewTasks.value = response
-      }
-      // 如果是标准的 {code, data} 格式
-      else if (response && response.code === 200) {
-        allReviewTasks.value = response.data.data as unknown as StudyTask[]
-      }
-      // 如果数据直接就在 response 里
-      else if (response && response.data) {
-        allReviewTasks.value = response.data.data as unknown as StudyTask[]
-      } else {
-        console.log('【fetchAllReviewTasks】未知的响应格式:', response)
-      }
+      const response = (await studyApi.getAllReviewTasks()) as unknown as StudyTask[]
+      allReviewTasks.value = response
     } catch (error) {
-      console.error('【fetchAllReviewTasks】捕获错误:', error)
+      console.error('获取复习任务失败:', error)
     }
   }
 

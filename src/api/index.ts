@@ -236,12 +236,10 @@ const request = <T>(config: AxiosRequestConfig): Promise<T> => {
   return service(config)
     .then((res) => {
       console.log('request 收到响应，准备返回 data')
-      return res.data
+      return res.data as T
     })
     .catch((err) => {
       console.log('request 捕获错误:', err)
-      ElMessage.error('网络连接失败，请检查网络设置')
-      ElMessage.error('可能开启了VPN')
       throw err
     })
 }

@@ -35,7 +35,7 @@ const reservationInfo = ref({
   date: '',
   time: '',
   courts: [] as string[],
-  duration: 2, // 预约时长(小时)
+  duration: 1, // 预约时长(小时)
 })
 
 // 计算属性：获取当前登录用户的ID
