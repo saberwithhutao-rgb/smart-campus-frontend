@@ -289,7 +289,9 @@ const openHistory = async () => {
   isLoadingHistory.value = true
   try {
     // 只需要获取 suggestions
-    const suggestions = await studyApi.getPlanSuggestions(taskDetail.value.planId)
+    const suggestions = (await studyApi.getPlanSuggestions(
+      taskDetail.value.planId,
+    )) as unknown as ReviewSuggestion[]
     planSuggestions.value = suggestions
   } catch (error) {
     console.error('获取历史记录失败:', error)
@@ -434,7 +436,7 @@ const getCompleteButtonText = () => {
 onMounted(async () => {
   isLoading.value = true
   try {
-    const taskResponse = await studyApi.getReviewTaskDetail(taskId)
+    const taskResponse = (await studyApi.getReviewTaskDetail(taskId)) as unknown as StudyTask
     taskDetail.value = taskResponse || null
   } catch (error) {
     console.error('获取复习详情失败:', error)
@@ -498,17 +500,16 @@ const generateReviewAdvice = async () => {
 
   isGenerating.value = true
   try {
-    // 只需要调用生成接口，不需要接收返回值
+    // 调用生成接口
     await studyApi.generateReviewAdvice({
       taskId: taskDetail.value.id,
       title: taskDetail.value.title,
       reviewStage: taskDetail.value.reviewStage,
     })
 
-    // 生成成功后，重新获取当前建议
-    const suggestion = await studyApi.getCurrentSuggestion(taskDetail.value.id)
-    if (suggestion) {
-      taskDetail.value.currentSuggestion = suggestion
+    const updatedTask = (await studyApi.getReviewTaskDetail(taskId)) as unknown as StudyTask
+    if (updatedTask) {
+      taskDetail.value = updatedTask
     }
 
     ElMessage.success('复习建议生成成功')
