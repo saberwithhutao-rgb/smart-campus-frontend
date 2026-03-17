@@ -88,9 +88,9 @@ export const addPost = async (post: {
   userId: number
 }): Promise<Post> => {
   try {
-    const response = await request.post('/api/forum/posts', post)
+    const response = (await request.post('/api/forum/posts', post)) as unknown as Post
     if (response) {
-      return response.data
+      return response
     } else {
       console.error('发布帖子失败:', response.msg)
       throw new Error(response.msg || '发布帖子失败')
@@ -107,13 +107,12 @@ export const getPosts = async (
   size: number = 10,
 ): Promise<PageResponse<Post>> => {
   try {
-    const response = await request.get('/api/forum/posts', {
+    const response = (await request.get('/api/forum/posts', {
       params: { page, size },
-    })
+    })) as unknown as PageResponse<Post>
     console.log('getPosts response:', response)
-    console.log('getPosts response.data:', response.data)
     if (response) {
-      return response.data
+      return response
     } else {
       console.error('获取帖子列表失败:', response.msg)
       return {
@@ -169,11 +168,11 @@ export const getPostsByCategory = async (
   size: number = 10,
 ): Promise<PageResponse<Post>> => {
   try {
-    const response = await request.get(`/api/forum/posts/category/${categoryId}`, {
+    const response = (await request.get(`/api/forum/posts/category/${categoryId}`, {
       params: { page, size },
-    })
+    })) as unknown as PageResponse<Post>
     if (response) {
-      return response.data
+      return response
     } else {
       console.error('获取分类帖子失败:', response.msg)
       return {
@@ -225,9 +224,9 @@ export const getPostsByCategory = async (
 // 获取帖子详情（包含评论）
 export const getPostDetail = async (id: number): Promise<Post> => {
   try {
-    const response = await request.get(`/api/forum/posts/${id}`)
+    const response = (await request.get(`/api/forum/posts/${id}`)) as unknown as Post
     if (response) {
-      return response.data
+      return response
     } else {
       console.error('获取帖子详情失败:', response.msg)
       throw new Error(response.msg || '获取帖子详情失败')
@@ -261,9 +260,9 @@ export const addComment = async (comment: {
   userId: number
 }): Promise<Comment> => {
   try {
-    const response = await request.post('/api/forum/comments', comment)
+    const response = (await request.post('/api/forum/comments', comment)) as unknown as Comment
     if (response) {
-      return response.data
+      return response
     } else {
       console.error('发表评论失败:', response.msg)
       throw new Error(response.msg || '发表评论失败')
