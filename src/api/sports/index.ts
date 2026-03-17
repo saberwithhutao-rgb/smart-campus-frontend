@@ -4,7 +4,7 @@ import request from '@/utils/request'
 export const getVenues = async () => {
   try {
     const response = await request.get('/api/sports/venues')
-    return response.data || []
+    return response
   } catch (error) {
     console.error('获取场馆列表失败:', error)
     throw error
@@ -15,7 +15,7 @@ export const getVenues = async () => {
 export const getCourtsByVenue = async (venueId: number) => {
   try {
     const response = await request.get(`/api/sports/courts/venue/${venueId}`)
-    return response.data || []
+    return response
   } catch (error) {
     console.error('获取场地列表失败:', error)
     throw error
@@ -26,7 +26,7 @@ export const getCourtsByVenue = async (venueId: number) => {
 export const getAvailableCourts = async (venueId: number) => {
   try {
     const response = await request.get(`/api/sports/venues/${venueId}/available-courts`)
-    return response.data
+    return response
   } catch (error) {
     console.error('获取可用场地数失败:', error)
     throw error
@@ -77,7 +77,7 @@ export const leaveReservation = async (reservationId: number) => {
 export const getUserReservations = async () => {
   try {
     const response = await request.get('/api/sports/reservations/user')
-    return response.data || []
+    return response
   } catch (error) {
     console.error('获取用户预约记录失败:', error)
     throw error
@@ -88,7 +88,7 @@ export const getUserReservations = async () => {
 export const getCourtReservations = async (courtId: number) => {
   try {
     const response = await request.get(`/api/sports/reservations/court/${courtId}`)
-    return response.data || []
+    return response
   } catch (error) {
     console.error('获取场地预约失败:', error)
     throw error
