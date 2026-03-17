@@ -706,7 +706,6 @@ watch([studyPlans, completionRate], () => {
   --text-color-light: #86909c;
 
   /* 边框和阴影 */
-  --border-color: var(--border-color);
   --border-color-light: #f0f2f5;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
