@@ -685,7 +685,7 @@ const getReservationBySeatId = async (seatId: number) => {
       const response = await request.get(`/api/library/reservations/seat/${seatId}`)
       console.log('预约记录接口响应:', response.data)
 
-      if (response.data.code === 200) {
+      if (response) {
         const reservationData = response.data
         console.log('从接口获取预约记录:', reservationData)
         return reservationData || null
@@ -1448,8 +1448,7 @@ const getSeatDetails = async (seatId) => {
       const response = await request.get(`/api/library/reservations/seat/${currentSeatData.id}`)
       console.log('预约记录接口响应:', response.data)
 
-      if (response.data.code === 200) {
-        // 如果 data 是数组，直接使用；如果是单个对象，包装成数组
+      if (response) {
         const reservationData = response.data
         let allReservations = []
         if (Array.isArray(reservationData)) {

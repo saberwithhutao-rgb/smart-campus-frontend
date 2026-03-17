@@ -603,7 +603,7 @@ const handleReserveCourtFromDetail = async () => {
           endTime,
         })
 
-        if (response.data.code === 200) {
+        if (response) {
           ElMessage.success('预约成功！')
           // 刷新场地列表
           await loadCourts(currentVenue.value.id)

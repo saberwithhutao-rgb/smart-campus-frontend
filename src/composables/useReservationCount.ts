@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
+import request from '@/utils/request'
 
 export function useReservationCount() {
   const activeCount = ref(0)
@@ -16,18 +17,11 @@ export function useReservationCount() {
   const fetchActiveReservationCount = async () => {
     try {
       isLoading.value = true
-      const response = await axios.get(`/api/library/reservations/user`)
-
-      if (response.data.code === 200) {
-        const reservations = response.data.data || []
-        // 过滤出状态为 active 的记录
-        const activeReservations = reservations.filter((item: any) => item.status === 'active')
-        activeCount.value = activeReservations.length
-        console.log('用户活跃预约数量:', activeCount.value)
-      } else {
-        console.error('查询用户预约记录失败:', response.data.msg)
-        activeCount.value = 0
-      }
+      // 改用 request，保持统一
+      const response = (await request.get('/api/library/reservations/user')) as unknown as any
+      const activeReservations = response.filter((item: any) => item.status === 'active')
+      activeCount.value = activeReservations.length
+      console.log('用户活跃预约数量:', activeCount.value)
     } catch (error) {
       console.error('调用查询用户预约记录接口失败:', error)
       activeCount.value = 0
