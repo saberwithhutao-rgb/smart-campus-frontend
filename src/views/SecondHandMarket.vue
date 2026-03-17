@@ -44,10 +44,14 @@ const showRightArrow = ref(false)
 
 // 初始化数据
 onMounted(async () => {
+  // 确保用户信息已加载
+  if (!userStore.userProfile) {
+    await userStore.fetchUserProfile()
+  }
+
+  console.log('当前用户ID:', currentUserId.value)
   await loadCategories()
   await loadPosts()
-
-  // 初始化滚动状态
   nextTick(() => {
     updateArrowVisibility()
   })
