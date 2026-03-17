@@ -17,7 +17,7 @@ import {
 // 响应式数据
 const userStore = useUserStore()
 const currentVenue = ref<any>(null) // 当前场馆
-const selectedDate = ref(new Date()) // 选中的日期
+const selectedDate = ref(new Date().toISOString().split('T')[0]) // 选中的日期
 const selectedCourts = ref<string[]>([]) // 选中的场地
 const isConfirmDialogVisible = ref(false) // 确认预约对话框
 const leaveDialogVisible = ref(false) // 离开场地对话框

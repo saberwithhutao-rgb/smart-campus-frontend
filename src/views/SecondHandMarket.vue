@@ -8,6 +8,8 @@ import * as forumApi from '@/api/forum'
 import { useUserStore } from '@/stores/user'
 
 // 响应式数据
+const currentUserNickname = computed(() => userStore.fullUserInfo?.username || '游客')
+
 const selectedCategoryId = ref<number | null>(null)
 const selectedPostId = ref<number | null>(null)
 const newComment = ref('')
@@ -68,6 +70,7 @@ const loadCategories = async () => {
 
     if (categoryList.value.length > 0) {
       selectedCategoryId.value = categoryList.value[0]!.id
+      publishCategoryId.value = categoryList.value[0]!.id
       console.log('默认选中分类:', selectedCategoryId.value)
       await loadPosts(0)
     }
@@ -615,6 +618,8 @@ const updateArrowVisibility = () => {
               :category-list="categoryList"
               placeholder="选择话题"
               style="width: 140px"
+              popper-class="topic-select-popper"
+              teleported
             />
           </div>
           <div class="publish-input-wrapper">
@@ -660,6 +665,10 @@ const updateArrowVisibility = () => {
 </template>
 
 <style scoped>
+.topic-select-popper {
+  position: fixed !important;
+  z-index: 9999;
+}
 .campus-forum {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);

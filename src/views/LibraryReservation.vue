@@ -26,7 +26,7 @@ const {
 const currentFloor = ref<Floor | null>(null) // 当前楼层
 const selectedRoom = ref<string>('') // 选中的教室
 const selectedClassroom = ref<Classroom | null>(null) // 存储当前选中的教室
-const selectedDate = ref(new Date()) // 选中的日期
+const selectedDate = ref(new Date().toISOString().split('T')[0]) // 选中的日期
 const selectedSeats = ref<string[]>([]) // 选中的座位
 const isConfirmDialogVisible = ref(false) // 确认预约对话框
 const leaveDialogVisible = ref(false) // 离开座位对话框
