@@ -11,7 +11,6 @@ import type { Seat, Reservation, ReservationData } from '@/api/library/reservati
 import { getClassroomsByFloor } from '@/api/library/reservation'
 // 暂时注释掉 getSeatsByClassroom 导入，使用直接 request 请求
 // import { getSeatsByClassroom } from '@/api/library/seat'
-import { STORAGE_KEYS } from '@/utils/storageKeys'
 
 console.log('request 导入成功:', typeof request, request)
 
