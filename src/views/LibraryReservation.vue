@@ -1593,6 +1593,8 @@ const grid = computed(() => {
           </h3>
           <div class="info-grid">
             <div class="info-item">
+              <div>当前选择时间: {{ selectedTimeSlot }}</div>
+              <div>当前选择日期: {{ selectedDate }}</div>
               <label>选择日期：</label>
               <el-date-picker
                 v-model="selectedDate"

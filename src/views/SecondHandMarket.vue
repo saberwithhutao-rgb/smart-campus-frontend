@@ -63,7 +63,7 @@ const loadCategories = async () => {
     console.log('开始加载分类...')
     const res = await forumApi.getCategories()
     console.log('加载分类返回:', res)
-    categoryList.value = res || []
+    categoryList.value = Array.isArray(res) ? res : []
     console.log('分类列表:', categoryList.value)
 
     if (categoryList.value.length > 0) {
