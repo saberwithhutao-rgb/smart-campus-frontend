@@ -110,6 +110,8 @@ export const getPosts = async (
     const response = await request.get('/api/forum/posts', {
       params: { page, size },
     })
+    console.log('getPosts response:', response)
+    console.log('getPosts response.data:', response.data)
     if (response) {
       return response.data
     } else {
