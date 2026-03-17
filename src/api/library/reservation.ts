@@ -55,7 +55,7 @@ export const getFloors = (): Promise<{ code: number; data: Floor[] }> => {
 }
 
 export const getClassroomsByFloor = (
-  floorId: number
+  floorId: number,
 ): Promise<{ code: number; data: Classroom[] }> => {
   if (!floorId || typeof floorId !== 'number') {
     return Promise.reject(new Error('楼层 ID 必须是数字'))
@@ -68,7 +68,7 @@ export const getClassroomsByFloor = (
 }
 
 export const getSeatsByClassroom = (
-  classroomId: number
+  classroomId: number,
 ): Promise<{ code: number; data: Seat[] }> => {
   if (!classroomId || typeof classroomId !== 'number') {
     return Promise.reject(new Error('教室 ID 必须是数字'))
@@ -81,7 +81,7 @@ export const getSeatsByClassroom = (
 }
 
 export const createReservation = (
-  data: ReservationData
+  data: ReservationData,
 ): Promise<{ code: number; data: Reservation; msg?: string }> => {
   if (!data || typeof data !== 'object') {
     return Promise.reject(new Error('预约数据必须是对象'))
@@ -110,9 +110,7 @@ export const createReservation = (
   })
 }
 
-export const occupySeat = (
-  reservationId: number
-): Promise<{ code: number; data: null }> => {
+export const occupySeat = (reservationId: number): Promise<{ code: number; data: null }> => {
   if (!reservationId || typeof reservationId !== 'number') {
     return Promise.reject(new Error('预约 ID 必须是数字'))
   }
@@ -123,9 +121,7 @@ export const occupySeat = (
   })
 }
 
-export const cancelReservation = (
-  reservationId: number
-): Promise<{ code: number; data: null }> => {
+export const cancelReservation = (reservationId: number): Promise<{ code: number; data: null }> => {
   if (!reservationId || typeof reservationId !== 'number') {
     return Promise.reject(new Error('预约 ID 必须是数字'))
   }
@@ -136,15 +132,9 @@ export const cancelReservation = (
   })
 }
 
-export const getUserReservations = (
-  userId: number
-): Promise<{ code: number; data: Reservation[] }> => {
-  if (!userId || typeof userId !== 'number') {
-    return Promise.reject(new Error('用户 ID 必须是数字'))
-  }
-
+export const getUserReservations = (): Promise<{ code: number; data: Reservation[] }> => {
   return request({
-    url: `/api/library/reservations/user/${userId}`,
+    url: `/api/library/reservations/user`,
     method: 'GET',
   })
 }
