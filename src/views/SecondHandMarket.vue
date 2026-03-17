@@ -83,6 +83,8 @@ const loadPosts = async (page: number = 0) => {
       result = await forumApi.getPosts(page, pageSize.value)
     }
 
+    console.log('加载帖子返回:', result)
+
     // 确保result存在，并且是预期的结构
     if (result) {
       // 适配后端数据结构
