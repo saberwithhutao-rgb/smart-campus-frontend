@@ -123,7 +123,10 @@
                   <span class="setting-label">系统通知</span>
                   <span class="setting-desc">接收系统消息提醒</span>
                 </div>
-                <el-switch v-model="settings.systemNotification" />
+                <el-switch
+                  v-model="settings.systemNotification"
+                  @change="handleSystemNotificationChange"
+                />
               </div>
 
               <div class="setting-item">
@@ -131,7 +134,7 @@
                   <span class="setting-label">学习提醒</span>
                   <span class="setting-desc">每日学习计划提醒</span>
                 </div>
-                <el-switch v-model="settings.studyReminder" />
+                <el-switch v-model="settings.studyReminder" @change="handleStudyReminderChange" />
               </div>
             </div>
 
@@ -152,7 +155,7 @@
                   <span class="setting-label">公开个人资料</span>
                   <span class="setting-desc">允许其他用户查看您的资料</span>
                 </div>
-                <el-switch v-model="settings.publicProfile" />
+                <el-switch v-model="settings.publicProfile" @change="handlePublicProfileChange" />
               </div>
 
               <div class="setting-item">
@@ -160,7 +163,7 @@
                   <span class="setting-label">学习数据共享</span>
                   <span class="setting-desc">允许匿名学习数据用于改进服务</span>
                 </div>
-                <el-switch v-model="settings.shareData" />
+                <el-switch v-model="settings.shareData" @change="handleShareDataChange" />
               </div>
             </div>
 
@@ -183,54 +186,35 @@ import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
+import {
+  DEFAULT_USER_SETTINGS,
+  applyThemeSettings,
+  applyUserSettings,
+  ensureNotificationPermission,
+  getUserSettings,
+  saveUserSettings,
+  syncAnonymousStudyAnalytics,
+  syncPublicProfileSnapshot,
+  type UserSettings,
+} from '@/utils/userSettings'
 
 const router = useRouter()
 const isSaving = ref(false)
 
 // 设置数据
-const settings = reactive({
-  // 外观
-  darkMode: false,
-  themeColor: '#409eff',
-
-  // 特效
-  bubbleEffect: true,
-  bubbleCount: 60,
-  bubbleSize: 100,
-
-  // 通知
-  systemNotification: true,
-  studyReminder: true,
-
-  // 隐私
-  publicProfile: true,
-  shareData: false,
-})
+const settings = reactive<UserSettings>({ ...DEFAULT_USER_SETTINGS })
 
 // 加载设置
 const loadSettings = () => {
-  const saved = localStorage.getItem('userSettings')
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved)
-      Object.assign(settings, parsed)
-    } catch (e) {
-      console.error('加载设置失败:', e)
-    }
-  }
+  Object.assign(settings, getUserSettings())
 }
 
 // 恢复默认
 const resetSettings = () => {
-  settings.darkMode = false
-  settings.themeColor = '#409eff'
-  settings.bubbleEffect = true
-  settings.bubbleCount = 60
-  settings.bubbleSize = 100
-  settings.systemNotification = true
-  settings.studyReminder = true
-  settings.publicProfile = true
-  settings.shareData = false
+  Object.assign(settings, DEFAULT_USER_SETTINGS)
+  applyThemeSettings(settings)
+  ElMessage.info('已恢复为默认设置，保存后生效')
 }
 
 // 处理设置变更
@@ -240,6 +224,57 @@ const handleDarkModeChange = (val: boolean) => {
 
 const handleThemeColorChange = (val: string) => {
   document.documentElement.style.setProperty('--primary-color', val)
+}
+
+const handleSystemNotificationChange = async (val: boolean) => {
+  if (!val) {
+    ElMessage.info('已关闭系统通知')
+    return
+  }
+
+  const permission = await ensureNotificationPermission()
+  if (permission === 'granted') {
+    ElMessage.success('系统通知已开启，后续将优先使用浏览器通知')
+    return
+  }
+
+  if (permission === 'unsupported') {
+    ElMessage.warning('当前浏览器不支持系统通知，将仅使用站内提醒')
+    return
+  }
+
+  ElMessage.warning('浏览器通知权限未开启，将继续使用站内提醒')
+}
+
+const handleStudyReminderChange = (val: boolean) => {
+  if (!val) {
+    localStorage.removeItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
+    ElMessage.info('已关闭每日学习提醒')
+    return
+  }
+
+  ElMessage.success('已开启每日学习提醒，应用打开期间会按天提醒')
+}
+
+const handlePublicProfileChange = (val: boolean) => {
+  if (val) {
+    syncPublicProfileSnapshot()
+    ElMessage.success('已开启公开个人资料')
+    return
+  }
+
+  localStorage.removeItem(STORAGE_KEYS.PUBLIC_PROFILE_SNAPSHOT)
+  ElMessage.info('已设为私密资料，仅保留本人可见')
+}
+
+const handleShareDataChange = (val: boolean) => {
+  if (val) {
+    ElMessage.success('已开启匿名学习数据共享，仅同步统计结果')
+    return
+  }
+
+  syncAnonymousStudyAnalytics()
+  ElMessage.info('已关闭学习数据共享，并清除本地匿名统计')
 }
 
 // 处理特效开关
@@ -261,14 +296,24 @@ const handleBubbleSizeChange = (val: number) => {
 const saveSettings = async () => {
   isSaving.value = true
   try {
-    localStorage.setItem('userSettings', JSON.stringify(settings))
-
-    // 触发总设置变更事件
+    const nextSettings = { ...settings }
+    saveUserSettings(nextSettings)
+    applyUserSettings(nextSettings)
     window.dispatchEvent(
       new CustomEvent('settings-changed', {
-        detail: { ...settings },
+        detail: nextSettings,
       }),
     )
+
+    if (nextSettings.publicProfile) {
+      syncPublicProfileSnapshot()
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.PUBLIC_PROFILE_SNAPSHOT)
+    }
+
+    if (!nextSettings.shareData) {
+      syncAnonymousStudyAnalytics()
+    }
 
     ElMessage.success('设置保存成功')
     setTimeout(() => router.back(), 1500)
@@ -281,6 +326,7 @@ const saveSettings = async () => {
 
 onMounted(() => {
   loadSettings()
+  applyThemeSettings(settings)
 })
 </script>
 

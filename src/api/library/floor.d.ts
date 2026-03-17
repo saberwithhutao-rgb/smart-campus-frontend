@@ -1,37 +1,23 @@
 // src/api/library/floor.d.ts
 
-/**
- * 楼层信息接口
- */
+// 楼层类型
 export interface Floor {
-  /** 楼层 ID */
   id: number
-  /** 楼层编号 */
   floorNum: number
-  /** 楼层名称（可选） */
-  name?: string
+  description?: string
 }
 
-/**
- * 教室信息接口
- */
+// 教室类型
 export interface Classroom {
-  /** 教室 ID */
   id: number
-  /** 教室名称 */
-  classroomName?: string
-  /** 教室名称备用字段 */
-  name?: string
-  /** 所属楼层 ID */
+  classroomName: string
   floorId: number
-  /** 总座位数 */
-  totalSeats?: number
-  /** 可用座位数 */
-  availableSeats?: number
-  /** 占用率 */
+  seatCount: number
+  floor?: Floor
+  availableSeats?: number | null
+  totalSeats?: number | null
   occupancyRate?: number
 }
-
 /**
  * 获取楼层列表
  * @returns 楼层列表 Promise

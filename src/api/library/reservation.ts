@@ -1,26 +1,51 @@
 // src/api/library/reservation.ts
 import request from '@/utils/request'
+import type { Classroom, Floor } from './floor'
 
-// 定义类型接口
-export interface Floor {
-  id: number
-  name: string
-  [key: string]: any
-}
-
-export interface Classroom {
-  id: number
-  name: string
-  floorId: number
-  [key: string]: any
-}
-
+// 座位类型
 export interface Seat {
   id: number
-  name: string
   classroomId: number
+  seatCode: string
+  status: 'available' | 'occupied' | 'reserved'
+  classroom?: Classroom
+}
+
+// 预约类型
+export interface Reservation {
+  id: number
+  userId: number
+  seatId: number
+  classroomId: number
+  reserveDate: string
+  startTime: string
+  duration: number
+  endTime: string
+  type: string
   status: string
-  [key: string]: any
+  createdAt: string
+  actualEndTime?: string | null
+  actualDurationMinutes?: number | null
+  seat?: Seat
+  classroom?: Classroom
+}
+
+// 预约数据 DTO（用于创建预约）
+export interface ReservationData {
+  seatId: number
+  classroomId: number
+  reserveDate: string
+  startTime: string
+  duration: number
+  endTime: string
+  type: string
+}
+
+// 可用座位数 DTO
+export interface AvailableSeatsDTO {
+  totalSeats: number
+  usedSeats: number
+  availableSeats: number
 }
 
 export interface ReservationData {
@@ -43,7 +68,7 @@ export interface Reservation {
   startTime: string
   endTime: string
   status: string
-  [key: string]: any
+  type: string
 }
 
 // API 函数

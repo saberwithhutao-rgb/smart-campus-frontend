@@ -67,7 +67,7 @@ const timeSlots = [
   { id: 16, label: '22:00', start: '22:00' },
 ]
 
-const selectedTimeSlot = ref(3) // 默认选中的时间
+const selectedTimeSlot = ref(getDefaultTimeSlot()) // 默认选中的时间
 const maxDuration = ref(4) // 最大可预约时长
 
 // 监听预约时间变化，动态计算最大可预约时长
@@ -134,6 +134,27 @@ onMounted(async () => {
   }
 })
 
+const disabledDate = (date: Date) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const compareDate = new Date(date)
+  compareDate.setHours(0, 0, 0, 0)
+  return compareDate < today
+}
+
+// 计算当前小时+1的默认时间槽
+const getDefaultTimeSlot = () => {
+  const now = new Date()
+  const currentHour = now.getHours()
+  const defaultHour = currentHour + 1
+
+  // 如果超过22点，选22点
+  const targetHour = Math.min(defaultHour, 22)
+
+  // 找到对应的时间槽
+  const slot = timeSlots.find((s) => parseInt(s.start.split(':')[0]) === targetHour)
+  return slot?.id || 3 // 默认09:00
+}
 // 加载场地列表
 const loadCourts = async (venueId: number) => {
   try {
@@ -677,18 +698,7 @@ const getGridStyle = () => {
                 v-model="selectedDate"
                 type="date"
                 placeholder="选择日期"
-                :disabled-date="
-                  (date: Date) => {
-                    // 创建一个只包含年月日的今天日期对象
-                    const today = new Date()
-                    today.setHours(0, 0, 0, 0)
-                    // 创建一个只包含年月日的传入日期对象
-                    const compareDate = new Date(date)
-                    compareDate.setHours(0, 0, 0, 0)
-                    // 禁用今天之前的日期
-                    return compareDate < today
-                  }
-                "
+                :disabled-date="disabledDate"
                 format="YYYY-MM-DD"
                 value-format="YYYY-MM-DD"
               />

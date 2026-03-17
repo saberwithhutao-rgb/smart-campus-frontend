@@ -9,6 +9,12 @@
         <div class="profile-card">
           <div class="profile-header">
             <h2 class="profile-title">个人信息</h2>
+            <span
+              class="visibility-badge"
+              :class="publicProfileEnabled ? 'is-public' : 'is-private'"
+            >
+              {{ publicProfileEnabled ? '公开资料' : '私密资料' }}
+            </span>
           </div>
 
           <div class="profile-info">
@@ -31,6 +37,13 @@
             </div>
 
             <!-- 基本信息网格 -->
+            <div class="privacy-tip">
+              {{
+                publicProfileEnabled
+                  ? '其他页面可读取你的公开资料快照。'
+                  : '当前资料仅本人可见，不对外公开。'
+              }}
+            </div>
             <div class="info-grid">
               <div class="info-item">
                 <span class="info-label">昵称：</span>
@@ -115,16 +128,19 @@
 
 <script setup lang="ts">
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
+import { getUserSettings, syncPublicProfileSnapshot } from '@/utils/userSettings'
 
 // 路由实例
 const router = useRouter()
 
 // 用户状态管理
 const userStore = useUserStore()
+const publicProfileEnabled = ref(getUserSettings().publicProfile)
 
 // 从 store 获取完整用户信息
 const userInfo = computed(() => {
@@ -160,10 +176,37 @@ const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
 }
 
+const syncVisibilityState = () => {
+  publicProfileEnabled.value = getUserSettings().publicProfile
+}
+
+const handleSettingsChanged = () => {
+  syncVisibilityState()
+
+  if (publicProfileEnabled.value) {
+    syncPublicProfileSnapshot({
+      username: userInfo.value.nickname,
+      avatar: userInfo.value.avatar,
+      college: userInfo.value.college,
+      major: userInfo.value.major,
+      grade: userInfo.value.grade,
+    })
+  }
+}
+
+const handleStorageChange = (event: StorageEvent) => {
+  if (event.key === STORAGE_KEYS.USER_SETTINGS) {
+    syncVisibilityState()
+  }
+}
+
 // 生命周期钩子 - 初始化和窗口大小监听
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
+  window.addEventListener('settings-changed', handleSettingsChanged)
+  window.addEventListener('storage', handleStorageChange)
+  handleSettingsChanged()
 
   // 确保用户信息已加载
   userStore.restoreFromStorage?.()
@@ -175,6 +218,12 @@ onMounted(() => {
       console.error('获取用户资料失败:', err)
     })
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkScreenSize)
+  window.removeEventListener('settings-changed', handleSettingsChanged)
+  window.removeEventListener('storage', handleStorageChange)
 })
 
 // 刷新用户信息
@@ -266,7 +315,7 @@ const getUserStatusText = (status?: number) => {
 /* 主容器 */
 .user-center {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: var(--bg-color);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
   flex-direction: column;
@@ -278,7 +327,7 @@ const getUserStatusText = (status?: number) => {
   flex: 1;
   margin-top: 70px;
   padding: 24px;
-  background-color: #f5f7fa;
+  background-color: var(--bg-color);
   min-height: calc(100vh - 70px);
 }
 
@@ -292,7 +341,7 @@ const getUserStatusText = (status?: number) => {
 /* 个人信息卡片 */
 .profile-card,
 .security-card {
-  background-color: #fff;
+  background-color: var(--surface-color);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   padding: 24px;
@@ -311,6 +360,10 @@ const getUserStatusText = (status?: number) => {
   margin-bottom: 24px;
   border-bottom: 1px solid #f0f0f0;
   padding-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .profile-title {
@@ -320,10 +373,36 @@ const getUserStatusText = (status?: number) => {
   margin: 0;
 }
 
+.visibility-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.visibility-badge.is-public {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.visibility-badge.is-private {
+  background: #fef3f2;
+  color: #b42318;
+}
+
 .profile-info {
   display: flex;
   flex-direction: column;
   gap: 32px;
+}
+
+.privacy-tip {
+  margin-top: -12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #f5f7fa;
+  color: #606266;
+  font-size: 13px;
 }
 
 /* 头像区域 */
@@ -340,7 +419,7 @@ const getUserStatusText = (status?: number) => {
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid #f0f9ff;
-  background-color: #f5f7fa;
+  background-color: var(--bg-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -373,7 +452,7 @@ const getUserStatusText = (status?: number) => {
 .btn-text {
   padding: 6px 16px;
   background: transparent;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 13px;
   color: #606266;
@@ -382,7 +461,7 @@ const getUserStatusText = (status?: number) => {
 }
 
 .btn-text:hover {
-  background-color: #f5f7fa;
+  background-color: var(--bg-color);
   border-color: #409eff;
   color: #409eff;
 }
@@ -392,7 +471,7 @@ const getUserStatusText = (status?: number) => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px 30px;
-  background-color: #fafafa;
+  background-color: var(--bg-color-light);
   padding: 20px;
   border-radius: 8px;
 }

@@ -5,10 +5,9 @@ import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { useUserStore } from '@/stores/user'
 import { useReservationCount } from '@/composables/useReservationCount'
 import request from '@/utils/request'
-// 直接从各个文件导入函数，避免通过 index.js 导致的模块加载问题
-// 导入函数
 import { getFloors } from '@/api/library/floor'
 import type { Floor, Classroom } from '@/api/library/floor'
+import type { Seat, Reservation } from '@/api/library/reservation'
 import { getClassroomsByFloor } from '@/api/library/reservation'
 // 暂时注释掉 getSeatsByClassroom 导入，使用直接 request 请求
 // import { getSeatsByClassroom } from '@/api/library/seat'
@@ -32,11 +31,8 @@ const selectedDate = ref(new Date()) // 选中的日期
 const selectedSeats = ref<string[]>([]) // 选中的座位
 const isConfirmDialogVisible = ref(false) // 确认预约对话框
 const leaveDialogVisible = ref(false) // 离开座位对话框
-const currentSeat = ref<any>(null) // 当前点击座位
 const currentClassroomName = ref('') // 当前教室名
 const seatDetailDialogVisible = ref(false) // 座位详情对话框
-const currentSeatDetails = ref<any>(null) // 当前座位详情
-const currentSeatReservations = ref<any[]>([]) // 当前座位的预约列表
 const hasActiveReservation = ref(false) // 用户是否有活跃的预约或占用记录
 const seatReservationCounts = ref<Record<string, number>>({}) // 存储每个座位的预约人数
 const occupyDialogVisible = ref(false) // 占用确认弹窗
@@ -73,30 +69,11 @@ const seatUsageInfo = ref<
 const floors = ref<Floor[]>([])
 
 // 座位列表
-const rooms = ref<Room[]>([])
-const seats = ref<any[]>([])
-
-// 教室类型
-interface Room {
-  id: number
-  name?: string
-  classroomName?: string
-  floorId: number
-  floor?: number
-  totalSeats?: number
-  seatCount?: number
-  availableSeats: number
-  occupancyRate: number
-}
-
-// 座位类型
-interface Seat {
-  id: number
-  classroomId: number
-  seatNumber: string
-  seatCode: string
-  status: 'available' | 'occupied'
-}
+const rooms = ref<Classroom[]>([])
+const seats = ref<Seat[]>([])
+const currentSeat = ref<Seat | null>(null)
+const currentSeatDetails = ref<Seat | null>(null)
+const currentSeatReservations = ref<Reservation[]>([])
 
 // 组件挂载时，初始化数据
 onMounted(async () => {
@@ -180,6 +157,25 @@ watch(
   { immediate: true },
 )
 
+const disabledDate = (date: Date) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const compareDate = new Date(date)
+  compareDate.setHours(0, 0, 0, 0)
+  return compareDate < today
+}
+
+const getDefaultTimeSlot = () => {
+  const now = new Date()
+  const currentHour = now.getHours()
+  const defaultHour = currentHour + 1
+
+  const targetHour = Math.min(defaultHour, 22)
+
+  const slot = timeSlots.find((s) => parseInt(s.start.split(':')[0]) === targetHour)
+  return slot?.id || 3 // 默认09:00
+}
+
 // 加载教室列表
 const loadClassrooms = async (floorId: number) => {
   try {
@@ -207,7 +203,7 @@ const loadClassrooms = async (floorId: number) => {
 }
 
 // 加载座位列表
-const loadSeats = async (classroomId) => {
+const loadSeats = async (classroomId: number | string) => {
   console.log('开始加载座位，教室ID:', classroomId)
 
   try {
@@ -218,8 +214,7 @@ const loadSeats = async (classroomId) => {
     const response = await request.get(`/api/library/seats/classroom/${numericClassroomId}`)
     console.log('请求成功，响应:', response)
 
-    // ✅ 修改这里：response 直接就是数组，不需要 .data.data
-    const seatData = response || []
+    const seatData = (response || []) as unknown as Seat[]
     console.log('座位数据:', seatData)
     console.log('座位数据类型:', typeof seatData)
     console.log('是否为数组:', Array.isArray(seatData))
@@ -236,7 +231,7 @@ const loadSeats = async (classroomId) => {
       console.log('开始处理座位数据，长度:', seatData.length)
       for (const seat of seatData) {
         console.log(`处理座位:`, seat)
-        const seatCode = seat.seatCode || seat.seatNumber
+        const seatCode = seat.seatCode
         console.log(`座位编码:`, seatCode)
         const seatId = `${numericClassroomId}-${seatCode}`
         console.log(`生成的 seatId:`, seatId)
@@ -259,8 +254,6 @@ const loadSeats = async (classroomId) => {
             let activeReservationCount = 0
             if (Array.isArray(reservations)) {
               activeReservationCount = reservations.filter((r) => r.status === 'active').length
-            } else if (reservations && reservations.status === 'active') {
-              activeReservationCount = 1
             }
             seatReservationCounts.value[seat.seatCode] = activeReservationCount
             console.log(`座位 ${seat.seatCode} 预约人数:`, activeReservationCount)
@@ -480,7 +473,7 @@ const timeSlots = [
   { id: 16, label: '22:00', start: '22:00' },
 ]
 
-const selectedTimeSlot = ref(2) // 默认选中的时间
+const selectedTimeSlot = ref(getDefaultTimeSlot()) // 默认选中的时间
 const maxDuration = ref(4) // 最大可预约时长
 
 // 监听预约时间变化，动态计算最大可预约时长
@@ -505,7 +498,7 @@ watch(selectedTimeSlot, (newSlotId) => {
 })
 
 // 座位状态类型
-type SeatStatus = 'available' | 'occupied' | 'selected' | 'podium' | 'door' | 'empty'
+type SeatStatus = 'available' | 'occupied' | 'reserved' | 'selected' | 'podium' | 'door' | 'empty'
 
 // 所有教室的座位数据
 const roomSeats = ref<Record<string, Record<string, SeatStatus>>>({})
@@ -1598,18 +1591,7 @@ const grid = computed(() => {
                 v-model="selectedDate"
                 type="date"
                 placeholder="选择日期"
-                :disabled-date="
-                  (date: Date) => {
-                    // 创建一个只包含年月日的今天日期对象
-                    const today = new Date()
-                    today.setHours(0, 0, 0, 0)
-                    // 创建一个只包含年月日的传入日期对象
-                    const compareDate = new Date(date)
-                    compareDate.setHours(0, 0, 0, 0)
-                    // 禁用今天之前的日期
-                    return compareDate < today
-                  }
-                "
+                :disabled-date="disabledDate"
                 format="YYYY-MM-DD"
                 value-format="YYYY-MM-DD"
               />

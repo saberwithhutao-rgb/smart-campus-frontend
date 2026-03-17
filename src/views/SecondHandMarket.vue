@@ -65,6 +65,11 @@ const loadCategories = async () => {
     console.log('加载分类返回:', res)
     categoryList.value = res || []
     console.log('分类列表:', categoryList.value)
+
+    if (categoryList.value.length > 0) {
+      selectedCategoryId.value = categoryList.value[0]!.id
+      await loadPosts(0)
+    }
   } catch (error) {
     ElMessage.error('加载分类失败')
     console.error('加载分类失败:', error)

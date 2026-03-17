@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import GlobalNavbar from '../components/GlobalNavbar.vue'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
 import { useStudyPlanStore } from '../stores/studyPlan'
 import type { StudyPlan } from '@/stores/studyPlan'
 import { ElMessage } from 'element-plus'
 import 'element-plus/es/components/message/style/css'
 import { nextTick } from 'vue'
+import { getUserSettings, syncAnonymousStudyAnalytics } from '@/utils/userSettings'
 
 // 路由实例
 const router = useRouter()
@@ -98,6 +98,30 @@ const selectMenu = (menu: string) => {
 // 切换侧边栏显示
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value
+}
+
+const syncSharedStudyAnalytics = () => {
+  const settings = getUserSettings()
+  if (!settings.shareData) {
+    syncAnonymousStudyAnalytics()
+    return
+  }
+
+  const subjects = Array.from(
+    new Set(
+      studyPlans.value
+        .map((plan) => plan.subject)
+        .filter((subject): subject is string => !!subject),
+    ),
+  )
+
+  syncAnonymousStudyAnalytics({
+    updatedAt: new Date().toISOString(),
+    planCount: studyPlans.value.length,
+    completedCount: studyPlanStore.completedPlans.length,
+    completionRate: completionRate.value,
+    subjects,
+  })
 }
 
 // ---------- 学习计划 CRUD 操作 ----------
@@ -300,6 +324,11 @@ onMounted(() => {
 
   window.addEventListener('resize', checkScreenSize)
   studyPlanStore.fetchStudyPlans()
+  syncSharedStudyAnalytics()
+})
+
+watch([studyPlans, completionRate], () => {
+  syncSharedStudyAnalytics()
 })
 </script>
 
@@ -677,7 +706,7 @@ onMounted(() => {
   --text-color-light: #86909c;
 
   /* 边框和阴影 */
-  --border-color: #e5e7eb;
+  --border-color: var(--border-color);
   --border-color-light: #f0f2f5;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -712,7 +741,7 @@ onMounted(() => {
   top: 0;
   left: 0;
   right: 0;
-  background-color: #fff;
+  background-color: var(--surface-color);
   box-shadow: var(--shadow-sm);
   z-index: 100;
   height: 70px;
@@ -791,7 +820,7 @@ onMounted(() => {
   position: absolute;
   top: 100%;
   left: 0;
-  background-color: #fff;
+  background-color: var(--surface-color);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
@@ -898,7 +927,7 @@ onMounted(() => {
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: #fff;
+  background-color: var(--surface-color);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
@@ -970,7 +999,7 @@ onMounted(() => {
 /* 左侧功能栏 - 恢复为相对定位/固定定位混合，确保不被内容覆盖 */
 .sidebar {
   width: 280px;
-  background-color: #fff;
+  background-color: var(--surface-color);
   border-right: 1px solid var(--border-color);
   padding: 20px 0;
   transition: var(--transition);
@@ -1080,7 +1109,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #fff;
+  background-color: var(--surface-color);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 40px 20px;
@@ -1106,7 +1135,7 @@ onMounted(() => {
 
 /* 完成度模块 */
 .completion-section {
-  background-color: #fff;
+  background-color: var(--surface-color);
   border-radius: var(--border-radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   padding: 20px 24px;
@@ -1151,7 +1180,7 @@ onMounted(() => {
 
 /* 学习计划区域 */
 .plan-section {
-  background-color: #fff;
+  background-color: var(--surface-color);
   border-radius: var(--border-radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   padding: 20px 24px;
@@ -1193,7 +1222,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   padding: 18px 20px;
-  background-color: #fff;
+  background-color: var(--surface-color);
   border-radius: var(--border-radius-lg);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   gap: 16px;
@@ -1212,7 +1241,7 @@ onMounted(() => {
 /* 已完成计划的样式 */
 .plan-item-completed {
   background-color: #f9fafb;
-  border-color: #e5e7eb;
+  border-color: var(--border-color);
   opacity: 0.8;
 }
 
@@ -1485,7 +1514,7 @@ onMounted(() => {
 }
 
 .modal-content {
-  background-color: #fff;
+  background-color: var(--surface-color);
   border-radius: var(--border-radius-xl);
   box-shadow: var(--shadow-lg);
   width: 100%;
@@ -1581,7 +1610,7 @@ onMounted(() => {
   border-radius: var(--border-radius-lg);
   font-size: 14px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #fff;
+  background-color: var(--surface-color);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
@@ -1664,7 +1693,7 @@ onMounted(() => {
 }
 
 .cancel-btn {
-  background-color: #fff;
+  background-color: var(--surface-color);
   color: var(--text-color);
   border: 1px solid var(--border-color);
 }
@@ -1742,7 +1771,7 @@ onMounted(() => {
     top: 100%;
     left: 0;
     right: 0;
-    background-color: #fff;
+    background-color: var(--surface-color);
     box-shadow: var(--shadow-lg);
     border-top: 1px solid var(--border-color-light);
     padding: 16px;

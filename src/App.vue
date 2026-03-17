@@ -6,10 +6,18 @@ import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import { api } from '@/api'
+import {
+  applyUserSettings,
+  getUserSettings,
+  sendBrowserNotification,
+  syncPublicProfileSnapshot,
+  type UserSettings,
+} from '@/utils/userSettings'
 
 const userStore = useUserStore()
 const router = useRouter()
 const appReady = ref(false)
+let studyReminderTimer: number | null = null
 
 const validateToken = async (): Promise<boolean> => {
   const token =
@@ -34,6 +42,9 @@ const validateToken = async (): Promise<boolean> => {
 }
 // 保留：时段问候功能
 const showGreetingMessage = () => {
+  const currentSettings = getUserSettings()
+  if (!currentSettings.systemNotification) return
+
   const GREETING_KEY = 'system_greeting_shown'
   const hasShownGreeting = localStorage.getItem(GREETING_KEY)
 
@@ -73,6 +84,79 @@ const showGreetingMessage = () => {
   }
 }
 
+const getDateKey = (date: Date) => {
+  return date.toISOString().split('T')[0] ?? ''
+}
+
+const clearStudyReminder = () => {
+  if (studyReminderTimer !== null) {
+    window.clearTimeout(studyReminderTimer)
+    studyReminderTimer = null
+  }
+}
+
+const fireStudyReminder = (settings: UserSettings) => {
+  const todayKey = getDateKey(new Date())
+  if (localStorage.getItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE) === todayKey) {
+    return
+  }
+
+  const message = '今天的学习计划还没看，记得安排一下进度。'
+  const sent =
+    settings.systemNotification &&
+    sendBrowserNotification('学习提醒', message, STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
+
+  if (!sent) {
+    ElMessage({
+      message,
+      type: 'info',
+      duration: 4000,
+      showClose: true,
+    })
+  }
+
+  localStorage.setItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE, todayKey)
+}
+
+const scheduleStudyReminder = (settings: UserSettings) => {
+  clearStudyReminder()
+  if (!settings.studyReminder) return
+
+  const now = new Date()
+  const nextReminder = new Date()
+  nextReminder.setHours(20, 0, 0, 0)
+
+  if (nextReminder <= now) {
+    nextReminder.setDate(nextReminder.getDate() + 1)
+  }
+
+  const delay = nextReminder.getTime() - now.getTime()
+  studyReminderTimer = window.setTimeout(() => {
+    fireStudyReminder(settings)
+    scheduleStudyReminder(getUserSettings())
+  }, delay)
+}
+
+const applyRuntimeSettings = (settings: UserSettings) => {
+  applyUserSettings(settings)
+  scheduleStudyReminder(settings)
+
+  if (settings.publicProfile) {
+    syncPublicProfileSnapshot()
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.PUBLIC_PROFILE_SNAPSHOT)
+  }
+
+  if (!settings.shareData) {
+    localStorage.removeItem(STORAGE_KEYS.ANONYMOUS_STUDY_DATA)
+  }
+}
+
+const handleSettingsChanged = (event: Event) => {
+  const customEvent = event as CustomEvent<UserSettings>
+  applyRuntimeSettings(customEvent.detail)
+}
+
 // 保留：Storage 事件监听（多标签页同步）
 const handleStorageChange = (e: StorageEvent) => {
   console.log('📡 Storage 事件:', e.key)
@@ -86,6 +170,10 @@ const handleStorageChange = (e: StorageEvent) => {
         router.replace('/login')
       }
     }
+  }
+
+  if (e.key === STORAGE_KEYS.USER_SETTINGS) {
+    applyRuntimeSettings(getUserSettings())
   }
 }
 
@@ -102,6 +190,7 @@ onMounted(async () => {
   try {
     console.log('1. 开始恢复状态...')
     userStore.restoreFromStorage()
+    applyRuntimeSettings(getUserSettings())
 
     // 【新增】先验证 token 是否有效
     console.log('2. 验证 token 有效性...')
@@ -126,10 +215,13 @@ onMounted(async () => {
   }
 
   window.addEventListener('storage', handleStorageChange)
+  window.addEventListener('settings-changed', handleSettingsChanged as EventListener)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('storage', handleStorageChange)
+  window.removeEventListener('settings-changed', handleSettingsChanged as EventListener)
+  clearStudyReminder()
 })
 </script>
 
