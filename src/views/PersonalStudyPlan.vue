@@ -488,7 +488,7 @@ watch([studyPlans, completionRate], () => {
           <h3 class="modal-title">创建新学习计划</h3>
           <button
             class="modal-close"
-            @click="closeEditModalHandler"
+            @click="closeAddModalHandler"
             aria-label="关闭弹窗"
             type="button"
           >
@@ -1508,21 +1508,21 @@ watch([studyPlans, completionRate], () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200;
-  backdrop-filter: blur(4px);
+  z-index: 2000;
+  backdrop-filter: blur(5px);
   animation: modalFadeIn 0.3s ease;
 }
 
 .modal-content {
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-lg);
+  background-color: var(--background-white);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
   max-height: 90vh;
   overflow-y: auto;
-  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(22, 93, 255, 0.1);
+  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(64, 158, 255, 0.1);
 }
 
 @keyframes modalFadeIn {
@@ -1537,7 +1537,7 @@ watch([studyPlans, completionRate], () => {
 @keyframes modalSlideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px) scale(0.95);
+    transform: translateY(20px) scale(0.95);
   }
   to {
     opacity: 1;
@@ -1550,43 +1550,47 @@ watch([studyPlans, completionRate], () => {
   justify-content: space-between;
   align-items: center;
   padding: 24px 28px;
-  border-bottom: 1px solid var(--border-color-light);
-  background: linear-gradient(135deg, #f8fafc 0%, #f0f2f5 100%);
-  border-radius: var(--border-radius-xl) var(--border-radius-xl) 0 0;
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, #f9fafc 0%, #f3f6f9 100%);
+  border-radius: 20px 20px 0 0;
 }
 
 .modal-title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--text-color);
   margin: 0;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #0052d9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .modal-close {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 28px;
   color: var(--text-color-light);
   cursor: pointer;
   padding: 0;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--border-radius-lg);
-  transition: var(--transition);
-  background-color: var(--bg-color-light);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
 .modal-close:hover {
-  background-color: var(--bg-color-dark);
-  color: var(--text-color);
+  background-color: var(--danger-color);
+  color: white;
   transform: rotate(90deg);
 }
 
 .modal-body {
-  padding: 28px;
+  padding: 32px;
 }
 
 .form-group {
@@ -1595,28 +1599,36 @@ watch([studyPlans, completionRate], () => {
 
 .form-group label {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-color);
+  letter-spacing: 0.3px;
 }
 
 .form-input,
 .form-select,
 .form-textarea {
   width: 100%;
-  padding: 14px 18px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  font-size: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: var(--surface-color);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background-color: var(--background-white);
+  color: var(--text-color);
 }
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
+.form-input:hover,
+.form-select:hover,
+.form-textarea:hover {
+  border-color: var(--primary-color-light);
 }
 
 .form-input:focus,
@@ -1624,26 +1636,99 @@ watch([studyPlans, completionRate], () => {
 .form-textarea:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px rgba(22, 93, 255, 0.12);
+  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.15);
   transform: translateY(-1px);
 }
 
-/* 优化日期输入框字体样式 */
+/* 优化日期输入框 */
 .form-input[type='date'] {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text-color);
-  letter-spacing: 0.5px;
+  color-scheme: light;
+  font-family: inherit;
+  padding: 11px 16px;
 }
 
 .form-input[type='date']::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 0.6;
   transition: opacity 0.3s;
+  font-size: 16px;
 }
 
 .form-input[type='date']::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.required {
+  color: var(--danger-color);
+  margin-left: 4px;
+  font-size: 16px;
+}
+
+/* 选择框样式优化 */
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23606966' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  padding-right: 48px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 24px 28px;
+  border-top: 1px solid var(--border-color);
+  background-color: #fafbfc;
+  border-radius: 0 0 20px 20px;
+}
+
+.modal-btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 110px;
+  letter-spacing: 0.5px;
+}
+
+.cancel-btn {
+  background-color: white;
+  color: var(--text-color);
+  border: 2px solid var(--border-color);
+}
+
+.cancel-btn:hover {
+  background-color: #f5f7fa;
+  border-color: var(--text-color-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.confirm-btn {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #0052d9 100%);
+  color: white;
+  box-shadow: 0 8px 18px -6px var(--primary-color);
+}
+
+.confirm-btn:hover {
+  background: linear-gradient(135deg, #0052d9 0%, #0036b3 100%);
+  box-shadow: 0 10px 24px -6px var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.confirm-btn:active {
+  transform: translateY(0);
 }
 
 #edit-plan-start-date,
@@ -1655,66 +1740,9 @@ watch([studyPlans, completionRate], () => {
   color: var(--text-color);
 }
 
-.form-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
 .form-group.half {
   flex: 1;
   margin-bottom: 0;
-}
-
-.required {
-  color: var(--accent-color);
-  margin-left: 4px;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  padding: 24px 28px;
-  border-top: 1px solid var(--border-color-light);
-  background-color: var(--bg-color-light);
-  border-radius: 0 0 var(--border-radius-xl) var(--border-radius-xl);
-}
-
-.modal-btn {
-  padding: 12px 28px;
-  border: none;
-  border-radius: var(--border-radius-lg);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-weight: 500;
-  min-width: 100px;
-}
-
-.cancel-btn {
-  background-color: var(--surface-color);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-}
-
-.cancel-btn:hover {
-  background-color: var(--bg-color-light);
-  border-color: var(--primary-color);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.confirm-btn {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.3);
-}
-
-.confirm-btn:hover {
-  background: linear-gradient(135deg, var(--primary-color-dark) 0%, #0a36b9 100%);
-  box-shadow: 0 6px 16px rgba(22, 93, 255, 0.4);
-  transform: translateY(-2px);
 }
 
 /* 响应式设计 */
