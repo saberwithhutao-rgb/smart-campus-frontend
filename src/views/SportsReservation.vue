@@ -100,9 +100,12 @@ const venueCourts = ref<Record<string, Record<string, CourtStatus>>>({})
 // 组件挂载时，初始化数据
 onMounted(async () => {
   try {
-    // 打印当前登录用户ID
+    if (!userStore.userProfile) {
+      await userStore.fetchUserProfile()
+    }
+
+    console.log('当前用户ID:', currentUserId.value)
     console.log('当前登录用户ID:', userStore.userState.userInfo?.userId)
-    console.log('currentUserId.value:', currentUserId.value)
 
     // 获取场馆列表
     const venueList = await getVenues()
@@ -326,7 +329,6 @@ const submitReservation = async () => {
 
           // 调用创建预约API
           const response = await createReservation({
-            userId,
             courtId: realCourtId,
             venueId,
             reserveDate: reservationInfo.value.date,
@@ -437,15 +439,12 @@ const getCourtDetails = async (courtId: number) => {
 // 占用场地
 const handleOccupyCourt = async (reservationId: number) => {
   try {
-    const userId = currentUserId.value
-
     console.log('调用占用场地接口，参数:', {
       reservationId: reservationId,
-      userId: userId,
     })
 
     // 调用占用场地接口
-    const res = await occupyReservation(reservationId, userId)
+    const res = await occupyReservation(reservationId)
 
     console.log('占用场地接口响应:', res)
 
@@ -467,15 +466,12 @@ const handleOccupyCourt = async (reservationId: number) => {
 // 离开场地
 const handleLeaveCourt = async (reservationId: number) => {
   try {
-    const userId = currentUserId.value
-
     console.log('调用离开场地接口，参数:', {
       reservationId: reservationId,
-      userId: userId,
     })
 
     // 调用离开场地接口
-    const res = await leaveReservation(reservationId, userId)
+    const res = await leaveReservation(reservationId)
 
     console.log('离开场地接口响应:', res)
 
@@ -507,16 +503,14 @@ const handleOccupyCourtFromDetail = (reservationId: number) => {
 // 确认占用场地
 const handleOccupyConfirm = async () => {
   try {
-    const userId = currentUserId.value
     const reservationId = currentOccupyReservationId.value
 
     console.log('调用占用场地接口，参数:', {
       reservationId: reservationId,
-      userId: userId,
     })
 
     // 调用占用场地接口
-    const res = await occupyReservation(reservationId, userId)
+    const res = await occupyReservation(reservationId)
 
     console.log('占用场地接口响应:', res)
 
@@ -601,7 +595,6 @@ const handleReserveCourtFromDetail = async () => {
       try {
         // 调用预约接口
         const response = await createReservation({
-          userId: currentUserId.value,
           courtId: currentCourtDetails.value.id,
           venueId: currentVenue.value.id,
           reserveDate,
@@ -634,11 +627,10 @@ const activeReservation = ref<any>(null)
 
 const checkUserActiveStatus = async () => {
   try {
-    const userId = currentUserId.value
-    console.log('查询用户活跃状态，用户ID:', userId)
+    console.log('查询用户活跃状态，用户ID:', currentUserId.value)
 
     // 调用查询用户预约记录的接口
-    const reservations = await getUserReservations(userId)
+    const reservations = await getUserReservations()
     console.log('用户预约记录:', reservations)
 
     // 过滤出状态为 active 的记录

@@ -218,7 +218,6 @@ const handlePostComment = async (postId: number | undefined) => {
     await forumApi.addComment({
       postId,
       content: newComment.value,
-      userId: currentUserId.value,
     })
 
     // 重新加载评论
@@ -248,18 +247,12 @@ const handlePublish = async () => {
     return
   }
 
-  if (!currentUserId.value) {
-    ElMessage.warning('请先登录')
-    return
-  }
-
   publishing.value = true
   try {
     await forumApi.addPost({
       title: postTitle.value,
       content: postContent.value,
       categoryId: publishCategoryId.value ? Number(publishCategoryId.value) : 0,
-      userId: currentUserId.value,
     })
 
     // 重新加载帖子列表
@@ -292,12 +285,7 @@ const handleDeletePost = async (postId: number | undefined) => {
   })
     .then(async () => {
       try {
-        if (!currentUserId.value) {
-          ElMessage.warning('请先登录')
-          return
-        }
-
-        await forumApi.deletePost(postId, currentUserId.value)
+        await forumApi.deletePost(postId)
 
         // 从列表中移除帖子
         if (postList.value) {
@@ -335,11 +323,7 @@ const handleDeleteComment = async (commentId: number | undefined, postId: number
   })
     .then(async () => {
       try {
-        if (!currentUserId.value) {
-          ElMessage.warning('请先登录')
-          return
-        }
-        await forumApi.deleteComment(commentId, currentUserId.value)
+        await forumApi.deleteComment(commentId)
 
         // 从帖子的评论列表中移除
         if (postList.value) {

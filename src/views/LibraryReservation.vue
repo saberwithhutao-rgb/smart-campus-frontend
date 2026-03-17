@@ -55,9 +55,6 @@ const reservationInfo = ref({
 // 计算属性：获取当前登录用户的ID
 const currentUserId = computed(() => userStore.userProfile?.id)
 
-// 打印当前登录用户ID
-console.log('当前登录用户ID:', currentUserId.value)
-
 // 座位使用状态管理
 const seatUsageInfo = ref<
   Map<
@@ -177,7 +174,7 @@ watch(
     if (newId) {
       console.log('用户ID已加载:', newId)
       await checkUserActiveStatus()
-      await fetchActiveReservationCount(newId)
+      await fetchActiveReservationCount()
     }
   },
   { immediate: true },
@@ -711,8 +708,6 @@ const getReservationBySeatId = async (seatId: number) => {
 // 占用座位
 const handleOccupySeat = async (reservationId: number) => {
   try {
-    const userId = currentUserId.value
-
     // 检查用户是否达到最大预约数量
     if (!checkReservationLimit()) {
       return
@@ -720,19 +715,10 @@ const handleOccupySeat = async (reservationId: number) => {
 
     console.log('调用占用座位接口，参数:', {
       reservationId: reservationId,
-      userId: userId,
     })
 
     // 调用占用座位接口
-    const res = await request.post(
-      `/api/library/reservations/${reservationId}/occupy`,
-      {},
-      {
-        params: {
-          userId: userId,
-        },
-      },
-    )
+    const res = await request.post(`/api/library/reservations/${reservationId}/occupy`)
 
     console.log('占用座位接口响应:', res.data)
 
@@ -743,9 +729,7 @@ const handleOccupySeat = async (reservationId: number) => {
       // 更新用户活跃状态
       await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      if (userId !== undefined && userId !== null) {
-        await fetchActiveReservationCount(userId)
-      }
+      await fetchActiveReservationCount()
     } else {
       ElMessage.error(`占用失败：${res.data.msg}`)
     }
@@ -1078,7 +1062,6 @@ const createReservation = async (...args: any[]) => {
       duration: number,
       endTime: string,
       classroomId: number,
-      user_id: number,
       type: string
 
     // 处理两种不同的调用方式
@@ -1091,13 +1074,11 @@ const createReservation = async (...args: any[]) => {
       duration = params.duration // 已经是分钟
       endTime = params.endTime
       classroomId = params.classroomId
-      user_id = params.userId
       type = params.type
     } else {
       // 从 handleSeatClick 调用，传入的是多个参数
       ;[seatId, reserveDate, startTime, duration, endTime] = args
       classroomId = parseInt(selectedRoom.value)
-      user_id = currentUserId.value
       type = 'reservation'
       duration = duration * 60 // 转换为分钟
     }
@@ -1114,7 +1095,6 @@ const createReservation = async (...args: any[]) => {
     }
 
     console.log('调用预约接口，参数:', {
-      userId: user_id,
       seatId,
       classroomId,
       reserveDate,
@@ -1125,7 +1105,6 @@ const createReservation = async (...args: any[]) => {
     })
 
     const res = await request.post('/api/library/reservations', {
-      userId: user_id,
       seatId,
       classroomId,
       reserveDate,
@@ -1148,7 +1127,7 @@ const createReservation = async (...args: any[]) => {
       // 更新用户活跃状态
       await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      await fetchActiveReservationCount(user_id)
+      await fetchActiveReservationCount()
       console.log('用户活跃状态更新完成，hasActiveReservation:', hasActiveReservation.value)
       // 刷新教室卡片的可用座位数
       await refreshAllClassroomData()
@@ -1197,9 +1176,6 @@ const submitReservation = async () => {
         const endMinutes = (minutes + duration) % 60
         const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
 
-        // 使用当前登录用户ID
-        const userId = currentUserId.value
-
         // 为每个选中的座位创建预约
         for (const seatId of selectedSeats.value) {
           // 从座位ID中提取座位代码
@@ -1212,7 +1188,6 @@ const submitReservation = async () => {
 
           // 调用创建预约API
           await createReservation({
-            userId,
             seatId: realSeatId, // 使用真实的座位ID
             classroomId,
             reserveDate: reservationInfo.value.date,
@@ -1264,23 +1239,13 @@ const handleLeaveConfirm = async () => {
 
   try {
     const classroomId = parseInt(selectedRoom.value)
-    const userId = currentUserId.value
 
     console.log('调用离开座位接口，参数:', {
       reservationId: currentSeat.value.id,
-      userId: userId,
     })
 
     // 调用离开座位接口
-    const res = await request.post(
-      `/api/library/reservations/${currentSeat.value.id}/leave`,
-      {},
-      {
-        params: {
-          userId: userId,
-        },
-      },
-    )
+    const res = await request.post(`/api/library/reservations/${currentSeat.value.id}/leave`)
 
     console.log('离开座位接口响应:', res)
 
@@ -1290,7 +1255,7 @@ const handleLeaveConfirm = async () => {
       // 更新用户活跃状态
       await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      await fetchActiveReservationCount(userId)
+      await fetchActiveReservationCount()
       // 刷新座位列表
       await loadSeats(classroomId)
     } else {
@@ -1306,23 +1271,13 @@ const handleLeaveConfirm = async () => {
 const handleLeaveSeatFromDetail = async (reservationId, seatCode) => {
   try {
     const classroomId = parseInt(selectedRoom.value)
-    const userId = currentUserId.value
 
     console.log('从详情弹窗调用离开座位接口，参数:', {
       reservationId: reservationId,
-      userId: userId,
     })
 
     // 调用离开座位接口
-    const res = await request.post(
-      `/api/library/reservations/${reservationId}/leave`,
-      {},
-      {
-        params: {
-          userId: userId,
-        },
-      },
-    )
+    const res = await request.post(`/api/library/reservations/${reservationId}/leave`)
 
     console.log('离开座位接口响应:', res)
 
@@ -1332,7 +1287,7 @@ const handleLeaveSeatFromDetail = async (reservationId, seatCode) => {
       // 更新用户活跃状态
       await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      await fetchActiveReservationCount(userId)
+      await fetchActiveReservationCount()
       // 刷新座位列表
       await loadSeats(classroomId)
       // 刷新教室卡片的可用座位数
@@ -1358,7 +1313,6 @@ const handleOccupySeatFromDetail = (reservationId, seatCode) => {
 const handleOccupyConfirm = async () => {
   try {
     const classroomId = parseInt(selectedRoom.value)
-    const userId = currentUserId.value
     const reservationId = currentOccupyReservationId.value
 
     // 检查用户是否达到最大预约数量
@@ -1368,19 +1322,10 @@ const handleOccupyConfirm = async () => {
 
     console.log('调用占用座位接口，参数:', {
       reservationId: reservationId,
-      userId: userId,
     })
 
     // 调用占用座位接口
-    const res = await request.post(
-      `/api/library/reservations/${reservationId}/occupy`,
-      {},
-      {
-        params: {
-          userId: userId,
-        },
-      },
-    )
+    const res = await request.post(`/api/library/reservations/${reservationId}/occupy`)
 
     console.log('占用座位接口响应:', res.data)
 
@@ -1395,7 +1340,7 @@ const handleOccupyConfirm = async () => {
       // 更新用户活跃状态
       await checkUserActiveStatus()
       // 更新用户活跃预约数量
-      await fetchActiveReservationCount(userId)
+      await fetchActiveReservationCount()
       // 刷新教室卡片的可用座位数
       await refreshAllClassroomData()
     } else {

@@ -85,7 +85,6 @@ export const addPost = async (post: {
   title: string
   content: string
   categoryId: number
-  userId: number
 }): Promise<Post> => {
   try {
     const response = (await request.post('/api/forum/posts', post)) as unknown as Post
@@ -238,11 +237,9 @@ export const getPostDetail = async (id: number): Promise<Post> => {
 }
 
 // 删除帖子（只能本人删除）
-export const deletePost = async (id: number, userId: number): Promise<void> => {
+export const deletePost = async (id: number): Promise<void> => {
   try {
-    const response = await request.delete(`/api/forum/posts/${id}`, {
-      params: { userId },
-    })
+    const response = await request.delete(`/api/forum/posts/${id}`)
     if (response.data.code !== 200) {
       console.error('删除帖子失败:', response.msg)
       throw new Error(response.msg || '删除帖子失败')
@@ -257,7 +254,6 @@ export const deletePost = async (id: number, userId: number): Promise<void> => {
 export const addComment = async (comment: {
   postId: number
   content: string
-  userId: number
 }): Promise<Comment> => {
   try {
     const response = (await request.post('/api/forum/comments', comment)) as unknown as Comment
@@ -274,11 +270,9 @@ export const addComment = async (comment: {
 }
 
 // 删除评论（只能本人删除）
-export const deleteComment = async (id: number, userId: number): Promise<void> => {
+export const deleteComment = async (id: number): Promise<void> => {
   try {
-    const response = await request.delete(`/api/forum/comments/${id}`, {
-      params: { userId },
-    })
+    const response = await request.delete(`/api/forum/comments/${id}`)
     if (response.data.code !== 200) {
       console.error('删除评论失败:', response.msg)
       throw new Error(response.msg || '删除评论失败')

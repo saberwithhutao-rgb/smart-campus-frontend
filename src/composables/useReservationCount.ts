@@ -13,11 +13,11 @@ export function useReservationCount() {
   const isAtMaxLimit = computed(() => activeCount.value >= MAX_RESERVATIONS)
 
   // 查询用户当前活跃预约数量
-  const fetchActiveReservationCount = async (userId: number) => {
+  const fetchActiveReservationCount = async () => {
     try {
       isLoading.value = true
-      const response = await axios.get(`/api/library/reservations/user/${userId}`)
-      
+      const response = await axios.get(`/api/library/reservations/user`)
+
       if (response.data.code === 200) {
         const reservations = response.data.data || []
         // 过滤出状态为 active 的记录
@@ -50,6 +50,6 @@ export function useReservationCount() {
     isLoading,
     isAtMaxLimit,
     fetchActiveReservationCount,
-    checkReservationLimit
+    checkReservationLimit,
   }
 }

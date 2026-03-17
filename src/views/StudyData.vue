@@ -181,30 +181,21 @@ const fetchData = async () => {
     return
   }
 
-  const currentUserId = userId.value
-  if (!currentUserId) {
-    error.value = '无法获取用户ID'
-    return
-  }
-
   loading.value = true
   error.value = ''
 
   try {
     console.log('开始获取数据，参数:', {
       timeRange: timeRange.value,
-      userId: currentUserId,
     })
 
     // ✨ 并行请求，response 已经是处理后的数据（因为 request.js 已经修改）
     const [statsData, suggestionsData] = await Promise.all([
       getStudyStatistics({
         timeRange: timeRange.value,
-        userId: currentUserId,
       }),
       getStudySuggestions({
         timeRange: timeRange.value,
-        userId: currentUserId,
       }),
     ])
 
