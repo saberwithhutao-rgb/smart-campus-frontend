@@ -189,7 +189,7 @@ export const api = {
     }),
 
   getUserProfile: () =>
-    request<ApiResponse<UserProfile>>({
+    request<UserProfile>({
       method: 'GET',
       url: '/api/user/profile',
     }),
@@ -242,7 +242,7 @@ export const api = {
 
   // 认证模块
   login: (data: { username: string; password: string; captcha: string; captchaId?: string }) =>
-    request<ApiResponse<LoginData>>({ method: 'POST', url: '/api/login', data }),
+    request<LoginData>({ method: 'POST', url: '/api/login', data }),
 
   register: (data: { username: string; password: string; email: string; verifyCode: string }) =>
     request<ApiResponse<null>>({ method: 'POST', url: '/api/register', data }),

@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { api } from '@/api'
-import { type UserState, type UserInfo, type UserProfile, type CaptchaResponse } from '@/types/user'
+import { type UserState, type UserInfo, type UserProfile, type LoginData } from '@/types/user'
 import { encryptPassword, decryptPassword } from '@/utils/encryption'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 
@@ -198,19 +198,19 @@ export const useUserStore = defineStore('user', () => {
   ) {
     try {
       console.log('调用登录 API...')
-      const response = await api.login({ username, password, captcha })
+      const response = (await api.login({ username, password, captcha })) as unknown as LoginData
 
-      if (response.code !== 200) {
-        return { success: false, error: response.message }
+      if (!response) {
+        return { success: false, error: response }
       }
 
-      const token = response.data.token
+      const token = response.token
       console.log('登录成功，token:', token ? '已获取' : '无')
 
       //保存基本的用户信息
       const userInfo = {
-        username: response.data.username,
-        role: response.data.role || 'user',
+        username: response.username,
+        role: response.role || 'user',
         token: token,
       }
 
@@ -261,10 +261,10 @@ export const useUserStore = defineStore('user', () => {
     }
 
     try {
-      const response = await api.getUserProfile()
-      if (response.code === 200) {
-        userProfile.value = response.data
-        return response.data
+      const response = (await api.getUserProfile()) as unknown as UserProfile
+      if (response) {
+        userProfile.value = response
+        return response
       }
     } catch (error) {
       console.error('获取用户资料失败:', error)
@@ -290,8 +290,8 @@ export const useUserStore = defineStore('user', () => {
     try {
       const response = await api.register(data)
 
-      if (response.code !== 200) {
-        throw new Error(response.message || '注册失败')
+      if (!response) {
+        throw new Error('注册失败')
       }
 
       return { success: true }
