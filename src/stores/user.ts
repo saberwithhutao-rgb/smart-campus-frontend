@@ -170,7 +170,7 @@ export const useUserStore = defineStore('user', () => {
       console.log('获取验证码...')
       const captchaRes = (await api.getCaptcha()) as unknown as CaptchaResponse
       if (captchaRes.code !== 200) {
-        console.log('❌ 获取验证码失败')
+        console.log('❌ 获取验证码失败:', captchaRes)
         return false
       }
       console.log('✅ 获取验证码成功')
