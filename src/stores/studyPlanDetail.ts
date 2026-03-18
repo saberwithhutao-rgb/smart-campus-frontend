@@ -47,11 +47,10 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
   const fetchLatestPlan = async (studyPlanId: number) => {
     isLoading.value = true
     try {
-      const response = await api.getStudyPlanDetails(studyPlanId)
+      const response = await api.getStudyPlanDetails(studyPlanId) // response 已经是数组
 
-      if (response) {
-        // 按创建时间倒序排序
-        const sorted = response.data.sort(
+      if (response && Array.isArray(response)) {
+        const sorted = response.sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )
 
@@ -85,11 +84,10 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
   const fetchHistoryPlans = async (studyPlanId: number) => {
     isLoading.value = true
     try {
-      const response = await api.getStudyPlanDetails(studyPlanId)
+      const response = await api.getStudyPlanDetails(studyPlanId) // response 已经是数组
 
-      if (response) {
-        // 按创建时间倒序排序
-        const sorted = response.data.sort(
+      if (response && Array.isArray(response)) {
+        const sorted = response.sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )
 
