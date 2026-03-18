@@ -4,21 +4,8 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '@/api'
 
-// 定义响应类型
-interface ApiResponse<T = unknown> {
-  code: number
-  message: string
-  data: T
-}
-
-// 定义生成计划的响应数据类型
-interface GeneratePlanResponse {
-  plan: string
-  detailId: number
-}
-
 // 数据库中的计划详情实体
-export interface StudyPlanDetailEntity {
+export interface StudyPlanDetail {
   id: number
   studyPlanId: number
   duration: string
@@ -62,7 +49,7 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
     try {
       const response = await api.getStudyPlanDetails(studyPlanId)
 
-      if (response.code === 200 && response.data.length > 0) {
+      if (response) {
         // 按创建时间倒序排序
         const sorted = response.data.sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -100,7 +87,7 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
     try {
       const response = await api.getStudyPlanDetails(studyPlanId)
 
-      if (response.code === 200) {
+      if (response) {
         // 按创建时间倒序排序
         const sorted = response.data.sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -132,7 +119,7 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
     try {
       const response = await api.generatePlanDetail(params)
 
-      if (response.code === 200) {
+      if (response) {
         const newDetail: StudyPlanDetailWithParsed = {
           id: response.data.detailId,
           studyPlanId: params.studyPlanId,
@@ -152,7 +139,7 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
         ElMessage.success('学习计划生成成功')
         return newDetail
       } else {
-        ElMessage.error(response.message || '生成计划失败')
+        ElMessage.error('生成计划失败')
         return null
       }
     } catch (error) {

@@ -5,6 +5,8 @@ import { ElMessage } from 'element-plus'
 import { api } from '@/api'
 import * as studyApi from '@/api/study'
 import type { ReviewSuggestion } from '@/api/study'
+import type { StudyPlanDetail } from '@/stores/studyPlanDetail'
+
 export interface StudyPlan {
   id: number
   userId: number
@@ -18,7 +20,7 @@ export interface StudyPlan {
   endDate: string | null
   createdAt: string
   updatedAt: string
-  studyPlanDetails?: any[]
+  studyPlanDetails?: StudyPlanDetail[]
   latestDetailId?: number
 }
 
@@ -122,7 +124,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     isLoading.value = true
     try {
       const response = await api.getPendingTasks()
-      if (response.code === 200) {
+      if (response) {
         const today = new Date().toISOString().split('T')[0] ?? ''
         reviewItems.value = response.data.filter(
           (item: StudyTask) => item.taskDate <= today || item.reviewStage === 0,
@@ -158,14 +160,9 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     try {
       const response = await api.completeTask(id)
 
-      if (response.code === 200) {
+      if (response) {
         ElMessage.success('任务已完成')
-        if (response.data) {
-          reviewItems.value[taskIndex] = response.data
-        }
-      } else {
-        reviewItems.value[taskIndex] = originalTask
-        ElMessage.error(response.message || '操作失败')
+        reviewItems.value[taskIndex] = response.data
       }
     } catch (error) {
       reviewItems.value[taskIndex] = originalTask
@@ -180,12 +177,12 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       const response = await api.getStudyPlans({
         page: params?.page || currentPage.value,
         size: params?.size || pageSize.value,
-        status: params?.status,
-        planType: params?.planType,
-        subject: params?.subject,
+        ...(params?.status && { status: params.status }),
+        ...(params?.planType && { planType: params.planType }),
+        ...(params?.subject && { subject: params.subject }),
       })
 
-      if (response.code === 200) {
+      if (response) {
         studyPlans.value = response.data.list as StudyPlan[]
         total.value = response.data.total
         currentPage.value = response.data.page
@@ -203,9 +200,9 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     isLoading.value = true
     try {
       const response = await api.getStudyPlan(id)
-      if (response.code === 200) {
-        selectedPlan.value = response.data as StudyPlan
-        return response.data
+      if (response) {
+        selectedPlan.value = response.data
+        return response
       }
     } catch (error) {
       console.error('获取学习计划详情失败:', error)
@@ -227,7 +224,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         endDate: planData.endDate,
       })
 
-      if (response.code === 200 || response.code === 201) {
+      if (response) {
         ElMessage.success('创建学习计划成功')
         await fetchStudyPlans()
         return response.data
@@ -253,7 +250,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         endDate: planData.endDate ?? undefined,
       })
 
-      if (response.code === 200) {
+      if (response) {
         ElMessage.success('更新学习计划成功')
         await fetchStudyPlans()
         return response.data
@@ -269,7 +266,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     isLoading.value = true
     try {
       const response = await api.deleteStudyPlan(id)
-      if (response.code === 200) {
+      if (response) {
         ElMessage.success('删除学习计划成功')
         await fetchStudyPlans()
       }
@@ -289,27 +286,30 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       planIndex = studyPlans.value.findIndex((p) => p.id === id)
       if (planIndex === -1) return
 
-      originalPlan = { ...studyPlans.value[planIndex] }
+      const targetPlan = studyPlans.value[planIndex]
+      if (!targetPlan) return
+
+      originalPlan = { ...targetPlan }
       const newStatus = originalPlan.status === 'completed' ? 'active' : 'completed'
 
-      const updatedPlan = {
+      // 乐观更新
+      studyPlans.value[planIndex] = {
         ...originalPlan,
         status: newStatus,
       }
-      studyPlans.value[planIndex] = updatedPlan
 
       const response = await api.togglePlanComplete(id)
 
-      if (response.code === 200) {
-        ElMessage.success('状态切换成功')
-        if (response.data) {
-          studyPlans.value[planIndex] = {
-            ...studyPlans.value[planIndex],
-            ...response.data,
-          }
-        }
+      const responseData = response.data || response
+
+      // 成功 - 用后端返回的数据更新
+      studyPlans.value[planIndex] = {
+        ...studyPlans.value[planIndex],
+        ...responseData,
       }
-    } catch (error) {
+
+      ElMessage.success('状态切换成功')
+    } catch (error: unknown) {
       if (planIndex !== -1 && originalPlan) {
         studyPlans.value[planIndex] = originalPlan
       }

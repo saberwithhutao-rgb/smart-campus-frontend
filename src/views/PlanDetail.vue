@@ -196,7 +196,7 @@ const currentPlan = computed(() => studyPlanStore.studyPlans.find((p) => p.id ==
 const isLoggedIn = computed(() => userStore.userState.isLoggedIn)
 const isMobile = ref(window.innerWidth <= 768)
 
-// 难度映射：英文转中文
+// 难度映射
 const difficultyMap: Record<string, string> = {
   easy: '简单',
   medium: '中等',
