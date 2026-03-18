@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { api } from '@/api'
-import { type UserState, type UserInfo, type UserProfile } from '@/types/user'
+import { type UserState, type UserInfo, type UserProfile, type CaptchaResponse } from '@/types/user'
 import { encryptPassword, decryptPassword } from '@/utils/encryption'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 
@@ -168,7 +168,7 @@ export const useUserStore = defineStore('user', () => {
       console.log('✅ 密码解密成功')
 
       console.log('获取验证码...')
-      const captchaRes = await api.getCaptcha()
+      const captchaRes = (await api.getCaptcha()) as unknown as CaptchaResponse
       if (captchaRes.code !== 200) {
         console.log('❌ 获取验证码失败')
         return false
