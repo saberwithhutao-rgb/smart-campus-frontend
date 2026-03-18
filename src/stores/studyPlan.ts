@@ -182,6 +182,8 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
         ...(params?.subject && { subject: params.subject }),
       })
 
+      console.log('fetchStudyPlans response:', response)
+
       if (response) {
         studyPlans.value = response.data.list as StudyPlan[]
         total.value = response.data.total
