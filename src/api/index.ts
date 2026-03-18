@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { ReviewItem, StudyPlan, StudyTask } from '@/stores/studyPlan'
+import type { ReviewItem, StudyPlan, StudyTask, StudyPlansResponse } from '@/stores/studyPlan'
 import type { ExamCountdown, UserProfile } from '../types/user'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import type { StudyPlanDetail } from '../stores/studyPlanDetail'
@@ -264,13 +264,7 @@ export const api = {
     planType?: string
     subject?: string
   }) =>
-    request<{
-      list: StudyPlan[]
-      total: number
-      page: number
-      size: number
-      totalPages: number
-    }>({
+    request<StudyPlansResponse>({
       method: 'GET',
       url: '/api/study/plans',
       params,

@@ -40,6 +40,14 @@ export interface StudyTask {
   createdAt: string
 }
 
+export type StudyPlansResponse = {
+  list: StudyPlan[]
+  total: number
+  page: number
+  size: number
+  totalPages: number
+}
+
 export interface ReviewItem {
   id: number
   planId: number
@@ -170,25 +178,22 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     }
   }
 
-  // ----- 学习计划相关方法 -----
   const fetchStudyPlans = async (params?: StudyPlanQueryParams) => {
     isLoading.value = true
     try {
-      const response = await api.getStudyPlans({
+      const response = (await api.getStudyPlans({
         page: params?.page || currentPage.value,
         size: params?.size || pageSize.value,
         ...(params?.status && { status: params.status }),
         ...(params?.planType && { planType: params.planType }),
         ...(params?.subject && { subject: params.subject }),
-      })
-
-      console.log('fetchStudyPlans response:', response)
+      })) as unknown as StudyPlansResponse
 
       if (response) {
-        studyPlans.value = response.data.list as StudyPlan[]
-        total.value = response.data.total
-        currentPage.value = response.data.page
-        pageSize.value = response.data.size
+        studyPlans.value = response.list
+        total.value = response.total
+        currentPage.value = response.page
+        pageSize.value = response.size
       }
       return studyPlans.value
     } catch (error) {
