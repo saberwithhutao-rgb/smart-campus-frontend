@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '@/api'
+import type { GeneratePlanResponse } from '@/api/index'
 
 // 数据库中的计划详情实体
 export interface StudyPlanDetail {
@@ -115,15 +116,15 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
   const generatePlanDetail = async (params: GeneratePlanParams) => {
     isGenerating.value = true
     try {
-      const response = await api.generatePlanDetail(params)
+      const response = (await api.generatePlanDetail(params)) as unknown as GeneratePlanResponse
 
       if (response) {
         const newDetail: StudyPlanDetailWithParsed = {
-          id: response.data.detailId,
+          id: response.detailId,
           studyPlanId: params.studyPlanId,
           duration: params.duration,
           level: params.level as 'easy' | 'medium' | 'hard',
-          plan: response.data.plan,
+          plan: response.plan,
           createdAt: new Date().toISOString(),
         }
 

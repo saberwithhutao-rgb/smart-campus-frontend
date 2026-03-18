@@ -227,7 +227,7 @@ export const api = {
     duration: string
     level: string
   }) =>
-    request({
+    request<GeneratePlanResponse>({
       method: 'POST',
       url: '/ai/plan-detail',
       data,
