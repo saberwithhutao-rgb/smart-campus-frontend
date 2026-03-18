@@ -37,6 +37,7 @@ export interface StudyPlanDetailWithParsed {
 }
 
 export interface GeneratePlanParams {
+  title: string
   studyPlanId: number
   subject: string
   duration: string
@@ -59,9 +60,7 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
   const fetchLatestPlan = async (studyPlanId: number) => {
     isLoading.value = true
     try {
-      const response = (await api.getStudyPlanDetails(studyPlanId)) as ApiResponse<
-        StudyPlanDetailEntity[]
-      >
+      const response = await api.getStudyPlanDetails(studyPlanId)
 
       if (response.code === 200 && response.data.length > 0) {
         // 按创建时间倒序排序
@@ -99,9 +98,7 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
   const fetchHistoryPlans = async (studyPlanId: number) => {
     isLoading.value = true
     try {
-      const response = (await api.getStudyPlanDetails(studyPlanId)) as ApiResponse<
-        StudyPlanDetailEntity[]
-      >
+      const response = await api.getStudyPlanDetails(studyPlanId)
 
       if (response.code === 200) {
         // 按创建时间倒序排序
@@ -133,7 +130,7 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
   const generatePlanDetail = async (params: GeneratePlanParams) => {
     isGenerating.value = true
     try {
-      const response = (await api.generatePlanDetail(params)) as ApiResponse<GeneratePlanResponse>
+      const response = await api.generatePlanDetail(params)
 
       if (response.code === 200) {
         const newDetail: StudyPlanDetailWithParsed = {

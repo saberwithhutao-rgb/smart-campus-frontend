@@ -85,48 +85,12 @@ const router = createRouter({
       },
     },
     {
-      path: '/career/competitions',
-      name: 'competition-management',
-      component: () => import('../views/CompetitionManagement.vue'),
-      meta: {
-        requiresAuth: true,
-      },
-    },
-    {
-      path: '/career/competitions/:id',
-      name: 'competition-detail',
-      component: () => import('../views/CompetitionDetail.vue'),
-      meta: {
-        requiresAuth: true,
-      },
-    },
-    {
-      path: '/career/position',
-      name: 'career-navigation',
-      component: () => import('../views/CareerNavigation.vue'),
-      meta: {
-        requiresAuth: true,
-      },
-    },
-    {
-      path: '/career/pee',
-      name: 'exam-support',
-      component: () => import('../views/PostgraduateSupport.vue'),
-      meta: {
-        requiresAuth: true,
-      },
-    },
-    {
       path: '/profile',
       name: 'user-center',
       component: () => import('../views/UserCenter.vue'),
       meta: {
         requiresAuth: true,
       },
-    },
-    {
-      path: '/:pathMatch(.*)*',
-      redirect: '/index',
     },
     {
       path: '/ai/study/review/detail/:id',
@@ -170,6 +134,14 @@ const router = createRouter({
       path: '/campus/secondhand-market',
       name: 'secondhand-market',
       component: () => import('../views/SecondHandMarket.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/campus/analysis',
+      name: 'study-data',
+      component: () => import('../views/StudyData.vue'),
       meta: {
         requiresAuth: true,
       },

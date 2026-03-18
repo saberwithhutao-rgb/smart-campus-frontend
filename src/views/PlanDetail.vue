@@ -285,6 +285,7 @@ const generateStudyPlan = async () => {
   }
 
   const result = await studyPlanDetailStore.generatePlanDetail({
+    title: currentPlan.value.title,
     studyPlanId: currentPlan.value.id,
     subject: currentPlan.value.subject || '',
     duration: getDuration(),

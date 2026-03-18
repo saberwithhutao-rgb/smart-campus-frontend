@@ -181,6 +181,7 @@ const handleErrorResponse = async (error) => {
     console.error('响应错误:', status, data)
 
     const errorMessage = data?.message || data?.msg || getHttpStatusMessage(status)
+    console.log('🔥 进入错误拦截器', error.response?.status)
     ElMessage.error(errorMessage)
   } else if (error.request) {
     console.error('网络错误:', error.request)

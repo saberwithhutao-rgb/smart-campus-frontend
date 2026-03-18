@@ -1,8 +1,6 @@
-import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig } from 'axios'
+import request from '@/utils/request'
 import type { ReviewItem, StudyPlan, StudyTask } from '@/stores/studyPlan'
 import type { ExamCountdown, UserProfile } from '../types/user'
-import { ElMessage } from 'element-plus'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import type {
   QaMessage,
@@ -44,16 +42,6 @@ export interface OpenAiMessageVo {
   answer?: string
   createdAt?: string
 }
-
-// 创建 axios 实例
-const service: AxiosInstance = axios.create({
-  baseURL: '',
-  timeout: import.meta.env.PROD ? 30000 : 600000, // 生产30秒，开发10分钟
-  headers: {
-    'Content-Type': 'application/json;charset=utf-8',
-  },
-  withCredentials: true,
-})
 
 export interface ApiResponse<T = unknown> {
   code: number
@@ -148,77 +136,6 @@ export interface ChatStats {
   unrated: number
 }
 
-// 请求拦截器
-service.interceptors.request.use(
-  (config) => {
-    const token =
-      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-
-    // 开发环境下添加调试日志
-    if (import.meta.env.DEV) {
-      console.log('%c[API Request]', 'color: #4CAF50; font-weight: bold;', {
-        url: config.url,
-        method: config.method,
-        baseURL: config.baseURL,
-        headers: config.headers,
-        data: config.data,
-      })
-    }
-
-    // 如果是FormData，删除Content-Type让浏览器自动设置
-    if (config.data instanceof FormData) {
-      delete config.headers['Content-Type']
-    }
-
-    return config
-  },
-  (error) => {
-    console.error('%c[Request Error]', 'color: #F44336; font-weight: bold;', error)
-    return Promise.reject(error)
-  },
-)
-
-// 响应拦截器
-service.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config
-
-    if (error.response?.status === 401 && !originalRequest?._retry) {
-      originalRequest._retry = true
-
-      // 清除无效 token
-      localStorage.removeItem(STORAGE_KEYS.TOKEN)
-      localStorage.removeItem(STORAGE_KEYS.TOKEN_ALT)
-
-      try {
-        const { useUserStore } = await import('@/stores/user')
-        const userStore = useUserStore()
-
-        const success = await userStore.tryAutoLogin()
-
-        if (success) {
-          const newToken =
-            localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
-
-          originalRequest.headers.Authorization = `Bearer ${newToken}`
-          return service(originalRequest)
-        }
-      } catch (error) {
-        console.error('自动登录失败:', error)
-      }
-
-      // 自动登录失败，跳转登录页
-      window.location.href = '/login'
-    }
-
-    return Promise.reject(error)
-  },
-)
-
 const parsePossiblyJsonText = <T>(data: unknown): T => {
   if (typeof data === 'string') {
     const trimmed = data.trim()
@@ -230,18 +147,6 @@ const parsePossiblyJsonText = <T>(data: unknown): T => {
     return JSON.parse(trimmed) as T
   }
   return data as T
-}
-// 通用请求函数
-const request = <T>(config: AxiosRequestConfig): Promise<T> => {
-  return service(config)
-    .then((res) => {
-      console.log('request 收到响应，准备返回 data')
-      return res.data as T
-    })
-    .catch((err) => {
-      console.log('request 捕获错误:', err)
-      throw err
-    })
 }
 
 // API 接口定义
@@ -299,7 +204,7 @@ export const api = {
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
     localStorage.removeItem('refreshToken')
-    delete service.defaults.headers.common['Authorization']
+    delete request.defaults.headers.common['Authorization']
   },
 
   getStudyPlanDetails: (studyPlanId: number) =>
@@ -315,6 +220,7 @@ export const api = {
     }),
 
   generatePlanDetail: (data: {
+    title: string
     studyPlanId: number
     subject: string
     duration: string
@@ -886,5 +792,4 @@ export const askQuestionStream = async (params: {
   }
 }
 
-// 导出axios实例供其他地方使用
-export default service
+export default request

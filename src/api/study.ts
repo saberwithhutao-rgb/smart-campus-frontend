@@ -112,7 +112,6 @@ export const generateReviewAdvice = (data: {
  */
 export interface StudyStatisticsParams {
   timeRange: string // 时间范围：today/week/month
-  userId: number // 用户ID
 }
 
 export interface StudyStatisticsResponse {
@@ -155,7 +154,6 @@ export async function getStudyStatistics(
  */
 export interface StudySuggestionsParams {
   timeRange: string // 时间范围：today/week/month
-  userId: number // 用户ID
 }
 
 export interface StudySuggestionsResponse {

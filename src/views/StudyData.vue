@@ -114,11 +114,12 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
 
 const userStore = useUserStore()
 
