@@ -188,7 +188,6 @@ const router = createRouter({
 
 const publicPages = ['/login', '/register', '/index', '/', '/logout']
 
-// 【新增】初始化标记
 let isRouterInitialized = false
 
 // 路由守卫
@@ -215,6 +214,14 @@ router.beforeEach(async (to, from, next) => {
 
   if (isPublicPage) {
     if ((to.path === '/login' || to.path === '/register') && isLoggedIn) {
+      const token =
+        localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+      if (!token) {
+        userStore.userState.isLoggedIn = false
+        userStore.userState.userInfo = null
+        next()
+        return
+      }
       console.log('已登录用户访问登录/注册页面，重定向到首页')
       next('/index')
       return
@@ -230,6 +237,7 @@ router.beforeEach(async (to, from, next) => {
 
     if (!isLoggedIn) {
       console.log('未登录，重定向到登录页')
+      userStore.logout(false)
 
       if (to.path !== '/login') {
         localStorage.setItem('redirectAfterLogin', to.fullPath)
