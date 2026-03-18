@@ -250,6 +250,10 @@ const formatDateTime = (dateStr: string) => {
 }
 
 onMounted(async () => {
+  if (studyPlanStore.studyPlans.length === 0) {
+    await studyPlanStore.fetchStudyPlans()
+  }
+
   if (!currentPlan.value) {
     router.push('/ai/study')
     return
