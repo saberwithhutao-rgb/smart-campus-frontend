@@ -254,7 +254,7 @@ export const api = {
   sendVerifyCode: (email: string) =>
     request<ApiResponse<null>>({ method: 'POST', url: '/api/verify/email', data: { email } }),
 
-  getCaptcha: () => request<CaptchaResponse>({ method: 'GET', url: '/api/captcha' }),
+  getCaptcha: () => request<string>({ method: 'GET', url: '/api/captcha' }),
 
   // 学习计划模块
   getStudyPlans: (params?: {

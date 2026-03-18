@@ -166,17 +166,15 @@ export const useUserStore = defineStore('user', () => {
         return false
       }
       console.log('✅ 密码解密成功')
-
       console.log('获取验证码...')
-      const captchaRes = (await api.getCaptcha()) as unknown as CaptchaResponse
-      if (captchaRes.code !== 200) {
-        console.log('❌ 获取验证码失败:', captchaRes)
+      const captchaRes = (await api.getCaptcha()) as unknown as string
+      if (!captchaRes) {
+        console.log('❌ 获取验证码失败')
         return false
       }
       console.log('✅ 获取验证码成功')
-
       console.log('使用保存的凭证登录...')
-      const result = await login(username, password, captchaRes.data, true)
+      const result = await login(username, password, captchaRes, true)
 
       if (result.success) {
         console.log('✅ 自动登录成功')
