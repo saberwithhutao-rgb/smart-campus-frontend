@@ -216,7 +216,7 @@ router.beforeEach(async (to, from, next) => {
   if (isPublicPage) {
     if ((to.path === '/login' || to.path === '/register') && isLoggedIn) {
       console.log('已登录用户访问登录/注册页面，重定向到首页')
-      window.location.href = '/index'
+      next('/index')
       return
     }
 
@@ -235,7 +235,7 @@ router.beforeEach(async (to, from, next) => {
         localStorage.setItem('redirectAfterLogin', to.fullPath)
       }
 
-      window.location.href = '/login'
+      next('/login')
       return
     }
 

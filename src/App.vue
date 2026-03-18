@@ -203,7 +203,6 @@ onMounted(async () => {
       console.log('3. Token 有效，已有登录状态')
     }
 
-    // 保留：问候
     showGreetingMessage()
   } catch (error) {
     console.error('初始化失败:', error)
