@@ -147,7 +147,8 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
 
   const fetchAllReviewTasks = async () => {
     try {
-      const response = (await studyApi.getAllReviewTasks()) as unknown as StudyTask[]
+      const response = await studyApi.getAllReviewTasks()
+      console.log('getAllReviewTasks 返回:', response)
       allReviewTasks.value = response
     } catch (error) {
       console.error('获取复习任务失败:', error)
