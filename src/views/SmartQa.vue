@@ -67,15 +67,19 @@ const loadSessions = async () => {
     const response = await api.getConversationSessions()
     const requestTime = Date.now() - startTime
 
-    if (response?.code === 200) {
-      if (Array.isArray(response.data)) {
-        if (requestTime > 5000) {
-          isVpnLikely.value = true
-        }
-        sessions.value = response.data
+    if (Array.isArray(response)) {
+      if (requestTime > 5000) {
+        isVpnLikely.value = true
       }
+      sessions.value = response
+      console.log('sessions.value 已赋值:', sessions.value)
+    } else {
+      console.log('response 不是数组:', response)
+      sessions.value = []
     }
-  } catch {
+  } catch (error) {
+    console.error('loadSessions 捕获错误:', error)
+    sessions.value = []
   } finally {
     loadingSessions.value = false
   }
@@ -87,12 +91,12 @@ const loadSessionHistory = async (sessionId: string) => {
   console.log('加载会话:', sessionId, '请求URL:', `/ai/chat/history/${sessionId}`)
   try {
     const response = await api.getSessionHistory(sessionId)
-    if (response.code === 200) {
+    if (Array.isArray(response)) {
       // 清空现有消息
       messages.value = []
 
       // 添加历史消息
-      response.data.forEach((item: SessionHistoryItem, index: number) => {
+      response.forEach((item: SessionHistoryItem, index: number) => {
         // 添加用户问题
         messages.value.push({
           id: Date.now() + index * 2,
@@ -112,6 +116,8 @@ const loadSessionHistory = async (sessionId: string) => {
 
       currentSessionId.value = sessionId
       selectedSessionId.value = sessionId
+    } else {
+      console.error('返回数据不是数组:', response)
     }
   } catch (error) {
     console.error('加载历史消息失败:', error)
@@ -137,8 +143,9 @@ const deleteSession = async (sessionId: string, event: Event) => {
 
   try {
     const response = await api.deleteSession(sessionId)
-    if (response.code === 200) {
-      // 从列表中移除
+    console.log('deleteSession response:', response)
+
+    if (response) {
       sessions.value = sessions.value.filter((s) => s.sessionId !== sessionId)
 
       // 如果删除的是当前选中的会话，清空消息区
@@ -174,7 +181,7 @@ const renameSession = async () => {
 
   try {
     const response = await api.renameSession(renamingSession.value.sessionId, newTitle.value)
-    if (response.code === 200) {
+    if (response) {
       // 更新列表中的标题
       const session = sessions.value.find((s) => s.sessionId === renamingSession.value?.sessionId)
       if (session) {
@@ -219,7 +226,7 @@ const selectMenu = (menu: string) => {
       },
     ]
     currentSessionId.value = ''
-    selectedSessionId.value = '' // 新增
+    selectedSessionId.value = ''
   }
 }
 
