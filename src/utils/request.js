@@ -3,6 +3,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { autoLogin } from './autoLogin'
 import { useUserStore } from '../stores/user'
+import router from '@/router'
 
 // 创建axios实例
 const request = axios.create({
@@ -151,8 +152,7 @@ const handleAutoLogin = async (error, originalRequest) => {
       processQueue(new Error('自动登录失败'), null)
       const userStore = useUserStore()
       userStore.clearUser?.()
-      const currentPath = encodeURIComponent(window.location.pathname + window.location.search)
-      window.location.href = `/login?redirect=${currentPath}`
+      router.push('/login')
     }
   } catch (autoLoginError) {
     console.error('自动登录过程出错:', autoLoginError)
