@@ -4,7 +4,7 @@ import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUserStore } from '../stores/user'
 import { api, type ConversationSession, type SessionHistoryItem } from '../api/index'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
-
+import { ElMessage } from 'element-plus'
 interface ChatMessage {
   id: number
   content: string
@@ -141,31 +141,19 @@ const formatDateTime = (dateStr: string) => {
   if (!dateStr) return '未知时间'
 
   try {
-    // 处理带时区的格式：2026-03-19 22:41:40.207174+08
-    // 转换为标准格式：2026-03-19T22:41:40.207174+08:00
-    let standardizedDate = dateStr
+    // 直接解析 ISO 格式字符串
+    const date = new Date(dateStr)
 
-    // 如果是 "2026-03-19 22:41:40.207174+08" 这种格式
-    if (dateStr.includes(' ') && dateStr.includes('+')) {
-      // 替换空格为 T，并确保时区格式正确
-      standardizedDate = dateStr.replace(' ', 'T')
-      // 如果时区是 +08，加上 :00
-      if (standardizedDate.match(/\+[0-9]{2}$/)) {
-        standardizedDate = standardizedDate + ':00'
-      }
-    }
-
-    const date = new Date(standardizedDate)
+    // 检查是否有效
     if (isNaN(date.getTime())) {
       console.warn('无效日期:', dateStr)
       return '未知时间'
     }
 
-    return date.toLocaleString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })
+    // 格式化为 HH:MM
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${hours}:${minutes}`
   } catch (e) {
     console.error('日期解析失败:', e)
     return '未知时间'
@@ -261,23 +249,30 @@ const formatDate = (dateStr: string) => {
 // 切换菜单选中状态
 const selectMenu = (menu: string) => {
   if (menu === 'history') {
-    // 如果当前是 history，则切换到 new；否则切换到 history
-    selectedMenu.value = selectedMenu.value === 'history' ? 'new' : 'history'
+    // 如果当前是 history，则收起列表（但保持对话界面）
+    if (selectedMenu.value === 'history') {
+      selectedMenu.value = 'new' // 切换到 new，但不清空消息
+      // ❌ 不要清空 messages
+    } else {
+      // 否则显示历史列表
+      selectedMenu.value = 'history'
+      loadSessions() // 加载会话列表
+    }
   } else {
     selectedMenu.value = menu
-  }
-
-  if (selectedMenu.value === 'new') {
-    messages.value = [
-      {
-        id: 1,
-        content: '您好！我是您的智能学习助手，有什么可以帮助您的吗？',
-        sender: 'ai',
-        timestamp: new Date().toLocaleTimeString(),
-      },
-    ]
-    currentSessionId.value = ''
-    selectedSessionId.value = ''
+    if (menu === 'new') {
+      // 只有主动点击“新对话”时才清空消息
+      messages.value = [
+        {
+          id: 1,
+          content: '您好！我是您的智能学习助手，有什么可以帮助您的吗？',
+          sender: 'ai',
+          timestamp: new Date().toLocaleTimeString(),
+        },
+      ]
+      currentSessionId.value = ''
+      selectedSessionId.value = ''
+    }
   }
 }
 
@@ -534,8 +529,21 @@ const handleKeyDown = (event: KeyboardEvent) => {
 const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
-    selectedFile.value = input.files[0]!
-    // 可选：自动聚焦输入框，方便用户输入问题
+    const file = input.files[0]!
+
+    // 检查文件大小（限制为 50MB）
+    const maxSize = 50 * 1024 * 1024 // 50MB
+    if (file.size > maxSize) {
+      ElMessage.error(
+        `文件过大，请上传小于 50MB 的文件 (当前文件 ${(file.size / 1024 / 1024).toFixed(2)}MB)`,
+      )
+      // 清空文件选择
+      input.value = ''
+      selectedFile.value = null
+      return
+    }
+
+    selectedFile.value = file
     nextTick(() => {
       const textarea = document.querySelector('.message-input') as HTMLTextAreaElement
       textarea?.focus()
@@ -725,14 +733,12 @@ watch(
               @click="triggerFileInput"
               :class="{ 'upload-button-active': selectedFile }"
             >
-              📎 上传文件
+              上传文件 (支持 .pdf .doc .docx .txt .ppt .pptx)
             </button>
             <span v-if="selectedFile" class="file-info">
               {{ selectedFile.name }}
               <button class="remove-file" @click="removeFile">✕</button>
             </span>
-            <!-- ✅ 添加这一行显示格式提示 -->
-            <span class="file-format-hint">支持 .pdf .doc .docx .txt .ppt .pptx</span>
           </div>
 
           <!-- 统一的输入模式 - 无论是否上传文件，都显示输入框 -->
