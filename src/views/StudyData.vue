@@ -48,51 +48,38 @@
           </el-col>
         </el-row>
 
-        <!-- 难度分布 -->
-        <el-divider content-position="left">难度分布</el-divider>
-        <div class="distribution-chart">
-          <div
-            v-for="item in statistics?.difficultyDistribution?.details || []"
-            :key="item.type"
-            class="distribution-bar"
-          >
-            <div class="bar-label">
-              <span>{{ item.type }}</span>
-              <el-tag size="small" :type="getDifficultyTagType(item.type)">
-                {{ item.count }}个 ({{ (item.percentage * 100).toFixed(2) }}%)
-              </el-tag>
+        <!-- 环形图区域：两列布局 -->
+        <el-row :gutter="24" class="charts-row">
+          <!-- 难度分布环形图 -->
+          <el-col :xs="24" :md="12">
+            <div class="chart-container">
+              <h4 class="chart-title">📈 难度分布</h4>
+              <div ref="difficultyChartRef" class="chart" :style="{ height: '300px' }"></div>
+              <div class="chart-legend">
+                <div v-for="item in difficultyLegend" :key="item.name" class="legend-item">
+                  <span class="legend-color" :style="{ backgroundColor: item.color }"></span>
+                  <span class="legend-name">{{ item.name }}</span>
+                  <span class="legend-value">{{ item.value }}个 ({{ item.percentage }}%)</span>
+                </div>
+              </div>
             </div>
-            <el-progress
-              :percentage="item.percentage * 100"
-              :color="getDifficultyColor(item.type)"
-              :show-text="false"
-              :stroke-width="12"
-            />
-          </div>
-        </div>
+          </el-col>
 
-        <!-- 计划类型分布 -->
-        <el-divider content-position="left">计划类型分布</el-divider>
-        <div class="distribution-chart">
-          <div
-            v-for="item in statistics?.planTypeDistribution?.details || []"
-            :key="item.type"
-            class="distribution-bar"
-          >
-            <div class="bar-label">
-              <span>{{ item.type }}</span>
-              <el-tag size="small" :type="getPlanTypeTagType(item.type)">
-                {{ item.count }}个 ({{ (item.percentage * 100).toFixed(2) }}%)
-              </el-tag>
+          <!-- 计划类型分布环形图 -->
+          <el-col :xs="24" :md="12">
+            <div class="chart-container">
+              <h4 class="chart-title">📊 计划类型分布</h4>
+              <div ref="planTypeChartRef" class="chart" :style="{ height: '300px' }"></div>
+              <div class="chart-legend">
+                <div v-for="item in planTypeLegend" :key="item.name" class="legend-item">
+                  <span class="legend-color" :style="{ backgroundColor: item.color }"></span>
+                  <span class="legend-name">{{ item.name }}</span>
+                  <span class="legend-value">{{ item.value }}个 ({{ item.percentage }}%)</span>
+                </div>
+              </div>
             </div>
-            <el-progress
-              :percentage="item.percentage * 100"
-              :color="getPlanTypeColor(item.type)"
-              :show-text="false"
-              :stroke-width="12"
-            />
-          </div>
-        </div>
+          </el-col>
+        </el-row>
 
         <!-- 各科目计划数量 -->
         <el-divider content-position="left">各科目计划数量</el-divider>
@@ -122,10 +109,10 @@
           </div>
         </template>
 
-        <el-empty v-if="!suggestions?.length" description="暂无学习建议" />
+        <el-empty v-if="!hasSuggestions" description="暂无学习建议" />
         <el-timeline v-else>
           <el-timeline-item
-            v-for="(suggestion, index) in suggestions"
+            v-for="(suggestion, index) in suggestionList"
             :key="index"
             :type="getSuggestionType(index)"
             :size="'large'"
@@ -143,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import type {
   StudyStatisticsResponse, // 重命名，方便使用
@@ -151,6 +138,7 @@ import type {
 } from '../api/study'
 import { useUserStore } from '@/stores/user'
 import { MagicStick } from '@element-plus/icons-vue'
+import * as echarts from 'echarts'
 
 const userStore = useUserStore()
 
@@ -160,6 +148,12 @@ const loading = ref(false)
 const error = ref('')
 const statistics = ref<StudyStatisticsResponse | null>(null)
 const suggestions = ref<StudySuggestionsResponse | null>(null)
+
+// ECharts 实例
+const difficultyChartRef = ref<HTMLElement>()
+const planTypeChartRef = ref<HTMLElement>()
+const difficultyChart = ref<echarts.ECharts | null>(null)
+const planTypeChart = ref<echarts.ECharts | null>(null)
 
 // 时间范围文本
 const timeRangeText = computed(() => {
@@ -183,51 +177,173 @@ const statisticsList = computed(() => {
   ]
 })
 
-// 获取难度标签类型
-const getDifficultyTagType = (difficulty: string) => {
-  const map: Record<string, string> = {
-    简单: 'success',
-    中等: 'warning',
-    困难: 'danger',
-  }
-  return map[difficulty] || 'info'
-}
-
-// 获取难度颜色
-const getDifficultyColor = (difficulty: string) => {
-  const map: Record<string, string> = {
+const CHART_COLORS = {
+  difficulty: {
     简单: '#67C23A',
     中等: '#E6A23C',
     困难: '#F56C6C',
-  }
-  return map[difficulty] || '#909399'
-}
-
-// 获取计划类型标签类型
-const getPlanTypeTagType = (type: string) => {
-  const map: Record<string, string> = {
-    学习计划: 'primary',
-    复习计划: 'warning',
-    项目计划: 'success',
-  }
-  return map[type] || 'info'
-}
-
-// 获取计划类型颜色
-const getPlanTypeColor = (type: string) => {
-  const map: Record<string, string> = {
+  },
+  planType: {
     学习计划: '#409EFF',
     复习计划: '#E6A23C',
     项目计划: '#67C23A',
-  }
-  return map[type] || '#909399'
-}
+  },
+} // 难度分布图例数据
+const difficultyLegend = computed(() => {
+  if (!statistics.value?.difficultyDistribution?.details) return []
+  return statistics.value.difficultyDistribution.details.map((item) => ({
+    name: item.type,
+    value: item.count,
+    percentage: (item.percentage * 100).toFixed(2),
+    color: CHART_COLORS.difficulty[item.type as keyof typeof CHART_COLORS.difficulty] || '#909399',
+  }))
+})
 
-// 获取建议类型（用于交替显示）
+// 计划类型分布图例数据
+const planTypeLegend = computed(() => {
+  if (!statistics.value?.planTypeDistribution?.details) return []
+  return statistics.value.planTypeDistribution.details.map((item) => ({
+    name: item.type,
+    value: item.count,
+    percentage: (item.percentage * 100).toFixed(2),
+    color: CHART_COLORS.planType[item.type as keyof typeof CHART_COLORS.planType] || '#909399',
+  }))
+})
+
+// 计算属性：获取建议数组
+const suggestionList = computed(() => {
+  if (!suggestions.value) return []
+
+  if (Array.isArray(suggestions.value)) {
+    return suggestions.value
+  }
+
+  if (suggestions.value.suggestions) {
+    return suggestions.value.suggestions
+  }
+
+  if (suggestions.value.data?.suggestions) {
+    return suggestions.value.data.suggestions
+  }
+
+  return []
+})
+
+const hasSuggestions = computed(() => suggestionList.value.length > 0)
+
+// 获取建议类型
 const getSuggestionType = (index: number) => {
   const types = ['primary', 'success', 'warning', 'info']
   return types[index % types.length] as 'primary' | 'success' | 'warning' | 'info'
 }
+
+// 渲染环形图
+const renderCharts = () => {
+  nextTick(() => {
+    // 难度分布环形图
+    if (difficultyChartRef.value && difficultyLegend.value.length > 0) {
+      if (difficultyChart.value) difficultyChart.value.dispose()
+      difficultyChart.value = echarts.init(difficultyChartRef.value)
+
+      difficultyChart.value.setOption({
+        tooltip: {
+          trigger: 'item',
+          formatter: '{b}: {c}个 ({d}%)',
+        },
+        legend: {
+          show: false,
+        },
+        series: [
+          {
+            name: '难度分布',
+            type: 'pie',
+            radius: ['40%', '70%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+              borderRadius: 10,
+              borderColor: '#fff',
+              borderWidth: 2,
+            },
+            label: {
+              show: false,
+            },
+            emphasis: {
+              scale: false,
+              label: {
+                show: true,
+                position: 'center',
+                fontSize: 16,
+                fontWeight: 'bold',
+                formatter: '{b}\n{d}%',
+              },
+            },
+            data: difficultyLegend.value.map((item) => ({
+              name: item.name,
+              value: item.value,
+              itemStyle: { color: item.color },
+            })),
+          },
+        ],
+      })
+    }
+
+    // 计划类型分布环形图
+    if (planTypeChartRef.value && planTypeLegend.value.length > 0) {
+      if (planTypeChart.value) planTypeChart.value.dispose()
+      planTypeChart.value = echarts.init(planTypeChartRef.value)
+
+      planTypeChart.value.setOption({
+        tooltip: {
+          trigger: 'item',
+          formatter: '{b}: {c}个 ({d}%)',
+        },
+        legend: {
+          show: false,
+        },
+        series: [
+          {
+            name: '计划类型分布',
+            type: 'pie',
+            radius: ['40%', '70%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+              borderRadius: 10,
+              borderColor: '#fff',
+              borderWidth: 2,
+            },
+            label: {
+              show: false,
+            },
+            emphasis: {
+              scale: false,
+              label: {
+                show: true,
+                position: 'center',
+                fontSize: 16,
+                fontWeight: 'bold',
+                formatter: '{b}\n{d}%',
+              },
+            },
+            data: planTypeLegend.value.map((item) => ({
+              name: item.name,
+              value: item.value,
+              itemStyle: { color: item.color },
+            })),
+          },
+        ],
+      })
+    }
+  })
+}
+
+// 监听数据变化，重新渲染图表
+watch(
+  [statistics, difficultyLegend, planTypeLegend],
+  () => {
+    renderCharts()
+  },
+  { deep: true },
+)
 
 // 处理时间范围切换
 const handleTimeRangeChange = () => {
@@ -244,7 +360,6 @@ const fetchData = async () => {
       timeRange: timeRange.value,
     })
 
-    // 并行请求
     const [statsData, suggestionsData] = await Promise.all([
       getStudyStatistics({ timeRange: timeRange.value }).catch((err) => {
         console.warn('获取统计数据失败，使用模拟数据', err)
@@ -256,11 +371,8 @@ const fetchData = async () => {
       }),
     ])
 
-    // 如果接口失败，使用模拟数据
     statistics.value = statsData || getMockStatistics(timeRange.value)
-    suggestions.value = Array.isArray(suggestionsData)
-      ? suggestionsData
-      : getMockSuggestions(timeRange.value)
+    suggestions.value = suggestionsData || getMockSuggestions(timeRange.value)
 
     console.log('数据获取成功:', {
       statistics: statistics.value,
@@ -268,23 +380,21 @@ const fetchData = async () => {
     })
   } catch (err) {
     console.error('请求失败:', err)
-    // 即使主请求失败，也显示模拟数据
     statistics.value = getMockStatistics(timeRange.value)
     suggestions.value = getMockSuggestions(timeRange.value)
-    error.value = '' // 清空错误，让页面显示模拟数据
+    error.value = ''
   } finally {
     loading.value = false
   }
 }
 
 // 模拟统计数据
-// 模拟统计数据 - 匹配 StudyStatisticsResponseResponse 格式
 const getMockStatistics = (range: 'today' | 'week' | 'month'): StudyStatisticsResponse => {
   const baseData: StudyStatisticsResponse = {
     totalPlanCount: 12,
     completedPlanCount: 5,
     completionRate: 0.42,
-    unfinishedCount: 7, // 未完成计划数 = 总 - 已完成
+    unfinishedCount: 7,
     overduePlanCount: 2,
     difficultyDistribution: {
       details: [
@@ -307,7 +417,6 @@ const getMockStatistics = (range: 'today' | 'week' | 'month'): StudyStatisticsRe
     },
   }
 
-  // 根据时间范围调整数据
   if (range === 'today') {
     return {
       ...baseData,
@@ -328,7 +437,7 @@ const getMockStatistics = (range: 'today' | 'week' | 'month'): StudyStatisticsRe
   return baseData
 }
 
-// 模拟学习建议 - 匹配 StudySuggestionsResponse 格式
+// 模拟学习建议
 const getMockSuggestions = (range: 'today' | 'week' | 'month'): StudySuggestionsResponse => {
   const suggestionsList = [
     '根据您的学习进度，建议每天安排2小时进行编程练习',
@@ -380,6 +489,12 @@ onMounted(() => {
   } else {
     error.value = '请先登录'
   }
+})
+
+// 组件卸载时销毁图表
+onUnmounted(() => {
+  if (difficultyChart.value) difficultyChart.value.dispose()
+  if (planTypeChart.value) planTypeChart.value.dispose()
 })
 </script>
 
@@ -476,21 +591,63 @@ onMounted(() => {
   line-height: 1.3;
 }
 
-.distribution-chart {
-  margin: 20px 0;
+.charts-row {
+  margin-top: 24px;
 }
 
-.distribution-bar {
-  margin-bottom: 16px;
+.chart-container {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.bar-label {
+.chart-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0 0 16px 0;
+}
+
+.chart {
+  width: 100%;
+  height: 300px;
+}
+
+.chart-legend {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.legend-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  gap: 8px;
+  padding: 8px 0;
   font-size: 14px;
   color: #606266;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.legend-item:last-child {
+  border-bottom: none;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.legend-value {
+  color: #909399;
 }
 
 .subject-card {
@@ -532,14 +689,6 @@ onMounted(() => {
   color: #303133;
 }
 
-:deep(.el-progress) {
-  width: 100%;
-}
-
-:deep(.el-progress-bar__outer) {
-  background-color: #f0f2f5;
-}
-
 /* 响应式设计 */
 @media (max-width: 768px) {
   .study-data-container {
@@ -557,6 +706,10 @@ onMounted(() => {
 
   .stat-value {
     font-size: 20px;
+  }
+
+  .chart {
+    height: 250px;
   }
 }
 </style>
