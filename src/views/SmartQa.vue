@@ -101,12 +101,19 @@ const loadSessionHistory = async (sessionId: string) => {
 
       // 添加历史消息
       response.forEach((item: SessionHistoryItem, index: number) => {
+        // 构造用户消息内容
+        let userContent = item.question
+        // 如果有文件信息，显示文件标记
+        if (item.file) {
+          userContent = `📎 [文件] ${item.file.originalName}\n\n${item.question || '请分析这个文件'}`
+        }
+
         // 添加用户问题
         messages.value.push({
           id: Date.now() + index * 2,
-          content: item.question,
+          content: userContent,
           sender: 'user',
-          timestamp: new Date(item.createTime).toLocaleTimeString(),
+          timestamp: safeParseDate(item.createTime),
         })
 
         // 添加AI回答
@@ -114,7 +121,7 @@ const loadSessionHistory = async (sessionId: string) => {
           id: Date.now() + index * 2 + 1,
           content: item.answer,
           sender: 'ai',
-          timestamp: new Date(item.createTime).toLocaleTimeString(),
+          timestamp: safeParseDate(item.createTime),
         })
       })
 
@@ -129,7 +136,28 @@ const loadSessionHistory = async (sessionId: string) => {
     loadingHistory.value = false
   }
 }
+// 辅助函数：安全解析日期
+const safeParseDate = (dateStr: string) => {
+  if (!dateStr) return '未知时间'
 
+  try {
+    const date = new Date(dateStr)
+    // 检查是否有效
+    if (isNaN(date.getTime())) {
+      console.warn('无效日期:', dateStr)
+      return '未知时间'
+    }
+    return date.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+  } catch (e) {
+    console.error('日期解析失败:', e)
+    return '未知时间'
+  }
+}
 // ===== 新增：选择会话 =====
 const selectSession = (session: ConversationSession) => {
   selectMenu('history') // 确保在历史对话菜单

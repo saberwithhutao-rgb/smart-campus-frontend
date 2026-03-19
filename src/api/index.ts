@@ -123,6 +123,15 @@ export interface SessionHistoryItem {
   fileId?: number
   fileName?: string
   fileType?: string
+  // ✅ 新增：完整的文件信息
+  file?: {
+    id: number
+    fileName: string
+    originalName: string
+    fileType: string
+    fileSize: number
+    uploadTime: string
+  }
 }
 
 /**
