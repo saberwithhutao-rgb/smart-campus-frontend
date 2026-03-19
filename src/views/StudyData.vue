@@ -1,5 +1,6 @@
 <template>
   <div class="study-data-container">
+    <GlobalNavbar />
     <!-- 时间范围选择器 -->
     <div class="time-range-selector">
       <label>时间范围：</label>
@@ -132,10 +133,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
-import type {
-  StudyStatisticsResponse, // 重命名，方便使用
-  StudySuggestionsResponse,
-} from '../api/study'
+import type { StudyStatisticsResponse, StudySuggestionsResponse } from '../api/study'
+import { GlobalComponents } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { MagicStick } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'

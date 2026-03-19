@@ -29,7 +29,7 @@ const showSidebar = ref(true)
 const isUploadMode = ref(false)
 const selectedFile = ref<File | null>(null)
 const currentSessionId = ref<string>('')
-
+const fileInput = ref<HTMLInputElement>()
 // ===== 新增：历史对话相关数据 =====
 const sessions = ref<ConversationSession[]>([])
 const loadingSessions = ref(false)
@@ -42,6 +42,10 @@ const isVpnLikely = ref(false)
 
 // 用户状态管理
 const userStore = useUserStore()
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
 
 // 检查屏幕尺寸
 const checkScreenSize = () => {
@@ -268,11 +272,7 @@ const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) 
 /**
  * ✅ 处理通义千问流式响应 - OpenAI 兼容格式
  */
-const processTongyiStream = async (
-  response: Response,
-  aiMessageIndex: number,
-  question: string,
-) => {
+const processTongyiStream = async (response: Response, aiMessageIndex: number) => {
   const reader = response.body?.getReader()
   if (!reader) {
     throw new Error('无法读取响应流')
@@ -373,7 +373,6 @@ const sendMessage = async () => {
 
   const question = inputMessage.value
   const hasFile = selectedFile.value !== null
-
   // 添加用户消息
   const userMessage: ChatMessage = {
     id: Date.now(),
@@ -458,7 +457,7 @@ const sendMessage = async () => {
       const data = await response.json()
       safeUpdateMessage(aiMessageIndex, data.data?.answer || '响应格式错误', false)
     } else {
-      await processTongyiStream(response, aiMessageIndex, question || '请分析这个文件')
+      await processTongyiStream(response, aiMessageIndex)
     }
   } catch (error) {
     console.error('❌ 请求失败:', error)
@@ -487,95 +486,21 @@ const handleKeyDown = (event: KeyboardEvent) => {
 // 处理文件选择
 const handleFileChange = (event: Event) => {
   const input = event.target as HTMLInputElement
-  const file = input.files?.[0] // 使用可选链操作符安全访问
-  if (file) {
-    selectedFile.value = file
-  }
-}
-
-// 上传文件（使用流式）
-const uploadFile = async () => {
-  if (!selectedFile.value) return
-
-  const fileMessage: ChatMessage = {
-    id: Date.now(),
-    content: `📎 上传了文件: ${selectedFile.value.name}`,
-    sender: 'user',
-    timestamp: new Date().toLocaleTimeString(),
-  }
-  messages.value.push(fileMessage)
-  scrollToBottom()
-
-  // 创建AI消息占位符
-  const aiMessageId = Date.now() + 1
-  const aiMessage: ChatMessage = {
-    id: aiMessageId,
-    content: '',
-    sender: 'ai',
-    timestamp: new Date().toLocaleTimeString(),
-    isLoading: true,
-  }
-  messages.value.push(aiMessage)
-  const aiMessageIndex = messages.value.length - 1
-  scrollToBottom()
-
-  try {
-    const token =
-      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
-    if (!token) {
-      safeUpdateMessage(aiMessageIndex, '请先登录', false)
-      return
-    }
-
-    const formData = new FormData()
-    formData.append('question', inputMessage.value || '请分析这个文件')
-
-    let sessionIdToUse = currentSessionId.value
-    if (!sessionIdToUse) {
-      sessionIdToUse = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
-      currentSessionId.value = sessionIdToUse
-    }
-    formData.append('sessionId', sessionIdToUse)
-
-    formData.append('file', selectedFile.value)
-    formData.append('stream', 'true')
-
-    const response = await fetch('/ai/chat/send', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'text/event-stream',
-      },
-      body: formData,
+  if (input.files && input.files.length > 0) {
+    selectedFile.value = input.files[0]!
+    // 可选：自动聚焦输入框，方便用户输入问题
+    nextTick(() => {
+      const textarea = document.querySelector('.message-input') as HTMLTextAreaElement
+      textarea?.focus()
     })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-
-    // 使用流式处理
-    await processTongyiStream(response, aiMessageIndex, inputMessage.value || '请分析这个文件')
-
-    // 清除文件选择
-    selectedFile.value = null
-    isUploadMode.value = false
-  } catch (error) {
-    console.error('上传失败:', error)
-    safeUpdateMessage(
-      aiMessageIndex,
-      `上传失败: ${error instanceof Error ? error.message : '未知错误'}`,
-      false,
-    )
   }
 }
 
-// 取消上传
-const cancelUpload = () => {
+// 移除文件
+const removeFile = () => {
   selectedFile.value = null
-  isUploadMode.value = false
-  const input = document.getElementById('file-upload') as HTMLInputElement
-  if (input) {
-    input.value = ''
+  if (fileInput.value) {
+    fileInput.value.value = ''
   }
 }
 
@@ -746,58 +671,57 @@ watch(
 
         <!-- 输入区域 -->
         <div class="chat-input-area">
-          <!-- 上传按钮 -->
+          <!-- 上传按钮和文件信息 -->
           <div class="input-toolbar">
             <button
               class="upload-button"
-              @click="isUploadMode = !isUploadMode"
-              :class="{ 'upload-button-active': isUploadMode }"
+              @click="triggerFileInput"
+              :class="{ 'upload-button-active': selectedFile }"
             >
-              {{ isUploadMode ? '取消上传' : '上传文件' }}
+              📎 上传文件
             </button>
+            <span v-if="selectedFile" class="file-info">
+              {{ selectedFile.name }}
+              <button class="remove-file" @click="removeFile">✕</button>
+            </span>
           </div>
 
-          <!-- 输入模式 -->
-          <div v-if="!isUploadMode" class="input-mode">
+          <!-- 统一的输入模式 - 无论是否上传文件，都显示输入框 -->
+          <div class="input-mode">
             <div class="input-container">
               <textarea
                 v-model="inputMessage"
                 class="message-input"
-                placeholder="请输入您的问题"
+                :placeholder="selectedFile ? '输入问题（可选）...' : '请输入您的问题...'"
                 rows="1"
                 @keydown="handleKeyDown"
                 spellcheck="false"
               ></textarea>
-              <button class="send-button" @click="sendMessage">发送</button>
+              <button
+                class="send-button"
+                @click="sendMessage"
+                :disabled="!inputMessage.trim() && !selectedFile"
+              >
+                发送
+              </button>
             </div>
-            <div class="input-tip">按Enter发送消息，Shift+Enter换行</div>
+            <div class="input-tip">
+              {{
+                selectedFile
+                  ? '可输入问题指导AI分析文件，或直接发送文件'
+                  : '按Enter发送消息，Shift+Enter换行'
+              }}
+            </div>
           </div>
 
-          <!-- 上传模式 -->
-          <div v-else class="upload-mode">
-            <div class="upload-container">
-              <input
-                type="file"
-                id="file-upload"
-                class="file-input"
-                accept=".doc,.docx,.pdf,.txt"
-                @change="handleFileChange"
-              />
-              <label for="file-upload" class="upload-box">
-                <div class="upload-icon">📁</div>
-                <div class="upload-text">
-                  {{ selectedFile ? selectedFile.name : '点击或拖拽文件到此处上传' }}
-                </div>
-                <div class="upload-hint">支持 .doc .docx .pdf .txt 格式文件</div>
-              </label>
-              <div class="upload-actions">
-                <button class="upload-submit" @click="uploadFile" :disabled="!selectedFile">
-                  确认上传
-                </button>
-                <button class="upload-cancel" @click="cancelUpload">取消</button>
-              </div>
-            </div>
-          </div>
+          <!-- 隐藏的文件输入 -->
+          <input
+            ref="fileInput"
+            type="file"
+            class="file-input-hidden"
+            accept=".doc,.docx,.pdf,.txt,.jpg,.jpeg,.png"
+            @change="handleFileChange"
+          />
         </div>
       </main>
 
@@ -838,6 +762,45 @@ watch(
 </template>
 
 <style scoped>
+.file-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  padding: 4px 12px;
+  background-color: #e3f2fd;
+  border-radius: 16px;
+  font-size: 13px;
+  color: #1976d2;
+}
+
+.remove-file {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #999;
+  padding: 0 4px;
+}
+
+.remove-file:hover {
+  color: #f44336;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.send-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.send-button:disabled:hover {
+  background-color: #ccc;
+  box-shadow: none;
+}
+
 .smart-qa-container {
   min-height: 100vh;
   background-color: #f5f7fa;
@@ -1438,12 +1401,6 @@ watch(
   font-size: 12px;
   color: #86909c;
   text-align: center;
-}
-
-.upload-mode {
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .upload-container {
