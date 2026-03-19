@@ -157,6 +157,9 @@ const handleSuccessResponse = (response: AxiosResponse) => {
 
 // ==================== 响应拦截器 - 错误处理 ====================
 const handleAutoLogin = async (error: AxiosError, originalRequest: ExtendedAxiosRequestConfig) => {
+  if (originalRequest.url?.includes('/api/login')) {
+    return Promise.reject(error)
+  }
   if (isAutoLogging) {
     return new Promise((resolve, reject) => {
       failedQueue.push({ resolve, reject })

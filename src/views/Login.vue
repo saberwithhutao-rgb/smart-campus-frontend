@@ -125,8 +125,6 @@ const goToRegister = () => {
 // 组件挂载时获取验证码，并检查是否有保存的用户名
 onMounted(() => {
   getCaptcha()
-
-  // 如果有保存的用户名，自动填充
   const savedUsername = autoLogin.getSavedUsername()
   if (savedUsername) {
     form.username = savedUsername
