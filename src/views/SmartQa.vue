@@ -113,7 +113,7 @@ const loadSessionHistory = async (sessionId: string) => {
           id: Date.now() + index * 2,
           content: userContent,
           sender: 'user',
-          timestamp: safeParseDate(item.createTime),
+          timestamp: formatDateTime(item.createTime),
         })
 
         // 添加AI回答
@@ -121,7 +121,7 @@ const loadSessionHistory = async (sessionId: string) => {
           id: Date.now() + index * 2 + 1,
           content: item.answer,
           sender: 'ai',
-          timestamp: safeParseDate(item.createTime),
+          timestamp: formatDateTime(item.createTime),
         })
       })
 
@@ -137,20 +137,33 @@ const loadSessionHistory = async (sessionId: string) => {
   }
 }
 // 辅助函数：安全解析日期
-const safeParseDate = (dateStr: string) => {
+const formatDateTime = (dateStr: string) => {
   if (!dateStr) return '未知时间'
 
   try {
-    const date = new Date(dateStr)
-    // 检查是否有效
+    // 处理带时区的格式：2026-03-19 22:41:40.207174+08
+    // 转换为标准格式：2026-03-19T22:41:40.207174+08:00
+    let standardizedDate = dateStr
+
+    // 如果是 "2026-03-19 22:41:40.207174+08" 这种格式
+    if (dateStr.includes(' ') && dateStr.includes('+')) {
+      // 替换空格为 T，并确保时区格式正确
+      standardizedDate = dateStr.replace(' ', 'T')
+      // 如果时区是 +08，加上 :00
+      if (standardizedDate.match(/\+[0-9]{2}$/)) {
+        standardizedDate = standardizedDate + ':00'
+      }
+    }
+
+    const date = new Date(standardizedDate)
     if (isNaN(date.getTime())) {
       console.warn('无效日期:', dateStr)
       return '未知时间'
     }
-    return date.toLocaleTimeString('zh-CN', {
+
+    return date.toLocaleString('zh-CN', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
       hour12: false,
     })
   } catch (e) {
@@ -247,8 +260,14 @@ const formatDate = (dateStr: string) => {
 
 // 切换菜单选中状态
 const selectMenu = (menu: string) => {
-  selectedMenu.value = menu
-  if (menu === 'new') {
+  if (menu === 'history') {
+    // 如果当前是 history，则切换到 new；否则切换到 history
+    selectedMenu.value = selectedMenu.value === 'history' ? 'new' : 'history'
+  } else {
+    selectedMenu.value = menu
+  }
+
+  if (selectedMenu.value === 'new') {
     messages.value = [
       {
         id: 1,
@@ -712,6 +731,8 @@ watch(
               {{ selectedFile.name }}
               <button class="remove-file" @click="removeFile">✕</button>
             </span>
+            <!-- ✅ 添加这一行显示格式提示 -->
+            <span class="file-format-hint">支持 .pdf .doc .docx .txt .ppt .pptx</span>
           </div>
 
           <!-- 统一的输入模式 - 无论是否上传文件，都显示输入框 -->
@@ -747,7 +768,7 @@ watch(
             ref="fileInput"
             type="file"
             class="file-input-hidden"
-            accept=".doc,.docx,.pdf,.txt,.jpg,.jpeg,.png"
+            accept=".pdf,.doc,.docx,.txt,.ppt,.pptx"
             @change="handleFileChange"
           />
         </div>
@@ -1638,6 +1659,26 @@ watch(
 
 .dialog-btn.confirm:hover {
   background-color: #1565c0;
+}
+
+.file-format-hint {
+  margin-left: 12px;
+  font-size: 12px;
+  color: #999;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .input-toolbar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .file-format-hint {
+    margin-left: 0;
+  }
 }
 
 /* 响应式设计 */
