@@ -1,31 +1,60 @@
-// utils/request.js
+// utils/request.ts
 import axios from 'axios'
+import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
 import { autoLogin } from './autoLogin'
 import { useUserStore } from '../stores/user'
 import router from '@/router'
 
+// 扩展 AxiosRequestConfig 类型，添加 metadata
+interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
+  metadata?: { startTime: number }
+  _retry?: boolean
+  skipGlobalError?: boolean
+}
+
 // 创建axios实例
-const request = axios.create({
+const request: AxiosInstance = axios.create({
   baseURL: '',
   timeout: 120000,
   headers: {
     'Content-Type': 'application/json;charset=utf-8',
   },
-  paramsSerializer: (params) => {
-    if (params.page === undefined) params.page = 0
-    if (params.size === undefined) params.size = 10
-    return Object.entries(params)
-      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+  paramsSerializer: (params: Record<string, unknown>) => {
+    const serializedParams: Record<string, string | number | boolean> = {}
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (key === 'page' && value === undefined) serializedParams.page = 0
+      else if (key === 'size' && value === undefined) serializedParams.size = 10
+      else if (
+        typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'boolean'
+      ) {
+        serializedParams[key] = value
+      }
+      // 忽略复杂类型
+    })
+
+    return Object.entries(serializedParams)
+      .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
       .join('&')
   },
 })
 
 // ==================== 请求队列管理 ====================
-let isAutoLogging = false
-let failedQueue = []
+type ResolveFunction = (value: unknown) => void
+type RejectFunction = (reason?: Error | string | unknown) => void
 
-const processQueue = (error, token = null) => {
+interface QueueItem {
+  resolve: ResolveFunction
+  reject: RejectFunction
+}
+
+let failedQueue: QueueItem[] = []
+let isAutoLogging = false
+
+const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error)
@@ -35,8 +64,9 @@ const processQueue = (error, token = null) => {
   })
   failedQueue = []
 }
+
 // ==================== HTTP状态码提示 ====================
-const HTTP_STATUS_MESSAGES = {
+const HTTP_STATUS_MESSAGES: Record<number, string> = {
   400: '请求参数错误',
   401: '未授权，请重新登录',
   403: '没有权限访问此资源',
@@ -53,12 +83,12 @@ const HTTP_STATUS_MESSAGES = {
   504: '网关超时',
 }
 
-const getHttpStatusMessage = (status) => {
+const getHttpStatusMessage = (status: number): string => {
   return HTTP_STATUS_MESSAGES[status] || `请求失败 (${status})`
 }
 
 // ==================== 工具函数 ====================
-const logRequest = (config) => {
+const logRequest = (config: ExtendedAxiosRequestConfig) => {
   console.log('[原始URL]', config.url)
   console.log('[完整URL]', axios.getUri(config))
   console.log('[API Request]', {
@@ -68,14 +98,14 @@ const logRequest = (config) => {
   })
 }
 
-const logResponse = (response, duration) => {
+const logResponse = (response: AxiosResponse, duration: number) => {
   console.log(`请求耗时: ${duration} ms - ${response.config.url}`)
   console.log('📦 拦截器收到的原始响应:', response.data)
 }
 
 // ==================== 请求拦截器 ====================
 request.interceptors.request.use(
-  (config) => {
+  (config: ExtendedAxiosRequestConfig) => {
     config.metadata = { startTime: Date.now() }
 
     const token = localStorage.getItem('userToken') || localStorage.getItem('token')
@@ -86,16 +116,16 @@ request.interceptors.request.use(
     logRequest(config)
     return config
   },
-  (error) => Promise.reject(error),
+  (error: AxiosError) => Promise.reject(error),
 )
 
 // ==================== 响应拦截器 - 成功处理 ====================
-const handleSuccessResponse = (response) => {
-  const duration = Date.now() - response.config.metadata.startTime
+const handleSuccessResponse = (response: AxiosResponse) => {
+  const duration = Date.now() - (response.config as ExtendedAxiosRequestConfig).metadata!.startTime
   logResponse(response, duration)
 
   const res = response.data
-  const config = response.config
+  const config = response.config as ExtendedAxiosRequestConfig
 
   // 跳过全局错误处理
   if (config.skipGlobalError) {
@@ -122,7 +152,7 @@ const handleSuccessResponse = (response) => {
 }
 
 // ==================== 响应拦截器 - 错误处理 ====================
-const handleAutoLogin = async (error, originalRequest) => {
+const handleAutoLogin = async (error: AxiosError, originalRequest: ExtendedAxiosRequestConfig) => {
   if (isAutoLogging) {
     return new Promise((resolve, reject) => {
       failedQueue.push({ resolve, reject })
@@ -151,19 +181,19 @@ const handleAutoLogin = async (error, originalRequest) => {
       console.log('❌ 自动登录失败')
       processQueue(new Error('自动登录失败'), null)
       const userStore = useUserStore()
-      userStore.clearUser?.()
+      userStore.logout(false)
       router.push('/login')
     }
   } catch (autoLoginError) {
     console.error('自动登录过程出错:', autoLoginError)
-    processQueue(autoLoginError, null)
+    processQueue(autoLoginError as Error, null)
   } finally {
     isAutoLogging = false
   }
 }
 
-const handleErrorResponse = async (error) => {
-  const originalRequest = error.config
+const handleErrorResponse = async (error: AxiosError) => {
+  const originalRequest = error.config as ExtendedAxiosRequestConfig
 
   // 跳过全局错误处理
   if (originalRequest?.skipGlobalError) {
@@ -180,7 +210,8 @@ const handleErrorResponse = async (error) => {
     const { status, data } = error.response
     console.error('响应错误:', status, data)
 
-    const errorMessage = data?.message || data?.msg || getHttpStatusMessage(status)
+    const errorData = data as { message?: string; msg?: string }
+    const errorMessage = errorData?.message || errorData?.msg || getHttpStatusMessage(status)
     console.log('🔥 进入错误拦截器', error.response?.status)
     ElMessage.error(errorMessage)
   } else if (error.request) {
