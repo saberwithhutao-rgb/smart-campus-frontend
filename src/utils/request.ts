@@ -127,6 +127,10 @@ const handleSuccessResponse = (response: AxiosResponse) => {
   const res = response.data
   const config = response.config as ExtendedAxiosRequestConfig
 
+  if (config.url?.includes('/api/captcha')) {
+    return response.data // 返回完整对象，让拦截器不处理
+  }
+
   // 跳过全局错误处理
   if (config.skipGlobalError) {
     return res
