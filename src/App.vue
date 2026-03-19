@@ -198,7 +198,16 @@ onMounted(async () => {
 
     if (!isValid) {
       console.log('3. Token 无效，尝试自动登录...')
-      await userStore.tryAutoLogin?.()
+      const autoLoginSuccess = await userStore.tryAutoLogin?.()
+      if (!autoLoginSuccess) {
+        console.log('3.1 自动登录失败，跳转到登录页')
+        // 清除无效状态
+        userStore.userState.isLoggedIn = false
+        userStore.userState.userInfo = null
+
+        router.push('/login')
+      }
+      return // 重要：不再继续执行
     } else {
       console.log('3. Token 有效，已有登录状态')
     }
