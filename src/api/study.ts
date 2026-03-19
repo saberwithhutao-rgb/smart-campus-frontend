@@ -27,7 +27,7 @@ export const getAllReviewTasks = () => {
   return request<StudyTask[]>({
     method: 'GET',
     url: '/api/study/tasks/all',
-  })
+  }) as unknown as Promise<StudyTask[]>
 }
 
 // 获取复习任务详情
