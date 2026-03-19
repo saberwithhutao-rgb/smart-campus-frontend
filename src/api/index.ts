@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 import type { ReviewItem, StudyPlan, StudyTask, StudyPlansResponse } from '@/stores/studyPlan'
-import type { ExamCountdown, UserProfile } from '../types/user'
+import type { ExamCountdown, UserProfile, CaptchaResponse } from '../types/user'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import type { StudyPlanDetail } from '../stores/studyPlanDetail'
 import type {
@@ -255,7 +255,9 @@ export const api = {
     request<ApiResponse<null>>({ method: 'POST', url: '/api/verify/email', data: { email } }),
 
   getCaptcha: () =>
-    request<string>({ method: 'GET', url: '/api/captcha' }).then((res) => res as unknown as string),
+    request<CaptchaResponse>({ method: 'GET', url: '/api/captcha' }).then(
+      (res) => res as unknown as CaptchaResponse,
+    ),
 
   // 学习计划模块
   getStudyPlans: (params?: {

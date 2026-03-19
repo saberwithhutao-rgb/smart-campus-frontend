@@ -43,22 +43,24 @@ const togglePasswordVisibility = () => {
 const getCaptcha = async () => {
   isGettingCaptcha.value = true
   try {
-    const captchaText = await api.getCaptcha()
-    console.log('登录验证码响应:', captchaText)
+    const res = await api.getCaptcha()
+    console.log('登录验证码响应:', res)
 
-    if (captchaText) {
-      captchaData.captchaText = captchaText
-      form.captcha = ''
-
-      errorMessage.value = '验证码已更新'
-      setTimeout(() => {
-        if (errorMessage.value === '验证码已更新') {
-          errorMessage.value = ''
-        }
-      }, 3000)
-    } else {
-      errorMessage.value = '获取验证码失败'
+    // 先判断是否有图片
+    if (res.captchaBase64) {
+      captchaData.captchaBase64 = res.captchaBase64
+      captchaData.captchaText = res.data
+    } else if (res.data) {
+      captchaData.captchaText = res.data
     }
+
+    form.captcha = ''
+    errorMessage.value = '验证码已更新'
+    setTimeout(() => {
+      if (errorMessage.value === '验证码已更新') {
+        errorMessage.value = ''
+      }
+    }, 3000)
   } catch (error) {
     console.error('获取验证码失败:', error)
     errorMessage.value = '获取验证码失败'
