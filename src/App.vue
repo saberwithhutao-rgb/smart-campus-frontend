@@ -27,16 +27,14 @@ const validateToken = async (): Promise<boolean> => {
   try {
     await api.verifyToken()
     return true
-  } catch (error: any) {
-    // 如果是 401 或其他认证错误，说明 token 无效
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      console.log('Token 无效，清除本地存储')
-      localStorage.removeItem(STORAGE_KEYS.TOKEN)
-      localStorage.removeItem(STORAGE_KEYS.TOKEN_ALT)
+  } catch {
+    console.log('Token 无效，清除本地存储')
+    localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    localStorage.removeItem(STORAGE_KEYS.TOKEN_ALT)
 
-      userStore.userState.isLoggedIn = false
-      userStore.userState.userInfo = null
-    }
+    userStore.userState.isLoggedIn = false
+    userStore.userState.userInfo = null
+
     return false
   }
 }
