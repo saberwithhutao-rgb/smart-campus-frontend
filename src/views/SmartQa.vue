@@ -484,6 +484,7 @@ const sendMessage = async () => {
       await processTongyiStream(response, aiMessageIndex)
     }
   } catch (error) {
+    ElMessage.error('AI服务异常，请稍后重试')
     console.error('❌ 请求失败:', error)
     safeUpdateMessage(
       aiMessageIndex,
@@ -715,7 +716,7 @@ watch(
               @click="triggerFileInput"
               :class="{ 'upload-button-active': selectedFile }"
             >
-              上传文件 (支持 .pdf .docx .doc .txt .xls .xlsx .pptx .jpg .jpeg .png .bmp .gif)
+              上传文件 (支持 .pdf .docx .doc .txt .xls .xlsx .pptx)
             </button>
             <span v-if="selectedFile" class="file-info">
               {{ selectedFile.name }}
@@ -756,7 +757,7 @@ watch(
             ref="fileInput"
             type="file"
             class="file-input-hidden"
-            accept=".pdf,.docx,.doc,.txt,.xls,.xlsx,.pptx,.jpg,.jpeg,.png,.bmp,.gif"
+            accept=".pdf,.docx,.doc,.txt,.xls,.xlsx,.pptx"
             @change="handleFileChange"
           />
         </div>
