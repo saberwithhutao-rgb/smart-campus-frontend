@@ -96,14 +96,11 @@ const loadSessionHistory = async (sessionId: string) => {
   try {
     const response = await api.getSessionHistory(sessionId)
     if (Array.isArray(response)) {
-      // 清空现有消息
       messages.value = []
 
       // 添加历史消息
       response.forEach((item: SessionHistoryItem, index: number) => {
-        // 构造用户消息内容
         let userContent = item.question
-        // 如果有文件信息，显示文件标记
         if (item.file) {
           userContent = `📎 [文件] ${item.file.originalName}\n\n${item.question || '请分析这个文件'}`
         }
@@ -113,7 +110,7 @@ const loadSessionHistory = async (sessionId: string) => {
           id: Date.now() + index * 2,
           content: userContent,
           sender: 'user',
-          timestamp: formatDateTime(item.createTime),
+          timestamp: formatDateTime(item.createdAt),
         })
 
         // 添加AI回答
@@ -121,7 +118,7 @@ const loadSessionHistory = async (sessionId: string) => {
           id: Date.now() + index * 2 + 1,
           content: item.answer,
           sender: 'ai',
-          timestamp: formatDateTime(item.createTime),
+          timestamp: formatDateTime(item.createdAt),
         })
       })
 
@@ -138,36 +135,12 @@ const loadSessionHistory = async (sessionId: string) => {
 }
 // 辅助函数：安全解析日期
 const formatDateTime = (dateStr: string) => {
-  if (!dateStr) return '未知时间'
-
-  try {
-    // 如果字符串没有时区，添加本地时区
-    let parsedDateStr = dateStr
-    if (dateStr.length === 26 && !dateStr.includes('Z') && !dateStr.includes('+')) {
-      // 获取本地时区偏移，如 +08:00
-      const offset = -new Date().getTimezoneOffset()
-      const sign = offset >= 0 ? '+' : '-'
-      const hours = Math.floor(Math.abs(offset) / 60)
-        .toString()
-        .padStart(2, '0')
-      const minutes = (Math.abs(offset) % 60).toString().padStart(2, '0')
-      parsedDateStr = dateStr + `${sign}${hours}:${minutes}`
-    }
-
-    const date = new Date(parsedDateStr)
-
-    if (isNaN(date.getTime())) {
-      console.warn('无效日期:', dateStr)
-      return '未知时间'
-    }
-
-    const hours = date.getHours().toString().padStart(2, '0')
-    const minutes = date.getMinutes().toString().padStart(2, '0')
-    return `${hours}:${minutes}`
-  } catch (e) {
-    console.error('日期解析失败:', e)
-    return '未知时间'
-  }
+  const date = new Date(dateStr)
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  return `${month}-${day} ${hours}:${minutes}`
 }
 // ===== 新增：选择会话 =====
 const selectSession = (session: ConversationSession) => {
@@ -742,7 +715,7 @@ watch(
               @click="triggerFileInput"
               :class="{ 'upload-button-active': selectedFile }"
             >
-              上传文件 (支持 .pdf .doc .docx .txt .ppt .pptx)
+              上传文件 (支持 .pdf .docx .doc .txt .xls .xlsx .pptx .jpg .jpeg .png .bmp .gif)
             </button>
             <span v-if="selectedFile" class="file-info">
               {{ selectedFile.name }}
@@ -783,7 +756,7 @@ watch(
             ref="fileInput"
             type="file"
             class="file-input-hidden"
-            accept=".pdf,.doc,.docx,.txt,.ppt,.pptx"
+            accept=".pdf,.docx,.doc,.txt,.xls,.xlsx,.pptx,.jpg,.jpeg,.png,.bmp,.gif"
             @change="handleFileChange"
           />
         </div>

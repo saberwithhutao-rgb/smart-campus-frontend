@@ -114,16 +114,17 @@ export interface ConversationSession {
  * 会话历史记录项
  */
 export interface SessionHistoryItem {
+  createdAt: string
   question: string
   answer: string
-  createTime: string
-  questionType: string
-  rating: number
   tokenUsage: number
-  fileId?: number
-  fileName?: string
-  fileType?: string
-  // ✅ 新增：完整的文件信息
+  rating: number
+  id: number
+  sessionId: string
+  title: string | null
+  userId: number
+  questionType: string
+  fileId: number | null
   file?: {
     id: number
     fileName: string
@@ -470,7 +471,7 @@ export const api = {
    * @param sessionId 会话ID
    */
   getSessionHistory: (sessionId: string) =>
-    request<ApiResponse<SessionHistoryItem[]>>({
+    request<SessionHistoryItem[]>({
       method: 'GET',
       url: `/ai/chat/history/${sessionId}`,
     }),
