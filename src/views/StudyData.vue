@@ -134,7 +134,7 @@
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import type { StudyStatisticsResponse, StudySuggestionsResponse } from '../api/study'
-import { GlobalComponents } from 'vue'
+import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { useUserStore } from '@/stores/user'
 import { MagicStick } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
