@@ -141,16 +141,26 @@ const formatDateTime = (dateStr: string) => {
   if (!dateStr) return '未知时间'
 
   try {
-    // 直接解析 ISO 格式字符串
-    const date = new Date(dateStr)
+    // 如果字符串没有时区，添加本地时区
+    let parsedDateStr = dateStr
+    if (dateStr.length === 26 && !dateStr.includes('Z') && !dateStr.includes('+')) {
+      // 获取本地时区偏移，如 +08:00
+      const offset = -new Date().getTimezoneOffset()
+      const sign = offset >= 0 ? '+' : '-'
+      const hours = Math.floor(Math.abs(offset) / 60)
+        .toString()
+        .padStart(2, '0')
+      const minutes = (Math.abs(offset) % 60).toString().padStart(2, '0')
+      parsedDateStr = dateStr + `${sign}${hours}:${minutes}`
+    }
 
-    // 检查是否有效
+    const date = new Date(parsedDateStr)
+
     if (isNaN(date.getTime())) {
       console.warn('无效日期:', dateStr)
       return '未知时间'
     }
 
-    // 格式化为 HH:MM
     const hours = date.getHours().toString().padStart(2, '0')
     const minutes = date.getMinutes().toString().padStart(2, '0')
     return `${hours}:${minutes}`
@@ -161,7 +171,6 @@ const formatDateTime = (dateStr: string) => {
 }
 // ===== 新增：选择会话 =====
 const selectSession = (session: ConversationSession) => {
-  selectMenu('history') // 确保在历史对话菜单
   loadSessionHistory(session.sessionId)
   if (isMobile.value) {
     showSidebar.value = false // 移动端选择后关闭侧边栏
