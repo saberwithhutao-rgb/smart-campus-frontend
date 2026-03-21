@@ -769,11 +769,6 @@ watch(
       </aside>
     </div>
 
-    <!-- 页脚 -->
-    <footer class="footer">
-      <div class="footer-content">智慧校园平台 © 2024</div>
-    </footer>
-
     <!-- ===== 新增：重命名对话框 ===== -->
     <div v-if="showRenameDialog" class="dialog-overlay" @click="showRenameDialog = false">
       <div class="dialog" @click.stop>
@@ -1539,22 +1534,6 @@ watch(
   flex-shrink: 0; /* 防止被压缩 */
 }
 
-.footer {
-  height: 50px;
-  background-color: #fff;
-  border-top: 1px solid #f0f2f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: #86909c;
-  flex-shrink: 0;
-}
-
-.footer-content {
-  text-align: center;
-}
-
 /* 重命名对话框 */
 .dialog-overlay {
   position: fixed;
@@ -1795,11 +1774,6 @@ watch(
   .upload-submit,
   .upload-cancel {
     width: 100%;
-  }
-
-  .footer {
-    height: 40px;
-    font-size: 12px;
   }
 }
 

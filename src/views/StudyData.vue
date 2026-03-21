@@ -504,6 +504,7 @@ onUnmounted(() => {
   margin: 0 auto;
   background-color: #f5f7fa;
   min-height: calc(100vh - 70px);
+  margin-top: 70px;
 }
 
 .time-range-selector {
