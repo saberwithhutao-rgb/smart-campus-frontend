@@ -536,6 +536,9 @@ const chatInput = ref<HTMLTextAreaElement | null>(null)
 const chanId = ref('')
 const isStreaming = ref(false)
 
+let pendingChars: string[] = []
+let typingTimer: number | null = null
+
 // 等待时的轮播提示文案
 const waitingTips = [
   '正在连接 AI 服务，请稍候…',
@@ -935,79 +938,37 @@ const sendMessage = async () => {
           delete msg.statusHint
         }
 
-        // 把当前 chunk 的所有字放入队列
-        for (const char of chunk) {
-          pendingChars.push(char)
+        // 把 chunk 拆成字，放进队列
+        for (let i = 0; i < chunk.length; i++) {
+          const char = chunk[i]
+          if (char !== undefined) {
+            pendingChars.push(char)
+          }
         }
 
-        // 如果定时器没启动，就启动
+        // 如果没在打字，就开始打
         if (!typingTimer) {
-          startTyping()
+          typingTimer = setInterval(() => {
+            if (pendingChars.length === 0) {
+              clearInterval(typingTimer!)
+              typingTimer = null
+              return
+            }
+            msg.content += pendingChars.shift()
+            scrollToBottom()
+          }, 30) as unknown as number
         }
       },
       streamAbortController.signal,
     )
 
-    // 打字定时器
-    const pendingChars: string[] = []
-    let typingTimer: number | null = null
-
-    const startTyping = () => {
-      if (typingTimer) return
-
-      const typeNext = () => {
-        if (pendingChars.length === 0) {
-          typingTimer = null
-          return
-        }
-
-        const msg = chatMessages.value[aiMsgIndex]
-        if (msg) {
-          msg.content += pendingChars.shift()
-          scrollToBottom()
-        }
-
-        typingTimer = setTimeout(typeNext, 30) as unknown as number
-      }
-
-      typeNext()
-    }
-
-    // 确保最后内容不为空
-    const finalMsg = chatMessages.value[aiMsgIndex]
-    if (finalMsg && !finalMsg.content) {
-      finalMsg.content = '暂无回复，请换个方式提问试试。'
-      finalMsg.isThinking = false
-      delete finalMsg.statusHint
-    }
-
-    if (chanId.value && !sessionIds.value.includes(chanId.value)) {
-      sessionIds.value = [chanId.value, ...sessionIds.value]
-    }
-  } catch (err: unknown) {
-    if (err instanceof DOMException && err.name === 'AbortError') {
-      console.log('流式请求已取消')
-      return
-    }
-    console.error('AI对话失败:', err)
-    const msg = chatMessages.value[aiMsgIndex]
-    if (msg) {
-      msg.role = 'ai'
-      msg.content = '抱歉，我遇到了一些问题，请稍后重试。'
-      msg.isThinking = false
-      delete msg.statusHint
-    } else {
-      chatMessages.value.push({
-        role: 'ai',
-        content: '抱歉，我遇到了一些问题，请稍后重试。',
-      })
-    }
+    // 在 finally 里清理
   } finally {
-    streamAbortController = null
-    stopWaitingTipRotation()
-    loading.value = false
-    isStreaming.value = false
-    scrollToBottom()
+    if (typingTimer) {
+      clearInterval(typingTimer)
+      typingTimer = null
+    }
+    pendingChars = []
   }
 }
 
