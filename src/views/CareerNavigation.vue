@@ -536,7 +536,7 @@ const chatInput = ref<HTMLTextAreaElement | null>(null)
 const chanId = ref('')
 const isStreaming = ref(false)
 
-let pendingChars: string[] = []
+const pendingChars: string[] = []
 let typingTimer: number | null = null
 
 // 等待时的轮播提示文案
@@ -961,14 +961,27 @@ const sendMessage = async () => {
       },
       streamAbortController.signal,
     )
-
-    // 在 finally 里清理
-  } finally {
+    while (pendingChars.length > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    }
     if (typingTimer) {
       clearInterval(typingTimer)
       typingTimer = null
     }
-    pendingChars = []
+  } finally {
+    streamAbortController = null
+    stopWaitingTipRotation()
+    loading.value = false
+    isStreaming.value = false
+
+    // 可以加一个延迟清理，等字显示完
+    setTimeout(() => {
+      if (typingTimer === null && pendingChars.length === 0) {
+        // 已经显示完了
+      }
+    }, 100)
+
+    scrollToBottom()
   }
 }
 
