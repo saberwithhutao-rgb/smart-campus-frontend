@@ -229,6 +229,21 @@ export interface LearningProgress {
   percentage: number
 }
 
+export interface LearningProgressItem {
+  id: number
+  userId: number
+  name: string
+  progressPercent: number
+  createdAt: string
+  updatedAt: string
+}
+
+/** 学习进度总览（/learning-progress/summary 返回） */
+export interface LearningProgressSummary {
+  overallPercent: number
+  items: LearningProgressItem[]
+}
+
 export interface ExamCountdown {
   name: string
   startDate: string
@@ -276,12 +291,4 @@ export interface DifficultyMark {
   content: string
   tags: string[]
   createdAt: string
-}
-
-// 学习进度相关类型（简化版）
-export interface LearningProgress {
-  subject: string
-  completed: number
-  total: number
-  percentage: number
 }

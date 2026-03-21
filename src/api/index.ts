@@ -1,17 +1,16 @@
 import request from '@/utils/request'
 import type { ReviewItem, StudyPlan, StudyTask, StudyPlansResponse } from '@/stores/studyPlan'
-import type { ExamCountdown, UserProfile, CaptchaResponse } from '../types/user'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import type { StudyPlanDetail } from '../stores/studyPlanDetail'
 import type {
+  ExamCountdown,
+  UserProfile,
+  CaptchaResponse,
   QaMessage,
   FileItem,
   LearningProgress,
-  ApiResponse,
-  CaptchaResponse,
   LearningProgressItem,
   LearningProgressSummary,
-  LoginResponse,
 } from '../types/user'
 import type {
   CompetitionRule,
@@ -34,16 +33,18 @@ import type {
 } from '../types/career'
 
 export interface OpenAiMessageVo {
-  role?: string
-  content?: string
-  message?: string
-  text?: string
-  isUser?: boolean
-  question?: string
-  answer?: string
-  createdAt?: string
+  id: number
+  userId: number
+  title: string | null
+  sessionId: string
+  question: string
+  answer: string
+  fileId: number | null
+  questionType: string
+  tokenUsage: number
+  createdAt: string
+  rating: number
 }
-
 export interface ApiResponse<T = unknown> {
   code: number
   message: string
@@ -114,25 +115,15 @@ export interface ConversationSession {
  * 会话历史记录项
  */
 export interface SessionHistoryItem {
-  createdAt: string
   question: string
   answer: string
-  tokenUsage: number
-  rating: number
-  id: number
-  sessionId: string
-  title: string | null
-  userId: number
+  createTime: string
   questionType: string
-  fileId: number | null
-  file?: {
-    id: number
-    fileName: string
-    originalName: string
-    fileType: string
-    fileSize: number
-    uploadTime: string
-  }
+  rating: number
+  tokenUsage: number
+  fileId?: number
+  fileName?: string
+  fileType?: string
 }
 
 /**

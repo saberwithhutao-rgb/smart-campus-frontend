@@ -497,6 +497,7 @@ import DOMPurify from 'dompurify'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { useUserStore } from '../stores/user'
 import { api } from '../api'
+import type { OpenAiMessageVo } from '../api/index.ts'
 import type {
   CareerArticle,
   CareerArticleDetail,
@@ -618,6 +619,59 @@ const CATEGORY_ICONS: Record<string, string> = {
 }
 
 // ==================== 工具函数 ====================
+const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem('userToken') || localStorage.getItem('token')
+  const headers: Record<string, string> = {
+    Accept: '*/*',
+    'Cache-Control': 'no-cache',
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  return headers
+}
+
+const sendAiMessageStream = async (
+  message: string,
+  chanId: string | undefined,
+  onChunk: (chunk: string) => void,
+  signal?: AbortSignal,
+): Promise<string> => {
+  const params = new URLSearchParams()
+  params.set('message', message)
+  if (chanId) params.set('chanId', chanId)
+
+  const response = await fetch(`/ai/chat/openai?${params.toString()}`, {
+    method: 'POST',
+    headers: {
+      ...getAuthHeaders(),
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`请求失败: ${response.status} ${response.statusText}`)
+  }
+
+  const reader = response.body?.getReader()
+  if (!reader) throw new Error('浏览器不支持流式读取')
+
+  const decoder = new TextDecoder('utf-8')
+  let fullText = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    const chunk = decoder.decode(value, { stream: true })
+    fullText += chunk
+    onChunk(chunk)
+  }
+
+  return fullText
+}
 
 function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {
@@ -642,17 +696,6 @@ function sanitizeHtml(html: string): string {
     ],
     ALLOWED_ATTR: ['class'],
   })
-}
-
-function handleApiResponse<T>(response: any): { success: boolean; data?: T; message?: string } {
-  const code = response?.code ?? response?.status
-  if (code === 1 || code === 200) {
-    return { success: true, data: response?.data }
-  }
-  return {
-    success: false,
-    message: response?.msg || response?.message || '操作失败',
-  }
 }
 
 function startWaitingTipRotation() {
@@ -766,13 +809,8 @@ const refreshSessionIds = async () => {
   sessionIdsLoading.value = true
   sessionIdsError.value = ''
   try {
-    const response = await api.getOpenAiSessionIdList('chat')
-    const result = handleApiResponse<string[]>(response)
-    if (result.success && result.data) {
-      sessionIds.value = result.data
-    } else {
-      sessionIds.value = []
-    }
+    const data = await api.getOpenAiSessionIdList('chat')
+    sessionIds.value = Array.isArray(data) ? data : []
   } catch (e) {
     sessionIdsError.value = e instanceof Error ? e.message : '加载历史会话失败'
     sessionIds.value = []
@@ -781,34 +819,15 @@ const refreshSessionIds = async () => {
   }
 }
 
-const normalizeHistoryToUiMessages = (items: any[]): UiChatMessage[] => {
+const normalizeHistoryToUiMessages = (items: OpenAiMessageVo[]): UiChatMessage[] => {
   const messages: UiChatMessage[] = []
 
   for (const it of items) {
-    if (!it) continue
-
-    if (typeof it.role === 'string') {
-      const rawRole = it.role.toLowerCase()
-      const role: UiChatMessage['role'] =
-        rawRole === 'user' ? 'user' : rawRole === 'assistant' || rawRole === 'ai' ? 'ai' : 'ai'
-      const content = String(it.content ?? it.message ?? it.text ?? '')
-      if (content.trim()) messages.push({ role, content })
-      continue
+    if (it.question?.trim()) {
+      messages.push({ role: 'user', content: it.question })
     }
-
-    if (typeof it.isUser === 'boolean') {
-      const role: UiChatMessage['role'] = it.isUser ? 'user' : 'ai'
-      const content = String(it.content ?? it.message ?? it.text ?? '')
-      if (content.trim()) messages.push({ role, content })
-      continue
-    }
-
-    if (it.question != null || it.answer != null) {
-      const q = String(it.question ?? '').trim()
-      const a = String(it.answer ?? '').trim()
-      if (q) messages.push({ role: 'user', content: q })
-      if (a) messages.push({ role: 'ai', content: a })
-      continue
+    if (it.answer?.trim()) {
+      messages.push({ role: 'ai', content: it.answer })
     }
   }
 
@@ -819,27 +838,28 @@ const loadSessionHistory = async (sid: string) => {
   if (!sid || loading.value || historyLoading.value || isStreaming.value) return
   historyLoading.value = true
   try {
-    const response = await api.getOpenAiSessionHistory('chat', sid)
-    const result = handleApiResponse<any[]>(response)
-    if (result.success && result.data) {
-      chanId.value = sid
-      chatMessages.value = normalizeHistoryToUiMessages(result.data)
+    const data = await api.getOpenAiSessionHistory('chat', sid)
+    const messages = normalizeHistoryToUiMessages(data || [])
 
-      if (chatMessages.value.length === 0) {
-        chatMessages.value.push({
+    if (messages.length > 0) {
+      chanId.value = sid
+      chatMessages.value = messages
+    } else {
+      chatMessages.value = [
+        {
           role: 'ai',
           content: '这个会话暂无历史消息。你可以继续提问，我会接着聊。',
-        })
-      }
-    } else {
-      throw new Error(result.message)
+        },
+      ]
     }
   } catch (e) {
     console.error('加载会话历史失败:', e)
-    chatMessages.value.push({
-      role: 'ai',
-      content: e instanceof Error ? `加载历史失败：${e.message}` : '加载历史失败，请稍后重试。',
-    })
+    chatMessages.value = [
+      {
+        role: 'ai',
+        content: e instanceof Error ? `加载历史失败：${e.message}` : '加载历史失败，请稍后重试。',
+      },
+    ]
   } finally {
     historyLoading.value = false
     scrollToBottom()
@@ -859,21 +879,7 @@ const startNewChat = () => {
   })
 }
 
-const simulateStreaming = async (text: string, msgIndex: number) => {
-  const msg = chatMessages.value[msgIndex]
-  if (!msg) return
-  msg.isThinking = false
-  msg.content = ''
-  delete msg.statusHint
-  const chars = text.split('')
-  for (let i = 0; i < chars.length; i++) {
-    if (chatMessages.value[msgIndex]) {
-      chatMessages.value[msgIndex].content += chars[i]
-    }
-    scrollToBottom()
-    await new Promise((resolve) => setTimeout(resolve, 30 + Math.random() * 20))
-  }
-}
+let streamAbortController: AbortController | null = null
 
 const sendMessage = async () => {
   const message = inputMessage.value.trim()
@@ -896,39 +902,28 @@ const sendMessage = async () => {
   const aiMsgIndex = chatMessages.value.length - 1
   scrollToBottom()
 
+  streamAbortController = new AbortController()
+
   try {
-    const response = await api.sendAiMessage(message, chanId.value)
+    await sendAiMessageStream(
+      message,
+      chanId.value || undefined,
+      (chunk: string) => {
+        const msg = chatMessages.value[aiMsgIndex]
+        if (!msg) return
 
-    // 处理响应 - 可能是包装后的对象，也可能是直接返回的字符串
-    let aiResponse = ''
+        if (msg.isThinking) {
+          msg.isThinking = false
+          msg.content = ''
+          delete msg.statusHint
+        }
+        msg.content += chunk
+        scrollToBottom()
+      },
+      streamAbortController.signal,
+    )
 
-    if (response && typeof response === 'object') {
-      // 如果是包装后的响应对象
-      const result = handleApiResponse<string>(response)
-      if (result.success && result.data) {
-        aiResponse = result.data
-      } else {
-        aiResponse = result.message || '暂无回复，请换个方式提问试试。'
-      }
-    } else if (typeof response === 'string') {
-      // 如果是直接返回的字符串
-      aiResponse = response
-    } else {
-      aiResponse = '暂无回复，请换个方式提问试试。'
-    }
-
-    console.log('AI返回内容:', aiResponse)
-
-    if (aiResponse && chatMessages.value[aiMsgIndex]) {
-      chatMessages.value[aiMsgIndex].statusHint = '正在生成回复…'
-      chatMessages.value[aiMsgIndex].content = ''
-
-      // 安全地检查是否包含特殊字符
-      const hasSpecialChars = aiResponse.includes && aiResponse.includes('<')
-      console.log('包含特殊字符:', hasSpecialChars)
-
-      await simulateStreaming(aiResponse, aiMsgIndex)
-    } else if (chatMessages.value[aiMsgIndex]) {
+    if (chatMessages.value[aiMsgIndex] && !chatMessages.value[aiMsgIndex].content) {
       chatMessages.value[aiMsgIndex].content = '暂无回复，请换个方式提问试试。'
       chatMessages.value[aiMsgIndex].isThinking = false
       delete chatMessages.value[aiMsgIndex].statusHint
@@ -937,7 +932,11 @@ const sendMessage = async () => {
     if (chanId.value && !sessionIds.value.includes(chanId.value)) {
       sessionIds.value = [chanId.value, ...sessionIds.value]
     }
-  } catch (err) {
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      console.log('流式请求已取消')
+      return
+    }
     console.error('AI对话失败:', err)
     if (chatMessages.value[aiMsgIndex]) {
       chatMessages.value[aiMsgIndex].role = 'ai'
@@ -951,6 +950,7 @@ const sendMessage = async () => {
       })
     }
   } finally {
+    streamAbortController = null
     stopWaitingTipRotation()
     loading.value = false
     isStreaming.value = false
@@ -962,9 +962,8 @@ const sendMessage = async () => {
 
 async function fetchDirectionCategories() {
   try {
-    const response = await api.getCareerDirectionCategories()
-    const result = handleApiResponse<string[]>(response)
-    directionCategories.value = result.success && result.data ? result.data : []
+    const data = await api.getCareerDirectionCategories()
+    directionCategories.value = Array.isArray(data) ? data : []
   } catch {
     directionCategories.value = []
   }
@@ -975,12 +974,8 @@ async function fetchCareerDirections() {
   directionsError.value = ''
   const category = selectedDirectionCategory.value.trim() || undefined
   try {
-    const response = await api.getCareerDirections(category ? { category } : undefined)
-    const result = handleApiResponse<CareerDirectionItem[]>(response)
-    careerDirectionList.value = result.success && result.data ? result.data : []
-    if (!result.success) {
-      directionsError.value = result.message || '加载职业方向列表失败'
-    }
+    const data = await api.getCareerDirections(category ? { category } : undefined)
+    careerDirectionList.value = Array.isArray(data) ? data : []
   } catch (e) {
     directionsError.value = e instanceof Error ? e.message : '加载职业方向列表失败'
     careerDirectionList.value = []
@@ -1001,13 +996,8 @@ async function openCareerDetail(id: number) {
   careerDetailError.value = ''
   careerDetailLoading.value = true
   try {
-    const response = await api.getCareerDirectionDetail(id)
-    const result = handleApiResponse<CareerDirectionDetail>(response)
-    if (result.success && result.data) {
-      careerDetailData.value = result.data
-    } else {
-      careerDetailError.value = result.message || '职业方向不存在'
-    }
+    const data = await api.getCareerDirectionDetail(id)
+    careerDetailData.value = data as unknown as CareerDirectionDetail
   } catch (e) {
     careerDetailError.value = e instanceof Error ? e.message : '加载详情失败'
   } finally {
@@ -1029,24 +1019,13 @@ async function fetchCareerArticles() {
   articleListError.value = ''
   const category = articleCategoryFilter.value.trim() || undefined
   try {
-    const response = await api.getCareerArticles(category ? { category } : undefined)
-    const result = handleApiResponse<CareerArticle[]>(response)
+    const data = await api.getCareerArticles(category ? { category } : undefined)
+    const list = Array.isArray(data) ? data : []
+    articleList.value = list
 
-    if (result.success && result.data) {
-      const list = result.data
-      articleList.value = list
-
-      if (!category) {
-        const set = new Set(list.map((a) => a.category).filter(Boolean))
-        allCategories.value = [...set].sort()
-      } else {
-        if (!allCategories.value.includes(category)) {
-          allCategories.value = [...allCategories.value, category].sort()
-        }
-      }
-    } else {
-      articleList.value = []
-      articleListError.value = result.message || '加载资讯列表失败'
+    if (!category) {
+      const set = new Set(list.map((a) => a.category).filter(Boolean))
+      allCategories.value = [...set].sort()
     }
   } catch (e) {
     articleListError.value = e instanceof Error ? e.message : '加载资讯列表失败'
@@ -1071,15 +1050,8 @@ async function fetchMyCareerArticles() {
   myArticleListLoading.value = true
   myArticleListError.value = ''
   try {
-    const response = await api.getMyCareerArticles()
-    const result = handleApiResponse<CareerArticle[]>(response)
-
-    if (result.success && result.data) {
-      myArticleList.value = result.data
-    } else {
-      myArticleList.value = []
-      myArticleListError.value = result.message || '加载失败'
-    }
+    const data = await api.getMyCareerArticles()
+    myArticleList.value = Array.isArray(data) ? data : []
   } catch (e) {
     myArticleListError.value = e instanceof Error ? e.message : '加载失败'
     myArticleList.value = []
@@ -1090,13 +1062,8 @@ async function fetchMyCareerArticles() {
 
 async function openEditModalByArticle(article: CareerArticle) {
   try {
-    const response = await api.getCareerArticleById(article.id)
-    const result = handleApiResponse<CareerArticleDetail>(response)
-    if (result.success && result.data) {
-      openEditModal(result.data)
-    } else {
-      alert(result.message || '获取资讯详情失败')
-    }
+    const data = await api.getCareerArticleById(article.id)
+    openEditModal(data as unknown as CareerArticleDetail)
   } catch {
     alert('获取资讯详情失败')
   }
@@ -1107,14 +1074,9 @@ function confirmDeleteMyArticle(id: number) {
 
   api
     .deleteCareerArticle(id)
-    .then((response) => {
-      const result = handleApiResponse(response)
-      if (result.success) {
-        fetchMyCareerArticles()
-        if (detailArticleData.value?.id === id) closeDetail()
-      } else {
-        alert(result.message || '删除失败')
-      }
+    .then(() => {
+      fetchMyCareerArticles()
+      if (detailArticleData.value?.id === id) closeDetail()
     })
     .catch((e) => {
       alert(e instanceof Error ? e.message : '删除失败')
@@ -1127,11 +1089,8 @@ async function openArticleDetail(id: number) {
   detailLoading.value = true
 
   try {
-    const response = await api.getCareerArticleById(id)
-    const result = handleApiResponse<CareerArticleDetail>(response)
-    if (result.success && result.data) {
-      detailArticleData.value = result.data
-    }
+    const data = await api.getCareerArticleById(id)
+    detailArticleData.value = data as unknown as CareerArticleDetail
   } catch {
     detailArticleData.value = null
   } finally {
@@ -1181,23 +1140,16 @@ async function submitPublishOrEdit() {
     const summaryVal = summary?.trim()
     if (summaryVal) payload.summary = summaryVal
 
-    let response
     if (id != null) {
-      response = await api.updateCareerArticle(id, payload)
+      await api.updateCareerArticle(id, payload)
     } else {
-      response = await api.createCareerArticle(payload)
+      await api.createCareerArticle(payload)
     }
 
-    const result = handleApiResponse(response)
-
-    if (result.success) {
-      closePublishModal()
-      closeDetail()
-      await fetchCareerArticles()
-      if (careerArticleTab.value === 'my') await fetchMyCareerArticles()
-    } else {
-      alert(result.message || (id != null ? '更新失败' : '发表失败'))
-    }
+    closePublishModal()
+    closeDetail()
+    await fetchCareerArticles()
+    if (careerArticleTab.value === 'my') await fetchMyCareerArticles()
   } catch (e) {
     alert(e instanceof Error ? e.message : '操作失败')
   } finally {
@@ -1212,15 +1164,10 @@ function confirmDeleteArticle() {
   const id = detailArticleData.value.id
   api
     .deleteCareerArticle(id)
-    .then((response) => {
-      const result = handleApiResponse(response)
-      if (result.success) {
-        closeDetail()
-        fetchCareerArticles()
-        if (careerArticleTab.value === 'my') fetchMyCareerArticles()
-      } else {
-        alert(result.message || '删除失败')
-      }
+    .then(() => {
+      closeDetail()
+      fetchCareerArticles()
+      if (careerArticleTab.value === 'my') fetchMyCareerArticles()
     })
     .catch((e) => {
       alert(e instanceof Error ? e.message : '删除失败')
@@ -1301,7 +1248,7 @@ watch(
 /* ==================== 主容器 ==================== */
 .career-navigation {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: var(--bg-color);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
   flex-direction: column;
@@ -1358,7 +1305,7 @@ watch(
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
-  color: #333;
+  color: var(--text-color);
 }
 
 .sidebar-item:hover {
@@ -1381,7 +1328,7 @@ watch(
   margin-left: 220px;
   flex: 1;
   padding: 24px;
-  background-color: #f5f7fa;
+  background-color: var(--bg-color);
   min-height: calc(100vh - 60px);
   transition: margin-left 0.3s ease;
 }
@@ -1414,7 +1361,7 @@ watch(
 .page-title {
   font-size: 20px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-color);
   margin: 0 0 24px 0;
 }
 
@@ -1593,7 +1540,7 @@ watch(
 .chat-history-panel {
   width: 260px;
   border-right: 1px solid #e0e6ed;
-  background: #ffffff;
+  background: var(--surface-color);
   display: flex;
   flex-direction: column;
 }
@@ -1618,8 +1565,8 @@ watch(
   padding: 6px 10px;
   font-size: 12px;
   border-radius: 6px;
-  border: 1px solid #dcdfe6;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
   color: #409eff;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -1673,7 +1620,7 @@ watch(
 }
 
 .history-item:hover {
-  background: #f5f7fa;
+  background: var(--bg-color);
 }
 
 .history-item.active {
@@ -2024,7 +1971,7 @@ watch(
 .content-area .section-title {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-color);
   margin: 32px 0 20px 0;
 }
 
@@ -2045,7 +1992,7 @@ watch(
   font-size: 14px;
   font-weight: 500;
   color: #646b7a;
-  background: #fff;
+  background: var(--surface-color);
   border: 1px solid #e0e6ed;
   border-radius: 6px;
   cursor: pointer;
@@ -2123,7 +2070,7 @@ watch(
 .career-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-color);
   margin: 0 0 8px 0;
 }
 
@@ -2183,7 +2130,7 @@ watch(
   font-size: 14px;
   font-weight: 500;
   color: #646b7a;
-  background: #fff;
+  background: var(--surface-color);
   border: 1px solid #e0e6ed;
   border-radius: 6px;
   cursor: pointer;
@@ -2232,7 +2179,7 @@ watch(
   border-radius: 6px;
   font-size: 14px;
   min-width: 160px;
-  background-color: #fff;
+  background-color: var(--surface-color);
   cursor: pointer;
   appearance: auto;
 }
@@ -2286,7 +2233,7 @@ watch(
 .news-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-color);
   margin: 0 0 12px 0;
   line-height: 1.4;
 }
@@ -2339,7 +2286,7 @@ watch(
 }
 
 .modal-box {
-  background: #fff;
+  background: var(--surface-color);
   border-radius: 12px;
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
   max-width: 560px;
@@ -2436,14 +2383,14 @@ watch(
   margin: 0 0 8px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-color);
 }
 
 .career-detail-text {
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
-  color: #333;
+  color: var(--text-color);
 }
 
 .detail-content-html {
@@ -2452,7 +2399,7 @@ watch(
   border-top: 1px solid #eee;
   font-size: 14px;
   line-height: 1.7;
-  color: #333;
+  color: var(--text-color);
 }
 
 /* 资讯详情 */
@@ -2498,7 +2445,7 @@ watch(
 .publish-form .form-group textarea {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 14px;
   box-sizing: border-box;
