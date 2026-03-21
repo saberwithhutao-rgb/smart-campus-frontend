@@ -426,6 +426,7 @@ import { useRouter } from 'vue-router'
 import { api } from '../api'
 import type { University, UniversityListDetail } from '../types/university'
 import type { ExamCountdown, LearningProgressItem, LearningProgressSummary } from '../types/user'
+import { ElMessage } from 'element-plus'
 
 // 路由实例
 const router = useRouter()
@@ -602,7 +603,6 @@ const fetchLearningProgressSummary = async () => {
   try {
     const response = (await api.getLearningProgressSummary()) as unknown as LearningProgressSummary
 
-    // 直接使用 response，因为拦截器已经返回了 data
     if (response && typeof response.overallPercent === 'number' && Array.isArray(response.items)) {
       learningProgressSummary.value = response
       progressError.value = ''
@@ -717,11 +717,14 @@ const toggleFavorite = async (university: University) => {
     const isFavorited = favoriteUniversityIds.value.includes(university.id)
     if (isFavorited) {
       favoriteUniversityIds.value = favoriteUniversityIds.value.filter((id) => id !== university.id)
+      favoriteUniversities.value = favoriteUniversities.value.filter((u) => u.id !== university.id)
     } else {
       favoriteUniversityIds.value.push(university.id)
+      favoriteUniversities.value.push(university)
     }
+    ElMessage.success('操作成功')
   } catch (err) {
-    alert('操作失败，请稍后重试')
+    ElMessage.error('操作失败，请稍后重试')
     console.error('切换收藏状态失败:', err)
   }
 }
