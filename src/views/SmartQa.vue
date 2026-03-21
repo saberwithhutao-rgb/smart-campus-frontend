@@ -1052,29 +1052,27 @@ watch(
   width: 280px;
   background-color: #fff;
   border-right: 1px solid #e5e7eb;
-  padding: 20px 0;
   transition: all 0.3s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  flex-shrink: 0; /* 防止侧边栏被压缩 */
+  flex-shrink: 0;
   position: relative;
   z-index: 2;
-  overflow-y: auto;
+  /* 关键修改：flex 布局 + 固定高度 */
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 70px);
+  overflow: hidden;
 }
 
 .sidebar-header {
   padding: 0 20px 20px;
   border-bottom: 1px solid #f0f2f5;
-}
-
-.sidebar-title {
-  font-size: 20px;
-  font-weight: bold;
-  color: #1d2129;
-  margin: 0;
+  flex-shrink: 0;
 }
 
 .sidebar-menu {
   margin-top: 20px;
+  flex-shrink: 0;
 }
 
 .sidebar-item {
@@ -1105,7 +1103,7 @@ watch(
   font-size: 16px;
 }
 
-/* 历史对话列表 */
+/* 历史对话列表 - 独立滚动 */
 .history-list {
   flex: 1;
   overflow-y: auto;
