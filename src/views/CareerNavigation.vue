@@ -622,7 +622,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 const sendAiMessageStream = async (
   message: string,
   chanId: string | undefined,
-  onChunk: (chunk: string) => void,
+  onChunk: (chunk: string) => Promise<void> | void, // 支持 async 回调
   signal?: AbortSignal,
 ): Promise<string> => {
   const token = localStorage.getItem('userToken') || localStorage.getItem('token')
@@ -649,16 +649,6 @@ const sendAiMessageStream = async (
 
   const decoder = new TextDecoder('utf-8')
   let fullText = ''
-  let pendingChars: string[] = []
-  let animationId: number | null = null
-
-  const flushPending = () => {
-    if (pendingChars.length === 0) return
-    const text = pendingChars.join('')
-    pendingChars = []
-    onChunk(text)
-    animationId = null
-  }
 
   while (true) {
     const { done, value } = await reader.read()
@@ -667,19 +657,9 @@ const sendAiMessageStream = async (
     const chunk = decoder.decode(value, { stream: true })
     fullText += chunk
 
-    for (const char of chunk) {
-      pendingChars.push(char)
-    }
-
-    if (!animationId) {
-      animationId = requestAnimationFrame(flushPending)
-    }
+    // 等待回调完成（支持 async）
+    await onChunk(chunk)
   }
-
-  if (animationId) {
-    cancelAnimationFrame(animationId)
-  }
-  flushPending()
 
   return fullText
 }
@@ -915,29 +895,40 @@ const sendMessage = async () => {
 
   streamAbortController = new AbortController()
 
+  // 逐字显示的辅助函数
+  const typeCharacter = async (char: string, msg: UiChatMessage) => {
+    if (msg.isThinking) {
+      msg.isThinking = false
+      msg.content = ''
+      delete msg.statusHint
+    }
+    msg.content += char
+    scrollToBottom()
+    await new Promise((resolve) => setTimeout(resolve, 30)) // 每个字间隔30ms
+  }
+
   try {
     await sendAiMessageStream(
       message,
       chanId.value || undefined,
-      (chunk: string) => {
+      async (chunk: string) => {
         const msg = chatMessages.value[aiMsgIndex]
         if (!msg) return
 
-        if (msg.isThinking) {
-          msg.isThinking = false
-          msg.content = ''
-          delete msg.statusHint
+        // 逐字输出
+        for (const char of chunk) {
+          typeCharacter(char, msg)
         }
-        msg.content += chunk
-        scrollToBottom()
       },
       streamAbortController.signal,
     )
 
-    if (chatMessages.value[aiMsgIndex] && !chatMessages.value[aiMsgIndex].content) {
-      chatMessages.value[aiMsgIndex].content = '暂无回复，请换个方式提问试试。'
-      chatMessages.value[aiMsgIndex].isThinking = false
-      delete chatMessages.value[aiMsgIndex].statusHint
+    // 确保最后内容不为空
+    const finalMsg = chatMessages.value[aiMsgIndex]
+    if (finalMsg && !finalMsg.content) {
+      finalMsg.content = '暂无回复，请换个方式提问试试。'
+      finalMsg.isThinking = false
+      delete finalMsg.statusHint
     }
 
     if (chanId.value && !sessionIds.value.includes(chanId.value)) {
@@ -949,11 +940,12 @@ const sendMessage = async () => {
       return
     }
     console.error('AI对话失败:', err)
-    if (chatMessages.value[aiMsgIndex]) {
-      chatMessages.value[aiMsgIndex].role = 'ai'
-      chatMessages.value[aiMsgIndex].content = '抱歉，我遇到了一些问题，请稍后重试。'
-      chatMessages.value[aiMsgIndex].isThinking = false
-      delete chatMessages.value[aiMsgIndex].statusHint
+    const msg = chatMessages.value[aiMsgIndex]
+    if (msg) {
+      msg.role = 'ai'
+      msg.content = '抱歉，我遇到了一些问题，请稍后重试。'
+      msg.isThinking = false
+      delete msg.statusHint
     } else {
       chatMessages.value.push({
         role: 'ai',
