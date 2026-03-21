@@ -50,7 +50,7 @@
         </el-row>
 
         <!-- 环形图区域：两列布局 -->
-        <el-row :gutter="24" class="charts-row">
+        <el-row :gutter="24" class="charts-row" v-if="hasChartData">
           <!-- 难度分布环形图 -->
           <el-col :xs="24" :md="12">
             <div class="chart-container">
@@ -83,23 +83,28 @@
         </el-row>
 
         <!-- 各科目计划数量 -->
-        <el-divider content-position="left">各科目计划数量</el-divider>
-        <el-row :gutter="16">
-          <el-col
-            :xs="24"
-            :sm="12"
-            :md="8"
-            v-for="(count, subject) in statistics?.subjectDistribution || {}"
-            :key="subject"
-          >
-            <el-card shadow="never" class="subject-card">
-              <div class="subject-info">
-                <span class="subject-name">{{ subject }}</span>
-                <el-tag size="small" type="primary">{{ count }}个</el-tag>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
+        <template v-if="hasSubjectData">
+          <el-divider content-position="left">各科目计划数量</el-divider>
+          <el-row :gutter="16">
+            <el-col
+              :xs="24"
+              :sm="12"
+              :md="8"
+              v-for="(count, subject) in statistics?.subjectDistribution || {}"
+              :key="subject"
+            >
+              <el-card shadow="never" class="subject-card">
+                <div class="subject-info">
+                  <span class="subject-name">{{ subject }}</span>
+                  <el-tag size="small" type="primary">{{ count }}个</el-tag>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </template>
+
+        <!-- 无数据提示 -->
+        <el-empty v-if="!hasChartData && !hasSubjectData" description="暂无统计数据" />
       </el-card>
 
       <!-- 学习建议卡片 -->
@@ -176,6 +181,22 @@ const statisticsList = computed(() => {
   ]
 })
 
+// 是否有图表数据
+const hasChartData = computed(() => {
+  return (
+    (difficultyLegend.value.length > 0 && difficultyLegend.value.some((item) => item.value > 0)) ||
+    (planTypeLegend.value.length > 0 && planTypeLegend.value.some((item) => item.value > 0))
+  )
+})
+
+// 是否有科目数据
+const hasSubjectData = computed(() => {
+  return (
+    statistics.value?.subjectDistribution &&
+    Object.keys(statistics.value.subjectDistribution).length > 0
+  )
+})
+
 const CHART_COLORS = {
   difficulty: {
     简单: '#67C23A',
@@ -187,7 +208,9 @@ const CHART_COLORS = {
     复习计划: '#E6A23C',
     项目计划: '#67C23A',
   },
-} // 难度分布图例数据
+}
+
+// 难度分布图例数据
 const difficultyLegend = computed(() => {
   if (!statistics.value?.difficultyDistribution?.details) return []
   return statistics.value.difficultyDistribution.details.map((item) => ({
@@ -240,7 +263,11 @@ const getSuggestionType = (index: number) => {
 const renderCharts = () => {
   nextTick(() => {
     // 难度分布环形图
-    if (difficultyChartRef.value && difficultyLegend.value.length > 0) {
+    if (
+      difficultyChartRef.value &&
+      difficultyLegend.value.length > 0 &&
+      difficultyLegend.value.some((item) => item.value > 0)
+    ) {
       if (difficultyChart.value) difficultyChart.value.dispose()
       difficultyChart.value = echarts.init(difficultyChartRef.value)
 
@@ -287,7 +314,11 @@ const renderCharts = () => {
     }
 
     // 计划类型分布环形图
-    if (planTypeChartRef.value && planTypeLegend.value.length > 0) {
+    if (
+      planTypeChartRef.value &&
+      planTypeLegend.value.length > 0 &&
+      planTypeLegend.value.some((item) => item.value > 0)
+    ) {
       if (planTypeChart.value) planTypeChart.value.dispose()
       planTypeChart.value = echarts.init(planTypeChartRef.value)
 
@@ -360,18 +391,12 @@ const fetchData = async () => {
     })
 
     const [statsData, suggestionsData] = await Promise.all([
-      getStudyStatistics({ timeRange: timeRange.value }).catch((err) => {
-        console.warn('获取统计数据失败，使用模拟数据', err)
-        return null
-      }),
-      getStudySuggestions({ timeRange: timeRange.value }).catch((err) => {
-        console.warn('获取学习建议失败，使用模拟数据', err)
-        return null
-      }),
+      getStudyStatistics({ timeRange: timeRange.value }),
+      getStudySuggestions({ timeRange: timeRange.value }),
     ])
 
-    statistics.value = statsData || getMockStatistics(timeRange.value)
-    suggestions.value = suggestionsData || getMockSuggestions(timeRange.value)
+    statistics.value = statsData
+    suggestions.value = suggestionsData
 
     console.log('数据获取成功:', {
       statistics: statistics.value,
@@ -379,86 +404,11 @@ const fetchData = async () => {
     })
   } catch (err) {
     console.error('请求失败:', err)
-    statistics.value = getMockStatistics(timeRange.value)
-    suggestions.value = getMockSuggestions(timeRange.value)
-    error.value = ''
+    error.value = err instanceof Error ? err.message : '获取数据失败，请稍后重试'
+    statistics.value = null
+    suggestions.value = null
   } finally {
     loading.value = false
-  }
-}
-
-// 模拟统计数据
-const getMockStatistics = (range: 'today' | 'week' | 'month'): StudyStatisticsResponse => {
-  const baseData: StudyStatisticsResponse = {
-    totalPlanCount: 12,
-    completedPlanCount: 5,
-    completionRate: 0.42,
-    unfinishedCount: 7,
-    overduePlanCount: 2,
-    difficultyDistribution: {
-      details: [
-        { type: '简单', count: 4, percentage: 0.33 },
-        { type: '中等', count: 6, percentage: 0.5 },
-        { type: '困难', count: 2, percentage: 0.17 },
-      ],
-    },
-    planTypeDistribution: {
-      details: [
-        { type: '学习计划', count: 8, percentage: 0.67 },
-        { type: '复习计划', count: 3, percentage: 0.25 },
-        { type: '项目计划', count: 1, percentage: 0.08 },
-      ],
-    },
-    subjectDistribution: {
-      数学: 4,
-      英语: 3,
-      编程: 5,
-    },
-  }
-
-  if (range === 'today') {
-    return {
-      ...baseData,
-      totalPlanCount: 3,
-      completedPlanCount: 1,
-      completionRate: 0.33,
-      unfinishedCount: 2,
-    }
-  } else if (range === 'week') {
-    return {
-      ...baseData,
-      totalPlanCount: 8,
-      completedPlanCount: 3,
-      completionRate: 0.38,
-      unfinishedCount: 5,
-    }
-  }
-  return baseData
-}
-
-// 模拟学习建议
-const getMockSuggestions = (range: 'today' | 'week' | 'month'): StudySuggestionsResponse => {
-  const suggestionsList = [
-    '根据您的学习进度，建议每天安排2小时进行编程练习',
-    '数学复习进度较慢，可以适当增加学习时间',
-    '英语学习效果不错，继续保持',
-    '下周有期中考试，建议提前复习重点内容',
-    '可以尝试使用番茄工作法提高学习效率',
-  ]
-
-  let suggestions: string[] = []
-  if (range === 'today') {
-    suggestions = suggestionsList.slice(0, 2)
-  } else if (range === 'week') {
-    suggestions = suggestionsList.slice(0, 3)
-  } else {
-    suggestions = suggestionsList
-  }
-
-  return {
-    success: true,
-    suggestions,
-    data: { suggestions },
   }
 }
 
@@ -498,6 +448,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .study-data-container {
   padding: 24px;
   max-width: 1400px;
