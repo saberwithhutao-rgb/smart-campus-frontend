@@ -392,8 +392,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 样式保持不变... */
-
+/* 样式保持不变 */
 .suggestions-empty {
   padding: 40px 0;
   text-align: center;
@@ -401,5 +400,220 @@ onUnmounted(() => {
 
 .suggestions-empty .el-icon {
   color: #c0c4cc;
+}
+
+.study-data-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 70px);
+  margin-top: 70px;
+}
+
+.time-range-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.time-range-selector label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+}
+
+:deep(.el-select) {
+  width: 160px;
+}
+
+.loading-container {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.data-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.statistics-card,
+.suggestions-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.stat-item {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.3s ease;
+  margin-bottom: 16px;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-label {
+  display: block;
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.3;
+}
+
+.charts-row {
+  margin-top: 24px;
+}
+
+.chart-container {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0 0 16px 0;
+}
+
+.chart {
+  width: 100%;
+  height: 300px;
+}
+
+.chart-legend {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #606266;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.legend-item:last-child {
+  border-bottom: none;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.legend-value {
+  color: #909399;
+}
+
+.subject-card {
+  margin-bottom: 12px;
+  background: #f8f9fa;
+  border: none;
+}
+
+.subject-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.subject-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+}
+
+.suggestion-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #606266;
+}
+
+.suggestion-content .el-icon {
+  font-size: 18px;
+  color: #409eff;
+}
+
+:deep(.el-divider__text) {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .study-data-container {
+    padding: 16px;
+  }
+
+  .time-range-selector {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  :deep(.el-select) {
+    width: 100%;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .chart {
+    height: 250px;
+  }
 }
 </style>
