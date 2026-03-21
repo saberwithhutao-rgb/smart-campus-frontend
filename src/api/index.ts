@@ -14,10 +14,9 @@ import type {
 } from '../types/user'
 import type { CompetitionRule, CompetitionListParams, Competition } from '../types/competition'
 import type {
-  UniversityListResponse,
+  University,
   UniversityCheckResponse,
-  UniversityIdsResponse,
-  UniversityListDetailResponse,
+  UniversityListDetail,
   UniversityCountResponse,
 } from '../types/university'
 import type {
@@ -532,7 +531,7 @@ export const api = {
   getCompetitionDetail: (id: number) =>
     request<ApiResponse<CompetitionRule[]>>({ method: 'GET', url: `/api/competition/${id}` }),
   // 院校管理模块
-  getUniversities: () => request<UniversityListResponse>({ method: 'GET', url: '/api/university' }),
+  getUniversities: () => request<University[]>({ method: 'GET', url: '/api/university' }),
 
   toggleFavoriteUniversity: (universityId: number) =>
     request<ApiResponse<null>>({
@@ -549,10 +548,10 @@ export const api = {
     }),
 
   getFavoriteUniversityIds: () =>
-    request<UniversityIdsResponse>({ method: 'GET', url: '/api/university/university-ids' }),
+    request<number[]>({ method: 'GET', url: '/api/university/university-ids' }),
 
   getFavoriteUniversities: () =>
-    request<UniversityListDetailResponse>({ method: 'GET', url: '/api/university/list' }),
+    request<UniversityListDetail[]>({ method: 'GET', url: '/api/university/list' }),
 
   getUniversityFavoriteCount: (universityId: number) =>
     request<UniversityCountResponse>({
@@ -592,7 +591,7 @@ export const api = {
     }),
 
   getExamCountdowns: () =>
-    request<ApiResponse<ExamCountdown[]>>({
+    request<ExamCountdown[]>({
       method: 'GET',
       url: '/api/exams',
     }),
@@ -629,7 +628,7 @@ export const api = {
 
   /** 获取学习进度总览（整体进度 + 科目列表） */
   getLearningProgressSummary: () =>
-    request<ApiResponse<LearningProgressSummary>>({
+    request<LearningProgressSummary>({
       method: 'GET',
       url: '/api/learning-progress/summary',
     }),

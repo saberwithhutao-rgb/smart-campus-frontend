@@ -19,32 +19,11 @@ export interface UniversityListDetail {
   universityId: number
 }
 
-export interface UniversityListResponse<T = University[]> {
-  code: number
-  msg?: string
-  message?: string
-  data: T
-}
-
 export interface UniversityCheckResponse {
   code: number
   msg?: string
   message?: string
   data: boolean
-}
-
-export interface UniversityIdsResponse {
-  code: number
-  msg?: string
-  message?: string
-  data: number[]
-}
-
-export interface UniversityListDetailResponse {
-  code: number
-  msg?: string
-  message?: string
-  data: UniversityListDetail[]
 }
 
 export interface UniversityCountResponse {
@@ -53,4 +32,3 @@ export interface UniversityCountResponse {
   message?: string
   data: number
 }
-

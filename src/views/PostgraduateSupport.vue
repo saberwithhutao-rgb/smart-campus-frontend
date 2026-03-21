@@ -490,9 +490,8 @@ const latestExam = computed(() => {
 const fetchExamCountdowns = async () => {
   try {
     const response = await api.getExamCountdowns()
-    console.log('考试倒计时响应:', response)
-    if (response && response.code === 1 && Array.isArray(response.data)) {
-      examCountdowns.value = response.data
+    if (Array.isArray(response)) {
+      examCountdowns.value = response
       console.log('考试数据:', examCountdowns.value)
       initCountdownTimers()
     }
@@ -571,10 +570,10 @@ const fetchUniversities = async () => {
   error.value = ''
   try {
     const response = await api.getUniversities()
-    if (response.code === 1) {
-      allUniversities.value = response.data
+    if (Array.isArray(response)) {
+      allUniversities.value = response
     } else {
-      error.value = response.msg || '获取院校列表失败'
+      error.value = '获取院校列表失败'
     }
   } catch (err) {
     error.value = '网络错误，请稍后重试'
@@ -588,8 +587,8 @@ const fetchUniversities = async () => {
 const fetchFavoriteIds = async () => {
   try {
     const response = await api.getFavoriteUniversityIds()
-    if (response.code === 1) {
-      favoriteUniversityIds.value = response.data
+    if (Array.isArray(response)) {
+      favoriteUniversityIds.value = response
     }
   } catch (err) {
     console.error('获取收藏列表失败:', err)
@@ -601,39 +600,27 @@ const fetchLearningProgressSummary = async () => {
   progressLoading.value = true
   progressError.value = ''
   try {
-    const response = await api.getLearningProgressSummary()
+    const response = (await api.getLearningProgressSummary()) as unknown as LearningProgressSummary
 
-    // 现在 response 是 ApiResponse<LearningProgressSummary> 类型
-    const rawCode = response.code
-    const numericCode = typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
-
-    // 兼容多种后端风格：
-    // - code 为 1 / '1'（常见业务成功码）
-    // - code 为 200 / '200'（有些后端把 HTTP 200 也作为业务码返回）
-    // - 未返回 code 但 data 结构正确
-    const hasValidData =
-      response.data &&
-      typeof response.data.overallPercent === 'number' &&
-      Array.isArray(response.data.items)
-
-    const successByCode = numericCode === 1 || numericCode === 200 || numericCode === 0
-
-    if (successByCode || (numericCode == null && hasValidData)) {
-      learningProgressSummary.value = response.data || { overallPercent: 0, items: [] }
+    // 直接使用 response，因为拦截器已经返回了 data
+    if (response && typeof response.overallPercent === 'number' && Array.isArray(response.items)) {
+      learningProgressSummary.value = response
       progressError.value = ''
     } else {
-      const msg = response.message
-      progressError.value = msg || '获取学习进度失败'
+      progressError.value = '获取学习进度失败'
+      // 设置默认空数据
+      learningProgressSummary.value = { overallPercent: 0, items: [] }
     }
   } catch (err) {
     const status = (err as Error & { status?: number }).status
     const is404 = status === 404 || (err instanceof Error && err.message === '请求资源不存在')
-    // 404 表示学习进度服务未部署或未启动，显示空状态并保留“添加”按钮
+    // 404 表示学习进度服务未部署或未启动，显示空状态并保留"添加"按钮
     if (is404) {
       learningProgressSummary.value = { overallPercent: 0, items: [] }
       progressError.value = ''
     } else {
       progressError.value = err instanceof Error ? err.message : '网络错误，请稍后重试'
+      learningProgressSummary.value = { overallPercent: 0, items: [] }
     }
     console.error('获取学习进度失败:', err)
   } finally {
@@ -655,21 +642,16 @@ const submitUpdateProgress = async (id: number) => {
     return
   }
   try {
-    const response = await api.updateLearningProgress(id, {
+    // 如果请求成功，直接继续
+    await api.updateLearningProgress(id, {
       ...(name ? { name } : {}),
       progressPercent: percent,
     })
-    const rawCode = (response as { code?: number | string }).code ?? (response as any).code
-    const numericCode = typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
-    if (numericCode === 1 || numericCode === 200 || numericCode === 0) {
-      editingProgressId.value = null
-      await fetchLearningProgressSummary()
-    } else {
-      const msg = (response as { msg?: string }).msg ?? (response as { message?: string }).message
-      alert(msg || '更新失败')
-    }
+    // 成功：更新本地状态
+    editingProgressId.value = null
+    await fetchLearningProgressSummary()
   } catch (err) {
-    alert(err instanceof Error ? err.message : '更新失败，请稍后重试')
+    // 拦截器已经弹出错误提示，这里只需要处理本地状态
     console.error('更新学习进度失败:', err)
   }
 }
@@ -686,20 +668,12 @@ const submitAddProgress = async () => {
     return
   }
   try {
-    const response = await api.addLearningProgress({ name, progressPercent: percent })
-    const rawCode = (response as { code?: number | string }).code ?? (response as any).code
-    const numericCode = typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
-    if (numericCode === 1 || numericCode === 200 || numericCode === 0) {
-      showAddProgress.value = false
-      newProgressName.value = ''
-      newProgressPercent.value = 0
-      await fetchLearningProgressSummary()
-    } else {
-      const msg = (response as { msg?: string }).msg ?? (response as { message?: string }).message
-      alert(msg || '添加失败')
-    }
+    await api.addLearningProgress({ name, progressPercent: percent })
+    showAddProgress.value = false
+    newProgressName.value = ''
+    newProgressPercent.value = 0
+    await fetchLearningProgressSummary()
   } catch (err) {
-    alert(err instanceof Error ? err.message : '添加失败，请稍后重试')
     console.error('添加学习进度失败:', err)
   }
 }
@@ -707,17 +681,9 @@ const submitAddProgress = async () => {
 const deleteProgressItem = async (id: number) => {
   if (!confirm('确定要删除该学习进度吗？')) return
   try {
-    const response = await api.deleteLearningProgress(id)
-    const rawCode = (response as { code?: number | string }).code ?? (response as any).code
-    const numericCode = typeof rawCode === 'string' ? Number.parseInt(rawCode, 10) : rawCode
-    if (numericCode === 1 || numericCode === 200 || numericCode === 0) {
-      await fetchLearningProgressSummary()
-    } else {
-      const msg = (response as { msg?: string }).msg ?? (response as { message?: string }).message
-      alert(msg || '删除失败')
-    }
+    await api.deleteLearningProgress(id)
+    await fetchLearningProgressSummary()
   } catch (err) {
-    alert(err instanceof Error ? err.message : '删除失败，请稍后重试')
     console.error('删除学习进度失败:', err)
   }
 }
@@ -728,12 +694,12 @@ const fetchFavoriteUniversities = async () => {
   error.value = ''
   try {
     const response = await api.getFavoriteUniversities()
-    if (response.code === 1) {
+    if (Array.isArray(response)) {
       favoriteUniversities.value = allUniversities.value.filter((u: University) =>
         response.data.some((f: UniversityListDetail) => f.universityId === u.id),
       )
     } else {
-      error.value = response.msg || '获取收藏列表失败'
+      error.value = '获取收藏列表失败'
     }
   } catch (err) {
     error.value = '网络错误，请稍后重试'
@@ -747,7 +713,7 @@ const fetchFavoriteUniversities = async () => {
 const toggleFavorite = async (university: University) => {
   try {
     const response = await api.toggleFavoriteUniversity(university.id)
-    if (response.code === 1) {
+    if (Array.isArray(response)) {
       const isFavorited = favoriteUniversityIds.value.includes(university.id)
       if (isFavorited) {
         favoriteUniversityIds.value = favoriteUniversityIds.value.filter(
@@ -757,7 +723,7 @@ const toggleFavorite = async (university: University) => {
         favoriteUniversityIds.value.push(university.id)
       }
     } else {
-      alert(response.message || '操作失败')
+      alert('操作失败')
     }
   } catch (err) {
     alert('操作失败，请稍后重试')
