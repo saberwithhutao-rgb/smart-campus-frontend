@@ -132,13 +132,16 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     isLoading.value = true
     try {
       const response = await api.getPendingTasks()
-      if (response) {
+      if (Array.isArray(response)) {
         const today = new Date().toISOString().split('T')[0] ?? ''
-        reviewItems.value = response.data.filter(
+        reviewItems.value = response.filter(
           (item: StudyTask) => item.taskDate <= today || item.reviewStage === 0,
         )
+      } else {
+        reviewItems.value = []
       }
     } catch (error) {
+      reviewItems.value = []
       console.error('获取待复习任务失败:', error)
     } finally {
       isLoading.value = false
