@@ -625,6 +625,7 @@ const sendAiMessageStream = async (
   onChunk: (chunk: string) => Promise<void> | void, // 支持 async 回调
   signal?: AbortSignal,
 ): Promise<string> => {
+  console.log('🔴 sendAiMessageStream 被调用了', message)
   const token = localStorage.getItem('userToken') || localStorage.getItem('token')
   const params = new URLSearchParams()
   params.set('message', message)
@@ -904,7 +905,7 @@ const sendMessage = async () => {
     }
     msg.content += char
     scrollToBottom()
-    await new Promise((resolve) => setTimeout(resolve, 30)) // 每个字间隔30ms
+    await new Promise((resolve) => setTimeout(resolve, 30))
   }
 
   try {
