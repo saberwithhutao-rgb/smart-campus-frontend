@@ -368,39 +368,39 @@ const handleTimeRangeChange = () => {
   fetchData()
 }
 
-// 获取数据
+// 获取数据 - 优化版：统计数据先显示
 const fetchData = async () => {
   loading.value = true
   error.value = ''
 
   try {
-    // 使用 Promise.allSettled 避免一个失败影响另一个
-    const [statsResult, suggestionsResult] = await Promise.allSettled([
-      getStudyStatistics({ timeRange: timeRange.value }),
-      getStudySuggestions({ timeRange: timeRange.value }),
-    ])
-
-    if (statsResult.status === 'fulfilled') {
-      statistics.value = statsResult.value
-    } else {
-      console.error('获取统计数据失败:', statsResult.reason)
+    // 1. 先获取统计数据（快速显示）
+    try {
+      const statsData = await getStudyStatistics({ timeRange: timeRange.value })
+      statistics.value = statsData
+    } catch (err) {
+      console.error('获取统计数据失败:', err)
       statistics.value = null
     }
 
-    if (suggestionsResult.status === 'fulfilled') {
-      suggestions.value = suggestionsResult.value
-    } else {
-      console.error('获取学习建议失败:', suggestionsResult.reason)
+    // 2. 统计数据已经显示，关闭主 loading
+    loading.value = false
+
+    // 3. 异步获取学习建议（不阻塞页面）
+    try {
+      const suggestionsData = await getStudySuggestions({ timeRange: timeRange.value })
+      suggestions.value = suggestionsData
+    } catch (err) {
+      console.error('获取学习建议失败:', err)
       suggestions.value = null
     }
 
-    if (statsResult.status === 'rejected' && suggestionsResult.status === 'rejected') {
+    if (!statistics.value && !suggestions.value) {
       error.value = '获取数据失败，请稍后重试'
     }
   } catch (err) {
     console.error('请求失败:', err)
     error.value = err instanceof Error ? err.message : '获取数据失败，请稍后重试'
-  } finally {
     loading.value = false
   }
 }
