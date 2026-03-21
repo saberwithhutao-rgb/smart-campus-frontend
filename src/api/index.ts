@@ -529,7 +529,7 @@ export const api = {
     request<Competition[]>({ method: 'GET', url: '/api/competition', params }),
 
   getCompetitionDetail: (id: number) =>
-    request<ApiResponse<CompetitionRule[]>>({ method: 'GET', url: `/api/competition/${id}` }),
+    request<CompetitionRule[]>({ method: 'GET', url: `/api/competition/${id}` }),
   // 院校管理模块
   getUniversities: () => request<University[]>({ method: 'GET', url: '/api/university' }),
 

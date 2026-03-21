@@ -189,21 +189,21 @@ const fetchCompetitionDetail = async () => {
       api.getCompetitionDetail(competitionId.value),
     ])
 
-    if (competitionsResponse.code === 1) {
-      const foundCompetition = competitionsResponse.data.find((c) => c.id === competitionId.value)
+    if (Array.isArray(competitionsResponse)) {
+      const foundCompetition = competitionsResponse.find((c) => c.id === competitionId.value)
       if (foundCompetition) {
         competition.value = foundCompetition
       } else {
         error.value = '未找到该竞赛信息'
       }
     } else {
-      error.value = competitionsResponse.msg || '获取竞赛信息失败'
+      error.value = '获取竞赛信息失败'
     }
 
-    if (rulesResponse.code === 1) {
-      rules.value = rulesResponse.data
+    if (Array.isArray(rulesResponse)) {
+      rules.value = rulesResponse
     } else {
-      error.value = rulesResponse.message || '获取竞赛规则失败'
+      error.value = '获取竞赛规则失败'
     }
   } catch (err) {
     error.value = '网络错误，请稍后重试'
