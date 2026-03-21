@@ -191,6 +191,15 @@ const addPlan = async () => {
  * 打开编辑计划弹窗
  */
 const openEditModalHandler = (plan: StudyPlan) => {
+  if (plan.status === 'completed') {
+    ElMessage({
+      message: '已完成的计划不支持修改',
+      type: 'warning',
+      duration: 3000,
+      showClose: true,
+    })
+    return
+  }
   currentEditPlan.value = plan
   editPlan.value = { ...plan } // 直接复制整个计划对象
   showEditModal.value = true
@@ -214,17 +223,12 @@ const saveEditPlan = async () => {
     return
   }
 
-  if (!editPlan.value.subject) {
-    ElMessage.warning('请选择学科')
-    return
-  }
-
   try {
     await studyPlanStore.updatePlan(editPlan.value.id, {
       title: editPlan.value.title,
       description: editPlan.value.description || undefined,
       planType: editPlan.value.planType,
-      subject: editPlan.value.subject,
+      subject: editPlan.value.subject || undefined,
       difficulty: editPlan.value.difficulty,
       startDate: editPlan.value.startDate,
       endDate: editPlan.value.endDate || undefined,
@@ -593,13 +597,13 @@ watch([studyPlans, completionRate], () => {
         </div>
 
         <div class="modal-body">
-          <!-- 计划名称 -->
+          <!-- 计划名称（必填） -->
           <div class="form-group">
             <label for="edit-plan-title">计划名称 <span class="required">*</span></label>
             <input type="text" id="edit-plan-title" v-model="editPlan.title" class="form-input" />
           </div>
 
-          <!-- 计划描述 -->
+          <!-- 计划描述（可选） -->
           <div class="form-group">
             <label for="edit-plan-description">计划描述</label>
             <textarea
@@ -610,7 +614,7 @@ watch([studyPlans, completionRate], () => {
             ></textarea>
           </div>
 
-          <!-- 计划类型和学科 -->
+          <!-- 计划类型和学科 - 学科改为可选，去掉 required 标记 -->
           <div class="form-row">
             <div class="form-group half">
               <label for="edit-plan-type">计划类型</label>
@@ -621,9 +625,9 @@ watch([studyPlans, completionRate], () => {
               </select>
             </div>
             <div class="form-group half">
-              <label for="edit-plan-subject">学科/科目 <span class="required">*</span></label>
+              <label for="edit-plan-subject">学科/科目</label>
               <select id="edit-plan-subject" v-model="editPlan.subject" class="form-select">
-                <option value="" disabled>请选择学科</option>
+                <option value="">请选择学科</option>
                 <option v-for="option in subjectOptions" :key="option.value" :value="option.value">
                   {{ option.label }}
                 </option>
@@ -631,7 +635,7 @@ watch([studyPlans, completionRate], () => {
             </div>
           </div>
 
-          <!-- 难易程度 -->
+          <!-- 难易程度（可选） -->
           <div class="form-group">
             <label for="edit-plan-difficulty">难易程度</label>
             <select id="edit-plan-difficulty" v-model="editPlan.difficulty" class="form-select">
@@ -641,10 +645,10 @@ watch([studyPlans, completionRate], () => {
             </select>
           </div>
 
-          <!-- 日期范围 -->
+          <!-- 日期范围 - 开始日期必填 -->
           <div class="form-row">
             <div class="form-group half">
-              <label for="edit-plan-start-date">开始日期</label>
+              <label for="edit-plan-start-date">开始日期 <span class="required">*</span></label>
               <input
                 type="date"
                 id="edit-plan-start-date"
@@ -664,6 +668,7 @@ watch([studyPlans, completionRate], () => {
             </div>
           </div>
 
+          <!-- 状态（可选） -->
           <div class="form-group">
             <label for="edit-plan-status">状态</label>
             <select id="edit-plan-status" v-model="editPlan.status" class="form-select">

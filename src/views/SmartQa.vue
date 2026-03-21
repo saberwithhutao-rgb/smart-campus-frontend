@@ -1211,14 +1211,14 @@ watch(
 
 /* 中间对话区 - 修复部分 */
 .chat-main {
-  flex: 1; /* 自动占满剩余空间 */
+  flex: 1;
   display: flex;
   flex-direction: column;
   background-color: #f5f7fa;
   padding: 20px;
-  /* 删除这行：max-width: calc(100% - 280px); */
-  min-width: 0; /* 防止flex子项溢出 */
-  overflow-y: auto;
+  min-width: 0;
+  height: calc(100vh - 70px); /* 固定高度，减去导航栏 */
+  overflow: hidden; /* 防止整体滚动 */
 }
 
 .chat-header {
@@ -1230,6 +1230,28 @@ watch(
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0; /* 新增：固定不滚动 */
+}
+
+.chat-messages {
+  flex: 1;
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  overflow-y: auto; /* 独立滚动 */
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0; /* 关键：flex 子项溢出修复 */
+}
+
+.chat-input-area {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  flex-shrink: 0; /* 新增：固定不滚动 */
 }
 
 .chat-ai-info {
@@ -1255,19 +1277,6 @@ watch(
 
 .session-title {
   font-weight: 500;
-}
-
-.chat-messages {
-  flex: 1;
-  background-color: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  overflow-y: auto;
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-height: 400px;
 }
 
 .message-item {
@@ -1346,13 +1355,6 @@ watch(
 
 .message-item-user .message-time {
   text-align: left;
-}
-
-.chat-input-area {
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  padding: 20px;
 }
 
 .input-toolbar {
@@ -1719,6 +1721,7 @@ watch(
 
   .chat-main {
     padding: 10px;
+    height: calc(100vh - 60px);
   }
 
   .message-content {
