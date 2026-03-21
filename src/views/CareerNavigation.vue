@@ -634,7 +634,7 @@ const sendAiMessageStream = async (
   params.set('message', message)
   if (chanId) params.set('chanId', chanId)
 
-  const url = `/ai/chat/openai?${params.toString()}`
+  const url = `/api/chat/openai?${params.toString()}`
 
   const response = await fetch(url, {
     method: 'POST',

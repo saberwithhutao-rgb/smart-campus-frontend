@@ -416,7 +416,7 @@ export const api = {
   sendAiMessage: (message: string, chanId?: string) =>
     request<string>({
       method: 'POST',
-      url: '/ai/chat/openai',
+      url: '/api/chat/openai',
       params: { message, chanId },
     }),
 
