@@ -696,7 +696,7 @@ const fetchFavoriteUniversities = async () => {
     const response = await api.getFavoriteUniversities()
     if (Array.isArray(response)) {
       favoriteUniversities.value = allUniversities.value.filter((u: University) =>
-        response.data.some((f: UniversityListDetail) => f.universityId === u.id),
+        response.some((f: UniversityListDetail) => f.universityId === u.id),
       )
     } else {
       error.value = '获取收藏列表失败'
@@ -712,18 +712,13 @@ const fetchFavoriteUniversities = async () => {
 // 切换收藏状态
 const toggleFavorite = async (university: University) => {
   try {
-    const response = await api.toggleFavoriteUniversity(university.id)
-    if (Array.isArray(response)) {
-      const isFavorited = favoriteUniversityIds.value.includes(university.id)
-      if (isFavorited) {
-        favoriteUniversityIds.value = favoriteUniversityIds.value.filter(
-          (id) => id !== university.id,
-        )
-      } else {
-        favoriteUniversityIds.value.push(university.id)
-      }
+    await api.toggleFavoriteUniversity(university.id)
+
+    const isFavorited = favoriteUniversityIds.value.includes(university.id)
+    if (isFavorited) {
+      favoriteUniversityIds.value = favoriteUniversityIds.value.filter((id) => id !== university.id)
     } else {
-      alert('操作失败')
+      favoriteUniversityIds.value.push(university.id)
     }
   } catch (err) {
     alert('操作失败，请稍后重试')
