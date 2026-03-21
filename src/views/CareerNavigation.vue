@@ -619,26 +619,13 @@ const CATEGORY_ICONS: Record<string, string> = {
 }
 
 // ==================== 工具函数 ====================
-const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem('userToken') || localStorage.getItem('token')
-  const headers: Record<string, string> = {
-    Accept: '*/*',
-    'Cache-Control': 'no-cache',
-  }
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`
-  }
-
-  return headers
-}
-
 const sendAiMessageStream = async (
   message: string,
   chanId: string | undefined,
   onChunk: (chunk: string) => void,
   signal?: AbortSignal,
 ): Promise<string> => {
+  const token = localStorage.getItem('userToken') || localStorage.getItem('token')
   const params = new URLSearchParams()
   params.set('message', message)
   if (chanId) params.set('chanId', chanId)
@@ -646,7 +633,9 @@ const sendAiMessageStream = async (
   const response = await fetch(`/ai/chat/openai?${params.toString()}`, {
     method: 'POST',
     headers: {
-      ...getAuthHeaders(),
+      Authorization: token ? `Bearer ${token}` : '',
+      Accept: '*/*',
+      'Cache-Control': 'no-cache',
     },
     signal,
   })
@@ -660,6 +649,16 @@ const sendAiMessageStream = async (
 
   const decoder = new TextDecoder('utf-8')
   let fullText = ''
+  let pendingChars: string[] = []
+  let animationId: number | null = null
+
+  const flushPending = () => {
+    if (pendingChars.length === 0) return
+    const text = pendingChars.join('')
+    pendingChars = []
+    onChunk(text)
+    animationId = null
+  }
 
   while (true) {
     const { done, value } = await reader.read()
@@ -667,8 +666,20 @@ const sendAiMessageStream = async (
 
     const chunk = decoder.decode(value, { stream: true })
     fullText += chunk
-    onChunk(chunk)
+
+    for (const char of chunk) {
+      pendingChars.push(char)
+    }
+
+    if (!animationId) {
+      animationId = requestAnimationFrame(flushPending)
+    }
   }
+
+  if (animationId) {
+    cancelAnimationFrame(animationId)
+  }
+  flushPending()
 
   return fullText
 }
