@@ -936,8 +936,8 @@ const sendMessage = async () => {
         }
 
         // 把当前 chunk 的所有字放入队列
-        for (let i = 0; i < chunk.length; i++) {
-          pendingChars.push(chunk[i])
+        for (const char of chunk) {
+          pendingChars.push(char)
         }
 
         // 如果定时器没启动，就启动
