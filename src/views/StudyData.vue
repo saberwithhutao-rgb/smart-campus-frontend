@@ -142,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import type { StudyStatisticsResponse, StudySuggestionsResponse } from '../api/study'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
@@ -153,7 +153,7 @@ import * as echarts from 'echarts'
 const userStore = useUserStore()
 
 // 响应式数据
-const timeRange = ref<'today' | 'week' | 'month'>('month') // 默认 month，避免空数据
+const timeRange = ref<'today' | 'week' | 'month'>('month')
 const statsLoading = ref(false)
 const suggestionsLoading = ref(false)
 const error = ref('')
@@ -185,35 +185,32 @@ const statisticsList = computed(() => {
   ]
 })
 
-// 图表数据
-const chartData = computed(() => {
-  const difficultyDetails = statistics.value?.difficultyDistribution?.details || []
-  const planTypeDetails = statistics.value?.planTypeDistribution?.details || []
-
-  return {
-    difficulty: difficultyDetails.map((item) => ({
-      name: item.type,
-      value: item.count,
-      percentage: (item.percentage * 100).toFixed(2),
-      color:
-        CHART_COLORS.difficulty[item.type as keyof typeof CHART_COLORS.difficulty] || '#909399',
-    })),
-    planType: planTypeDetails.map((item) => ({
-      name: item.type,
-      value: item.count,
-      percentage: (item.percentage * 100).toFixed(2),
-      color: CHART_COLORS.planType[item.type as keyof typeof CHART_COLORS.planType] || '#909399',
-    })),
-  }
-})
-
 const CHART_COLORS = {
   difficulty: { 简单: '#67C23A', 中等: '#E6A23C', 困难: '#F56C6C' },
   planType: { 学习计划: '#409EFF', 复习计划: '#E6A23C', 项目计划: '#67C23A' },
 }
 
-const difficultyLegend = computed(() => chartData.value.difficulty)
-const planTypeLegend = computed(() => chartData.value.planType)
+// 难度分布图例数据
+const difficultyLegend = computed(() => {
+  const details = statistics.value?.difficultyDistribution?.details || []
+  return details.map((item) => ({
+    name: item.type,
+    value: item.count,
+    percentage: (item.percentage * 100).toFixed(2),
+    color: CHART_COLORS.difficulty[item.type as keyof typeof CHART_COLORS.difficulty] || '#909399',
+  }))
+})
+
+// 计划类型分布图例数据
+const planTypeLegend = computed(() => {
+  const details = statistics.value?.planTypeDistribution?.details || []
+  return details.map((item) => ({
+    name: item.type,
+    value: item.count,
+    percentage: (item.percentage * 100).toFixed(2),
+    color: CHART_COLORS.planType[item.type as keyof typeof CHART_COLORS.planType] || '#909399',
+  }))
+})
 
 const hasChartData = computed(() => {
   return (
@@ -244,23 +241,55 @@ const getSuggestionType = (index: number) => {
   return types[index % types.length] as 'primary' | 'success' | 'warning' | 'info'
 }
 
-// 渲染图表
+// ✅ 渲染环形图 - 确保 DOM 存在后再渲染
 const renderCharts = () => {
-  requestAnimationFrame(() => {
+  // 确保图表容器存在且有数据
+  if (!difficultyChartRef.value && !planTypeChartRef.value) {
+    console.log('图表容器不存在')
+    return
+  }
+
+  // 使用 nextTick 确保 DOM 已更新
+  nextTick(() => {
+    // 难度分布环形图
     if (difficultyChartRef.value && difficultyLegend.value.length > 0) {
       const hasData = difficultyLegend.value.some((item) => item.value > 0)
+
       if (!difficultyChart) {
+        // 初始化图表
         difficultyChart = echarts.init(difficultyChartRef.value)
       }
+
       if (hasData) {
         difficultyChart.setOption({
-          tooltip: { trigger: 'item', formatter: '{b}: {c}个 ({d}%)' },
-          legend: { show: false },
+          tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c}个 ({d}%)',
+          },
           series: [
             {
               name: '难度分布',
               type: 'pie',
               radius: ['40%', '70%'],
+              avoidLabelOverlap: false,
+              itemStyle: {
+                borderRadius: 10,
+                borderColor: '#fff',
+                borderWidth: 2,
+              },
+              label: {
+                show: false,
+              },
+              emphasis: {
+                scale: false,
+                label: {
+                  show: true,
+                  position: 'center',
+                  fontSize: 16,
+                  fontWeight: 'bold',
+                  formatter: '{b}\n{d}%',
+                },
+              },
               data: difficultyLegend.value.map((item) => ({
                 name: item.name,
                 value: item.value,
@@ -274,20 +303,44 @@ const renderCharts = () => {
       }
     }
 
+    // 计划类型分布环形图
     if (planTypeChartRef.value && planTypeLegend.value.length > 0) {
       const hasData = planTypeLegend.value.some((item) => item.value > 0)
+
       if (!planTypeChart) {
         planTypeChart = echarts.init(planTypeChartRef.value)
       }
+
       if (hasData) {
         planTypeChart.setOption({
-          tooltip: { trigger: 'item', formatter: '{b}: {c}个 ({d}%)' },
-          legend: { show: false },
+          tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c}个 ({d}%)',
+          },
           series: [
             {
               name: '计划类型分布',
               type: 'pie',
               radius: ['40%', '70%'],
+              avoidLabelOverlap: false,
+              itemStyle: {
+                borderRadius: 10,
+                borderColor: '#fff',
+                borderWidth: 2,
+              },
+              label: {
+                show: false,
+              },
+              emphasis: {
+                scale: false,
+                label: {
+                  show: true,
+                  position: 'center',
+                  fontSize: 16,
+                  fontWeight: 'bold',
+                  formatter: '{b}\n{d}%',
+                },
+              },
               data: planTypeLegend.value.map((item) => ({
                 name: item.name,
                 value: item.value,
@@ -303,6 +356,7 @@ const renderCharts = () => {
   })
 }
 
+// 窗口大小变化处理
 const handleResize = () => {
   if (resizeTimer) clearTimeout(resizeTimer)
   resizeTimer = setTimeout(() => {
@@ -311,17 +365,27 @@ const handleResize = () => {
   }, 100)
 }
 
-let renderTimer: ReturnType<typeof setTimeout> | null = null
+// 监听统计数据变化，重新渲染图表
 watch(
-  [() => statistics.value, () => timeRange.value],
+  () => statistics.value,
   () => {
-    if (renderTimer) clearTimeout(renderTimer)
-    renderTimer = setTimeout(() => renderCharts(), 50)
+    renderCharts()
   },
-  { deep: false },
+  { deep: true, immediate: false },
 )
 
-// 获取统计数据（不包含 AI 建议）
+// 监听图表容器，确保 DOM 挂载后渲染
+watch(
+  [difficultyChartRef, planTypeChartRef],
+  () => {
+    if (difficultyChartRef.value || planTypeChartRef.value) {
+      renderCharts()
+    }
+  },
+  { immediate: false },
+)
+
+// 获取统计数据
 const fetchStatistics = async () => {
   statsLoading.value = true
   try {
@@ -335,7 +399,7 @@ const fetchStatistics = async () => {
   }
 }
 
-// 生成 AI 建议（用户点击按钮）
+// 生成 AI 建议
 const generateSuggestions = async () => {
   suggestionsLoading.value = true
   try {
@@ -351,8 +415,7 @@ const generateSuggestions = async () => {
 
 // 处理时间范围切换
 const handleTimeRangeChange = () => {
-  fetchStatistics() // 只刷新统计数据
-  // AI 建议不清空，保留之前的，用户可以手动重新生成
+  fetchStatistics()
 }
 
 // 监听登录状态
@@ -361,7 +424,6 @@ watch(
   (newVal) => {
     if (newVal) {
       fetchStatistics()
-      // 不自动生成建议，让用户手动点击
     }
   },
 )
@@ -369,13 +431,14 @@ watch(
 // 页面加载
 onMounted(() => {
   if (userStore.userState?.isLoggedIn) {
-    fetchStatistics() // 只加载统计数据，不加载 AI 建议
+    fetchStatistics()
   } else {
     error.value = '请先登录'
   }
   window.addEventListener('resize', handleResize)
 })
 
+// 组件卸载时销毁图表
 onUnmounted(() => {
   if (difficultyChart) {
     difficultyChart.dispose()
@@ -386,7 +449,6 @@ onUnmounted(() => {
     planTypeChart = null
   }
   if (resizeTimer) clearTimeout(resizeTimer)
-  if (renderTimer) clearTimeout(renderTimer)
   window.removeEventListener('resize', handleResize)
 })
 </script>
