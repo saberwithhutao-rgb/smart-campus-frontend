@@ -921,33 +921,57 @@ const sendMessage = async () => {
 
   streamAbortController = new AbortController()
 
-  // 逐字显示的辅助函数
-  const typeCharacter = async (char: string, msg: UiChatMessage) => {
-    if (msg.isThinking) {
-      msg.isThinking = false
-      msg.content = ''
-      delete msg.statusHint
-    }
-    msg.content += char
-    scrollToBottom()
-    await new Promise((resolve) => setTimeout(resolve, 30))
-  }
-
   try {
     await sendAiMessageStream(
       message,
       chanId.value || undefined,
-      async (chunk: string) => {
+      (chunk: string) => {
         const msg = chatMessages.value[aiMsgIndex]
         if (!msg) return
 
-        // 逐字输出
-        for (const char of chunk) {
-          typeCharacter(char, msg)
+        if (msg.isThinking) {
+          msg.isThinking = false
+          msg.content = ''
+          delete msg.statusHint
+        }
+
+        // 把当前 chunk 的所有字放入队列
+        for (let i = 0; i < chunk.length; i++) {
+          pendingChars.push(chunk[i])
+        }
+
+        // 如果定时器没启动，就启动
+        if (!typingTimer) {
+          startTyping()
         }
       },
       streamAbortController.signal,
     )
+
+    // 打字定时器
+    const pendingChars: string[] = []
+    let typingTimer: number | null = null
+
+    const startTyping = () => {
+      if (typingTimer) return
+
+      const typeNext = () => {
+        if (pendingChars.length === 0) {
+          typingTimer = null
+          return
+        }
+
+        const msg = chatMessages.value[aiMsgIndex]
+        if (msg) {
+          msg.content += pendingChars.shift()
+          scrollToBottom()
+        }
+
+        typingTimer = setTimeout(typeNext, 30) as unknown as number
+      }
+
+      typeNext()
+    }
 
     // 确保最后内容不为空
     const finalMsg = chatMessages.value[aiMsgIndex]
