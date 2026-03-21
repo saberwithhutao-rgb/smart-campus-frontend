@@ -34,12 +34,15 @@ export interface OpenAiMessageVo {
   sessionId: string
   question: string
   answer: string
+  role: 'user' | 'assistant'
+  content: string
   fileId: number | null
   questionType: string
   tokenUsage: number
   createdAt: string
   rating: number
 }
+
 export interface ApiResponse<T = unknown> {
   code: number
   message: string

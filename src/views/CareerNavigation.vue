@@ -129,7 +129,7 @@
                     <div class="message-content">
                       <!-- 仅在没有内容时显示“思考中”；有内容则显示流式/最终回复 -->
                       <div
-                        v-if="msg.role === 'ai' && msg.isThinking && !msg.content"
+                        v-if="msg.role === 'assistant' && msg.isThinking && !msg.content"
                         class="thinking-indicator"
                       >
                         <div class="thinking-dots">
@@ -524,7 +524,7 @@ const newsSectionRef = ref<HTMLElement | null>(null)
 // AI 对话相关
 const inputMessage = ref('')
 type UiChatMessage = {
-  role: 'user' | 'ai'
+  role: 'user' | 'assistant'
   content: string
   isThinking?: boolean
   statusHint?: string
@@ -822,11 +822,12 @@ const normalizeHistoryToUiMessages = (items: OpenAiMessageVo[]): UiChatMessage[]
   const messages: UiChatMessage[] = []
 
   for (const it of items) {
-    if (it.question?.trim()) {
-      messages.push({ role: 'user', content: it.question })
-    }
-    if (it.answer?.trim()) {
-      messages.push({ role: 'ai', content: it.answer })
+    if (!it) continue
+
+    if (it.role && it.content) {
+      const role: UiChatMessage['role'] = it.role === 'user' ? 'user' : 'assistant'
+      messages.push({ role, content: it.content })
+      continue
     }
   }
 
@@ -838,7 +839,7 @@ const loadSessionHistory = async (sid: string) => {
   historyLoading.value = true
   try {
     const data = await api.getOpenAiSessionHistory('chat', sid)
-    const messages = normalizeHistoryToUiMessages(data || [])
+    const messages = normalizeHistoryToUiMessages(data)
 
     if (messages.length > 0) {
       chanId.value = sid
@@ -846,7 +847,7 @@ const loadSessionHistory = async (sid: string) => {
     } else {
       chatMessages.value = [
         {
-          role: 'ai',
+          role: 'assistant',
           content: '这个会话暂无历史消息。你可以继续提问，我会接着聊。',
         },
       ]
@@ -855,7 +856,7 @@ const loadSessionHistory = async (sid: string) => {
     console.error('加载会话历史失败:', e)
     chatMessages.value = [
       {
-        role: 'ai',
+        role: 'assistant',
         content: e instanceof Error ? `加载历史失败：${e.message}` : '加载历史失败，请稍后重试。',
       },
     ]
@@ -872,7 +873,7 @@ const startNewChat = () => {
   chanId.value = `session_${timestamp}_${random}`
 
   chatMessages.value.push({
-    role: 'ai',
+    role: 'assistant',
     content:
       '我是职业导航智能顾问，我可帮你进行职业测评，职业路径规划，岗位推荐等，你有任何职业上的问题都能来问我',
   })
@@ -892,7 +893,7 @@ const sendMessage = async () => {
   startWaitingTipRotation()
 
   const placeholderMsg: UiChatMessage = {
-    role: 'ai',
+    role: 'assistant',
     content: '',
     isThinking: true,
     statusHint: waitingTips[0],
