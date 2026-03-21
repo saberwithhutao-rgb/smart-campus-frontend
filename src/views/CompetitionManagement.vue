@@ -321,10 +321,10 @@ const fetchCompetitions = async () => {
     }
 
     const response = await api.getCompetitions(Object.keys(params).length > 0 ? params : undefined)
-    if (response.code === 1) {
-      competitions.value = response.data
+    if (Array.isArray(response)) {
+      competitions.value = response
     } else {
-      error.value = response.msg || '获取竞赛列表失败'
+      error.value = '获取竞赛列表失败'
     }
   } catch (err) {
     error.value = '网络错误，请稍后重试'

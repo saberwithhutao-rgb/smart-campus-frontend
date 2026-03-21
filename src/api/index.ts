@@ -12,11 +12,7 @@ import type {
   LearningProgressItem,
   LearningProgressSummary,
 } from '../types/user'
-import type {
-  CompetitionRule,
-  CompetitionListParams,
-  CompetitionListResponse,
-} from '../types/competition'
+import type { CompetitionRule, CompetitionListParams, Competition } from '../types/competition'
 import type {
   UniversityListResponse,
   UniversityCheckResponse,
@@ -531,7 +527,7 @@ export const api = {
 
   // 竞赛管理模块
   getCompetitions: (params?: CompetitionListParams) =>
-    request<CompetitionListResponse>({ method: 'GET', url: '/api/competition', params }),
+    request<Competition[]>({ method: 'GET', url: '/api/competition', params }),
 
   getCompetitionDetail: (id: number) =>
     request<ApiResponse<CompetitionRule[]>>({ method: 'GET', url: `/api/competition/${id}` }),

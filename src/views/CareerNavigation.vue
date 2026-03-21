@@ -628,17 +628,13 @@ const sendAiMessageStream = async (
   onChunk: (chunk: string) => void,
   signal?: AbortSignal,
 ): Promise<string> => {
-  console.log('🔴 [1] sendAiMessageStream 被调用, message:', message, 'chanId:', chanId)
-
   const token = localStorage.getItem('userToken') || localStorage.getItem('token')
-  console.log('🔴 [2] token 存在:', !!token)
 
   const params = new URLSearchParams()
   params.set('message', message)
   if (chanId) params.set('chanId', chanId)
 
   const url = `/ai/chat/openai?${params.toString()}`
-  console.log('🔴 [3] 请求 URL:', url)
 
   const response = await fetch(url, {
     method: 'POST',
@@ -650,46 +646,29 @@ const sendAiMessageStream = async (
     signal,
   })
 
-  console.log('🔴 [4] 响应状态:', response.status, response.statusText)
-  console.log('🔴 [5] Content-Type:', response.headers.get('content-type'))
-
   if (!response.ok) {
-    console.error('🔴 [6] 响应失败')
     throw new Error(`请求失败: ${response.status} ${response.statusText}`)
   }
 
   const reader = response.body?.getReader()
   if (!reader) {
-    console.error('🔴 [7] 无法获取 reader')
     throw new Error('浏览器不支持流式读取')
   }
-  console.log('🔴 [8] reader 获取成功')
 
   const decoder = new TextDecoder('utf-8')
   let fullText = ''
-  let chunkCount = 0
 
   while (true) {
     const { done, value } = await reader.read()
-    console.log(`🔴 [9] reader.read() 返回: done=${done}, value长度=${value?.byteLength || 0}`)
-
     if (done) {
-      console.log('🔴 [10] 流式读取完成，总块数:', chunkCount, '总长度:', fullText.length)
       break
     }
-
-    chunkCount++
     const chunk = decoder.decode(value, { stream: true })
-    console.log(`🔴 [11] 第${chunkCount}块 (${value.byteLength}字节):`, JSON.stringify(chunk))
 
     fullText += chunk
-
-    console.log(`🔴 [12] 准备调用 onChunk, 内容:`, JSON.stringify(chunk))
     await onChunk(chunk)
-    console.log(`🔴 [13] onChunk 调用完成`)
   }
 
-  console.log('🔴 [14] 返回完整文本，长度:', fullText.length)
   return fullText
 }
 
@@ -956,7 +935,7 @@ const sendMessage = async () => {
             }
             msg.content += pendingChars.shift()
             scrollToBottom()
-          }, 30) as unknown as number
+          }, 20) as unknown as number
         }
       },
       streamAbortController.signal,

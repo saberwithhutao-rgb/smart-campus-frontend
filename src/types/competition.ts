@@ -30,11 +30,3 @@ export interface CompetitionListParams {
   status?: string
   level?: string
 }
-
-export interface CompetitionListResponse<T = Competition[]> {
-  code: number
-  msg?: string
-  message?: string
-  data: T
-}
-
