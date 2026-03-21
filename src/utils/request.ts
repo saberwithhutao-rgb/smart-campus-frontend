@@ -143,7 +143,7 @@ const handleSuccessResponse = (response: AxiosResponse) => {
   }
 
   // 成功状态码
-  if (res.code === 200 || res.code === 0 || res.success === true) {
+  if (res.code === 1 || res.code === 0 || res.code === 200 || res.success === true) {
     console.log(`[API Success] ${config.url}:`, res.data || res)
     return res.data ?? res
   }
