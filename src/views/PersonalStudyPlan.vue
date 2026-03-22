@@ -232,6 +232,7 @@ const saveEditPlan = async () => {
       difficulty: editPlan.value.difficulty,
       startDate: editPlan.value.startDate,
       endDate: editPlan.value.endDate || undefined,
+      status: editPlan.value.status || 'active',
     })
 
     closeEditModalHandler()
@@ -306,7 +307,6 @@ const getStatusText = (status: string) => {
   const map = {
     active: '进行中',
     completed: '已完成',
-    paused: '未开始',
   }
   return map[status as keyof typeof map] || status
 }
@@ -673,7 +673,6 @@ watch([studyPlans, completionRate], () => {
             <label for="edit-plan-status">状态</label>
             <select id="edit-plan-status" v-model="editPlan.status" class="form-select">
               <option value="active">进行中</option>
-              <option value="paused">未开始</option>
               <option value="completed">已完成</option>
             </select>
           </div>
