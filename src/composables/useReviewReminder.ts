@@ -4,14 +4,6 @@ import { useStudyPlanStore } from '@/stores/studyPlan'
 import { useUserStore } from '@/stores/user'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 
-export interface ReviewReminderState {
-  hasPendingTasks: boolean // 是否有待复习任务
-  pendingCount: number // 待复习任务数量
-  overdueCount: number // 逾期任务数量
-  lastCheckDate: string | null // 上次检查日期
-  lastRemindedDate: string | null // 上次提醒日期
-}
-
 export function useReviewReminder() {
   const studyPlanStore = useStudyPlanStore()
   const userStore = useUserStore()
@@ -20,6 +12,9 @@ export function useReviewReminder() {
   const hasPending = ref(false)
   const pendingCount = ref(0)
   const overdueCount = ref(0)
+
+  // 防止重复请求的标志
+  let isRefreshing = false
 
   // 是否已登录
   const isLoggedIn = computed(() => userStore.userState.isLoggedIn)
@@ -62,8 +57,47 @@ export function useReviewReminder() {
     }
   }
 
-  // 刷新待复习任务状态
+  // 计算待复习任务状态（从 store 中计算，不发起请求）
+  const updatePendingStatus = () => {
+    const tasks = studyPlanStore.allReviewTasks
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // 计算待复习任务（pending 且 taskDate <= 今天）
+    const pendingTasks = tasks.filter((task) => {
+      if (task.status !== 'pending') return false
+      const taskDate = new Date(task.taskDate)
+      taskDate.setHours(0, 0, 0, 0)
+      return taskDate <= today
+    })
+
+    // 计算逾期任务（pending 且 taskDate < 今天）
+    const overdueTasks = tasks.filter((task) => {
+      if (task.status !== 'pending') return false
+      const taskDate = new Date(task.taskDate)
+      taskDate.setHours(0, 0, 0, 0)
+      return taskDate < today
+    })
+
+    hasPending.value = pendingTasks.length > 0
+    pendingCount.value = pendingTasks.length
+    overdueCount.value = overdueTasks.length
+
+    console.log('[复习提醒] 状态更新:', {
+      hasPending: hasPending.value,
+      pendingCount: pendingCount.value,
+      overdueCount: overdueCount.value,
+    })
+  }
+
+  // 刷新待复习任务状态（从服务器获取数据）
   const refreshPendingStatus = async () => {
+    // 防止重复请求
+    if (isRefreshing) {
+      console.log('[复习提醒] 已有请求进行中，跳过')
+      return
+    }
+
     if (!isLoggedIn.value) {
       hasPending.value = false
       pendingCount.value = 0
@@ -72,51 +106,36 @@ export function useReviewReminder() {
     }
 
     try {
+      isRefreshing = true
+
       // 获取待复习任务
       await studyPlanStore.fetchPendingTasks()
       await studyPlanStore.fetchAllReviewTasks()
 
-      const tasks = studyPlanStore.allReviewTasks
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-
-      // 计算待复习任务（pending 且 taskDate <= 今天）
-      const pendingTasks = tasks.filter((task) => {
-        if (task.status !== 'pending') return false
-        const taskDate = new Date(task.taskDate)
-        taskDate.setHours(0, 0, 0, 0)
-        return taskDate <= today
-      })
-
-      // 计算逾期任务（pending 且 taskDate < 今天）
-      const overdueTasks = tasks.filter((task) => {
-        if (task.status !== 'pending') return false
-        const taskDate = new Date(task.taskDate)
-        taskDate.setHours(0, 0, 0, 0)
-        return taskDate < today
-      })
-
-      hasPending.value = pendingTasks.length > 0
-      pendingCount.value = pendingTasks.length
-      overdueCount.value = overdueTasks.length
-
-      console.log('[复习提醒] 状态刷新:', {
-        hasPending: hasPending.value,
-        pendingCount: pendingCount.value,
-        overdueCount: overdueCount.value,
-      })
+      // 更新状态
+      updatePendingStatus()
     } catch (error) {
       console.error('[复习提醒] 刷新状态失败:', error)
+    } finally {
+      isRefreshing = false
     }
   }
 
-  // 标记已查看（点击进入复习页面时调用）
+  // 标记已查看
   const markAsViewed = () => {
-    // 可选：记录用户已查看，但不影响红点状态
-    // 红点只在任务完成时消失
+    // 可选：记录用户已查看
   }
 
-  // 监听登录状态变化
+  // ✅ 修复：监听 allReviewTasks 的变化，但只更新状态，不再发起请求
+  watch(
+    () => studyPlanStore.allReviewTasks,
+    () => {
+      updatePendingStatus()
+    },
+    { deep: true },
+  )
+
+  // ✅ 监听登录状态变化
   watch(
     isLoggedIn,
     async (loggedIn) => {
@@ -129,15 +148,6 @@ export function useReviewReminder() {
       }
     },
     { immediate: true },
-  )
-
-  // 监听复习任务变化（当任务完成时自动刷新）
-  watch(
-    () => studyPlanStore.allReviewTasks,
-    async () => {
-      await refreshPendingStatus()
-    },
-    { deep: true },
   )
 
   // 每日重置提醒状态
@@ -153,13 +163,16 @@ export function useReviewReminder() {
     }
   }
 
-  init()
+  // 延迟初始化，避免在 App 启动时阻塞
+  setTimeout(() => {
+    init()
+  }, 100)
 
   return {
     // 状态
-    hasPending, // 是否有待复习任务（用于红点）
-    pendingCount, // 待复习数量（用于显示数字）
-    overdueCount, // 逾期数量
+    hasPending,
+    pendingCount,
+    overdueCount,
 
     // 方法
     refreshPendingStatus,
@@ -168,6 +181,6 @@ export function useReviewReminder() {
     markAsViewed,
     resetIfNewDay,
     getTodayString,
-    isReminderEnabled, // 用户是否开启复习提醒
+    isReminderEnabled,
   }
 }
