@@ -127,10 +127,9 @@ import { useReviewReminder } from '@/composables/useReviewReminder'
 const router = useRouter()
 const userStore = useUserStore()
 const reminder = useReviewReminder()
-const smartReviewBadge = computed(() => reminder.hasPending.value)
+const smartReviewBadge = computed(() => reminder.showRedDot.value)
 const personalPlanBadge = computed(() => smartReviewBadge.value)
 const parentBadge = computed(() => personalPlanBadge.value)
-
 // 响应式数据
 const showUserCenter = ref(false)
 const activeMenu = ref('')
@@ -153,6 +152,7 @@ const goToIndex = () => router.push('/index')
 const goToLogin = () => router.push('/login')
 const goToSmartQA = () => router.push('/ai/chat')
 const goToPersonalStudy = () => router.push('/ai/study')
+
 const goToStudyManagement = () => router.push('/campus/analysis')
 const goToCompetitionManagement = () => router.push('/career/competitions')
 const goToExamSupport = () => router.push('/career/pee')

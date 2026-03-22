@@ -8,10 +8,13 @@ export function useReviewReminder() {
   const studyPlanStore = useStudyPlanStore()
   const userStore = useUserStore()
 
-  // 红点状态（最底层）
-  const hasPending = ref(false)
+  // 是否有待复习任务（原始状态）
+  const hasPendingRaw = ref(false)
   const pendingCount = ref(0)
   const overdueCount = ref(0)
+
+  // ✅ 是否显示红点（考虑已读状态）
+  const showRedDot = ref(false)
 
   // 防止重复请求的标志
   let isRefreshing = false
@@ -35,6 +38,48 @@ export function useReviewReminder() {
   const getTodayString = (): string => {
     const today = new Date()
     return today.toISOString().split('T')[0] ?? ''
+  }
+
+  // ✅ 获取上次查看的日期（点击进入页面时记录）
+  const getLastViewedDate = (): string | null => {
+    return localStorage.getItem('review_reminder_last_viewed')
+  }
+
+  // ✅ 标记已查看（点击智能复习时调用）
+  const markAsViewed = (): void => {
+    const today = getTodayString()
+    localStorage.setItem('review_reminder_last_viewed', today)
+    // 立即更新红点状态
+    updateRedDotState()
+    console.log('[复习提醒] 用户已查看，今日红点消失')
+  }
+
+  // ✅ 更新红点显示状态
+  const updateRedDotState = () => {
+    if (!hasPendingRaw.value) {
+      // 没有待复习任务，不显示红点
+      showRedDot.value = false
+      return
+    }
+
+    // 有待复习任务，检查今天是否已查看过
+    const lastViewedDate = getLastViewedDate()
+    const today = getTodayString()
+
+    if (lastViewedDate === today) {
+      // 今天已查看过，不显示红点
+      showRedDot.value = false
+    } else {
+      // 今天还没查看过，显示红点
+      showRedDot.value = true
+    }
+
+    console.log('[复习提醒] 红点状态更新:', {
+      hasPendingRaw: hasPendingRaw.value,
+      lastViewedDate,
+      today,
+      showRedDot: showRedDot.value,
+    })
   }
 
   // 检查今天是否已经提醒过（用于横幅）
@@ -79,15 +124,19 @@ export function useReviewReminder() {
       return taskDate < today
     })
 
-    hasPending.value = pendingTasks.length > 0
+    const oldHasPending = hasPendingRaw.value
+    hasPendingRaw.value = pendingTasks.length > 0
     pendingCount.value = pendingTasks.length
     overdueCount.value = overdueTasks.length
 
-    console.log('[复习提醒] 状态更新:', {
-      hasPending: hasPending.value,
-      pendingCount: pendingCount.value,
-      overdueCount: overdueCount.value,
-    })
+    // ✅ 如果从有任务变为无任务，清除查看记录
+    if (oldHasPending && !hasPendingRaw.value) {
+      console.log('[复习提醒] 所有任务已完成，清除查看记录')
+      localStorage.removeItem('review_reminder_last_viewed')
+    }
+
+    // ✅ 更新红点显示状态
+    updateRedDotState()
   }
 
   // 刷新待复习任务状态（从服务器获取数据）
@@ -98,9 +147,10 @@ export function useReviewReminder() {
     }
 
     if (!isLoggedIn.value) {
-      hasPending.value = false
+      hasPendingRaw.value = false
       pendingCount.value = 0
       overdueCount.value = 0
+      showRedDot.value = false
       return
     }
 
@@ -134,9 +184,10 @@ export function useReviewReminder() {
       if (loggedIn) {
         await refreshPendingStatus()
       } else {
-        hasPending.value = false
+        hasPendingRaw.value = false
         pendingCount.value = 0
         overdueCount.value = 0
+        showRedDot.value = false
       }
     },
     { immediate: true },
@@ -160,8 +211,8 @@ export function useReviewReminder() {
   }, 100)
 
   return {
-    // 最底层状态（智能复习的红点）
-    hasPending,
+    // 红点显示状态（供组件使用）
+    showRedDot,
     pendingCount,
     overdueCount,
 
@@ -169,6 +220,7 @@ export function useReviewReminder() {
     refreshPendingStatus,
     markRemindedToday,
     hasRemindedToday,
+    markAsViewed, // ✅ 导出，供点击时调用
     resetIfNewDay,
     getTodayString,
     isReminderEnabled,

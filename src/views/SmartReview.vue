@@ -17,9 +17,9 @@
 
         <div class="sidebar-menu">
           <div class="sidebar-item" @click="goToStudyPlan">学习计划</div>
-          <div class="sidebar-item sidebar-item-with-badge">
+          <div class="sidebar-item sidebar-item-with-badge" @click="goToSmartReview">
             智能复习
-            <BadgeDot :show="smartReviewBadge" :max-number="false" />
+            <BadgeDot :show="showRedDot" :max-number="false" />
           </div>
         </div>
       </aside>
@@ -125,7 +125,7 @@ import { useReviewReminder } from '@/composables/useReviewReminder'
 
 // 复习提醒状态
 const reminder = useReviewReminder()
-const smartReviewBadge = computed(() => reminder.hasPending.value)
+const showRedDot = computed(() => reminder.showRedDot.value)
 
 const router = useRouter()
 const studyPlanStore = useStudyPlanStore()
@@ -178,7 +178,10 @@ const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 1024
 }
 const goToStudyPlan = () => router.push('/ai/study')
-
+const goToSmartReview = () => {
+  reminder.markAsViewed()
+  router.push('/ai/study/review')
+}
 // 切换侧边栏
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value
@@ -208,6 +211,7 @@ onMounted(async () => {
   studyPlanStore.fetchAllReviewTasks()
 
   await reminder.refreshPendingStatus()
+  reminder.markAsViewed()
 })
 
 onUnmounted(() => {

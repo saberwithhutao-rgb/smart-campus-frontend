@@ -13,8 +13,7 @@ import { useReviewReminder } from '@/composables/useReviewReminder'
 
 const reminder = useReviewReminder()
 
-const smartReviewBadge = computed(() => reminder.hasPending.value)
-
+const showRedDot = computed(() => reminder.showRedDot.value)
 // 路由实例
 const router = useRouter()
 
@@ -155,6 +154,11 @@ const goToPlanDetail = (id: number) => {
     name: 'PlanDetail',
     params: { id: id.toString() },
   })
+}
+
+const goToSmartReview = () => {
+  reminder.markAsViewed()
+  router.push('/ai/study/review')
 }
 
 /**
@@ -368,9 +372,9 @@ watch([studyPlans, completionRate], () => {
           >
             学习计划
           </div>
-          <div class="sidebar-item sidebar-item-with-badge" @click="selectMenu('review')">
+          <div class="sidebar-item sidebar-item-with-badge" @click="goToSmartReview">
             智能复习
-            <BadgeDot :show="smartReviewBadge" :max-number="false" />
+            <BadgeDot :show="showRedDot" :max-number="false" />
           </div>
         </div>
       </aside>
