@@ -8,7 +8,7 @@ export function useReviewReminder() {
   const studyPlanStore = useStudyPlanStore()
   const userStore = useUserStore()
 
-  // 红点状态
+  // 红点状态（最底层）
   const hasPending = ref(false)
   const pendingCount = ref(0)
   const overdueCount = ref(0)
@@ -92,7 +92,6 @@ export function useReviewReminder() {
 
   // 刷新待复习任务状态（从服务器获取数据）
   const refreshPendingStatus = async () => {
-    // 防止重复请求
     if (isRefreshing) {
       console.log('[复习提醒] 已有请求进行中，跳过')
       return
@@ -108,11 +107,9 @@ export function useReviewReminder() {
     try {
       isRefreshing = true
 
-      // 获取待复习任务
       await studyPlanStore.fetchPendingTasks()
       await studyPlanStore.fetchAllReviewTasks()
 
-      // 更新状态
       updatePendingStatus()
     } catch (error) {
       console.error('[复习提醒] 刷新状态失败:', error)
@@ -121,12 +118,7 @@ export function useReviewReminder() {
     }
   }
 
-  // 标记已查看
-  const markAsViewed = () => {
-    // 可选：记录用户已查看
-  }
-
-  // ✅ 修复：监听 allReviewTasks 的变化，但只更新状态，不再发起请求
+  // 监听 allReviewTasks 的变化
   watch(
     () => studyPlanStore.allReviewTasks,
     () => {
@@ -135,7 +127,7 @@ export function useReviewReminder() {
     { deep: true },
   )
 
-  // ✅ 监听登录状态变化
+  // 监听登录状态变化
   watch(
     isLoggedIn,
     async (loggedIn) => {
@@ -163,13 +155,12 @@ export function useReviewReminder() {
     }
   }
 
-  // 延迟初始化，避免在 App 启动时阻塞
   setTimeout(() => {
     init()
   }, 100)
 
   return {
-    // 状态
+    // 最底层状态（智能复习的红点）
     hasPending,
     pendingCount,
     overdueCount,
@@ -178,7 +169,6 @@ export function useReviewReminder() {
     refreshPendingStatus,
     markRemindedToday,
     hasRemindedToday,
-    markAsViewed,
     resetIfNewDay,
     getTodayString,
     isReminderEnabled,

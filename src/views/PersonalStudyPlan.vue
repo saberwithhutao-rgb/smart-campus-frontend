@@ -8,6 +8,12 @@ import { ElMessage } from 'element-plus'
 import 'element-plus/es/components/message/style/css'
 import { nextTick } from 'vue'
 import { getUserSettings, syncAnonymousStudyAnalytics } from '@/utils/userSettings'
+import BadgeDot from '@/components/BadgeDot.vue'
+import { useReviewReminder } from '@/composables/useReviewReminder'
+
+const reminder = useReviewReminder()
+
+const smartReviewBadge = computed(() => reminder.hasPending.value)
 
 // 路由实例
 const router = useRouter()
@@ -353,6 +359,7 @@ watch([studyPlans, completionRate], () => {
           <h2 class="sidebar-title">学习规划</h2>
         </div>
 
+        <!-- 修改侧边栏菜单部分，添加红点 -->
         <div class="sidebar-menu">
           <div
             class="sidebar-item"
@@ -361,12 +368,9 @@ watch([studyPlans, completionRate], () => {
           >
             学习计划
           </div>
-          <div
-            class="sidebar-item"
-            :class="{ 'sidebar-item-active': selectedMenu === 'review' }"
-            @click="selectMenu('review')"
-          >
+          <div class="sidebar-item sidebar-item-with-badge" @click="selectMenu('review')">
             智能复习
+            <BadgeDot :show="smartReviewBadge" :max-number="false" />
           </div>
         </div>
       </aside>
@@ -1057,6 +1061,12 @@ watch([studyPlans, completionRate], () => {
   color: var(--primary-color) !important;
   border-left-color: var(--primary-color);
   font-weight: 500;
+}
+
+.sidebar-item-with-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 /* 中间学习计划区域 - 保持宽屏，确保不被侧边栏遮挡 */

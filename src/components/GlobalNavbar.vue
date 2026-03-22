@@ -21,27 +21,30 @@
 
         <div
           class="nav-item has-submenu"
-          :class="{ 'has-badge': hasParentBadge }"
+          :class="{ 'has-badge': parentBadge }"
           @mouseenter="showSubMenuHandler('个性化学习伴侣')"
           @mouseleave="hideSubMenu"
           @click="handleMenuClick('个性化学习伴侣')"
         >
           个性化学习伴侣
-          <BadgeDot :show="hasParentBadge" :max-number="false" />
+          <BadgeDot :show="parentBadge" :max-number="false" />
+
+          <!-- 子菜单 -->
           <div v-if="showSubMenu === '个性化学习伴侣' && !isMobile" class="submenu">
             <div class="submenu-item" @click="goToSmartQA">智能问答</div>
             <div class="submenu-item submenu-item-with-badge" @click="goToPersonalStudy">
               个性化规划
-              <BadgeDot :show="hasPersonalPlanBadge" :max-number="false" />
+              <BadgeDot :show="personalPlanBadge" :max-number="false" />
             </div>
             <div class="submenu-item" @click="goToStudyManagement">学习管理</div>
           </div>
-          <!-- 移动端子菜单同样需要红点 -->
+
+          <!-- 移动端子菜单 -->
           <div v-if="showSubMenu === '个性化学习伴侣' && isMobile" class="mobile-submenu">
             <div class="mobile-submenu-item" @click="goToSmartQA">智能问答</div>
             <div class="mobile-submenu-item submenu-item-with-badge" @click="goToPersonalStudy">
               个性化规划
-              <BadgeDot :show="hasPersonalPlanBadge" :max-number="false" />
+              <BadgeDot :show="personalPlanBadge" :max-number="false" />
             </div>
             <div class="mobile-submenu-item" @click="goToStudyManagement">学习管理</div>
           </div>
@@ -124,12 +127,10 @@ import { useReviewReminder } from '@/composables/useReviewReminder'
 const router = useRouter()
 const userStore = useUserStore()
 const reminder = useReviewReminder()
-const hasPendingTasks = computed(() => reminder.hasPending.value)
-// 个性化规划子菜单红点
-const hasPersonalPlanBadge = computed(() => hasPendingTasks.value)
+const smartReviewBadge = computed(() => reminder.hasPending.value)
+const personalPlanBadge = computed(() => smartReviewBadge.value)
+const parentBadge = computed(() => personalPlanBadge.value)
 
-// 个性化学习伴侣父级红点（子菜单任一有红点）
-const hasParentBadge = computed(() => hasPersonalPlanBadge.value)
 // 响应式数据
 const showUserCenter = ref(false)
 const activeMenu = ref('')
