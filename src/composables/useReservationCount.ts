@@ -1,6 +1,5 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
 import request from '@/utils/request'
 
 export function useReservationCount() {

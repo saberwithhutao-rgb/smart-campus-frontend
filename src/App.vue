@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import MouseBubbles from '@/components/MouseBubbles.vue'
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { ElMessage, ElLoading } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import { api } from '@/api'
+import ReviewReminderBanner from '@/components/ReviewReminderBanner.vue'
+import { useReviewReminder } from '@/composables/useReviewReminder'
 import {
   applyUserSettings,
   getUserSettings,
@@ -14,6 +16,7 @@ import {
   type UserSettings,
 } from '@/utils/userSettings'
 
+const reminder = useReviewReminder()
 const userStore = useUserStore()
 const router = useRouter()
 const appReady = ref(false)
@@ -229,6 +232,16 @@ onBeforeUnmount(() => {
   window.removeEventListener('settings-changed', handleSettingsChanged as EventListener)
   clearStudyReminder()
 })
+
+// 登录后刷新状态
+watch(
+  () => userStore.userState.isLoggedIn,
+  (loggedIn) => {
+    if (loggedIn) {
+      reminder.refreshPendingStatus()
+    }
+  },
+)
 </script>
 
 <template>
@@ -240,6 +253,7 @@ onBeforeUnmount(() => {
   </div>
 
   <div v-else class="app-content" :class="{ 'content-ready': appReady }">
+    <ReviewReminderBanner />
     <router-view />
   </div>
   <MouseBubbles />

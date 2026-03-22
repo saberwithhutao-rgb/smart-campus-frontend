@@ -21,19 +21,28 @@
 
         <div
           class="nav-item has-submenu"
+          :class="{ 'has-badge': hasParentBadge }"
           @mouseenter="showSubMenuHandler('个性化学习伴侣')"
           @mouseleave="hideSubMenu"
           @click="handleMenuClick('个性化学习伴侣')"
         >
           个性化学习伴侣
+          <BadgeDot :show="hasParentBadge" :max-number="false" />
           <div v-if="showSubMenu === '个性化学习伴侣' && !isMobile" class="submenu">
             <div class="submenu-item" @click="goToSmartQA">智能问答</div>
-            <div class="submenu-item" @click="goToPersonalStudy">个性化规划</div>
+            <div class="submenu-item submenu-item-with-badge" @click="goToPersonalStudy">
+              个性化规划
+              <BadgeDot :show="hasPersonalPlanBadge" :max-number="false" />
+            </div>
             <div class="submenu-item" @click="goToStudyManagement">学习管理</div>
           </div>
+          <!-- 移动端子菜单同样需要红点 -->
           <div v-if="showSubMenu === '个性化学习伴侣' && isMobile" class="mobile-submenu">
             <div class="mobile-submenu-item" @click="goToSmartQA">智能问答</div>
-            <div class="mobile-submenu-item" @click="goToPersonalStudy">个性化规划</div>
+            <div class="mobile-submenu-item submenu-item-with-badge" @click="goToPersonalStudy">
+              个性化规划
+              <BadgeDot :show="hasPersonalPlanBadge" :max-number="false" />
+            </div>
             <div class="mobile-submenu-item" @click="goToStudyManagement">学习管理</div>
           </div>
         </div>
@@ -109,10 +118,18 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
+import BadgeDot from '@/components/BadgeDot.vue'
+import { useReviewReminder } from '@/composables/useReviewReminder'
 
 const router = useRouter()
 const userStore = useUserStore()
+const reminder = useReviewReminder()
+const hasPendingTasks = computed(() => reminder.hasPending.value)
+// 个性化规划子菜单红点
+const hasPersonalPlanBadge = computed(() => hasPendingTasks.value)
 
+// 个性化学习伴侣父级红点（子菜单任一有红点）
+const hasParentBadge = computed(() => hasPersonalPlanBadge.value)
 // 响应式数据
 const showUserCenter = ref(false)
 const activeMenu = ref('')
@@ -1158,6 +1175,23 @@ h4 {
   width: 100%;
   height: 100%;
   min-height: 260px;
+}
+
+/* 红点样式 - 让菜单项支持红点 */
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.submenu-item-with-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.submenu-item-with-badge .badge-dot {
+  margin-left: 8px;
 }
 
 /* 响应式设计 */

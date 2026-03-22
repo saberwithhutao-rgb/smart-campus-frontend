@@ -17,7 +17,13 @@
 
         <div class="sidebar-menu">
           <div class="sidebar-item" @click="goToStudyPlan">学习计划</div>
-          <div class="sidebar-item sidebar-item-active" @click="goToSmartReview">智能复习</div>
+          <div
+            class="sidebar-item sidebar-item-active sidebar-item-with-badge"
+            @click="goToSmartReview"
+          >
+            智能复习
+            <BadgeDot :show="hasPendingTasks" :max-number="false" />
+          </div>
         </div>
       </aside>
 
@@ -117,6 +123,12 @@ import { useStudyPlanStore } from '../stores/studyPlan'
 import type { StudyTask } from '@/stores/studyPlan'
 import { ArrowRight } from '@element-plus/icons-vue'
 import { nextTick } from 'vue'
+import BadgeDot from '../components/BadgeDot.vue'
+import { useReviewReminder } from '@/composables/useReviewReminder'
+
+// 复习提醒状态
+const reminder = useReviewReminder()
+const hasPendingTasks = computed(() => reminder.hasPending.value)
 
 const router = useRouter()
 const studyPlanStore = useStudyPlanStore()
@@ -186,7 +198,7 @@ watch(
   { deep: true },
 )
 
-onMounted(() => {
+onMounted(async () => {
   showSidebar.value = true
   nextTick(() => {
     checkScreenSize()
@@ -198,6 +210,9 @@ onMounted(() => {
   window.addEventListener('resize', checkScreenSize)
   studyPlanStore.fetchPendingTasks()
   studyPlanStore.fetchAllReviewTasks()
+
+  await reminder.refreshPendingStatus()
+  reminder.markAsViewed()
 })
 
 onUnmounted(() => {
@@ -310,6 +325,12 @@ onUnmounted(() => {
   color: var(--primary-color) !important;
   border-left-color: var(--primary-color);
   font-weight: 500;
+}
+
+.sidebar-item-with-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .study-main {
