@@ -107,22 +107,28 @@
         <template #header>
           <div class="card-header">
             <h3>💡 AI 学习建议</h3>
-            <el-button
-              type="primary"
-              size="small"
-              :loading="suggestionsLoading"
-              @click="generateSuggestions"
-            >
-              {{ suggestions ? '重新生成' : '生成建议' }}
-            </el-button>
+            <div class="suggestions-actions">
+              <span v-if="currentSuggestion?.time" class="suggestions-time">
+                <el-icon><Clock /></el-icon>
+                生成于 {{ currentSuggestion.time }}
+              </span>
+              <el-button
+                type="primary"
+                size="small"
+                :loading="suggestionsLoading"
+                @click="generateSuggestions"
+              >
+                {{ currentSuggestion?.content ? '重新生成' : '生成建议' }}
+              </el-button>
+            </div>
           </div>
         </template>
 
-        <div v-if="suggestions">
+        <div v-if="currentSuggestion?.content">
           <el-empty v-if="!hasSuggestions" description="暂无学习建议" />
           <el-timeline v-else>
             <el-timeline-item
-              v-for="(suggestion, index) in suggestionList"
+              v-for="(suggestion, index) in currentSuggestion.content"
               :key="index"
               :type="getSuggestionType(index)"
               :size="'large'"
@@ -153,7 +159,7 @@ import { getStudyStatistics, getStudySuggestions } from '../api/study'
 import type { StudyStatisticsResponse, StudySuggestionsResponse } from '../api/study'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { useUserStore } from '@/stores/user'
-import { MagicStick } from '@element-plus/icons-vue'
+import { MagicStick, Clock } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
 const userStore = useUserStore()
@@ -164,7 +170,23 @@ const statsLoading = ref(false)
 const suggestionsLoading = ref(false)
 const error = ref('')
 const statistics = ref<StudyStatisticsResponse | null>(null)
-const suggestions = ref<StudySuggestionsResponse | null>(null)
+
+// 缓存结构：每个时间范围存储建议内容和生成时间
+interface SuggestionCache {
+  content: StudySuggestionsResponse | null
+  time: string
+}
+
+const suggestionsCache = ref<Record<'today' | 'week' | 'month', SuggestionCache>>({
+  today: { content: null, time: '' },
+  week: { content: null, time: '' },
+  month: { content: null, time: '' },
+})
+
+// 当前显示的建议（根据 timeRange 从缓存读取）
+const currentSuggestion = computed(() => {
+  return suggestionsCache.value[timeRange.value]
+})
 
 // ECharts 实例
 const difficultyChartRef = ref<HTMLElement>()
@@ -223,10 +245,11 @@ const hasSuggestions = computed(() => {
 })
 
 const suggestionList = computed(() => {
-  if (!suggestions.value) return []
-  if (Array.isArray(suggestions.value)) return suggestions.value
-  if (suggestions.value.suggestions) return suggestions.value.suggestions
-  if (suggestions.value.data?.suggestions) return suggestions.value.data.suggestions
+  const content = currentSuggestion.value?.content
+  if (!content) return []
+  if (Array.isArray(content)) return content
+  if (content.suggestions) return content.suggestions
+  if (content.data?.suggestions) return content.data.suggestions
   return []
 })
 
@@ -235,7 +258,7 @@ const getSuggestionType = (index: number) => {
   return types[index % types.length] as 'primary' | 'success' | 'warning' | 'info'
 }
 
-// 渲染环形图 - 原始版本
+// 渲染环形图
 const renderCharts = () => {
   nextTick(() => {
     // 难度分布环形图
@@ -359,15 +382,26 @@ const fetchStatistics = async () => {
   }
 }
 
-// 生成 AI 建议
+// 生成 AI 建议（带缓存）
 const generateSuggestions = async () => {
   suggestionsLoading.value = true
   try {
     const data = await getStudySuggestions({ timeRange: timeRange.value })
-    suggestions.value = data
+
+    // 存入缓存
+    const now = new Date()
+    const timeStr = `${now.getMonth() + 1}-${now.getDate()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+
+    suggestionsCache.value[timeRange.value] = {
+      content: data,
+      time: timeStr,
+    }
   } catch (err) {
     console.error('生成学习建议失败:', err)
-    suggestions.value = null
+    suggestionsCache.value[timeRange.value] = {
+      content: null,
+      time: '',
+    }
   } finally {
     suggestionsLoading.value = false
   }
@@ -376,7 +410,7 @@ const generateSuggestions = async () => {
 // 处理时间范围切换
 const handleTimeRangeChange = () => {
   fetchStatistics()
-  // AI 建议不清空，保留之前的
+  // 不需要清空建议，直接从缓存读取
 }
 
 // 监听登录状态
@@ -414,7 +448,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 样式保持不变，添加 suggestions-empty 样式 */
+/* 整体布局 */
 .study-data-container {
   padding: 24px;
   max-width: 1400px;
@@ -424,6 +458,7 @@ onUnmounted(() => {
   margin-top: 70px;
 }
 
+/* 时间范围选择器 */
 .time-range-selector {
   display: flex;
   align-items: center;
@@ -445,6 +480,7 @@ onUnmounted(() => {
   width: 160px;
 }
 
+/* 加载状态 */
 .loading-container {
   background: white;
   padding: 40px;
@@ -452,12 +488,14 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+/* 数据内容区域 */
 .data-content {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
+/* 卡片通用样式 */
 .statistics-card,
 .suggestions-card {
   border-radius: 12px;
@@ -466,6 +504,7 @@ onUnmounted(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
+/* 卡片头部 */
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -479,6 +518,26 @@ onUnmounted(() => {
   color: #303133;
 }
 
+/* 建议卡片操作区 */
+.suggestions-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suggestions-time {
+  font-size: 12px;
+  color: #909399;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.suggestions-time .el-icon {
+  font-size: 12px;
+}
+
+/* 统计项 */
 .stat-item {
   background: #f8f9fa;
   padding: 20px;
@@ -508,10 +567,12 @@ onUnmounted(() => {
   line-height: 1.3;
 }
 
+/* 图表行 */
 .charts-row {
   margin-top: 24px;
 }
 
+/* 图表容器 */
 .chart-container {
   background: white;
   padding: 20px;
@@ -531,6 +592,7 @@ onUnmounted(() => {
   height: 300px;
 }
 
+/* 图例 */
 .chart-legend {
   margin-top: 16px;
   padding: 12px;
@@ -567,6 +629,7 @@ onUnmounted(() => {
   color: #909399;
 }
 
+/* 科目卡片 */
 .subject-card {
   margin-bottom: 12px;
   background: #f8f9fa;
@@ -586,6 +649,7 @@ onUnmounted(() => {
   color: #606266;
 }
 
+/* 建议内容 */
 .suggestion-content {
   display: flex;
   align-items: center;
@@ -600,6 +664,7 @@ onUnmounted(() => {
   color: #409eff;
 }
 
+/* 空状态 */
 .suggestions-empty {
   padding: 40px 0;
   text-align: center;
@@ -607,233 +672,6 @@ onUnmounted(() => {
 
 .suggestions-empty .el-icon {
   color: #c0c4cc;
-}
-
-:deep(.el-divider__text) {
-  font-size: 14px;
-  font-weight: 600;
-  color: #303133;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .study-data-container {
-    padding: 16px;
-  }
-
-  .time-range-selector {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  :deep(.el-select) {
-    width: 100%;
-  }
-
-  .stat-value {
-    font-size: 20px;
-  }
-
-  .chart {
-    height: 250px;
-  }
-}
-</style>
-
-<style scoped>
-/* 样式保持不变 */
-.suggestions-empty {
-  padding: 40px 0;
-  text-align: center;
-}
-
-.suggestions-empty .el-icon {
-  color: #c0c4cc;
-}
-
-.study-data-container {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-  background-color: #f5f7fa;
-  min-height: calc(100vh - 70px);
-  margin-top: 70px;
-}
-
-.time-range-selector {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  background: white;
-  padding: 16px 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.time-range-selector label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #606266;
-}
-
-:deep(.el-select) {
-  width: 160px;
-}
-
-.loading-container {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.data-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.statistics-card,
-.suggestions-card {
-  border-radius: 12px;
-  overflow: hidden;
-  border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.stat-item {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  text-align: center;
-  transition: all 0.3s ease;
-  margin-bottom: 16px;
-}
-
-.stat-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.stat-label {
-  display: block;
-  font-size: 14px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  display: block;
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-  line-height: 1.3;
-}
-
-.charts-row {
-  margin-top: 24px;
-}
-
-.chart-container {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.chart-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0 0 16px 0;
-}
-
-.chart {
-  width: 100%;
-  height: 300px;
-}
-
-.chart-legend {
-  margin-top: 16px;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-  font-size: 14px;
-  color: #606266;
-  border-bottom: 1px solid #e4e7ed;
-}
-
-.legend-item:last-child {
-  border-bottom: none;
-}
-
-.legend-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.legend-name {
-  flex: 1;
-  font-weight: 500;
-}
-
-.legend-value {
-  color: #909399;
-}
-
-.subject-card {
-  margin-bottom: 12px;
-  background: #f8f9fa;
-  border: none;
-}
-
-.subject-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-}
-
-.subject-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #606266;
-}
-
-.suggestion-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #606266;
-}
-
-.suggestion-content .el-icon {
-  font-size: 18px;
-  color: #409eff;
 }
 
 :deep(.el-divider__text) {
