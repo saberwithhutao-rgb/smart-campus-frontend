@@ -194,11 +194,17 @@ export const useUserStore = defineStore('user', () => {
     username: string,
     password: string,
     captcha: string,
+    captchaId: string,
     rememberMe: boolean = false,
   ) {
     try {
       console.log('调用登录 API...')
-      const response = (await api.login({ username, password, captcha })) as unknown as LoginData
+      const response = (await api.login({
+        username,
+        password,
+        captcha,
+        captchaId,
+      })) as unknown as LoginData
 
       if (!response) {
         return { success: false, error: response }

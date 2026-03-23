@@ -20,6 +20,7 @@ const form = reactive({
 const captchaData = reactive({
   captchaText: '',
   captchaBase64: '',
+  captchaId: '',
 })
 
 // 密码是否可见
@@ -50,6 +51,7 @@ const getCaptcha = async () => {
     if (res.captchaBase64) {
       captchaData.captchaBase64 = res.captchaBase64
       captchaData.captchaText = res.data
+      captchaData.captchaId = res.captchaId
     } else if (res.data) {
       captchaData.captchaText = res.data
     }
@@ -96,6 +98,7 @@ const handleLogin = async () => {
       form.username,
       form.password,
       form.captcha,
+      captchaData.captchaId,
       form.rememberMe,
     )
 
