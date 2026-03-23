@@ -410,13 +410,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     })
   })
 
-  // 初始化
-  const init = async () => {
-    await fetchStudyPlans()
-  }
-
-  init()
-
   return {
     // 状态
     studyPlans,
@@ -452,7 +445,5 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
 
     // 关联方法
     updatePlanLatestDetail,
-
-    init,
   }
 })

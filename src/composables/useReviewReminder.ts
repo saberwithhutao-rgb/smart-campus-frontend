@@ -198,17 +198,7 @@ export function useReviewReminder() {
     resetIfNewDay()
   }
 
-  // 初始化
-  const init = async () => {
-    checkAndResetDaily()
-    if (isLoggedIn.value) {
-      await refreshPendingStatus()
-    }
-  }
-
-  setTimeout(() => {
-    init()
-  }, 100)
+  checkAndResetDaily()
 
   return {
     // 红点显示状态（供组件使用）
@@ -220,7 +210,7 @@ export function useReviewReminder() {
     refreshPendingStatus,
     markRemindedToday,
     hasRemindedToday,
-    markAsViewed, // ✅ 导出，供点击时调用
+    markAsViewed,
     resetIfNewDay,
     getTodayString,
     isReminderEnabled,

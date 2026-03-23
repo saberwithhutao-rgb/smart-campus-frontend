@@ -11,6 +11,8 @@ import type {
   LearningProgress,
   LearningProgressItem,
   LearningProgressSummary,
+  ResetPasswordRequest,
+  SendResetCodeRequest,
 } from '../types/user'
 import type { CompetitionRule, CompetitionListParams, Competition } from '../types/competition'
 import type {
@@ -257,6 +259,34 @@ export const api = {
     request<CaptchaResponse>({ method: 'GET', url: '/api/captcha' }).then(
       (res) => res as unknown as CaptchaResponse,
     ),
+
+  // 发送重置密码验证码
+  sendResetCode: async (data: SendResetCodeRequest) => {
+    const response = await fetch('/api/password/reset/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    const result = await response.json()
+    return result
+  },
+
+  // 重置密码
+  resetPassword: async (data: ResetPasswordRequest) => {
+    const response = await fetch('/api/password/reset', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    const result = await response.json()
+    return result
+  },
 
   // 学习计划模块
   getStudyPlans: (params?: {

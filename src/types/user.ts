@@ -80,16 +80,6 @@ export interface ApiResponse<T = unknown> {
   data: T
 }
 
-// 验证码类型
-export interface CaptchaResponse {
-  code: number
-  data: string // 验证码文本
-  captchaId?: string // 会话ID
-  captchaBase64?: string // 验证码图片Base64
-  message?: string // 消息
-  expiresIn?: number // 过期时间（秒）
-}
-
 // 登录响应类型
 // 后端返回的用户数据结构
 // 修改LoginResponse类型，匹配项目文档
@@ -291,4 +281,28 @@ export interface DifficultyMark {
   content: string
   tags: string[]
   createdAt: string
+}
+
+// 图形验证码响应
+export interface CaptchaResponse {
+  code: number
+  data: string // 验证码文本（用于调试）
+  captchaId: string // 新增：验证码唯一ID
+  captchaBase64: string // 验证码图片Base64
+  message: string
+  expiresIn: number
+}
+
+// 发送重置验证码请求
+export interface SendResetCodeRequest {
+  email: string
+  captcha: string
+  captchaId: string
+}
+
+// 重置密码请求
+export interface ResetPasswordRequest {
+  email: string
+  verifyCode: string
+  newPassword: string
 }
