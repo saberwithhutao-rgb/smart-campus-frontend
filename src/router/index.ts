@@ -178,6 +178,12 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    {
+      path: '/forgot-password',
+      name: 'ForgotPassword',
+      component: () => import('@/views/ForgotPassword.vue'),
+      meta: { requiresAuth: false },
+    },
     // 404路由
     {
       path: '/:pathMatch(.*)*',

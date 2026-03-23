@@ -122,6 +122,10 @@ const goToRegister = () => {
   router.push('/register')
 }
 
+const goToForgotPassword = () => {
+  router.push('/forgot-password')
+}
+
 // 组件挂载时获取验证码，并检查是否有保存的用户名
 onMounted(() => {
   getCaptcha()
@@ -233,6 +237,10 @@ onMounted(() => {
       <!-- 注册链接 -->
       <div class="register-link">
         还没有账号？<a href="#" @click.prevent="goToRegister">立即注册</a>
+      </div>
+
+      <div class="forgot-link">
+        <a href="#" @click.prevent="goToForgotPassword">忘记密码？</a>
       </div>
     </div>
   </div>
@@ -400,6 +408,21 @@ onMounted(() => {
 .register-link a:hover {
   color: #5a6fd8;
   text-decoration: underline;
+}
+
+.forgot-link {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.forgot-link a {
+  color: #909399;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.forgot-link a:hover {
+  color: #667eea;
 }
 
 .captcha-input {
