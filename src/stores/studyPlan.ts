@@ -1,6 +1,6 @@
 // stores/studyPlan.ts
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '@/api'
 import * as studyApi from '@/api/study'

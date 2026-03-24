@@ -232,16 +232,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('settings-changed', handleSettingsChanged as EventListener)
   clearStudyReminder()
 })
-
-// 登录后刷新状态
-watch(
-  () => userStore.userState.isLoggedIn,
-  (loggedIn) => {
-    if (loggedIn) {
-      reminder.refreshPendingStatus()
-    }
-  },
-)
 </script>
 
 <template>
