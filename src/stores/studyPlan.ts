@@ -97,26 +97,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   let pendingTasksCache: StudyTask[] | null = null
   let allTasksCache: StudyTask[] | null = null
 
-  // ✅ 监听 reviewItems 变化（待复习任务变化时清除缓存）
-  watch(
-    reviewItems,
-    () => {
-      console.log('[缓存] 检测到 pending 数据变化，清除缓存')
-      pendingTasksCache = null
-    },
-    { deep: true },
-  )
-
-  // ✅ 监听 allReviewTasks 变化（所有任务变化时清除缓存）
-  watch(
-    allReviewTasks,
-    () => {
-      console.log('[缓存] 检测到 all 数据变化，清除缓存')
-      allTasksCache = null
-    },
-    { deep: true },
-  )
-
   // ----- 计算属性 -----
   const completionRate = computed(() => {
     if (studyPlans.value.length === 0) return 0
