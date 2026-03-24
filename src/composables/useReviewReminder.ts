@@ -4,7 +4,11 @@ import { useStudyPlanStore } from '@/stores/studyPlan'
 import { useUserStore } from '@/stores/user'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 
-export function useReviewReminder() {
+// ✅ 全局单例实例
+let singletonInstance: ReturnType<typeof createReviewReminder> | null = null
+
+// ✅ 创建实例的函数（你原来的代码全部移到这里）
+function createReviewReminder() {
   const studyPlanStore = useStudyPlanStore()
   const userStore = useUserStore()
 
@@ -18,6 +22,8 @@ export function useReviewReminder() {
 
   // 防止重复请求的标志
   let isRefreshing = false
+  // ✅ 新增：用于复用请求的 Promise
+  let refreshPromise: Promise<void> | null = null
 
   // 是否已登录
   const isLoggedIn = computed(() => userStore.userState.isLoggedIn)
@@ -130,8 +136,14 @@ export function useReviewReminder() {
     updateRedDotState()
   }
 
-  // 刷新待复习任务状态（从服务器获取数据）
+  // ✅ 刷新待复习任务状态（添加请求复用）
   const refreshPendingStatus = async () => {
+    // ✅ 如果已有正在进行的请求，复用 Promise
+    if (refreshPromise) {
+      console.log('[复习提醒] 复用已有请求')
+      return refreshPromise
+    }
+
     if (isRefreshing) {
       console.log('[复习提醒] 已有请求进行中，跳过')
       return
@@ -147,16 +159,20 @@ export function useReviewReminder() {
 
     try {
       isRefreshing = true
+      refreshPromise = (async () => {
+        // ✅ 添加 fetchStudyPlans
+        await studyPlanStore.fetchStudyPlans()
+        await studyPlanStore.fetchPendingTasks()
+        await studyPlanStore.fetchAllReviewTasks()
+        updatePendingStatus()
+      })()
 
-      await studyPlanStore.fetchStudyPlans()
-      await studyPlanStore.fetchPendingTasks()
-      await studyPlanStore.fetchAllReviewTasks()
-
-      updatePendingStatus()
+      await refreshPromise
     } catch (error) {
       console.error('[复习提醒] 刷新状态失败:', error)
     } finally {
       isRefreshing = false
+      refreshPromise = null
     }
   }
 
@@ -207,4 +223,13 @@ export function useReviewReminder() {
     getTodayString,
     isReminderEnabled,
   }
+}
+
+// ✅ 导出单例 hook
+export function useReviewReminder() {
+  if (!singletonInstance) {
+    singletonInstance = createReviewReminder()
+    console.log('[复习提醒] 创建全局单例实例')
+  }
+  return singletonInstance
 }
