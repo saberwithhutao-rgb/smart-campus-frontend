@@ -207,8 +207,6 @@ onMounted(async () => {
   })
 
   window.addEventListener('resize', checkScreenSize)
-  studyPlanStore.fetchPendingTasks()
-  studyPlanStore.fetchAllReviewTasks()
 
   await reminder.refreshPendingStatus()
   reminder.markAsViewed()

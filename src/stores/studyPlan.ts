@@ -1,6 +1,6 @@
 // stores/studyPlan.ts
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '@/api'
 import * as studyApi from '@/api/study'
@@ -94,6 +94,29 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   const total = ref(0)
   const selectedPlan = ref<StudyPlan | null>(null)
 
+  let pendingTasksCache: StudyTask[] | null = null
+  let allTasksCache: StudyTask[] | null = null
+
+  // ✅ 监听 reviewItems 变化（待复习任务变化时清除缓存）
+  watch(
+    reviewItems,
+    () => {
+      console.log('[缓存] 检测到 pending 数据变化，清除缓存')
+      pendingTasksCache = null
+    },
+    { deep: true },
+  )
+
+  // ✅ 监听 allReviewTasks 变化（所有任务变化时清除缓存）
+  watch(
+    allReviewTasks,
+    () => {
+      console.log('[缓存] 检测到 all 数据变化，清除缓存')
+      allTasksCache = null
+    },
+    { deep: true },
+  )
+
   // ----- 计算属性 -----
   const completionRate = computed(() => {
     if (studyPlans.value.length === 0) return 0
@@ -128,7 +151,12 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   )
 
   // ----- 复习任务相关方法 -----
-  const fetchPendingTasks = async () => {
+  const fetchPendingTasks = async (force = false) => {
+    if (!force && pendingTasksCache !== null) {
+      console.log('[缓存] 使用 pending 缓存')
+      reviewItems.value = pendingTasksCache
+      return pendingTasksCache
+    }
     isLoading.value = true
     try {
       const response = await api.getPendingTasks()
@@ -140,6 +168,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       } else {
         reviewItems.value = []
       }
+      pendingTasksCache = reviewItems.value
     } catch (error) {
       reviewItems.value = []
       console.error('获取待复习任务失败:', error)
@@ -148,14 +177,33 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     }
   }
 
-  const fetchAllReviewTasks = async () => {
+  const fetchAllReviewTasks = async (force = false) => {
+    if (!force && allTasksCache !== null) {
+      console.log('[缓存] 使用 all 缓存')
+      allReviewTasks.value = allTasksCache
+      return allTasksCache
+    }
     try {
       const response = await studyApi.getAllReviewTasks()
       console.log('getAllReviewTasks 返回:', response)
       allReviewTasks.value = response
     } catch (error) {
       console.error('获取复习任务失败:', error)
+      allReviewTasks.value = []
     }
+  }
+
+  // ✅ 清除缓存（任务完成后调用）
+  const clearCache = () => {
+    console.log('[缓存] 清除缓存')
+    pendingTasksCache = null
+    allTasksCache = null
+  }
+
+  // ✅ 强制刷新（清除缓存后重新请求）
+  const refreshReviewTasks = async () => {
+    clearCache()
+    await Promise.all([fetchPendingTasks(true), fetchAllReviewTasks(true)])
   }
 
   const completeTask = async (id: number) => {
@@ -445,5 +493,8 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
 
     // 关联方法
     updatePlanLatestDetail,
+
+    clearCache,
+    refreshReviewTasks,
   }
 })
