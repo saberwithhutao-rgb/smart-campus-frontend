@@ -208,6 +208,10 @@ onMounted(async () => {
 
   window.addEventListener('resize', checkScreenSize)
 
+  console.log('studyPlans 数据:', studyPlanStore.studyPlans)
+  console.log('allReviewTasks 数据:', studyPlanStore.allReviewTasks)
+  console.log('completedPlansWithReviewStatus:', studyPlanStore.completedPlansWithReviewStatus)
+
   await reminder.refreshPendingStatus()
   reminder.markAsViewed()
 })

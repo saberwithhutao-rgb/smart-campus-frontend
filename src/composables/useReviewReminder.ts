@@ -148,6 +148,7 @@ export function useReviewReminder() {
     try {
       isRefreshing = true
 
+      await studyPlanStore.fetchStudyPlans()
       await studyPlanStore.fetchPendingTasks()
       await studyPlanStore.fetchAllReviewTasks()
 
