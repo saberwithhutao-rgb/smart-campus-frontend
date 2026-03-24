@@ -140,7 +140,7 @@ export function useReviewReminder() {
   }
 
   // 刷新待复习任务状态（从服务器获取数据）
-  const refreshPendingStatus = async (force = false) => {
+  const refreshPendingStatus = async () => {
     if (isRefreshing) {
       console.log('[复习提醒] 已有请求进行中，跳过')
       return
@@ -157,8 +157,8 @@ export function useReviewReminder() {
     try {
       isRefreshing = true
 
-      await studyPlanStore.fetchPendingTasks(force)
-      await studyPlanStore.fetchAllReviewTasks(force)
+      await studyPlanStore.fetchPendingTasks()
+      await studyPlanStore.fetchAllReviewTasks()
 
       updatePendingStatus()
     } catch (error) {

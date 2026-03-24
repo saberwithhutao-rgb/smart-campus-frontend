@@ -94,9 +94,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   const total = ref(0)
   const selectedPlan = ref<StudyPlan | null>(null)
 
-  let pendingTasksCache: StudyTask[] | null = null
-  let allTasksCache: StudyTask[] | null = null
-
   // ----- 计算属性 -----
   const completionRate = computed(() => {
     if (studyPlans.value.length === 0) return 0
@@ -131,12 +128,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
   )
 
   // ----- 复习任务相关方法 -----
-  const fetchPendingTasks = async (force = false) => {
-    if (!force && pendingTasksCache !== null) {
-      console.log('[缓存] 使用 pending 缓存')
-      reviewItems.value = pendingTasksCache
-      return pendingTasksCache
-    }
+  const fetchPendingTasks = async () => {
     isLoading.value = true
     try {
       const response = await api.getPendingTasks()
@@ -148,7 +140,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       } else {
         reviewItems.value = []
       }
-      pendingTasksCache = reviewItems.value
     } catch (error) {
       reviewItems.value = []
       console.error('获取待复习任务失败:', error)
@@ -157,12 +148,7 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
     }
   }
 
-  const fetchAllReviewTasks = async (force = false) => {
-    if (!force && allTasksCache !== null) {
-      console.log('[缓存] 使用 all 缓存')
-      allReviewTasks.value = allTasksCache
-      return allTasksCache
-    }
+  const fetchAllReviewTasks = async () => {
     try {
       const response = await studyApi.getAllReviewTasks()
       console.log('getAllReviewTasks 返回:', response)
@@ -171,19 +157,6 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
       console.error('获取复习任务失败:', error)
       allReviewTasks.value = []
     }
-  }
-
-  // ✅ 清除缓存（任务完成后调用）
-  const clearCache = () => {
-    console.log('[缓存] 清除缓存')
-    pendingTasksCache = null
-    allTasksCache = null
-  }
-
-  // ✅ 强制刷新（清除缓存后重新请求）
-  const refreshReviewTasks = async () => {
-    clearCache()
-    await Promise.all([fetchPendingTasks(true), fetchAllReviewTasks(true)])
   }
 
   const completeTask = async (id: number) => {
@@ -473,8 +446,5 @@ export const useStudyPlanStore = defineStore('studyPlan', () => {
 
     // 关联方法
     updatePlanLatestDetail,
-
-    clearCache,
-    refreshReviewTasks,
   }
 })
