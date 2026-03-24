@@ -51,7 +51,6 @@ export function useReviewReminder() {
     localStorage.setItem('review_reminder_last_viewed', today)
     // 立即更新红点状态
     updateRedDotState()
-    console.log('[复习提醒] 用户已查看，今日红点消失')
   }
 
   // ✅ 更新红点显示状态
@@ -73,13 +72,6 @@ export function useReviewReminder() {
       // 今天还没查看过，显示红点
       showRedDot.value = true
     }
-
-    console.log('[复习提醒] 红点状态更新:', {
-      hasPendingRaw: hasPendingRaw.value,
-      lastViewedDate,
-      today,
-      showRedDot: showRedDot.value,
-    })
   }
 
   // 检查今天是否已经提醒过（用于横幅）
@@ -131,7 +123,6 @@ export function useReviewReminder() {
 
     // ✅ 如果从有任务变为无任务，清除查看记录
     if (oldHasPending && !hasPendingRaw.value) {
-      console.log('[复习提醒] 所有任务已完成，清除查看记录')
       localStorage.removeItem('review_reminder_last_viewed')
     }
 

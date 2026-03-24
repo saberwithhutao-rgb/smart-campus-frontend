@@ -113,7 +113,7 @@ request.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
-    logRequest(config)
+    // logRequest(config)
     return config
   },
   (error: AxiosError) => Promise.reject(error),
@@ -121,8 +121,8 @@ request.interceptors.request.use(
 
 // ==================== 响应拦截器 - 成功处理 ====================
 const handleSuccessResponse = (response: AxiosResponse) => {
-  const duration = Date.now() - (response.config as ExtendedAxiosRequestConfig).metadata!.startTime
-  logResponse(response, duration)
+  // const duration = Date.now() - (response.config as ExtendedAxiosRequestConfig).metadata!.startTime
+  // logResponse(response, duration)
 
   const res = response.data
   const config = response.config as ExtendedAxiosRequestConfig
