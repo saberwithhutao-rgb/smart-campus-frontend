@@ -25,6 +25,33 @@ import {
   createReservation,
 } from '@/api/library/reservation'
 
+const formatDate = (date: Date | string | null | undefined) => {
+  // 类型校验
+  if (!date) {
+    console.warn('formatDate: date is null or undefined')
+    return ''
+  }
+
+  // 如果是字符串，转换为Date对象
+  let dateObj: Date
+  if (typeof date === 'string') {
+    dateObj = new Date(date)
+  } else {
+    dateObj = date
+  }
+
+  // 检查是否是有效日期
+  if (isNaN(dateObj.getTime())) {
+    console.warn('formatDate: invalid date', date)
+    return ''
+  }
+
+  const year = dateObj.getFullYear()
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const day = String(dateObj.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // ==================== 响应式数据 ====================
 const userStore = useUserStore()
 const {
@@ -37,8 +64,7 @@ const {
 const currentFloor = ref<Floor | null>(null)
 const selectedRoom = ref<string>('')
 const selectedClassroom = ref<Classroom | null>(null)
-const selectedDate = ref<Date>(new Date())
-console.log('初始化 selectedDate:', selectedDate.value)
+const selectedDate = ref<string>(formatDate(new Date()))
 const selectedSeats = ref<string[]>([])
 const isConfirmDialogVisible = ref(false)
 const leaveDialogVisible = ref(false)
@@ -898,34 +924,6 @@ const handleSeatClick = async (seatId: string, status: SeatStatus) => {
 //   return `${mins}分钟`
 // }
 
-// 格式化日期
-const formatDate = (date: Date | string | null | undefined) => {
-  // 类型校验
-  if (!date) {
-    console.warn('formatDate: date is null or undefined')
-    return ''
-  }
-
-  // 如果是字符串，转换为Date对象
-  let dateObj: Date
-  if (typeof date === 'string') {
-    dateObj = new Date(date)
-  } else {
-    dateObj = date
-  }
-
-  // 检查是否是有效日期
-  if (isNaN(dateObj.getTime())) {
-    console.warn('formatDate: invalid date', date)
-    return ''
-  }
-
-  const year = dateObj.getFullYear()
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-  const day = String(dateObj.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 // 确认预约
 // const confirmReservation = () => {
 //   if (!selectedRoom.value) {
@@ -1215,7 +1213,7 @@ const handleReserveSeatFromDetail = async () => {
   seatDetailDialogVisible.value = false
 
   // 获取预约信息
-  const reserveDate = formatDate(selectedDate.value)
+  const reserveDate = selectedDate.value
   const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value)
   const startTime = slot?.start || '09:00'
   const duration = reservationInfo.value.duration // 使用用户选择的时长
@@ -1479,13 +1477,10 @@ const grid = computed(() => {
                 placeholder="选择日期"
                 :disabled-date="
                   (date: Date) => {
-                    // 创建一个只包含年月日的今天日期对象
                     const today = new Date()
                     today.setHours(0, 0, 0, 0)
-                    // 创建一个只包含年月日的传入日期对象
                     const compareDate = new Date(date)
                     compareDate.setHours(0, 0, 0, 0)
-                    // 禁用今天之前的日期
                     return compareDate < today
                   }
                 "
