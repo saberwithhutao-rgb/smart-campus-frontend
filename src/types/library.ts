@@ -40,6 +40,8 @@ export interface Seat {
 export interface Reservation {
   id: number
   userId: number
+  userName: string
+  isOwner: boolean
   seatId: number
   classroomId: number
   reserveDate: string

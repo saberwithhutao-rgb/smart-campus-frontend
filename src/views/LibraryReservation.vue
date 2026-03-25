@@ -41,7 +41,6 @@ const formatDate = (date: Date | string | null | undefined): string => {
 }
 
 // ==================== 响应式数据 ====================
-const userStore = useUserStore()
 const {
   isLoading: isCountLoading,
   isAtMaxLimit,
@@ -107,11 +106,6 @@ const floors = ref<Floor[]>([])
 // 座位列表
 const rooms = ref<Classroom[]>([])
 const seats = ref<Seat[]>([])
-
-// 获取当前登录用户ID
-const currentUserId = computed(() => {
-  return userStore.userState.userInfo?.userId
-})
 
 // 所有教室的座位数据
 const roomSeats = ref<Record<string, Record<string, SeatStatus>>>({})
@@ -1060,19 +1054,15 @@ const submitReservation = async () => {
             type: 'normal',
           })
         }
-
+        ElMessage.success('预约成功！')
         isConfirmDialogVisible.value = false
         selectedSeats.value = []
-
         // 刷新当前教室的座位数据（核心修复）
         await loadSeats(classroomId)
         // 刷新用户有效预约状态
         await checkUserActiveStatus()
         // 刷新教室列表，更新可用座位数
         await refreshClassroomList()
-
-        ElMessage.success('预约成功！')
-
         // 更新教室的空闲率
         if (selectedRoom.value) {
           calculateRoomVacancyRate(parseInt(selectedRoom.value))
@@ -1305,18 +1295,6 @@ const getSeatDetails = async (seatId: string) => {
       currentSeatReservations.value = reservations.filter(
         (reservation) => reservation.status === 'active',
       )
-
-      console.log('预约列表:', currentSeatReservations.value)
-      console.log('当前登录用户ID:', currentUserId.value)
-
-      // 检查每条预约记录的 userId 与当前用户ID是否匹配
-      currentSeatReservations.value.forEach((reservation, index) => {
-        console.log(
-          `预约 ${index + 1} - userId: ${reservation.userId}, 当前用户ID: ${currentUserId.value}, 是否匹配: ${reservation.userId === currentUserId.value}`,
-        )
-      })
-
-      // 使用 nextTick 强制刷新组件
       await nextTick()
       console.log('组件已刷新，按钮应正确显示')
     }
@@ -1901,7 +1879,7 @@ const grid = computed(() => {
           >
             <div class="reservation-item">
               <div class="reservation-info">
-                <p><strong>预约人ID：</strong>{{ reservation.userId }}</p>
+                <p><strong>预约人：</strong>{{ reservation.userName }}</p>
                 <p><strong>预约日期：</strong>{{ reservation.reserveDate }}</p>
                 <p>
                   <strong>预约时间段：</strong>{{ reservation.startTime }} -
@@ -1909,7 +1887,7 @@ const grid = computed(() => {
                 </p>
               </div>
               <el-button
-                v-if="reservation.userId === userStore.userState.userInfo?.userId"
+                v-if="reservation.isOwner"
                 type="danger"
                 size="small"
                 @click="handleLeaveSeatFromDetail(reservation.id)"
