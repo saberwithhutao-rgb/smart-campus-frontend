@@ -17,7 +17,7 @@ export function useReservationCount() {
     try {
       isLoading.value = true
       // 改用 request，保持统一
-      const response = (await request.get('/api/library/reservations/user')) as unknown as any
+      const response = (await request.get('/library/reservations/user')) as unknown as any
       const activeReservations = response.filter((item: any) => item.status === 'active')
       activeCount.value = activeReservations.length
       console.log('用户活跃预约数量:', activeCount.value)
