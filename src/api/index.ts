@@ -262,7 +262,7 @@ export const api = {
 
   // 发送重置密码验证码
   sendResetCode: async (data: SendResetCodeRequest) => {
-    const response = await fetch('/password/reset/send', {
+    const response = await fetch('/api/password/reset/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -276,7 +276,7 @@ export const api = {
 
   // 重置密码
   resetPassword: async (data: ResetPasswordRequest) => {
-    const response = await fetch('/password/reset', {
+    const response = await fetch('/api/password/reset', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
