@@ -1,96 +1,97 @@
+// src/api/sports/index.ts
 import request from '@/utils/request'
+import type {
+  Venue,
+  Court,
+  Reservation,
+  CreateReservationParams,
+  ApiResponse,
+} from '@/types/sports'
 
 // 查询所有场馆
-export const getVenues = async () => {
-  try {
-    const response = await request.get('/api/sports/venues')
-    return response
-  } catch (error) {
-    console.error('获取场馆列表失败:', error)
-    throw error
-  }
+export const getVenues = async (): Promise<Venue[]> => {
+  const response = await request({
+    url: '/sports/venues',
+    method: 'GET',
+  })
+  return response as unknown as Venue[]
 }
 
 // 根据场馆查场地
-export const getCourtsByVenue = async (venueId: number) => {
-  try {
-    const response = await request.get(`/api/sports/courts/venue/${venueId}`)
-    return response
-  } catch (error) {
-    console.error('获取场地列表失败:', error)
-    throw error
+export const getCourtsByVenue = async (venueId: number): Promise<Court[]> => {
+  if (!venueId || typeof venueId !== 'number') {
+    return Promise.reject(new Error('场馆ID必须是数字'))
   }
-}
-
-// 查询场馆当前时段可用场地数
-export const getAvailableCourts = async (venueId: number) => {
-  try {
-    const response = await request.get(`/api/sports/venues/${venueId}/available-courts`)
-    return response
-  } catch (error) {
-    console.error('获取可用场地数失败:', error)
-    throw error
-  }
+  const response = await request({
+    url: `/sports/courts/venue/${venueId}`,
+    method: 'GET',
+  })
+  return (response as unknown as Court[]) || []
 }
 
 // 创建预约
-export const createReservation = async (data: {
-  courtId: number
-  venueId: number
-  reserveDate: string
-  startTime: string
-  duration: number
-  endTime: string
-}) => {
-  try {
-    const response = await request.post('/api/sports/reservations', data)
-    return response
-  } catch (error) {
-    console.error('创建预约失败:', error)
-    throw error
+export const createReservation = async (
+  data: CreateReservationParams,
+): Promise<ApiResponse<Reservation>> => {
+  const requiredFields: (keyof CreateReservationParams)[] = [
+    'courtId',
+    'venueId',
+    'reserveDate',
+    'startTime',
+    'duration',
+    'endTime',
+  ]
+  for (const field of requiredFields) {
+    if (data[field] === undefined || data[field] === null) {
+      return Promise.reject(new Error(`缺少必填字段：${field}`))
+    }
   }
+  return request({
+    url: '/sports/reservations',
+    method: 'POST',
+    data,
+  })
 }
 
 // 占用场地
-export const occupyReservation = async (reservationId: number) => {
-  try {
-    const response = await request.post(`/api/sports/reservations/${reservationId}/occupy`)
-    return response
-  } catch (error) {
-    console.error('占用场地失败:', error)
-    throw error
+export const occupyReservation = async (reservationId: number): Promise<ApiResponse<null>> => {
+  if (!reservationId || typeof reservationId !== 'number') {
+    return Promise.reject(new Error('预约ID必须是数字'))
   }
+  return request({
+    url: `/sports/reservations/${reservationId}/occupy`,
+    method: 'POST',
+  })
 }
 
 // 离开场地
-export const leaveReservation = async (reservationId: number) => {
-  try {
-    const response = await request.post(`/api/sports/reservations/${reservationId}/leave`)
-    return response
-  } catch (error) {
-    console.error('离开场地失败:', error)
-    throw error
+export const leaveReservation = async (reservationId: number): Promise<ApiResponse<null>> => {
+  if (!reservationId || typeof reservationId !== 'number') {
+    return Promise.reject(new Error('预约ID必须是数字'))
   }
+  return request({
+    url: `/sports/reservations/${reservationId}/leave`,
+    method: 'POST',
+  })
 }
 
 // 查询用户预约记录
-export const getUserReservations = async () => {
-  try {
-    const response = await request.get('/api/sports/reservations/user')
-    return response
-  } catch (error) {
-    console.error('获取用户预约记录失败:', error)
-    throw error
-  }
+export const getUserReservations = async (): Promise<Reservation[]> => {
+  const response = await request({
+    url: '/sports/reservations/user',
+    method: 'GET',
+  })
+  return (response as unknown as Reservation[]) || []
 }
 
 // 查询场地当前预约
-export const getCourtReservations = async (courtId: number) => {
-  try {
-    const response = await request.get(`/api/sports/reservations/court/${courtId}`)
-    return response
-  } catch (error) {
-    console.error('获取场地预约失败:', error)
-    throw error
+export const getCourtReservations = async (courtId: number): Promise<Reservation[]> => {
+  if (!courtId || typeof courtId !== 'number') {
+    return Promise.reject(new Error('场地ID必须是数字'))
   }
+  const response = await request({
+    url: `/sports/reservations/court/${courtId}`,
+    method: 'GET',
+  })
+  return (response as unknown as Reservation[]) || []
 }

@@ -12,7 +12,7 @@ export const getSeatsByClassroom = (classroomId) => {
   }
 
   return request({
-    url: `/api/library/seats/classroom/${classroomId}`,
-    method: 'GET',
+    url: `/library/seats/classroom/${classroomId}`,
+    method: 'GET'
   })
 }

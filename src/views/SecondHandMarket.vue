@@ -1,23 +1,63 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ElMessage, ElMessageBox, ElImage, ElDialog } from 'element-plus'
 import { Loading, Delete } from '@element-plus/icons-vue'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import Select from '@/components/select.vue'
 import * as forumApi from '@/api/forum'
+import type {
+  Post,
+  Comment,
+  Category,
+  CreatePostParams,
+  CreateCommentParams,
+  PageResponse,
+} from '@/types/forum'
+import request from '@/utils/request'
+import type { Violation } from '@/types/audit'
 import { useUserStore } from '@/stores/user'
 
-// 响应式数据
-const currentUserNickname = computed(() => userStore.fullUserInfo?.username || '游客')
+const userStore = useUserStore()
+const currentUserId = computed(() => userStore.userState.userInfo?.userId)
 
+// 响应式数据
 const selectedCategoryId = ref<number | null>(null)
 const selectedPostId = ref<number | null>(null)
 const newComment = ref('')
+// 评论图片相关
+const commentImages = ref<Record<number, string[]>>({})
+const commentFullImages = ref<Record<number, string[]>>({})
+const commentUploadLoading = ref<Record<number, boolean>>({})
+// 评论文件输入ref
+const commentFileInputs = ref<Record<number, HTMLInputElement | null>>({})
+
+// 存储已提示过的违规ID，避免重复提示（使用localStorage持久化）
+const processedViolationIds = ref<Set<number>>(
+  new Set(JSON.parse(localStorage.getItem('processedViolationIds') || '[]')),
+)
+
+// 保存已处理的违规ID到localStorage
+const saveProcessedIds = () => {
+  localStorage.setItem(
+    'processedViolationIds',
+    JSON.stringify(Array.from(processedViolationIds.value)),
+  )
+}
 
 // 发布输入框
 const postTitle = ref('')
 const postContent = ref('')
 const publishCategoryId = ref<number | string>('')
+
+// 图片上传相关
+const imageUrls = ref<string[]>([])
+const fullImageUrls = ref<string[]>([])
+const uploadLoading = ref(false)
+const previewDialogVisible = ref(false)
+const previewImageUrl = ref('')
+const previewError = ref(false)
+// 帖子图片预览
+const postPreviewUrl = ref<string | null>(null)
 
 // 分页数据
 const currentPage = ref(0)
@@ -31,32 +71,135 @@ const publishing = ref(false)
 const commenting = ref(false)
 
 // 分类列表
-const categoryList = ref<forumApi.Category[]>([])
+const categoryList = ref<Category[]>([])
 console.log('初始分类列表:', categoryList.value)
 
 // 帖子数据
-const postList = ref<forumApi.PageResponse<forumApi.Post> | null>(null)
-const userStore = useUserStore()
-const currentUserId = computed(() => userStore.userProfile?.id)
+const postList = ref<PageResponse<Post> | null>(null)
 
 // 话题栏滚动相关
 const topicsBarRef = ref<HTMLElement | null>(null)
 const showLeftArrow = ref(false)
 const showRightArrow = ref(false)
 
-// 初始化数据
-onMounted(async () => {
-  // 确保用户信息已加载
-  if (!userStore.userProfile) {
-    await userStore.fetchUserProfile()
+// 获取完整图片URL
+const getFullImageUrl = (path: string) => {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  // 如果 baseURL 是 /api，图片路径可能需要特殊处理
+  // 根据后端实际情况调整
+  return path
+}
+
+// 检查违规信息
+const checkViolations = async () => {
+  try {
+    console.log('开始检查违规')
+
+    const violations = await request({
+      url: '/audit/violations',
+      method: 'GET',
+    })
+
+    if (Array.isArray(violations)) {
+      // 收集未处理的违规项
+      const unprocessedViolations = violations.filter((violation: Violation) => {
+        return !processedViolationIds.value.has(violation.id)
+      })
+
+      console.log('未处理的违规项:', unprocessedViolations)
+
+      if (unprocessedViolations.length > 0) {
+        // 汇总提示
+        ElMessage.warning(
+          `您有 ${unprocessedViolations.length} 条帖子/评论经AI审核，因内容包含违规信息已自动下架，请规范发布内容`,
+        )
+
+        // 将未处理的违规ID加入已处理集合
+        unprocessedViolations.forEach((violation: Violation) => {
+          processedViolationIds.value.add(violation.id)
+        })
+
+        saveProcessedIds()
+
+        // 重新加载帖子列表
+        await loadPosts(currentPage.value)
+      }
+    }
+  } catch (error: unknown) {
+    console.warn('检查违规信息时发生错误:', error instanceof Error ? error.message : error)
+  }
+}
+
+/**
+ * 通用图片上传函数
+ * @param files - 文件列表
+ * @param onSuccess - 上传成功回调
+ * @param onError - 上传失败回调
+ */
+const uploadImages = async (
+  files: FileList,
+  onSuccess?: (urls: string[], fullUrls: string[]) => void,
+  onError?: (error: unknown) => void,
+): Promise<{ urls: string[]; fullUrls: string[] } | null> => {
+  if (!files || files.length === 0) return null
+
+  const formData = new FormData()
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    if (file) {
+      formData.append('images', file)
+    }
   }
 
-  console.log('当前用户ID:', currentUserId.value)
+  try {
+    // request 返回的已经是 data 字段，直接就是图片路径数组
+    const imageData = await request({
+      url: '/upload/images',
+      method: 'POST',
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    const urls = Array.isArray(imageData) ? imageData : []
+
+    if (urls.length > 0) {
+      const fullUrls = urls.map((url: string) => getFullImageUrl(url))
+      onSuccess?.(urls, fullUrls)
+      ElMessage.success(`成功上传 ${urls.length} 张图片`)
+      return { urls, fullUrls }
+    } else {
+      ElMessage.warning('上传失败，未返回图片路径')
+      onError?.(new Error('上传失败，未返回图片路径'))
+      return null
+    }
+  } catch (error) {
+    console.error('上传失败:', error)
+    ElMessage.error('图片上传失败，请重试')
+    onError?.(error)
+    return null
+  }
+}
+
+// 初始化数据
+onMounted(async () => {
   await loadCategories()
   await loadPosts()
+
+  // 初始化滚动状态
   nextTick(() => {
     updateArrowVisibility()
   })
+
+  // 只在页面加载时检查一次违规信息，不再定时轮询
+  checkViolations()
+})
+
+// 清理函数
+onUnmounted(() => {
+  // 不需要清理定时任务，因为已经移除了
 })
 
 // 加载分类列表
@@ -65,15 +208,8 @@ const loadCategories = async () => {
     console.log('开始加载分类...')
     const res = await forumApi.getCategories()
     console.log('加载分类返回:', res)
-    categoryList.value = Array.isArray(res) ? res : []
+    categoryList.value = res || []
     console.log('分类列表:', categoryList.value)
-
-    if (categoryList.value.length > 0) {
-      selectedCategoryId.value = categoryList.value[0]!.id
-      publishCategoryId.value = categoryList.value[0]!.id
-      console.log('默认选中分类:', selectedCategoryId.value)
-      await loadPosts(0)
-    }
   } catch (error) {
     ElMessage.error('加载分类失败')
     console.error('加载分类失败:', error)
@@ -92,13 +228,16 @@ const loadPosts = async (page: number = 0) => {
       result = await forumApi.getPosts(page, pageSize.value)
     }
 
-    console.log('加载帖子返回:', result)
-
-    // 确保result存在，并且是预期的结构
+    // result 的类型是 PageResponse<Post>
     if (result) {
+      // 过滤掉违规帖子（audit_status = 2）
+      const filteredContent = (result.content || []).filter(
+        (post: Post) => post && post.auditStatus !== 2,
+      )
+
       // 适配后端数据结构
       postList.value = {
-        content: result.content || [],
+        content: filteredContent,
         pageable: result.pageable || {
           pageNumber: page,
           pageSize: pageSize.value,
@@ -114,8 +253,8 @@ const loadPosts = async (page: number = 0) => {
         number: result.number || page,
         sort: result.sort || { empty: true, sorted: false, unsorted: true },
         first: result.first !== undefined ? result.first : page === 0,
-        numberOfElements: result.numberOfElements || 0,
-        empty: result.empty !== undefined ? result.empty : true,
+        numberOfElements: filteredContent.length,
+        empty: filteredContent.length === 0,
       }
       totalPosts.value = result.totalElements || 0
       currentPage.value = page
@@ -197,9 +336,12 @@ const loadPostComments = async (postId: number) => {
   try {
     const postDetail = await forumApi.getPostDetail(postId)
     if (postList.value) {
-      const postIndex = postList.value.content.findIndex((p) => p.id === postId)
+      const postIndex = postList.value.content.findIndex((p: Post) => p.id === postId)
       if (postIndex > -1 && postList.value.content[postIndex]) {
-        postList.value.content[postIndex].comments = postDetail.comments || []
+        // 过滤掉违规评论（audit_status = 2）
+        postList.value.content[postIndex].comments = (postDetail.comments || []).filter(
+          (comment: Comment) => comment && comment.auditStatus !== 2,
+        )
       }
     }
   } catch (error) {
@@ -212,35 +354,163 @@ const loadPostComments = async (postId: number) => {
 
 // 发布评论
 const handlePostComment = async (postId: number | undefined) => {
-  if (!postId || !newComment.value.trim()) {
-    ElMessage.warning('请输入评论内容')
+  if (!postId) {
+    ElMessage.warning('请选择评论的帖子')
     return
   }
 
-  if (!currentUserId.value) {
-    ElMessage.warning('请先登录')
+  if (
+    !newComment.value.trim() &&
+    (!commentImages.value ||
+      !commentImages.value[postId] ||
+      commentImages.value[postId].length === 0)
+  ) {
+    ElMessage.warning('请输入评论内容或上传图片')
     return
+  }
+
+  const commentData: CreateCommentParams = {
+    postId,
+    content: newComment.value,
+    imageUrls: commentImages.value?.[postId] || [],
   }
 
   commenting.value = true
   try {
-    await forumApi.addComment({
-      postId,
-      content: newComment.value,
-    })
+    const res = await forumApi.addComment(commentData)
+    console.log('评论接口响应', res)
 
-    // 重新加载评论
     await loadPostComments(postId)
     newComment.value = ''
+    if (commentImages.value) {
+      commentImages.value[postId] = []
+    }
+    if (commentFullImages.value) {
+      commentFullImages.value[postId] = []
+    }
     ElMessage.success('评论成功')
-  } catch (error: any) {
-    if (error.message && error.message.includes('敏感词')) {
+  } catch (error: unknown) {
+    console.error('评论失败:', error)
+    if (error instanceof Error && error.message && error.message.includes('敏感词')) {
       ElMessage.error('内容包含敏感词汇，请修改后再发布')
     } else {
       ElMessage.error('评论失败，请稍后重试')
     }
   } finally {
     commenting.value = false
+  }
+}
+
+// 处理图片上传（发布帖子）
+const handleImageUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const files = target.files
+  if (!files || files.length === 0) return
+
+  uploadLoading.value = true
+
+  try {
+    const result = await uploadImages(
+      files,
+      (urls, fullUrls) => {
+        imageUrls.value = [...imageUrls.value, ...urls]
+        fullImageUrls.value = [...fullImageUrls.value, ...fullUrls]
+      },
+      () => {
+        // 上传失败时的额外处理（可选）
+      },
+    )
+
+    if (!result) {
+      // 上传失败，清空文件输入
+      target.value = ''
+    }
+  } finally {
+    uploadLoading.value = false
+    target.value = ''
+  }
+}
+
+// 预览图片
+const handleImagePreview = (url: string, fullUrl: string) => {
+  previewImageUrl.value = fullUrl
+  previewError.value = false
+  previewDialogVisible.value = true
+}
+
+// 处理预览图片加载失败
+const handlePreviewError = () => {
+  previewError.value = true
+}
+
+// 处理帖子图片加载失败
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  target.style.display = 'none'
+}
+
+// 显示帖子图片预览
+const showPostPreview = (imageUrl: string) => {
+  postPreviewUrl.value = getFullImageUrl(imageUrl)
+}
+
+// 关闭帖子图片预览
+const closePostPreview = () => {
+  postPreviewUrl.value = null
+}
+
+// 删除图片
+const handleImageDelete = (index: number) => {
+  imageUrls.value.splice(index, 1)
+  fullImageUrls.value.splice(index, 1)
+}
+
+// 处理评论图片上传
+const handleCommentImageUpload = async (event: Event, postId: number) => {
+  const target = event.target as HTMLInputElement
+  const files = target.files
+  if (!files || files.length === 0) return
+
+  // 确保 ref 对象已初始化
+  if (!commentUploadLoading.value) {
+    commentUploadLoading.value = {}
+  }
+  if (!commentImages.value[postId]) {
+    commentImages.value[postId] = []
+  }
+  if (!commentFullImages.value[postId]) {
+    commentFullImages.value[postId] = []
+  }
+
+  commentUploadLoading.value[postId] = true
+
+  try {
+    const result = await uploadImages(
+      files,
+      (urls, fullUrls) => {
+        commentImages.value[postId] = [...commentImages.value[postId]!, ...urls]
+        commentFullImages.value[postId] = [...commentFullImages.value[postId]!, ...fullUrls]
+      },
+      () => {
+        // 上传失败时的额外处理（可选）
+      },
+    )
+
+    if (!result) {
+      target.value = ''
+    }
+  } finally {
+    commentUploadLoading.value[postId] = false
+    target.value = ''
+  }
+}
+// 删除评论图片
+const handleCommentImageDelete = (postId: number, index: number) => {
+  if (commentImages.value && commentImages.value[postId]) {
+    commentImages.value[postId].splice(index, 1)
+  }
+  if (commentFullImages.value && commentFullImages.value[postId]) {
+    commentFullImages.value[postId].splice(index, 1)
   }
 }
 
@@ -258,11 +528,13 @@ const handlePublish = async () => {
 
   publishing.value = true
   try {
-    await forumApi.addPost({
+    const postData: CreatePostParams = {
       title: postTitle.value,
       content: postContent.value,
       categoryId: publishCategoryId.value ? Number(publishCategoryId.value) : 0,
-    })
+      imageUrls: imageUrls.value,
+    }
+    await forumApi.addPost(postData)
 
     // 重新加载帖子列表
     currentPage.value = 0
@@ -270,10 +542,11 @@ const handlePublish = async () => {
     postTitle.value = ''
     postContent.value = ''
     publishCategoryId.value = ''
+    imageUrls.value = []
+    fullImageUrls.value = []
     ElMessage.success('发布成功！')
-  } catch (error: any) {
-    console.error('发布失败:', error)
-    if (error.message && error.message.includes('敏感词')) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message && error.message.includes('敏感词')) {
       ElMessage.error('内容包含敏感词汇，请修改后再发布')
     } else {
       ElMessage.error('发布失败，请稍后重试')
@@ -282,7 +555,6 @@ const handlePublish = async () => {
     publishing.value = false
   }
 }
-
 // 删除帖子
 const handleDeletePost = async (postId: number | undefined) => {
   if (!postId) return
@@ -332,6 +604,7 @@ const handleDeleteComment = async (commentId: number | undefined, postId: number
   })
     .then(async () => {
       try {
+        // ✅ 修复：不需要传 userId（后端从 token 获取）
         await forumApi.deleteComment(commentId)
 
         // 从帖子的评论列表中移除
@@ -365,7 +638,7 @@ const loadMore = () => {
 
 // 根据 categoryId 获取分类名称
 const getCategoryName = (categoryId: number): string => {
-  const category = categoryList.value.find((item) => item.id === categoryId)
+  const category = categoryList.value.find((item: Category) => item.id === categoryId)
   return category ? category.name : '未知话题'
 }
 
@@ -388,7 +661,7 @@ const getTopicClass = (topicName: string): string => {
 const scrollTopics = (direction: 'left' | 'right') => {
   if (!topicsBarRef.value) return
 
-  const scrollAmount = 150 // 滚动距离
+  const scrollAmount = 150
   const currentScrollLeft = topicsBarRef.value.scrollLeft
 
   if (direction === 'left') {
@@ -403,7 +676,6 @@ const scrollTopics = (direction: 'left' | 'right') => {
     })
   }
 
-  // 更新箭头可见性
   setTimeout(updateArrowVisibility, 300)
 }
 
@@ -419,7 +691,7 @@ const updateArrowVisibility = () => {
   const { scrollLeft, scrollWidth, clientWidth } = topicsBarRef.value
 
   showLeftArrow.value = scrollLeft > 0
-  showRightArrow.value = scrollLeft < scrollWidth - clientWidth - 10 // 10px 容差
+  showRightArrow.value = scrollLeft < scrollWidth - clientWidth - 10
 }
 </script>
 
@@ -431,7 +703,6 @@ const updateArrowVisibility = () => {
       <div class="content-area">
         <!-- 话题标签栏（带滑动功能） -->
         <div class="topics-container">
-          <!-- 左箭头 -->
           <button
             v-if="showLeftArrow"
             class="scroll-arrow left-arrow"
@@ -440,7 +711,6 @@ const updateArrowVisibility = () => {
             ←
           </button>
 
-          <!-- 标签滚动容器 -->
           <div class="topics-bar" ref="topicsBarRef" @scroll="handleScroll">
             <div
               class="topic-tag"
@@ -463,7 +733,6 @@ const updateArrowVisibility = () => {
             </div>
           </div>
 
-          <!-- 右箭头 -->
           <button
             v-if="showRightArrow"
             class="scroll-arrow right-arrow"
@@ -475,7 +744,6 @@ const updateArrowVisibility = () => {
 
         <!-- 帖子列表 -->
         <div class="posts-container">
-          <!-- 加载中状态 -->
           <div
             v-if="loading && !(postList?.content && postList.content.length)"
             class="loading-state"
@@ -496,24 +764,26 @@ const updateArrowVisibility = () => {
                   </div>
                 </div>
               </div>
-              <!-- 话题标签（右上角） -->
               <span
                 :class="[
                   'topic-tag',
                   getTopicClass(
-                    post.category?.name || getCategoryName(post.category?.id) || '未知话题',
+                    post.categoryName ||
+                      getCategoryName(post.categoryId) ||
+                      post.category?.name ||
+                      '未知话题',
                   ),
                 ]"
-                v-if="post.category?.name"
-                >#{{ post.category?.name }}</span
+                v-if="post.categoryName"
+                >#{{ post.categoryName }}</span
               >
               <span
                 :class="[
                   'topic-tag',
-                  getTopicClass(getCategoryName(post.category?.id) || '未知话题'),
+                  getTopicClass(getCategoryName(post.categoryId) || '未知话题'),
                 ]"
-                v-else-if="post.category?.id"
-                >#{{ getCategoryName(post.category?.id) }}</span
+                v-else-if="post.categoryId"
+                >#{{ getCategoryName(post.categoryId) }}</span
               >
               <span
                 :class="['topic-tag', getTopicClass(post.category?.name || '未知话题')]"
@@ -526,6 +796,17 @@ const updateArrowVisibility = () => {
             <div class="post-content">
               <h3 class="post-title">{{ post.title || '' }}</h3>
               <p class="post-text">{{ post.content || '' }}</p>
+              <!-- 帖子图片 -->
+              <div class="post-images" v-if="post.images && post.images.length > 0">
+                <div v-for="img in post.images" :key="img.id" class="post-image-item">
+                  <img
+                    :src="getFullImageUrl(img.imageUrl)"
+                    alt="帖子图片"
+                    @click="showPostPreview(img.imageUrl)"
+                    @error="handleImageError"
+                  />
+                </div>
+              </div>
             </div>
 
             <!-- 帖子操作 -->
@@ -548,7 +829,6 @@ const updateArrowVisibility = () => {
 
             <!-- 评论区域 -->
             <div v-if="selectedPostId === post.id" class="comments-section">
-              <!-- 评论加载中 -->
               <div v-if="loadingComments" class="loading-comments">
                 <el-icon class="loading-icon"><Loading /></el-icon>
                 <span>加载评论中...</span>
@@ -574,6 +854,17 @@ const updateArrowVisibility = () => {
                       </span>
                     </div>
                     <div class="comment-text">{{ comment.content || '' }}</div>
+                    <!-- 评论图片 -->
+                    <div class="post-images" v-if="comment.images && comment.images.length > 0">
+                      <div v-for="img in comment.images" :key="img.id" class="post-image-item">
+                        <img
+                          :src="getFullImageUrl(img.imageUrl)"
+                          alt="评论图片"
+                          @click="showPostPreview(img.imageUrl)"
+                          @error="handleImageError"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div v-if="!post.comments || post.comments.length === 0" class="no-comments">
@@ -583,6 +874,56 @@ const updateArrowVisibility = () => {
 
               <!-- 评论输入框 -->
               <div class="comment-input-area">
+                <div class="comment-upload-section">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    style="display: none"
+                    :ref="
+                      (el) => {
+                        commentFileInputs[post.id] = el as HTMLInputElement | null
+                      }
+                    "
+                    @change="(e) => handleCommentImageUpload(e, post.id)"
+                  />
+                  <el-button
+                    type="primary"
+                    plain
+                    icon="Upload"
+                    @click="
+                      () => {
+                        commentFileInputs[post.id]?.click()
+                      }
+                    "
+                    :loading="commentUploadLoading[post.id]"
+                  >
+                    上传图片
+                  </el-button>
+                </div>
+                <div
+                  v-if="(commentImages[post.id]?.length ?? 0) > 0"
+                  class="image-preview-container"
+                >
+                  <div
+                    v-for="(url, index) in commentImages[post.id] ?? []"
+                    :key="index"
+                    class="image-preview-item"
+                    @click="handleImagePreview(url, commentFullImages[post.id]?.[index] || '')"
+                  >
+                    <img
+                      :src="commentFullImages[post.id]?.[index] || ''"
+                      alt="预览图片"
+                      class="preview-image"
+                    />
+                    <div
+                      class="image-delete-btn"
+                      @click.stop="handleCommentImageDelete(post.id, index)"
+                    >
+                      <el-icon><Delete /></el-icon>
+                    </div>
+                  </div>
+                </div>
                 <el-input
                   v-model="newComment"
                   placeholder="发表你的评论..."
@@ -598,13 +939,11 @@ const updateArrowVisibility = () => {
             </div>
           </div>
 
-          <!-- 空状态 -->
           <div v-if="!loading && postList?.content?.length === 0" class="empty-state">
             <div class="empty-icon">💬</div>
             <p class="empty-text">暂无相关帖子</p>
           </div>
 
-          <!-- 加载更多 -->
           <div v-if="!loading && currentPage < (postList?.totalPages || 0) - 1" class="load-more">
             <el-button @click="loadMore" :loading="loading">加载更多</el-button>
           </div>
@@ -618,12 +957,41 @@ const updateArrowVisibility = () => {
               :category-list="categoryList"
               placeholder="选择话题"
               style="width: 140px"
-              popper-class="topic-select-popper"
-              teleported
             />
           </div>
           <div class="publish-input-wrapper">
-            <!-- 新增标题输入框 -->
+            <div class="input-item upload-section">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                style="display: none"
+                ref="fileInput"
+                @change="handleImageUpload"
+              />
+              <el-button
+                type="primary"
+                plain
+                icon="Upload"
+                @click="$refs.fileInput && ($refs.fileInput as HTMLInputElement).click()"
+                :loading="uploadLoading"
+              >
+                上传图片
+              </el-button>
+            </div>
+            <div v-if="imageUrls.length > 0" class="image-preview-container">
+              <div
+                v-for="(url, index) in imageUrls"
+                :key="index"
+                class="image-preview-item"
+                @click="handleImagePreview(url, fullImageUrls[index] || '')"
+              >
+                <img :src="fullImageUrls[index]" alt="预览图片" class="preview-image" />
+                <div class="image-delete-btn" @click.stop="handleImageDelete(index)">
+                  <el-icon><Delete /></el-icon>
+                </div>
+              </div>
+            </div>
             <div class="input-item">
               <el-input
                 v-model="postTitle"
@@ -632,7 +1000,6 @@ const updateArrowVisibility = () => {
                 show-word-limit
               />
             </div>
-            <!-- 原有内容输入框 -->
             <div class="input-item">
               <el-input
                 v-model="postContent"
@@ -659,16 +1026,37 @@ const updateArrowVisibility = () => {
             </el-button>
           </div>
         </div>
+
+        <!-- 图片预览对话框 -->
+        <el-dialog v-model="previewDialogVisible" title="图片预览" width="80%">
+          <div v-if="!previewError" class="preview-content">
+            <el-image
+              :src="previewImageUrl"
+              fit="contain"
+              class="preview-dialog-image"
+              @error="handlePreviewError"
+            />
+          </div>
+          <div v-else class="preview-error">
+            <el-icon class="error-icon">⚠️</el-icon>
+            <p>图片加载失败</p>
+          </div>
+        </el-dialog>
+
+        <!-- 帖子图片预览弹窗 -->
+        <div v-if="postPreviewUrl" class="post-preview-modal" @click="closePostPreview">
+          <div class="post-preview-content" @click.stop>
+            <button class="post-preview-close" @click="closePostPreview">×</button>
+            <img :src="postPreviewUrl" alt="预览图片" class="post-preview-image" />
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.topic-select-popper {
-  position: fixed !important;
-  z-index: 9999;
-}
+/* 样式保持不变 */
 .campus-forum {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -685,7 +1073,6 @@ const updateArrowVisibility = () => {
   margin: 0 auto;
 }
 
-/* 话题标签栏容器 */
 .topics-container {
   position: relative;
   margin-bottom: 20px;
@@ -693,7 +1080,6 @@ const updateArrowVisibility = () => {
   padding-right: 40px;
 }
 
-/* 话题标签栏 */
 .topics-bar {
   display: flex;
   gap: 12px;
@@ -707,7 +1093,6 @@ const updateArrowVisibility = () => {
   display: none;
 }
 
-/* 滚动箭头 */
 .scroll-arrow {
   position: absolute;
   top: 50%;
@@ -745,7 +1130,6 @@ const updateArrowVisibility = () => {
   right: 0;
 }
 
-/* 全部标签的默认样式 */
 .topics-bar .topic-tag:not([class*='topic-']) {
   background-color: #ffffff !important;
   color: #000000 !important;
@@ -768,7 +1152,6 @@ const updateArrowVisibility = () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* 帖子列表 */
 .posts-container {
   display: flex;
   flex-direction: column;
@@ -829,7 +1212,6 @@ const updateArrowVisibility = () => {
   margin-top: 2px;
 }
 
-/* 帖子卡片上的标签（纯展示） */
 .post-card .topic-tag {
   font-size: 14px;
   padding: 6px 12px;
@@ -840,7 +1222,6 @@ const updateArrowVisibility = () => {
   margin-left: 10px;
 }
 
-/* 话题标签专属颜色（彩色底 + 白字） */
 .post-card .topic-tag.topic-daily {
   background-color: #e53e3e;
   color: #ffffff;
@@ -881,7 +1262,6 @@ const updateArrowVisibility = () => {
   color: #ffffff;
 }
 
-/* 顶部筛选栏的标签（可点击） */
 .topics-bar .topic-tag {
   padding: 8px 16px;
   border-radius: 20px;
@@ -893,7 +1273,6 @@ const updateArrowVisibility = () => {
   border: 1px solid #e8e8e8;
 }
 
-/* 顶部筛选栏标签的专属颜色（彩色底 + 白字） */
 .topics-bar .topic-tag.topic-daily {
   background-color: #e53e3e;
   color: #ffffff;
@@ -942,14 +1321,12 @@ const updateArrowVisibility = () => {
   border-color: #718096;
 }
 
-/* 顶部筛选栏标签的交互效果 */
 .topics-bar .topic-tag:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   opacity: 0.9;
 }
 
-/* 顶部筛选栏标签的选中状态 */
 .topics-bar .topic-tag.active {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   opacity: 1;
@@ -1003,6 +1380,28 @@ const updateArrowVisibility = () => {
   color: #666;
   line-height: 1.6;
   margin: 0;
+  margin-bottom: 12px;
+}
+
+.post-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.post-image-item img {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: transform 0.2s ease;
+}
+
+.post-image-item img:hover {
+  transform: scale(1.05);
 }
 
 .post-actions {
@@ -1043,7 +1442,6 @@ const updateArrowVisibility = () => {
   font-size: 13px;
 }
 
-/* 评论区域 */
 .comments-section {
   margin-top: 16px;
   padding-top: 16px;
@@ -1180,7 +1578,10 @@ const updateArrowVisibility = () => {
   margin-top: 12px;
 }
 
-/* 空状态 */
+.comment-upload-section {
+  margin-bottom: 8px;
+}
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -1200,7 +1601,6 @@ const updateArrowVisibility = () => {
   margin: 0;
 }
 
-/* 底部发布栏 */
 .publish-bar {
   position: fixed;
   bottom: 0;
@@ -1233,7 +1633,142 @@ const updateArrowVisibility = () => {
   flex-shrink: 0;
 }
 
-/* 响应式设计 */
+.upload-section {
+  margin-bottom: 8px;
+}
+
+.image-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.image-preview-item {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.image-preview-item:hover {
+  transform: scale(1.05);
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-delete-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #000000;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  border: none;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.image-preview-item:hover .image-delete-btn {
+  opacity: 1;
+}
+
+.image-delete-btn:hover {
+  background: #333333;
+}
+
+.preview-dialog-image {
+  width: 100%;
+  height: 60vh;
+}
+
+.preview-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.preview-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  color: #ff4d4f;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.preview-error p {
+  font-size: 16px;
+  margin: 0;
+}
+
+.post-preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.post-preview-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.post-preview-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 32px;
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-preview-image {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
 @media (max-width: 768px) {
   .content-area {
     padding: 12px;
@@ -1260,6 +1795,23 @@ const updateArrowVisibility = () => {
 
   .post-actions {
     gap: 20px;
+  }
+
+  .image-preview-container {
+    max-height: 80px;
+  }
+
+  .image-preview-item {
+    width: 60px;
+    height: 60px;
+  }
+
+  .post-preview-content {
+    max-width: 95%;
+  }
+
+  .post-preview-image {
+    max-height: 70vh;
   }
 }
 </style>

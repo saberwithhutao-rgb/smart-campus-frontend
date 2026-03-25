@@ -157,7 +157,7 @@ export const api = {
   updateUserProfile: (data: Partial<UserProfile>) =>
     request<ApiResponse<UserProfile>>({
       method: 'PUT',
-      url: '/api/user/profile',
+      url: '/user/profile',
       data,
     }),
 
@@ -167,7 +167,7 @@ export const api = {
     formData.append('avatar', file)
     return request<ApiResponse<{ avatarUrl: string }>>({
       method: 'POST',
-      url: '/api/user/avatar',
+      url: '/user/avatar',
       data: formData,
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -185,20 +185,20 @@ export const api = {
   }) =>
     request<ApiResponse<UserProfile>>({
       method: 'PUT',
-      url: '/api/user/basic-info',
+      url: '/user/basic-info',
       data,
     }),
 
   getUserProfile: () =>
     request<UserProfile>({
       method: 'GET',
-      url: '/api/user/profile',
+      url: '/user/profile',
     }),
 
   verifyToken: () =>
     request<ApiResponse<null>>({
       method: 'GET',
-      url: '/api/auth/verify',
+      url: '/auth/verify',
     }),
 
   clearAuthHeader: () => {
@@ -212,13 +212,13 @@ export const api = {
   getStudyPlanDetails: (studyPlanId: number) =>
     request<StudyPlanDetail[]>({
       method: 'GET',
-      url: `/api/study-plan-details/plan/${studyPlanId}`,
+      url: `/study-plan-details/plan/${studyPlanId}`,
     }),
 
   getStudyPlanDetail: (detailId: number) =>
     request({
       method: 'GET',
-      url: `/api/study-plan-details/${detailId}`,
+      url: `/study-plan-details/${detailId}`,
     }),
 
   generatePlanDetail: (data: {
@@ -238,31 +238,31 @@ export const api = {
   deleteStudyPlanDetail: (detailId: number) =>
     request({
       method: 'DELETE',
-      url: `/api/study-plan-details/${detailId}`,
+      url: `/study-plan-details/${detailId}`,
     }),
 
   // 认证模块
   login: (data: { username: string; password: string; captcha: string; captchaId?: string }) =>
-    request<LoginData>({ method: 'POST', url: '/api/login', data }),
+    request<LoginData>({ method: 'POST', url: '/login', data }),
 
   register: (data: { username: string; password: string; email: string; verifyCode: string }) =>
-    request<ApiResponse<null>>({ method: 'POST', url: '/api/register', data }),
+    request<ApiResponse<null>>({ method: 'POST', url: '/register', data }),
 
-  logout: () => request<ApiResponse<null>>({ method: 'POST', url: '/api/logout' }),
+  logout: () => request<ApiResponse<null>>({ method: 'POST', url: '/logout' }),
 
-  refreshToken: () => request<ApiResponse<null>>({ method: 'POST', url: '/api/token/refresh' }),
+  refreshToken: () => request<ApiResponse<null>>({ method: 'POST', url: '/token/refresh' }),
 
   sendVerifyCode: (email: string) =>
-    request<ApiResponse<null>>({ method: 'POST', url: '/api/verify/email', data: { email } }),
+    request<ApiResponse<null>>({ method: 'POST', url: '/verify/email', data: { email } }),
 
   getCaptcha: () =>
-    request<CaptchaResponse>({ method: 'GET', url: '/api/captcha' }).then(
+    request<CaptchaResponse>({ method: 'GET', url: '/captcha' }).then(
       (res) => res as unknown as CaptchaResponse,
     ),
 
   // 发送重置密码验证码
   sendResetCode: async (data: SendResetCodeRequest) => {
-    const response = await fetch('/api/password/reset/send', {
+    const response = await fetch('/password/reset/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -276,7 +276,7 @@ export const api = {
 
   // 重置密码
   resetPassword: async (data: ResetPasswordRequest) => {
-    const response = await fetch('/api/password/reset', {
+    const response = await fetch('/password/reset', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -298,32 +298,32 @@ export const api = {
   }) =>
     request<StudyPlansResponse>({
       method: 'GET',
-      url: '/api/study/plans',
+      url: '/study/plans',
       params,
     }),
 
   getStudyPlan: (id: number) =>
     request<StudyPlan>({
       method: 'GET',
-      url: `/api/study/plans/${id}`,
+      url: `/study/plans/${id}`,
     }),
   getReviewPlanDetail: (planId: number) =>
     request<ApiResponse<StudyTask>>({
       method: 'GET',
-      url: `/api/study/review-plans/${planId}`,
+      url: `/study/review-plans/${planId}`,
     }),
 
   // 获取复习计划历史列表
   getReviewPlanHistory: (studyPlanId: number) =>
     request<ApiResponse<StudyTask[]>>({
       method: 'GET',
-      url: `/api/study/review-plans/${studyPlanId}/history`,
+      url: `/study/review-plans/${studyPlanId}/history`,
     }),
 
   batchGenerateReviewPlans: (taskIds: number[]) =>
     request<ApiResponse<null>>({
       method: 'POST',
-      url: '/api/study/tasks/batch-generate',
+      url: '/study/tasks/batch-generate',
       data: taskIds,
     }),
 
@@ -331,28 +331,28 @@ export const api = {
   getGeneratedReviewPlans: () =>
     request<ApiResponse<StudyTask[]>>({
       method: 'GET',
-      url: '/api/study/review-plans',
+      url: '/study/review-plans',
     }),
 
   // 获取复习任务详情（用于复习详情页）
   getReviewTaskDetail: (taskId: number) =>
     request<ApiResponse<StudyTask>>({
       method: 'GET',
-      url: `/api/study/tasks/review/${taskId}`,
+      url: `/study/tasks/review/${taskId}`,
     }),
 
   // 获取某个学习计划的历史复习任务
   getReviewTaskHistory: (planId: number) =>
     request<ApiResponse<StudyTask[]>>({
       method: 'GET',
-      url: `/api/study/tasks/plan/${planId}/history`,
+      url: `/study/tasks/plan/${planId}/history`,
     }),
 
   // 更新复习任务内容
   updateReviewTaskContent: (taskId: number, content: string) =>
     request<ApiResponse<StudyTask>>({
       method: 'PUT',
-      url: `/api/study/tasks/${taskId}/content`,
+      url: `/study/tasks/${taskId}/content`,
       data: content,
       headers: {
         'Content-Type': 'text/plain',
@@ -370,7 +370,7 @@ export const api = {
   }) =>
     request<ApiResponse<StudyPlan>>({
       method: 'POST',
-      url: '/api/study/plans',
+      url: '/study/plans',
       data,
     }),
 
@@ -389,20 +389,20 @@ export const api = {
   ) =>
     request<ApiResponse<StudyPlan>>({
       method: 'PUT',
-      url: `/api/study/plans/${id}`,
+      url: `/study/plans/${id}`,
       data,
     }),
 
   deleteStudyPlan: (id: number) =>
     request<ApiResponse<null>>({
       method: 'DELETE',
-      url: `/api/study/plans/${id}`,
+      url: `/study/plans/${id}`,
     }),
 
   togglePlanComplete: (id: number) =>
     request<StudyPlan>({
       method: 'POST',
-      url: `/api/study/plans/${id}/toggle`,
+      url: `/study/plans/${id}/toggle`,
     }),
 
   getStudySchedule: (params?: { startDate?: string; endDate?: string; planId?: number }) =>
@@ -420,7 +420,7 @@ export const api = {
       >
     >({
       method: 'GET',
-      url: '/api/study/schedule',
+      url: '/study/schedule',
       params,
     }),
 
@@ -449,7 +449,7 @@ export const api = {
   sendAiMessage: (message: string, chanId?: string) =>
     request<string>({
       method: 'POST',
-      url: '/api/chat/openai',
+      url: '/chat/openai',
       params: { message, chanId },
     }),
 
@@ -545,95 +545,95 @@ export const api = {
     formData.append('type', type)
     return request<ApiResponse<FileItem>>({
       method: 'POST',
-      url: '/api/files/upload',
+      url: '/files/upload',
       data: formData,
     })
   },
 
   getFileList: (type?: string) =>
-    request<ApiResponse<FileItem[]>>({ method: 'GET', url: '/api/files', params: { type } }),
+    request<ApiResponse<FileItem[]>>({ method: 'GET', url: '/files', params: { type } }),
 
   // 学习进度模块
   getLearningProgress: () =>
-    request<ApiResponse<LearningProgress[]>>({ method: 'GET', url: '/api/learning-progress' }),
+    request<ApiResponse<LearningProgress[]>>({ method: 'GET', url: '/learning-progress' }),
 
   // 竞赛管理模块
   getCompetitions: (params?: CompetitionListParams) =>
-    request<Competition[]>({ method: 'GET', url: '/api/competition', params }),
+    request<Competition[]>({ method: 'GET', url: '/competition', params }),
 
   getCompetitionDetail: (id: number) =>
-    request<CompetitionRule[]>({ method: 'GET', url: `/api/competition/${id}` }),
+    request<CompetitionRule[]>({ method: 'GET', url: `/competition/${id}` }),
   // 院校管理模块
-  getUniversities: () => request<University[]>({ method: 'GET', url: '/api/university' }),
+  getUniversities: () => request<University[]>({ method: 'GET', url: '/university' }),
 
   toggleFavoriteUniversity: (universityId: number) =>
     request<ApiResponse<null>>({
       method: 'POST',
-      url: '/api/university/toggle',
+      url: '/university/toggle',
       data: { universityId },
     }),
 
   checkUniversityFavorite: (universityId: number) =>
     request<UniversityCheckResponse>({
       method: 'GET',
-      url: '/api/university/check',
+      url: '/university/check',
       params: { universityId },
     }),
 
   getFavoriteUniversityIds: () =>
-    request<number[]>({ method: 'GET', url: '/api/university/university-ids' }),
+    request<number[]>({ method: 'GET', url: '/university/university-ids' }),
 
   getFavoriteUniversities: () =>
-    request<UniversityListDetail[]>({ method: 'GET', url: '/api/university/list' }),
+    request<UniversityListDetail[]>({ method: 'GET', url: '/university/list' }),
 
   getUniversityFavoriteCount: (universityId: number) =>
     request<UniversityCountResponse>({
       method: 'GET',
-      url: '/api/university/count',
+      url: '/university/count',
       params: { universityId },
     }),
   getPendingTasks: () =>
     request<ReviewItem[]>({
       method: 'GET',
-      url: '/api/study/tasks/pending',
+      url: '/study/tasks/pending',
     }),
 
   getTodayTasks: () =>
     request<ApiResponse<ReviewItem[]>>({
       method: 'GET',
-      url: '/api/study/tasks/today',
+      url: '/study/tasks/today',
     }),
 
   getOverdueTasks: () =>
     request<ApiResponse<ReviewItem[]>>({
       method: 'GET',
-      url: '/api/study/tasks/overdue',
+      url: '/study/tasks/overdue',
     }),
 
   completeTask: (id: number) =>
     request<ReviewItem>({
       method: 'POST',
-      url: `/api/study/tasks/${id}/complete`,
+      url: `/study/tasks/${id}/complete`,
     }),
 
   updateProgress: (data: Partial<LearningProgress>) =>
     request<ApiResponse<LearningProgress>>({
       method: 'POST',
-      url: '/api/learning-progress/update',
+      url: '/learning-progress/update',
       data,
     }),
 
   getExamCountdowns: () =>
     request<ExamCountdown[]>({
       method: 'GET',
-      url: '/api/exams',
+      url: '/exams',
     }),
 
   /** 添加学习科目/知识点 */
   addLearningProgress: (data: { name: string; progressPercent?: number }) =>
     request<ApiResponse<LearningProgressItem>>({
       method: 'POST',
-      url: '/api/learning-progress',
+      url: '/learning-progress',
       data,
     }),
 
@@ -641,7 +641,7 @@ export const api = {
   updateLearningProgress: (id: number, data: { name?: string; progressPercent?: number }) =>
     request<ApiResponse<LearningProgressItem>>({
       method: 'PUT',
-      url: `/api/learning-progress/${id}`,
+      url: `/learning-progress/${id}`,
       data,
     }),
 
@@ -649,27 +649,27 @@ export const api = {
   deleteLearningProgress: (id: number) =>
     request<ApiResponse<null>>({
       method: 'DELETE',
-      url: `/api/learning-progress/${id}`,
+      url: `/learning-progress/${id}`,
     }),
 
   /** 获取学习进度列表（按创建时间倒序） */
   getLearningProgressList: () =>
     request<ApiResponse<LearningProgressItem[]>>({
       method: 'GET',
-      url: '/api/learning-progress/list',
+      url: '/learning-progress/list',
     }),
 
   /** 获取学习进度总览（整体进度 + 科目列表） */
   getLearningProgressSummary: () =>
     request<LearningProgressSummary>({
       method: 'GET',
-      url: '/api/learning-progress/summary',
+      url: '/learning-progress/summary',
     }),
 
   createCareerArticle: (data: CareerArticleCreateDto) =>
     request<ApiResponse<CareerArticleDetail>>({
       method: 'POST',
-      url: '/api/career-articles',
+      url: '/career-articles',
       data,
     }),
 
@@ -677,7 +677,7 @@ export const api = {
   getCareerArticles: (params?: { category?: string }) =>
     request<ApiResponse<CareerArticle[]>>({
       method: 'GET',
-      url: '/api/career-articles',
+      url: '/career-articles',
       params,
     }),
 
@@ -685,21 +685,21 @@ export const api = {
   getMyCareerArticles: () =>
     request<ApiResponse<CareerArticle[]>>({
       method: 'GET',
-      url: '/api/career-articles/my',
+      url: '/career-articles/my',
     }),
 
   /** 资讯详情（全文） */
   getCareerArticleById: (id: number) =>
     request<ApiResponse<CareerArticleDetail>>({
       method: 'GET',
-      url: `/api/career-articles/${id}`,
+      url: `/career-articles/${id}`,
     }),
 
   /** 更新资讯（仅作者） */
   updateCareerArticle: (id: number, data: Partial<CareerArticleCreateDto>) =>
     request<ApiResponse<CareerArticleDetail>>({
       method: 'PUT',
-      url: `/api/career-articles/${id}`,
+      url: `/career-articles/${id}`,
       data,
     }),
 
@@ -707,19 +707,19 @@ export const api = {
   deleteCareerArticle: (id: number) =>
     request<ApiResponse<null>>({
       method: 'DELETE',
-      url: `/api/career-articles/${id}`,
+      url: `/career-articles/${id}`,
     }),
 
   // ===== 热门职业方向模块 =====
   /** 获取职业方向大类列表（筛选项） */
   getCareerDirectionCategories: () =>
-    request<ApiResponse<string[]>>({ method: 'GET', url: '/api/career-directions/categories' }),
+    request<ApiResponse<string[]>>({ method: 'GET', url: '/career-directions/categories' }),
 
   /** 获取热门职业方向列表，可选按大类筛选 */
   getCareerDirections: (params?: { category?: string }) =>
     request<ApiResponse<CareerDirectionItem[]>>({
       method: 'GET',
-      url: '/api/career-directions',
+      url: '/career-directions',
       params,
     }),
 
@@ -727,14 +727,14 @@ export const api = {
   getCareerDirectionDetail: (id: number) =>
     request<ApiResponse<CareerDirectionDetail>>({
       method: 'GET',
-      url: `/api/career-directions/${id}`,
+      url: `/career-directions/${id}`,
     }),
 
   // ===== OpenAI 会话历史（职业导航聊天用）=====
   getOpenAiSessionIdList: async (type: string = 'chat') => {
     const data = await request<string>({
       method: 'GET',
-      url: `/api/chat/openai/${encodeURIComponent(type)}`,
+      url: `/chat/openai/${encodeURIComponent(type)}`,
       responseType: 'text',
       params: { _t: Date.now() },
       headers: {
@@ -749,7 +749,7 @@ export const api = {
     try {
       const response = await request<OpenAiMessageVo[]>({
         method: 'GET',
-        url: `/api/chat/openai/${encodeURIComponent(type)}/${encodeURIComponent(chanId)}`,
+        url: `/chat/openai/${encodeURIComponent(type)}/${encodeURIComponent(chanId)}`,
         params: { _t: Date.now() },
         headers: {
           'Cache-Control': 'no-cache',
@@ -785,7 +785,7 @@ export const askQuestionStream = async (params: {
   formData.append('stream', 'true')
 
   try {
-    const response = await fetch('/ai/chat/send', {
+    const response = await fetch('/api/ai/chat/send', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

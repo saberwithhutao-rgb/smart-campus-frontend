@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>切换用户ID</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>切换用户ID</h1>
+    <button onclick="switchUser()">切换为用户2</button>
+    <div id="output"></div>
+
+    <script>
+        function switchUser() {
+            const output = document.getElementById('output');
+            let log = '';
+
+            function addLog(message) {
+                log += message + '\n';
+                output.innerHTML = '<pre>' + log + '</pre>';
+            }
+
+            // 检查当前用户信息
+            addLog('=== 当前用户状态 ===');
+            addLog('userInfo: ' + localStorage.getItem('userInfo'));
+            addLog('userToken: ' + localStorage.getItem('userToken'));
+            addLog('userId: ' + localStorage.getItem('userId'));
+
+            // 模拟修改用户ID为2
+            addLog('\n=== 修改用户ID为2 ===');
+
+            // 读取当前用户信息
+            const currentUserInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const currentToken = localStorage.getItem('userToken') || '';
+
+            // 修改用户ID
+            currentUserInfo.userId = 2;
+
+            // 修改token以匹配新的用户ID
+            let newToken = currentToken;
+            if (currentToken.startsWith('jwt-')) {
+                const parts = currentToken.split('-');
+                if (parts.length >= 2) {
+                    parts[1] = '2'; // 将用户ID部分改为2
+                    newToken = parts.join('-');
+                }
+            }
+
+            // 保存修改后的信息
+            localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
+            localStorage.setItem('userToken', newToken);
+            localStorage.setItem('userId', '2'); // 同时更新userId字段
+
+            // 显示修改后的信息
+            addLog('\n=== 修改后用户状态 ===');
+            addLog('userInfo: ' + localStorage.getItem('userInfo'));
+            addLog('userToken: ' + localStorage.getItem('userToken'));
+            addLog('userId: ' + localStorage.getItem('userId'));
+
+            addLog('\n✅ 用户ID已成功切换为2');
+        }
+
+        // 页面加载时显示当前状态
+        window.onload = function() {
+            const output = document.getElementById('output');
+            let log = '=== 页面加载时的用户状态 ===\n';
+            log += 'userInfo: ' + localStorage.getItem('userInfo') + '\n';
+            log += 'userToken: ' + localStorage.getItem('userToken') + '\n';
+            log += 'userId: ' + localStorage.getItem('userId') + '\n';
+            output.innerHTML = '<pre>' + log + '</pre>';
+        };
+    </script>
+</body>
+</html>

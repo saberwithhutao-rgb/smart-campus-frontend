@@ -18,7 +18,7 @@ export interface ReviewSuggestion {
 export const completeReviewTask = (taskId: number) => {
   return request<StudyTask>({
     method: 'POST',
-    url: `/api/study/tasks/${taskId}/complete`,
+    url: `/study/tasks/${taskId}/complete`,
   })
 }
 
@@ -26,7 +26,7 @@ export const completeReviewTask = (taskId: number) => {
 export const getAllReviewTasks = () => {
   return request<StudyTask[]>({
     method: 'GET',
-    url: '/api/study/tasks/all',
+    url: '/study/tasks/all',
   }) as unknown as Promise<StudyTask[]>
 }
 
@@ -34,7 +34,7 @@ export const getAllReviewTasks = () => {
 export const getReviewTaskDetail = (taskId: number) => {
   return request<StudyTask>({
     method: 'GET',
-    url: `/api/study/tasks/review/${taskId}`,
+    url: `/study/tasks/review/${taskId}`,
   })
 }
 
@@ -42,7 +42,7 @@ export const getReviewTaskDetail = (taskId: number) => {
 export const getReviewTaskHistory = (planId: number) => {
   return request<StudyTask[]>({
     method: 'GET',
-    url: `/api/study/tasks/plan/${planId}/history`,
+    url: `/study/tasks/plan/${planId}/history`,
   })
 }
 
@@ -50,7 +50,7 @@ export const getReviewTaskHistory = (planId: number) => {
 export const updateReviewTaskContent = (taskId: number, content: string) => {
   return request<ReviewSuggestion>({
     method: 'PUT',
-    url: `/api/study/tasks/${taskId}/content`,
+    url: `/study/tasks/${taskId}/content`,
     data: content,
     headers: {
       'Content-Type': 'text/plain',
@@ -60,7 +60,7 @@ export const updateReviewTaskContent = (taskId: number, content: string) => {
 export const createSuggestion = (taskId: number, content: string) => {
   return request<ReviewSuggestion>({
     method: 'POST',
-    url: `/api/study/tasks/${taskId}/suggestions`,
+    url: `/study/tasks/${taskId}/suggestions`,
     data: content,
     headers: {
       'Content-Type': 'text/plain',
@@ -71,14 +71,14 @@ export const createSuggestion = (taskId: number, content: string) => {
 export const getTaskSuggestions = (taskId: number) => {
   return request<ReviewSuggestion[]>({
     method: 'GET',
-    url: `/api/study/tasks/${taskId}/suggestions`,
+    url: `/study/tasks/${taskId}/suggestions`,
   })
 }
 
 export const getPlanSuggestions = (planId: number) => {
   return request<ReviewSuggestion[]>({
     method: 'GET',
-    url: `/api/study/tasks/plan/${planId}/suggestions`,
+    url: `/study/tasks/plan/${planId}/suggestions`,
   })
 }
 
@@ -88,7 +88,7 @@ export const getPlanSuggestions = (planId: number) => {
 export const getCurrentSuggestion = (taskId: number) => {
   return request<ReviewSuggestion>({
     method: 'GET',
-    url: `/api/study/tasks/${taskId}/suggestions/current`,
+    url: `/study/tasks/${taskId}/suggestions/current`,
   })
 }
 
@@ -100,7 +100,7 @@ export const generateReviewAdvice = (data: {
 }) => {
   return request<string>({
     method: 'POST',
-    url: '/api/ai/review/advice',
+    url: '/ai/review/advice',
     data,
   })
 }
@@ -141,7 +141,7 @@ export async function getStudyStatistics(
   params: StudyStatisticsParams,
 ): Promise<StudyStatisticsResponse> {
   return request({
-    url: '/api/study/statistics',
+    url: '/study/statistics',
     method: 'GET',
     params,
   })
@@ -169,7 +169,7 @@ export async function getStudySuggestions(
   params: StudySuggestionsParams,
 ): Promise<StudySuggestionsResponse> {
   return request({
-    url: '/api/study/suggestions',
+    url: '/study/suggestions',
     method: 'GET',
     params,
   })

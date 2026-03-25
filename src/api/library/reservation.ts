@@ -31,7 +31,7 @@ export interface Reservation {
 }
 
 // 预约数据 DTO（用于创建预约）
-export interface ReservationData {
+export interface CreateReservationParams {
   seatId: number
   classroomId: number
   reserveDate: string
@@ -48,72 +48,54 @@ export interface AvailableSeatsDTO {
   availableSeats: number
 }
 
-export interface ReservationData {
-  userId: number
-  seatId: number
-  classroomId: number
-  reserveDate: string // YYYY-MM-DD
-  startTime: string // HH:MM
-  duration: number // 分钟
-  endTime: string // HH:MM
-  type: string
-}
+// ==================== API 函数 ====================
 
-export interface Reservation {
-  id: number
-  userId: number
-  seatId: number
-  classroomId: number
-  reserveDate: string
-  startTime: string
-  endTime: string
-  status: string
-  type: string
-}
-
-// API 函数
-export const getFloors = (): Promise<{ code: number; data: Floor[] }> => {
-  return request({
-    url: '/api/library/floors',
+/**
+ * 获取所有楼层
+ */
+export const getFloors = async (): Promise<Floor[]> => {
+  const response = await request({
+    url: '/library/floors',
     method: 'GET',
   })
+  return response as unknown as Floor[]
 }
 
-export const getClassroomsByFloor = (
-  floorId: number,
-): Promise<{ code: number; data: Classroom[] }> => {
+/**
+ * 根据楼层获取教室列表
+ */
+export const getClassroomsByFloor = async (floorId: number): Promise<Classroom[]> => {
   if (!floorId || typeof floorId !== 'number') {
     return Promise.reject(new Error('楼层 ID 必须是数字'))
   }
 
-  return request({
-    url: `/api/library/classrooms/floor/${floorId}`,
+  const response = await request({
+    url: `/library/classrooms/floor/${floorId}`,
     method: 'GET',
   })
+  return response as unknown as Classroom[]
 }
 
-export const getSeatsByClassroom = (
-  classroomId: number,
-): Promise<{ code: number; data: Seat[] }> => {
+/**
+ * 根据教室获取座位列表
+ */
+export const getSeatsByClassroom = async (classroomId: number): Promise<Seat[]> => {
   if (!classroomId || typeof classroomId !== 'number') {
     return Promise.reject(new Error('教室 ID 必须是数字'))
   }
 
-  return request({
-    url: `/api/library/seats/classroom/${classroomId}`,
+  const response = await request({
+    url: `/library/seats/classroom/${classroomId}`,
     method: 'GET',
   })
+  return response as unknown as Seat[]
 }
 
-export const createReservation = (
-  data: ReservationData,
-): Promise<{ code: number; data: Reservation; msg?: string }> => {
-  if (!data || typeof data !== 'object') {
-    return Promise.reject(new Error('预约数据必须是对象'))
-  }
-
-  const requiredFields: (keyof ReservationData)[] = [
-    'userId',
+/**
+ * 创建预约
+ */
+export const createReservation = async (data: CreateReservationParams): Promise<Reservation> => {
+  const requiredFields: (keyof CreateReservationParams)[] = [
     'seatId',
     'classroomId',
     'reserveDate',
@@ -128,38 +110,81 @@ export const createReservation = (
     }
   }
 
-  return request({
-    url: '/api/library/reservations',
+  const response = await request({
+    url: '/library/reservations',
     method: 'POST',
     data,
   })
+  return response as unknown as Reservation
 }
 
-export const occupySeat = (reservationId: number): Promise<{ code: number; data: null }> => {
+/**
+ * 占用座位
+ */
+export const occupySeat = async (reservationId: number): Promise<void> => {
   if (!reservationId || typeof reservationId !== 'number') {
     return Promise.reject(new Error('预约 ID 必须是数字'))
   }
 
-  return request({
-    url: `/api/library/reservations/${reservationId}/occupy`,
+  await request({
+    url: `/library/reservations/${reservationId}/occupy`,
     method: 'POST',
   })
 }
 
-export const cancelReservation = (reservationId: number): Promise<{ code: number; data: null }> => {
+/**
+ * 取消预约
+ */
+export const cancelReservation = async (reservationId: number): Promise<void> => {
   if (!reservationId || typeof reservationId !== 'number') {
     return Promise.reject(new Error('预约 ID 必须是数字'))
   }
 
-  return request({
-    url: `/api/library/reservations/${reservationId}/cancel`,
+  await request({
+    url: `/library/reservations/${reservationId}/cancel`,
     method: 'POST',
   })
 }
 
-export const getUserReservations = (): Promise<{ code: number; data: Reservation[] }> => {
-  return request({
-    url: `/api/library/reservations/user`,
+/**
+ * 获取当前用户的预约列表
+ */
+export const getUserReservations = async (): Promise<Reservation[]> => {
+  const response = await request({
+    url: '/library/reservations/user',
     method: 'GET',
   })
+  return response as unknown as Reservation[]
+}
+
+/**
+ * 获取座位的预约列表
+ */
+export const getSeatReservations = async (seatId: number): Promise<Reservation[]> => {
+  if (!seatId || typeof seatId !== 'number') {
+    return Promise.reject(new Error('座位 ID 必须是数字'))
+  }
+
+  const response = await request({
+    url: `/library/reservations/seat/${seatId}`,
+    method: 'GET',
+  })
+  return response as unknown as Reservation[]
+}
+
+/**
+ * 获取教室的可用座位数
+ */
+export const getClassroomAvailableSeats = async (
+  classroomId: number,
+): Promise<AvailableSeatsDTO> => {
+  if (!classroomId || typeof classroomId !== 'number') {
+    return Promise.reject(new Error('教室 ID 必须是数字'))
+  }
+
+  const response = await request({
+    url: `/library/classrooms/${classroomId}/available-seats`,
+    method: 'GET',
+  })
+  return response as unknown as AvailableSeatsDTO
 }
