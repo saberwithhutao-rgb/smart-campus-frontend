@@ -127,7 +127,7 @@ const handleSuccessResponse = (response: AxiosResponse) => {
   const res = response.data
   const config = response.config as ExtendedAxiosRequestConfig
 
-  if (config.url?.includes('/api/captcha')) {
+  if (config.url?.includes('captcha')) {
     return res
   }
 
