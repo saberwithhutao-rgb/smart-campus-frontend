@@ -25,27 +25,15 @@ import {
   createReservation,
 } from '@/api/library/reservation'
 
-const formatDate = (date: Date | string | null | undefined) => {
-  // 类型校验
-  if (!date) {
-    console.warn('formatDate: date is null or undefined')
-    return ''
-  }
-
-  // 如果是字符串，转换为Date对象
+const formatDate = (date: Date | string | null | undefined): string => {
+  if (!date) return ''
   let dateObj: Date
   if (typeof date === 'string') {
     dateObj = new Date(date)
   } else {
     dateObj = date
   }
-
-  // 检查是否是有效日期
-  if (isNaN(dateObj.getTime())) {
-    console.warn('formatDate: invalid date', date)
-    return ''
-  }
-
+  if (isNaN(dateObj.getTime())) return ''
   const year = dateObj.getFullYear()
   const month = String(dateObj.getMonth() + 1).padStart(2, '0')
   const day = String(dateObj.getDate()).padStart(2, '0')

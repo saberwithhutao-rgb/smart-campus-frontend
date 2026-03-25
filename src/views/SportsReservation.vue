@@ -14,10 +14,25 @@ import {
   getUserReservations,
 } from '@/api/sports'
 
+const formatDate = (date: Date | string | null | undefined): string => {
+  if (!date) return ''
+  let dateObj: Date
+  if (typeof date === 'string') {
+    dateObj = new Date(date)
+  } else {
+    dateObj = date
+  }
+  if (isNaN(dateObj.getTime())) return ''
+  const year = dateObj.getFullYear()
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const day = String(dateObj.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // ==================== 响应式数据 ====================
 const userStore = useUserStore()
 const currentVenue = ref<Venue | null>(null)
-const selectedDate = ref<Date>(new Date())
+const selectedDate = ref<string>(formatDate(new Date()))
 const selectedCourts = ref<string[]>([])
 const isConfirmDialogVisible = ref(false)
 const courtDetailDialogVisible = ref(false)
@@ -35,6 +50,17 @@ const reservationInfo = ref({
   courts: [] as string[],
   duration: 2,
 })
+
+const getCurrentTimeSlotId = (): number => {
+  const now = new Date()
+  const currentHour = now.getHours()
+
+  if (currentHour < 7) return 1 // 7:00 之前，默认最早时段
+  if (currentHour >= 22) return 16 // 22:00 之后，默认最晚时段
+
+  const slotId = currentHour - 6
+  return Math.min(Math.max(slotId, 1), 16)
+}
 
 // 场馆列表
 const venues = ref<Venue[]>([])
@@ -62,7 +88,7 @@ const timeSlots = [
   { id: 16, label: '22:00', start: '22:00' },
 ]
 
-const selectedTimeSlot = ref(3)
+const selectedTimeSlot = ref(getCurrentTimeSlotId())
 const maxDuration = ref(4)
 
 // 场地状态类型
@@ -196,21 +222,6 @@ const handleRefresh = async () => {
   } else {
     ElMessage.warning('请先选择场馆')
   }
-}
-
-const formatDate = (date: Date | string | null | undefined): string => {
-  if (!date) return ''
-  let dateObj: Date
-  if (typeof date === 'string') {
-    dateObj = new Date(date)
-  } else {
-    dateObj = date
-  }
-  if (isNaN(dateObj.getTime())) return ''
-  const year = dateObj.getFullYear()
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-  const day = String(dateObj.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
 }
 
 // const confirmReservation = () => {
@@ -417,7 +428,7 @@ const handleReserveCourtFromDetail = async () => {
 
   courtDetailDialogVisible.value = false
 
-  const reserveDate = formatDate(selectedDate.value)
+  const reserveDate = selectedDate.value
   const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value)
   const startTime = slot?.start || '14:00'
   const duration = reservationInfo.value.duration
@@ -547,13 +558,10 @@ onMounted(async () => {
                 placeholder="选择日期"
                 :disabled-date="
                   (date: Date) => {
-                    // 创建一个只包含年月日的今天日期对象
                     const today = new Date()
                     today.setHours(0, 0, 0, 0)
-                    // 创建一个只包含年月日的传入日期对象
                     const compareDate = new Date(date)
                     compareDate.setHours(0, 0, 0, 0)
-                    // 禁用今天之前的日期
                     return compareDate < today
                   }
                 "
