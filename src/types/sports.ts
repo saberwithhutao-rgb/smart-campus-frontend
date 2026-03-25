@@ -32,6 +32,8 @@ export interface Court {
 export interface Reservation {
   id: number
   userId: number
+  userName: string
+  isOwner: boolean
   courtId: number
   venueId: number
   reserveDate: string // YYYY-MM-DD

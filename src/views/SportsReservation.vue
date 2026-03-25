@@ -474,7 +474,6 @@ const handleReserveCourtFromDetail = async () => {
         await checkUserActiveStatus()
       } catch (error: unknown) {
         console.error('预约失败:', error)
-        ElMessage.error(`预约失败：${error instanceof Error ? error.message : '网络错误'}`)
       }
     })
     .catch(() => {
@@ -775,11 +774,16 @@ onMounted(async () => {
             <el-table-column prop="startTime" label="开始时间" width="100" />
             <el-table-column prop="endTime" label="结束时间" width="100" />
             <el-table-column prop="duration" label="时长(分钟)" width="100" />
-            <el-table-column prop="userId" label="预约人ID" width="100" />
+
+            <el-table-column prop="userName" label="预约人" width="120">
+              <template #default="scope">
+                {{ scope.row.userName }}
+              </template>
+            </el-table-column>
             <el-table-column label="操作" width="180">
               <template #default="scope">
                 <el-button
-                  v-if="scope.row.userId === currentUserId"
+                  v-if="scope.row.isOwner"
                   type="primary"
                   size="small"
                   @click="handleLeaveCourt(scope.row.id)"
