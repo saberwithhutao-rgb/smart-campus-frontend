@@ -38,6 +38,7 @@ const currentFloor = ref<Floor | null>(null)
 const selectedRoom = ref<string>('')
 const selectedClassroom = ref<Classroom | null>(null)
 const selectedDate = ref<Date>(new Date())
+console.log('初始化 selectedDate:', selectedDate.value)
 const selectedSeats = ref<string[]>([])
 const isConfirmDialogVisible = ref(false)
 const leaveDialogVisible = ref(false)
@@ -59,6 +60,18 @@ const reservationInfo = ref({
   duration: 2,
   room: '',
 })
+
+// 获取当前小时对应的时段ID
+const getCurrentTimeSlotId = (): number => {
+  const now = new Date()
+  const currentHour = now.getHours()
+
+  if (currentHour < 7) return 1 // 7:00 之前，默认最早时段
+  if (currentHour >= 22) return 16 // 22:00 之后，默认最晚时段
+
+  const slotId = currentHour - 6
+  return Math.min(Math.max(slotId, 1), 16)
+}
 
 // 座位使用状态管理
 // const seatUsageInfo = ref<
@@ -432,7 +445,7 @@ const timeSlots: TimeSlot[] = [
   { id: 16, label: '22:00', start: '22:00' },
 ]
 
-const selectedTimeSlot = ref(2) // 默认选中的时间
+const selectedTimeSlot = ref(getCurrentTimeSlotId())
 const maxDuration = ref(4) // 最大可预约时长
 
 // 监听预约时间变化，动态计算最大可预约时长
