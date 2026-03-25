@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
-import { ElMessage, ElMessageBox, ElImage, ElDialog } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, Delete } from '@element-plus/icons-vue'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import Select from '@/components/select.vue'
@@ -53,11 +53,11 @@ const publishCategoryId = ref<number | string>('')
 const imageUrls = ref<string[]>([])
 const fullImageUrls = ref<string[]>([])
 const uploadLoading = ref(false)
-const previewDialogVisible = ref(false)
-const previewImageUrl = ref('')
-const previewError = ref(false)
-// 帖子图片预览
-const postPreviewUrl = ref<string | null>(null)
+
+// 新增 Image Viewer 相关变量
+const showImageViewer = ref(false)
+const currentImageList = ref<string[]>([])
+const currentImageIndex = ref(0)
 
 // 分页数据
 const currentPage = ref(0)
@@ -89,6 +89,28 @@ const getFullImageUrl = (path: string) => {
   // 如果 baseURL 是 /api，图片路径可能需要特殊处理
   // 根据后端实际情况调整
   return path
+}
+
+// 关闭图片查看器
+const closeImageViewer = () => {
+  showImageViewer.value = false
+  currentImageList.value = []
+  currentImageIndex.value = 0
+}
+
+// 预览单张图片（兼容旧调用）
+const previewImage = (imageUrl: string) => {
+  currentImageList.value = [getFullImageUrl(imageUrl)]
+  currentImageIndex.value = 0
+  showImageViewer.value = true
+}
+
+// 预览多张图片
+const previewImages = (images: { imageUrl: string }[], index: number) => {
+  if (!images || images.length === 0) return
+  currentImageList.value = images.map((img) => getFullImageUrl(img.imageUrl))
+  currentImageIndex.value = index
+  showImageViewer.value = true
 }
 
 // 检查违规信息
@@ -431,32 +453,11 @@ const handleImageUpload = async (event: Event) => {
   }
 }
 
-// 预览图片
-const handleImagePreview = (url: string, fullUrl: string) => {
-  previewImageUrl.value = fullUrl
-  previewError.value = false
-  previewDialogVisible.value = true
-}
-
-// 处理预览图片加载失败
-const handlePreviewError = () => {
-  previewError.value = true
-}
-
-// 处理帖子图片加载失败
 const handleImageError = (event: Event) => {
   const target = event.target as HTMLImageElement
-  target.style.display = 'none'
-}
-
-// 显示帖子图片预览
-const showPostPreview = (imageUrl: string) => {
-  postPreviewUrl.value = getFullImageUrl(imageUrl)
-}
-
-// 关闭帖子图片预览
-const closePostPreview = () => {
-  postPreviewUrl.value = null
+  // 可以设置为默认占位图，而不是隐藏
+  target.src = '/placeholder-image.png'
+  target.style.opacity = '0.6'
 }
 
 // 删除图片
@@ -796,13 +797,13 @@ const updateArrowVisibility = () => {
             <div class="post-content">
               <h3 class="post-title">{{ post.title || '' }}</h3>
               <p class="post-text">{{ post.content || '' }}</p>
-              <!-- 帖子图片 -->
+              <!-- 帖子图片区域 -->
               <div class="post-images" v-if="post.images && post.images.length > 0">
-                <div v-for="img in post.images" :key="img.id" class="post-image-item">
+                <div v-for="(img, idx) in post.images" :key="img.id" class="post-image-item">
                   <img
                     :src="getFullImageUrl(img.imageUrl)"
                     alt="帖子图片"
-                    @click="showPostPreview(img.imageUrl)"
+                    @click="previewImages(post.images!, idx)"
                     @error="handleImageError"
                   />
                 </div>
@@ -856,11 +857,15 @@ const updateArrowVisibility = () => {
                     <div class="comment-text">{{ comment.content || '' }}</div>
                     <!-- 评论图片 -->
                     <div class="post-images" v-if="comment.images && comment.images.length > 0">
-                      <div v-for="img in comment.images" :key="img.id" class="post-image-item">
+                      <div
+                        v-for="(img, idx) in comment.images"
+                        :key="img.id"
+                        class="post-image-item"
+                      >
                         <img
                           :src="getFullImageUrl(img.imageUrl)"
                           alt="评论图片"
-                          @click="showPostPreview(img.imageUrl)"
+                          @click="previewImages(comment.images!, idx)"
                           @error="handleImageError"
                         />
                       </div>
@@ -901,6 +906,7 @@ const updateArrowVisibility = () => {
                     上传图片
                   </el-button>
                 </div>
+                <!-- 评论区域的图片预览 -->
                 <div
                   v-if="(commentImages[post.id]?.length ?? 0) > 0"
                   class="image-preview-container"
@@ -909,7 +915,7 @@ const updateArrowVisibility = () => {
                     v-for="(url, index) in commentImages[post.id] ?? []"
                     :key="index"
                     class="image-preview-item"
-                    @click="handleImagePreview(url, commentFullImages[post.id]?.[index] || '')"
+                    @click="previewImage(commentFullImages[post.id]?.[index] || '')"
                   >
                     <img
                       :src="commentFullImages[post.id]?.[index] || ''"
@@ -979,12 +985,13 @@ const updateArrowVisibility = () => {
                 上传图片
               </el-button>
             </div>
+            <!-- 发布区域的图片预览 -->
             <div v-if="imageUrls.length > 0" class="image-preview-container">
               <div
                 v-for="(url, index) in imageUrls"
                 :key="index"
                 class="image-preview-item"
-                @click="handleImagePreview(url, fullImageUrls[index] || '')"
+                @click="previewImage(fullImageUrls[index] || '')"
               >
                 <img :src="fullImageUrls[index]" alt="预览图片" class="preview-image" />
                 <div class="image-delete-btn" @click.stop="handleImageDelete(index)">
@@ -1027,29 +1034,13 @@ const updateArrowVisibility = () => {
           </div>
         </div>
 
-        <!-- 图片预览对话框 -->
-        <el-dialog v-model="previewDialogVisible" title="图片预览" width="80%">
-          <div v-if="!previewError" class="preview-content">
-            <el-image
-              :src="previewImageUrl"
-              fit="contain"
-              class="preview-dialog-image"
-              @error="handlePreviewError"
-            />
-          </div>
-          <div v-else class="preview-error">
-            <el-icon class="error-icon">⚠️</el-icon>
-            <p>图片加载失败</p>
-          </div>
-        </el-dialog>
-
-        <!-- 帖子图片预览弹窗 -->
-        <div v-if="postPreviewUrl" class="post-preview-modal" @click="closePostPreview">
-          <div class="post-preview-content" @click.stop>
-            <button class="post-preview-close" @click="closePostPreview">×</button>
-            <img :src="postPreviewUrl" alt="预览图片" class="post-preview-image" />
-          </div>
-        </div>
+        <el-image-viewer
+          v-if="showImageViewer"
+          :url-list="currentImageList"
+          :initial-index="currentImageIndex"
+          :close-on-press-escape="true"
+          @close="closeImageViewer"
+        />
       </div>
     </div>
   </div>
@@ -1695,78 +1686,9 @@ const updateArrowVisibility = () => {
   background: #333333;
 }
 
-.preview-dialog-image {
-  width: 100%;
-  height: 60vh;
-}
-
-.preview-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-}
-
-.preview-error {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-  color: #ff4d4f;
-}
-
-.error-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
 .preview-error p {
   font-size: 16px;
   margin: 0;
-}
-
-.post-preview-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.post-preview-content {
-  position: relative;
-  max-width: 90%;
-  max-height: 90%;
-}
-
-.post-preview-close {
-  position: absolute;
-  top: -40px;
-  right: 0;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 32px;
-  cursor: pointer;
-  padding: 0;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.post-preview-image {
-  max-width: 100%;
-  max-height: 80vh;
-  object-fit: contain;
-  border-radius: 4px;
 }
 
 @media (max-width: 768px) {

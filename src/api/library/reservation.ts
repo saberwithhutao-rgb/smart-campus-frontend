@@ -1,6 +1,6 @@
 // src/api/library/reservation.ts
 import request from '@/utils/request'
-import type { Classroom, Floor } from './floor'
+import type { Classroom, Floor } from '@/types/library'
 
 // 座位类型
 export interface Seat {
@@ -187,4 +187,15 @@ export const getClassroomAvailableSeats = async (
     method: 'GET',
   })
   return response as unknown as AvailableSeatsDTO
+}
+
+export const leaveSeatAPI = async (reservationId: number): Promise<void> => {
+  if (!reservationId || typeof reservationId !== 'number') {
+    return Promise.reject(new Error('预约 ID 必须是数字'))
+  }
+
+  await request({
+    url: `/library/reservations/${reservationId}/leave`,
+    method: 'POST',
+  })
 }

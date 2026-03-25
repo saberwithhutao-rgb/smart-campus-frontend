@@ -120,12 +120,6 @@ const currentVenueCourts = computed(() => {
 const currentVenueInfo = computed(() => currentVenue.value)
 
 // ==================== 方法 ====================
-const getFullImageUrl = (path: string) => {
-  if (!path) return ''
-  if (path.startsWith('http')) return path
-  return path
-}
-
 const loadCourts = async (venueId: number) => {
   try {
     isLoading.value = true
@@ -196,6 +190,14 @@ const getCourtClass = (status: CourtStatus) => {
   }
 }
 
+const handleRefresh = async () => {
+  if (currentVenue.value) {
+    await loadCourts(currentVenue.value.id)
+  } else {
+    ElMessage.warning('请先选择场馆')
+  }
+}
+
 const formatDate = (date: Date | string | null | undefined): string => {
   if (!date) return ''
   let dateObj: Date
@@ -211,30 +213,30 @@ const formatDate = (date: Date | string | null | undefined): string => {
   return `${year}-${month}-${day}`
 }
 
-const confirmReservation = () => {
-  if (selectedCourts.value.length === 0) {
-    ElMessage.warning('请先选择一个场地')
-    return
-  }
-  if (selectedCourts.value.length > 2) {
-    ElMessage.warning('最多只能选择2个场地')
-    return
-  }
-  const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value)
-  if (!slot) {
-    ElMessage.error('请选择时间')
-    return
-  }
+// const confirmReservation = () => {
+//   if (selectedCourts.value.length === 0) {
+//     ElMessage.warning('请先选择一个场地')
+//     return
+//   }
+//   if (selectedCourts.value.length > 2) {
+//     ElMessage.warning('最多只能选择2个场地')
+//     return
+//   }
+//   const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value)
+//   if (!slot) {
+//     ElMessage.error('请选择时间')
+//     return
+//   }
 
-  reservationInfo.value = {
-    venue: currentVenueInfo.value?.venueName || '',
-    date: formatDate(selectedDate.value),
-    time: slot.label,
-    courts: selectedCourts.value.map((courtId) => getCourtLabel(courtId)),
-    duration: reservationInfo.value.duration,
-  }
-  isConfirmDialogVisible.value = true
-}
+//   reservationInfo.value = {
+//     venue: currentVenueInfo.value?.venueName || '',
+//     date: formatDate(selectedDate.value),
+//     time: slot.label,
+//     courts: selectedCourts.value.map((courtId) => getCourtLabel(courtId)),
+//     duration: reservationInfo.value.duration,
+//   }
+//   isConfirmDialogVisible.value = true
+// }
 
 const submitReservation = async () => {
   const venueName = reservationInfo.value.venue
@@ -274,7 +276,7 @@ const submitReservation = async () => {
           const parts = courtId.split('-')
           const realCourtId = parseInt(parts[1])
 
-          const response = await createReservation({
+          await createReservation({
             courtId: realCourtId,
             venueId,
             reserveDate: reservationInfo.value.date,
@@ -282,11 +284,6 @@ const submitReservation = async () => {
             duration,
             endTime,
           })
-
-          if (response.code !== 200) {
-            ElMessage.error(`预约失败：${response.msg || response.message}`)
-            return
-          }
         }
 
         isConfirmDialogVisible.value = false
@@ -374,19 +371,14 @@ const handleLeaveCourt = async (reservationId: number) => {
     })
 
     // 调用离开场地接口
-    const res = await leaveReservation(reservationId)
-
-    console.log('离开场地接口响应:', res)
-
-    if (Array.isArray(res)) {
-      ElMessage.success('离开场地成功！场地已释放')
-      courtDetailDialogVisible.value = false
+    await leaveReservation(reservationId)
+    ElMessage.success('离开场地成功！场地已释放')
+    courtDetailDialogVisible.value = false
+    if (currentVenue.value) {
       await loadCourts(currentVenue.value.id)
-      // 更新用户活跃状态
-      await checkUserActiveStatus()
-    } else {
-      ElMessage.error(`离开失败：${res.msg}`)
     }
+    // 更新用户活跃状态
+    await checkUserActiveStatus()
   } catch (error: unknown) {
     console.error('离开场地异常:', error)
     ElMessage.error(`离开失败：${error instanceof Error ? error.message : '网络错误'}`)
@@ -403,19 +395,14 @@ const handleOccupyConfirm = async () => {
 
     console.log('调用占用场地接口，参数:', { reservationId })
 
-    const res = await occupyReservation(reservationId)
-
-    if (res.code === 200) {
-      ElMessage.success('占用场地成功！')
-      occupyDialogVisible.value = false
-      courtDetailDialogVisible.value = false
-      if (currentVenue.value) {
-        await loadCourts(currentVenue.value.id)
-      }
-      await checkUserActiveStatus()
-    } else {
-      ElMessage.error(`占用失败：${res.msg || res.message}`)
+    await occupyReservation(reservationId)
+    ElMessage.success('占用场地成功！')
+    occupyDialogVisible.value = false
+    courtDetailDialogVisible.value = false
+    if (currentVenue.value) {
+      await loadCourts(currentVenue.value.id)
     }
+    await checkUserActiveStatus()
   } catch (error: unknown) {
     console.error('占用场地异常:', error)
     ElMessage.error(`占用失败：${error instanceof Error ? error.message : '系统内部错误'}`)
@@ -460,7 +447,7 @@ const handleReserveCourtFromDetail = async () => {
   )
     .then(async () => {
       try {
-        const response = await createReservation({
+        await createReservation({
           courtId: currentCourtDetails.value!.id,
           venueId: currentVenue.value!.id,
           reserveDate,
@@ -469,15 +456,11 @@ const handleReserveCourtFromDetail = async () => {
           endTime,
         })
 
-        if (response.code === 200) {
-          ElMessage.success('预约成功！')
-          if (currentVenue.value) {
-            await loadCourts(currentVenue.value.id)
-          }
-          await checkUserActiveStatus()
-        } else {
-          ElMessage.error(`预约失败：${response.msg || response.message}`)
+        ElMessage.success('预约成功！')
+        if (currentVenue.value) {
+          await loadCourts(currentVenue.value.id)
         }
+        await checkUserActiveStatus()
       } catch (error: unknown) {
         console.error('预约失败:', error)
         ElMessage.error(`预约失败：${error instanceof Error ? error.message : '网络错误'}`)
@@ -551,12 +534,7 @@ onMounted(async () => {
                 >（开放时间：每天7:00-23:00，节假日除外）</span
               >
             </h3>
-            <el-button
-              type="primary"
-              plain
-              @click="loadCourts(currentVenue?.id)"
-              :loading="isLoading"
-            >
+            <el-button type="primary" plain @click="handleRefresh" :loading="isLoading">
               刷新状态
             </el-button>
           </div>
