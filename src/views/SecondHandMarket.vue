@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, Delete } from '@element-plus/icons-vue'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
@@ -15,10 +15,6 @@ import type {
 } from '@/types/forum'
 import request from '@/utils/request'
 import type { Violation } from '@/types/audit'
-import { useUserStore } from '@/stores/user'
-
-const userStore = useUserStore()
-const currentUserId = computed(() => userStore.userState.userInfo?.userId)
 
 // 响应式数据
 const selectedCategoryId = ref<number | null>(null)
@@ -759,7 +755,7 @@ const updateArrowVisibility = () => {
               <div class="author-info">
                 <div class="avatar">👤</div>
                 <div class="author-text">
-                  <div class="author-name">用户{{ post.userId || '未知' }}</div>
+                  <div class="author-name">{{ post.userName || '未知用户' }}</div>
                   <div class="post-time">
                     {{ post.createTime ? new Date(post.createTime).toLocaleString() : '未知时间' }}
                   </div>
@@ -817,7 +813,7 @@ const updateArrowVisibility = () => {
                 <span class="count">{{ post.comments?.length || 0 }}</span>
               </div>
               <div
-                v-if="post.userId === currentUserId"
+                v-if="post.canDelete"
                 class="action-btn delete-btn"
                 @click="handleDeletePost(post.id)"
               >
@@ -836,18 +832,18 @@ const updateArrowVisibility = () => {
               </div>
 
               <div v-else class="comments-list">
-                <div v-for="comment in post.comments || []" :key="comment.id" class="comment-item">
+                <div class="comment-item" v-for="comment in post.comments || []" :key="comment.id">
                   <div class="comment-avatar">👤</div>
                   <div class="comment-content">
                     <div class="comment-header">
-                      <span class="comment-author">用户{{ comment.userId || '未知' }}</span>
+                      <span class="comment-author">{{ comment.userName || '未知用户' }}</span>
                       <span class="comment-time">{{
                         comment.createTime
                           ? new Date(comment.createTime).toLocaleString()
                           : '未知时间'
                       }}</span>
                       <span
-                        v-if="comment.userId === currentUserId"
+                        v-if="comment.canDelete"
                         class="comment-delete"
                         @click="handleDeleteComment(comment.id, post.id)"
                       >
