@@ -77,12 +77,16 @@ const reservationInfo = ref({
 // 获取当前小时对应的时段ID
 const getCurrentTimeSlotId = (): number => {
   const now = new Date()
-  const currentHour = now.getHours()
+  let targetHour = now.getHours() + 1
 
-  if (currentHour < 7) return 1 // 7:00 之前，默认最早时段
-  if (currentHour >= 22) return 16 // 22:00 之后，默认最晚时段
+  if (targetHour < 7) {
+    targetHour = 7
+  }
+  if (targetHour >= 22) {
+    targetHour = 22
+  }
 
-  const slotId = currentHour - 6
+  const slotId = targetHour - 6
   return Math.min(Math.max(slotId, 1), 16)
 }
 
@@ -1183,6 +1187,11 @@ const handleOccupyConfirm = async () => {
 
 // 从详情弹窗预约座位
 const handleReserveSeatFromDetail = async () => {
+  if (isAtMaxLimit.value) {
+    ElMessage.warning('您已达到最大预约数量（3个），请先离开或完成现有预约')
+    return
+  }
+
   if (!currentSeatDetails.value) {
     ElMessage.error('座位信息不存在')
     return
@@ -1261,6 +1270,15 @@ const handleReserveSeatFromDetail = async () => {
         type: 'reservation',
       }
       await createReservation(createParams)
+
+      ElMessage.success('预约成功！')
+
+      await loadSeats(parseInt(selectedRoom.value))
+
+      await checkUserActiveStatus()
+      await fetchActiveReservationCount()
+
+      await refreshAllClassroomData()
     })
     .catch(() => {
       ElMessage.info('已取消预约')
@@ -1285,6 +1303,8 @@ const getSeatDetails = async (seatId: string) => {
     if (currentSeatData) {
       currentSeatDetails.value = currentSeatData
       console.log('座位详情:', currentSeatDetails.value)
+
+      await fetchActiveReservationCount()
 
       // 调用后端接口获取该座位的所有有效预约信息
       const reservations = (await getSeatReservations(currentSeatData.id)) as Reservation[]
@@ -1511,96 +1531,98 @@ const grid = computed(() => {
               <p>正在加载教室数据...</p>
             </div>
 
-            <!-- 推荐教室 -->
-            <div v-else-if="recommendedRooms.length > 0" class="recommended-section">
-              <div class="recommended-title">
-                <span class="recommended-icon">🎯</span>
-                <span>推荐教室（按空闲率排序）</span>
-              </div>
-              <div class="room-grid recommended-grid">
-                <div
-                  v-for="room in recommendedRooms"
-                  :key="room.id"
-                  :class="[
-                    'room-card recommended',
-                    { active: selectedRoom === room.id.toString() },
-                  ]"
-                  @click="handleRoomSelect(room)"
-                >
-                  <div class="room-header">
-                    <span class="room-name">{{ room.classroomName || room.name }}</span>
-                    <span
-                      class="room-status"
-                      :style="{ backgroundColor: getOccupancyColor(room.occupancyRate || 0) }"
-                    >
-                      {{ getRoomStatusText(room.occupancyRate || 0) }}
-                    </span>
-                  </div>
-                  <div class="room-info">
-                    <div class="room-stat">
-                      <span class="stat-label">总座位：</span>
-                      <span class="stat-value">{{
-                        room.totalSeats !== null ? room.totalSeats : '加载中...'
-                      }}</span>
-                    </div>
-                    <div class="room-stat">
-                      <span class="stat-label">可用：</span>
-                      <span class="stat-value">{{
-                        room.availableSeats !== null ? room.availableSeats : '加载中...'
-                      }}</span>
-                    </div>
-                  </div>
-                  <div class="occupancy-bar">
-                    <div
-                      class="occupancy-fill"
-                      :style="{ width: `${(room.occupancyRate || 0) * 100}%` }"
-                    ></div>
-                  </div>
+            <template v-else>
+              <!-- 推荐教室 -->
+              <div v-if="recommendedRooms.length > 0" class="recommended-section">
+                <div class="recommended-title">
+                  <span class="recommended-icon">🎯</span>
+                  <span>推荐教室（按空闲率排序）</span>
                 </div>
-              </div>
-            </div>
-
-            <!-- 其他教室 -->
-            <div v-else-if="otherRooms.length > 0" class="all-rooms-section">
-              <div class="all-rooms-title">其他教室</div>
-              <div class="room-grid">
-                <div
-                  v-for="room in otherRooms"
-                  :key="room.id"
-                  :class="['room-card', { active: selectedRoom === room.id.toString() }]"
-                  @click="handleRoomSelect(room)"
-                >
-                  <div class="room-header">
-                    <span class="room-name">{{ room.classroomName || room.name }}</span>
-                    <span
-                      class="room-status"
-                      :style="{ backgroundColor: getOccupancyColor(room.occupancyRate || 0) }"
-                    >
-                      {{ getRoomStatusText(room.occupancyRate || 0) }}
-                    </span>
-                  </div>
-                  <div class="room-info">
-                    <div class="room-stat">
-                      <span class="stat-label">总座位：</span>
-                      <span class="stat-value">{{
-                        room.totalSeats !== null ? room.totalSeats : '加载中...'
-                      }}</span>
+                <div class="room-grid recommended-grid">
+                  <div
+                    v-for="room in recommendedRooms"
+                    :key="room.id"
+                    :class="[
+                      'room-card recommended',
+                      { active: selectedRoom === room.id.toString() },
+                    ]"
+                    @click="handleRoomSelect(room)"
+                  >
+                    <div class="room-header">
+                      <span class="room-name">{{ room.classroomName || room.name }}</span>
+                      <span
+                        class="room-status"
+                        :style="{ backgroundColor: getOccupancyColor(room.occupancyRate || 0) }"
+                      >
+                        {{ getRoomStatusText(room.occupancyRate || 0) }}
+                      </span>
                     </div>
-                    <div class="room-stat">
-                      <span class="stat-label">可用：</span>
-                      <span class="stat-value">{{
-                        room.availableSeats !== null ? room.availableSeats : '加载中...'
-                      }}</span>
+                    <div class="room-info">
+                      <div class="room-stat">
+                        <span class="stat-label">总座位：</span>
+                        <span class="stat-value">{{
+                          room.totalSeats !== null ? room.totalSeats : '加载中...'
+                        }}</span>
+                      </div>
+                      <div class="room-stat">
+                        <span class="stat-label">可用：</span>
+                        <span class="stat-value">{{
+                          room.availableSeats !== null ? room.availableSeats : '加载中...'
+                        }}</span>
+                      </div>
+                    </div>
+                    <div class="occupancy-bar">
+                      <div
+                        class="occupancy-fill"
+                        :style="{ width: `${(room.occupancyRate || 0) * 100}%` }"
+                      ></div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- 无教室数据 -->
-            <div v-else class="no-data">
-              <p>暂无教室数据</p>
-            </div>
+              <!-- 其他教室 -->
+              <div v-if="otherRooms.length > 0" class="all-rooms-section">
+                <div class="all-rooms-title">其他教室</div>
+                <div class="room-grid">
+                  <div
+                    v-for="room in otherRooms"
+                    :key="room.id"
+                    :class="['room-card', { active: selectedRoom === room.id.toString() }]"
+                    @click="handleRoomSelect(room)"
+                  >
+                    <div class="room-header">
+                      <span class="room-name">{{ room.classroomName || room.name }}</span>
+                      <span
+                        class="room-status"
+                        :style="{ backgroundColor: getOccupancyColor(room.occupancyRate || 0) }"
+                      >
+                        {{ getRoomStatusText(room.occupancyRate || 0) }}
+                      </span>
+                    </div>
+                    <div class="room-info">
+                      <div class="room-stat">
+                        <span class="stat-label">总座位：</span>
+                        <span class="stat-value">{{
+                          room.totalSeats !== null ? room.totalSeats : '加载中...'
+                        }}</span>
+                      </div>
+                      <div class="room-stat">
+                        <span class="stat-label">可用：</span>
+                        <span class="stat-value">{{
+                          room.availableSeats !== null ? room.availableSeats : '加载中...'
+                        }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 无教室数据 -->
+              <div v-else class="no-data">
+                <p>暂无教室数据</p>
+              </div>
+            </template>
           </div>
         </div>
 

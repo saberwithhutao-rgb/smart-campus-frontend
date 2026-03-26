@@ -53,12 +53,17 @@ const reservationInfo = ref({
 
 const getCurrentTimeSlotId = (): number => {
   const now = new Date()
-  const currentHour = now.getHours()
+  let targetHour = now.getHours() + 1
 
-  if (currentHour < 7) return 1 // 7:00 之前，默认最早时段
-  if (currentHour >= 22) return 16 // 22:00 之后，默认最晚时段
+  // 边界处理
+  if (targetHour < 7) {
+    targetHour = 7
+  }
+  if (targetHour >= 22) {
+    targetHour = 22
+  }
 
-  const slotId = currentHour - 6
+  const slotId = targetHour - 6
   return Math.min(Math.max(slotId, 1), 16)
 }
 
