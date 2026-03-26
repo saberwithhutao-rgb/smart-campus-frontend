@@ -1187,6 +1187,7 @@ const handleOccupyConfirm = async () => {
 
 // 从详情弹窗预约座位
 const handleReserveSeatFromDetail = async () => {
+  await fetchActiveReservationCount()
   if (isAtMaxLimit.value) {
     ElMessage.warning('您已达到最大预约数量（3个），请先离开或完成现有预约')
     return
@@ -1851,7 +1852,7 @@ const grid = computed(() => {
         <p><strong>座位编号：</strong>{{ currentSeat.seatCode }}</p>
         <p><strong>教室：</strong>{{ currentClassroomName }}</p>
         <p>
-          <strong>预约信息：</strong> {{ formatDate(selectedDate) }}
+          <strong>预约信息：</strong> {{ selectedDate }}
           {{ timeSlots.find((t) => t.id === selectedTimeSlot)?.start || '09:00' }}
         </p>
         <p style="color: red; margin-top: 10px">你确定要离开当前座位吗？</p>
@@ -1901,7 +1902,7 @@ const grid = computed(() => {
           >
             <div class="reservation-item">
               <div class="reservation-info">
-                <p><strong>预约人：</strong>{{ reservation.userName }}</p>
+                <p><strong>预约人：</strong>{{ reservation.userName || '未知用户' }}</p>
                 <p><strong>预约日期：</strong>{{ reservation.reserveDate }}</p>
                 <p>
                   <strong>预约时间段：</strong>{{ reservation.startTime }} -

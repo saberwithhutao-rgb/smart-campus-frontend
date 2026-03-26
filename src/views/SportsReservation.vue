@@ -677,7 +677,7 @@ onMounted(async () => {
             </div>
             <div class="tip-item">
               <span class="tip-icon">💡</span>
-              <span class="tip-text">您最多可同时预约2个场地</span>
+              <span class="tip-text">您最多可同时预约3个场地</span>
             </div>
           </div>
 
