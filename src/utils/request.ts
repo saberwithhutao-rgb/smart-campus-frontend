@@ -2,9 +2,9 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
-import { autoLogin } from './autoLogin'
 import { useUserStore } from '../stores/user'
 import router from '@/router'
+import { STORAGE_KEYS } from './storageKeys'
 
 // 扩展 AxiosRequestConfig 类型，添加 metadata
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -43,16 +43,11 @@ const request: AxiosInstance = axios.create({
 })
 
 // ==================== 请求队列管理 ====================
-type ResolveFunction = (value: unknown) => void
-type RejectFunction = (reason?: Error | string | unknown) => void
-
-interface QueueItem {
-  resolve: ResolveFunction
-  reject: RejectFunction
-}
-
-let failedQueue: QueueItem[] = []
-let isAutoLogging = false
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value: unknown) => void
+  reject: (reason?: Error | string | unknown) => void
+}> = []
 
 const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue.forEach((prom) => {
@@ -87,33 +82,17 @@ const getHttpStatusMessage = (status: number): string => {
   return HTTP_STATUS_MESSAGES[status] || `请求失败 (${status})`
 }
 
-// ==================== 工具函数 ====================
-const logRequest = (config: ExtendedAxiosRequestConfig) => {
-  console.log('[原始URL]', config.url)
-  console.log('[完整URL]', axios.getUri(config))
-  console.log('[API Request]', {
-    url: config.url,
-    method: config.method,
-    hasToken: !!localStorage.getItem('userToken') || !!localStorage.getItem('token'),
-  })
-}
-
-const logResponse = (response: AxiosResponse, duration: number) => {
-  console.log(`请求耗时: ${duration} ms - ${response.config.url}`)
-  console.log('📦 拦截器收到的原始响应:', response.data)
-}
-
 // ==================== 请求拦截器 ====================
 request.interceptors.request.use(
   (config: ExtendedAxiosRequestConfig) => {
     config.metadata = { startTime: Date.now() }
 
-    const token = localStorage.getItem('userToken') || localStorage.getItem('token')
+    const token =
+      localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
 
-    // logRequest(config)
     return config
   },
   (error: AxiosError) => Promise.reject(error),
@@ -121,12 +100,10 @@ request.interceptors.request.use(
 
 // ==================== 响应拦截器 - 成功处理 ====================
 const handleSuccessResponse = (response: AxiosResponse) => {
-  // const duration = Date.now() - (response.config as ExtendedAxiosRequestConfig).metadata!.startTime
-  // logResponse(response, duration)
-
   const res = response.data
   const config = response.config as ExtendedAxiosRequestConfig
 
+  // 验证码接口直接返回
   if (config.url?.includes('captcha')) {
     return res
   }
@@ -138,13 +115,11 @@ const handleSuccessResponse = (response: AxiosResponse) => {
 
   // 没有业务状态码，直接返回数据
   if (!res || typeof res !== 'object' || (!('code' in res) && !('success' in res))) {
-    console.log(`[API Success] ${config.url}: 直接返回数据`, res)
     return res
   }
 
   // 成功状态码
   if (res.code === 1 || res.code === 0 || res.code === 200 || res.success === true) {
-    console.log(`[API Success] ${config.url}:`, res.data || res)
     return res.data ?? res
   }
 
@@ -156,11 +131,18 @@ const handleSuccessResponse = (response: AxiosResponse) => {
 }
 
 // ==================== 响应拦截器 - 错误处理 ====================
-const handleAutoLogin = async (error: AxiosError, originalRequest: ExtendedAxiosRequestConfig) => {
-  if (originalRequest.url?.includes('/api/login')) {
+/**
+ * 处理 401 错误，尝试刷新 token
+ */
+const handleUnauthorized = async (
+  error: AxiosError,
+  originalRequest: ExtendedAxiosRequestConfig,
+) => {
+  if (originalRequest.url?.includes('/login')) {
     return Promise.reject(error)
   }
-  if (isAutoLogging) {
+
+  if (isRefreshing) {
     return new Promise((resolve, reject) => {
       failedQueue.push({ resolve, reject })
     })
@@ -172,30 +154,57 @@ const handleAutoLogin = async (error: AxiosError, originalRequest: ExtendedAxios
   }
 
   originalRequest._retry = true
-  isAutoLogging = true
+  isRefreshing = true
 
   try {
-    console.log('🔄 Token过期，尝试自动登录...')
-    const autoLoginSuccess = await autoLogin.tryAutoLogin()
+    console.log('🔄 Token 过期，尝试刷新...')
+    const userStore = useUserStore()
+    const refreshSuccess = await userStore.refreshAccessToken()
 
-    if (autoLoginSuccess) {
-      console.log('✅ 自动登录成功，重试请求')
-      const newToken = localStorage.getItem('userToken') || localStorage.getItem('token')
+    if (refreshSuccess) {
+      console.log('✅ Token 刷新成功，重试请求')
+      const newToken =
+        localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
       processQueue(null, newToken)
       originalRequest.headers['Authorization'] = `Bearer ${newToken}`
       return request(originalRequest)
     } else {
-      console.log('❌ 自动登录失败')
-      processQueue(new Error('自动登录失败'), null)
-      const userStore = useUserStore()
-      userStore.logout(false)
-      router.push('/login')
+      // ✅ refresh token 过期，尝试自动登录
+      console.log('⚠️ Refresh token 过期，尝试自动登录...')
+      const autoLoginSuccess = await userStore.tryAutoLogin()
+
+      if (autoLoginSuccess) {
+        console.log('✅ 自动登录成功，重试请求')
+        const newToken =
+          localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
+        processQueue(null, newToken)
+        originalRequest.headers['Authorization'] = `Bearer ${newToken}`
+        return request(originalRequest)
+      } else {
+        console.log('❌ 自动登录失败，跳转登录页')
+        processQueue(new Error('自动登录失败'), null)
+
+        // 清除所有凭证
+        const userStore = useUserStore()
+        userStore.logoutComplete(false)
+
+        ElMessage.error('登录已过期，请重新登录')
+        router.push('/login')
+        return Promise.reject(error)
+      }
     }
-  } catch (autoLoginError) {
-    console.error('自动登录过程出错:', autoLoginError)
-    processQueue(autoLoginError as Error, null)
+  } catch (refreshError) {
+    console.error('刷新/自动登录过程出错:', refreshError)
+    processQueue(refreshError as Error, null)
+
+    const userStore = useUserStore()
+    userStore.logoutComplete(false)
+
+    ElMessage.error('登录已过期，请重新登录')
+    router.push('/login')
+    return Promise.reject(error)
   } finally {
-    isAutoLogging = false
+    isRefreshing = false
   }
 }
 
@@ -207,9 +216,9 @@ const handleErrorResponse = async (error: AxiosError) => {
     return Promise.reject(error)
   }
 
-  // 处理401自动登录
+  // 处理 401 错误（未授权）
   if (error.response?.status === 401 && !originalRequest?._retry) {
-    return handleAutoLogin(error, originalRequest)
+    return handleUnauthorized(error, originalRequest)
   }
 
   // 普通错误处理
@@ -219,7 +228,6 @@ const handleErrorResponse = async (error: AxiosError) => {
 
     const errorData = data as { message?: string; msg?: string }
     const errorMessage = errorData?.message || errorData?.msg || getHttpStatusMessage(status)
-    console.log('🔥 进入错误拦截器', error.response?.status)
     ElMessage.error(errorMessage)
   } else if (error.request) {
     console.error('网络错误:', error.request)

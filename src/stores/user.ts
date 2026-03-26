@@ -3,8 +3,9 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { api } from '@/api'
 import { type UserState, type UserInfo, type UserProfile, type LoginData } from '@/types/user'
-import { encryptPassword, decryptPassword } from '@/utils/encryption'
+import { encryptPassword } from '@/utils/encryption'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
+import { autoLogin } from '@/utils/autoLogin'
 
 export const useUserStore = defineStore('user', () => {
   const userState = ref<UserState>({
@@ -59,6 +60,8 @@ export const useUserStore = defineStore('user', () => {
       userInfo: null,
     }
 
+    // ✅ 清除 refresh token
+    localStorage.removeItem('refresh_token')
     clearStorage()
 
     if (redirectToLogin) {
@@ -74,6 +77,7 @@ export const useUserStore = defineStore('user', () => {
       userInfo: null,
     }
 
+    localStorage.removeItem('refresh_token')
     clearStorage()
     clearAutoLoginCredentials()
 
@@ -86,7 +90,7 @@ export const useUserStore = defineStore('user', () => {
     const tokenKeys = [
       STORAGE_KEYS.TOKEN,
       STORAGE_KEYS.TOKEN_ALT,
-      'refreshToken',
+      'refresh_token', // refresh token 的 key
       STORAGE_KEYS.USER_INFO,
       'username',
       'userId',
@@ -140,52 +144,150 @@ export const useUserStore = defineStore('user', () => {
   }
 
   /**
-   * 尝试自动登录（在应用启动时调用）
+   * 刷新 access token
    */
-  async function tryAutoLogin(): Promise<boolean> {
-    console.log('========== 尝试自动登录 ==========')
-
-    const rememberMe = localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) === 'true'
-    const username = localStorage.getItem(STORAGE_KEYS.SAVED_USERNAME)
-    const encryptedPwd = localStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD)
-
-    console.log('记住我状态:', rememberMe)
-    console.log('保存的用户名:', username)
-    console.log('有保存密码:', !!encryptedPwd)
-
-    if (!rememberMe || !username || !encryptedPwd) {
-      console.log('❌ 没有完整的自动登录凭证')
+  async function refreshAccessToken(): Promise<boolean> {
+    const refreshToken = localStorage.getItem('refresh_token')
+    if (!refreshToken) {
+      console.log('⚠️ 没有 refresh token')
       return false
     }
 
     try {
-      console.log('解密密码...')
-      const password = decryptPassword(encryptedPwd)
-      if (!password) {
-        console.log('❌ 密码解密失败')
-        return false
-      }
-      console.log('✅ 密码解密成功')
-      console.log('获取验证码...')
-      const captchaRes = (await api.getCaptcha()) as unknown as string
-      if (!captchaRes) {
-        console.log('❌ 获取验证码失败')
-        return false
-      }
-      console.log('✅ 获取验证码成功')
-      console.log('使用保存的凭证登录...')
-      const result = await login(username, password, captchaRes, true)
+      console.log('🔄 尝试刷新 token...')
+      const response = (await api.refreshToken({ refreshToken })) as unknown as { token: string }
 
-      if (result.success) {
+      if (response.token) {
+        localStorage.setItem(STORAGE_KEYS.TOKEN, response.token)
+        localStorage.setItem(STORAGE_KEYS.TOKEN_ALT, response.token)
+        console.log('✅ Token 刷新成功')
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('刷新 token 失败:', error)
+      return false
+    }
+  }
+
+  /**
+   * ✅ 自动登录（使用 remember_me 凭证，首次启动时调用）
+   * 这是用保存的密码登录，会走正常的登录接口
+   */
+  async function autoLoginWithCredentials(
+    username: string,
+    password: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log('🔄 使用保存的凭证登录...')
+      const response = (await api.loginWithCredentials({
+        username,
+        password,
+      })) as unknown as LoginData
+
+      if (response.token) {
+        localStorage.setItem(STORAGE_KEYS.TOKEN, response.token)
+        localStorage.setItem(STORAGE_KEYS.TOKEN_ALT, response.token)
+
+        if (response.refreshToken) {
+          localStorage.setItem('refresh_token', response.refreshToken)
+        }
+
+        // 保存用户信息
+        const userInfo = {
+          username: response.username,
+          role: response.role || 'user',
+        }
+        localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userInfo))
+
+        userState.value = {
+          isLoggedIn: true,
+          userInfo: userInfo,
+        }
+
+        await fetchUserProfile()
+
+        console.log('✅ 自动登录成功')
+        return { success: true }
+      }
+
+      return { success: false, error: '自动登录失败' }
+    } catch (error: unknown) {
+      console.error('❌ 自动登录失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message || '自动登录失败' : '自动登录失败',
+      }
+    }
+  }
+
+  /**
+   * ✅ 尝试自动登录（在应用启动时调用）
+   * 优先使用 refresh token，如果失败则使用保存的密码
+   */
+  async function tryAutoLogin(): Promise<boolean> {
+    console.log('========== 尝试自动登录 ==========')
+
+    // 检查是否有保存的凭证
+    if (!autoLogin.isRememberMe() || !autoLogin.hasSavedCredentials()) {
+      console.log('⛔ 未启用记住我或无保存凭证，跳过自动登录')
+      return false
+    }
+
+    const username = autoLogin.getSavedUsername()
+    const password = autoLogin.getSavedPassword()
+
+    if (!username || !password) {
+      console.log('⚠️ 凭证不完整，清除保存的数据')
+      autoLogin.clearCredentials()
+      return false
+    }
+
+    try {
+      console.log('🔄 尝试自动登录...')
+
+      // 调用自动登录接口（不需要验证码）
+      const response = (await api.loginWithCredentials({
+        username,
+        password,
+      })) as unknown as LoginData
+
+      if (response.token) {
+        // 保存 token
+        localStorage.setItem(STORAGE_KEYS.TOKEN, response.token)
+        localStorage.setItem(STORAGE_KEYS.TOKEN_ALT, response.token)
+
+        // 保存 refresh token
+        if (response.refreshToken) {
+          localStorage.setItem('refresh_token', response.refreshToken)
+        }
+
+        // 保存用户信息
+        const userInfo = {
+          username: response.username,
+          role: response.role || 'user',
+        }
+        localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userInfo))
+
+        userState.value = {
+          isLoggedIn: true,
+          userInfo: userInfo,
+        }
+
+        await fetchUserProfile()
+
         console.log('✅ 自动登录成功')
         return true
-      } else {
-        console.log('❌ 自动登录失败:', result.error)
-        clearAutoLoginCredentials()
-        return false
       }
-    } catch (error) {
-      console.error('❌ 自动登录出错:', error)
+
+      console.log('❌ 自动登录失败')
+      return false
+    } catch (error: any) {
+      console.error('自动登录失败:', error)
+      // 密码错误，清除保存的凭证
+      if (error.response?.status === 401) {
+        autoLogin.clearCredentials()
+      }
       return false
     }
   }
@@ -211,25 +313,26 @@ export const useUserStore = defineStore('user', () => {
       }
 
       const token = response.token
+      const refreshToken = response.refreshToken
       console.log('登录成功，token:', token ? '已获取' : '无')
 
-      //保存基本的用户信息
+      // 保存 token
+      localStorage.setItem(STORAGE_KEYS.TOKEN, token)
+      localStorage.setItem(STORAGE_KEYS.TOKEN_ALT, token)
+
+      // ✅ 保存 refresh token
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken)
+      }
+
+      // 保存用户信息
       const userInfo = {
         username: response.username,
         role: response.role || 'user',
-        token: token,
       }
+      localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userInfo))
 
-      localStorage.setItem(STORAGE_KEYS.TOKEN, token)
-      localStorage.setItem(STORAGE_KEYS.TOKEN_ALT, token)
-      localStorage.setItem(
-        STORAGE_KEYS.USER_INFO,
-        JSON.stringify({
-          username: userInfo.username,
-          role: userInfo.role,
-        }),
-      )
-
+      // 如果记住我，保存密码凭证
       if (rememberMe) {
         console.log('保存自动登录凭证...')
         const encryptedPwd = encryptPassword(password)
@@ -238,11 +341,8 @@ export const useUserStore = defineStore('user', () => {
           localStorage.setItem(STORAGE_KEYS.SAVED_PASSWORD, encryptedPwd)
           localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true')
           console.log('凭证已保存')
-        } else {
-          console.error('❌密码加密失败')
         }
       } else {
-        console.log('未选择记住我，清除已有凭证')
         clearAutoLoginCredentials()
       }
 
@@ -254,9 +354,12 @@ export const useUserStore = defineStore('user', () => {
       await fetchUserProfile()
 
       return { success: true }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('登录失败:', error)
-      return { success: false, error: error.message }
+      return {
+        success: false,
+        error: error instanceof Error ? error.message || '登录失败' : '登录失败',
+      }
     }
   }
 
@@ -301,10 +404,10 @@ export const useUserStore = defineStore('user', () => {
       }
 
       return { success: true }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error: error.message || '注册失败',
+        error: error instanceof Error ? error.message || '注册失败' : '注册失败',
       }
     }
   }
@@ -352,6 +455,8 @@ export const useUserStore = defineStore('user', () => {
     clearStorage,
     forceCheckLoginStatus,
     tryAutoLogin,
+    refreshAccessToken,
+    autoLoginWithCredentials,
     getSavedUsername,
     hasAutoLoginCredentials,
     isRememberMeEnabled,

@@ -250,8 +250,6 @@ export const api = {
 
   logout: () => request<ApiResponse<null>>({ method: 'POST', url: '/logout' }),
 
-  refreshToken: () => request<ApiResponse<null>>({ method: 'POST', url: '/token/refresh' }),
-
   sendVerifyCode: (email: string) =>
     request<ApiResponse<null>>({ method: 'POST', url: '/verify/email', data: { email } }),
 
@@ -259,6 +257,21 @@ export const api = {
     request<CaptchaResponse>({ method: 'GET', url: '/captcha' }).then(
       (res) => res as unknown as CaptchaResponse,
     ),
+
+  loginWithCredentials: (data: { username: string; password: string }) =>
+    request<LoginData>({
+      method: 'POST',
+      url: '/login/credentials',
+      data,
+    }),
+
+  // ✅ 刷新 token
+  refreshToken: (data: { refreshToken: string }) =>
+    request<{ token: string }>({
+      method: 'POST',
+      url: '/auth/refresh',
+      data,
+    }),
 
   // 发送重置密码验证码
   sendResetCode: async (data: SendResetCodeRequest) => {
