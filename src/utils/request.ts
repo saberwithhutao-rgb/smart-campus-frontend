@@ -227,7 +227,10 @@ const handleErrorResponse = async (error: AxiosError) => {
     console.error('响应错误:', status, data)
 
     const errorData = data as { message?: string; msg?: string }
-    const errorMessage = errorData?.message || errorData?.msg || getHttpStatusMessage(status)
+    let errorMessage = errorData?.message || errorData?.msg || getHttpStatusMessage(status)
+    if (errorMessage.includes('Maximum upload size exceeded')) {
+      errorMessage = '文件过大，请上传小于50MB的文件'
+    }
     ElMessage.error(errorMessage)
   } else if (error.request) {
     console.error('网络错误:', error.request)
