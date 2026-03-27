@@ -82,8 +82,6 @@ const showRightArrow = ref(false)
 const getFullImageUrl = (path: string) => {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  // 如果 baseURL 是 /api，图片路径可能需要特殊处理
-  // 根据后端实际情况调整
   return path
 }
 
@@ -173,7 +171,7 @@ const uploadImages = async (
   try {
     // request 返回的已经是 data 字段，直接就是图片路径数组
     const imageData = await request({
-      url: '/uploads/images',
+      url: '/upload/images',
       method: 'POST',
       data: formData,
       headers: {
@@ -456,8 +454,8 @@ const handleImageUpload = async (event: Event) => {
 const handleImageError = (event: Event) => {
   const target = event.target as HTMLImageElement
   // 可以设置为默认占位图，而不是隐藏
-  target.src = '/placeholder-image.png'
-  target.style.opacity = '0.6'
+  // target.src = '/placeholder-image.png'
+  target.style.opacity = 'none'
 }
 
 // 删除图片
