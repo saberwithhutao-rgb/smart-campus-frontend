@@ -200,18 +200,25 @@ onMounted(async () => {
     console.log('2. 验证 token 有效性...')
     const isValid = await validateToken()
 
+    // App.vue onMounted 中的关键部分
     if (!isValid) {
       console.log('3. Token 无效，尝试自动登录...')
-      const autoLoginSuccess = await userStore.tryAutoLogin?.()
-      if (!autoLoginSuccess) {
-        console.log('3.1 自动登录失败，跳转到登录页')
-        userStore.userState.isLoggedIn = false
-        userStore.userState.userInfo = null
-        router.push('/login')
+
+      const currentPath = router.currentRoute.value.path
+      const isAuthPage = currentPath === '/login' || currentPath === '/register'
+
+      if (isAuthPage) {
+        console.log('⏭️ 当前在登录/注册页面，跳过自动登录，保持当前页面')
+        // 不做任何跳转，让用户正常操作
+      } else {
+        const autoLoginSuccess = await userStore.tryAutoLogin?.()
+        if (!autoLoginSuccess) {
+          console.log('3.1 自动登录失败，跳转到登录页')
+          userStore.userState.isLoggedIn = false
+          userStore.userState.userInfo = null
+          router.push('/login')
+        }
       }
-      return
-    } else {
-      console.log('3. Token 有效，已有登录状态')
     }
 
     showGreetingMessage()

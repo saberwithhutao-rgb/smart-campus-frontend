@@ -227,6 +227,11 @@ export const useUserStore = defineStore('user', () => {
    */
   async function tryAutoLogin(): Promise<boolean> {
     console.log('========== 尝试自动登录 ==========')
+    const currentPath = window.location.pathname
+    if (currentPath === '/login' || currentPath === '/register') {
+      console.log('⏭️ 当前在登录/注册页面，跳过自动登录')
+      return false
+    }
 
     // 检查是否有保存的凭证
     if (!autoLogin.isRememberMe() || !autoLogin.hasSavedCredentials()) {
