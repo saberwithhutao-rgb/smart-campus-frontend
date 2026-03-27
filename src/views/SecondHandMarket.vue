@@ -173,7 +173,7 @@ const uploadImages = async (
   try {
     // request 返回的已经是 data 字段，直接就是图片路径数组
     const imageData = await request({
-      url: '/upload/images',
+      url: '/uploads/images',
       method: 'POST',
       data: formData,
       headers: {
