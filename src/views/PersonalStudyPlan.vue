@@ -4,7 +4,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStudyPlanStore } from '../stores/studyPlan'
 import type { StudyPlan } from '@/stores/studyPlan'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import 'element-plus/es/components/message/style/css'
 import { nextTick } from 'vue'
 import { getUserSettings, syncAnonymousStudyAnalytics } from '@/utils/userSettings'
@@ -31,6 +31,15 @@ const selectedMenu = ref('plan')
 const studyPlans = computed(() => studyPlanStore.studyPlans)
 const completionRate = computed(() => studyPlanStore.completionRate)
 const isLoading = computed(() => studyPlanStore.isLoading)
+
+// 添加这个计算属性
+const minDate = computed(() => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+})
 
 const subjectOptions = [
   { value: '数学', label: '数学' },
@@ -263,6 +272,19 @@ const deletePlan = async (id: number) => {
  * 切换计划完成状态
  */
 const toggleComplete = async (plan: StudyPlan) => {
+  if (plan.status !== 'completed') {
+    try {
+      await ElMessageBox.confirm(`确定要完成计划「${plan.title}」吗？`, '确认完成', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info',
+      })
+    } catch {
+      return
+    }
+  }
+
+  // 执行状态切换
   await studyPlanStore.togglePlanComplete(plan.id)
 }
 
@@ -566,6 +588,7 @@ watch([studyPlans, completionRate], () => {
                 id="plan-start-date"
                 v-model="newPlan.startDate"
                 class="form-input"
+                :min="minDate"
               />
             </div>
             <div class="form-group half">
@@ -661,6 +684,7 @@ watch([studyPlans, completionRate], () => {
                 id="edit-plan-start-date"
                 v-model="editPlan.startDate"
                 class="form-input"
+                :min="minDate"
               />
             </div>
             <div class="form-group half">

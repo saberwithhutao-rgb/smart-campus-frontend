@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import { api } from '@/api'
 import ReviewReminderBanner from '@/components/ReviewReminderBanner.vue'
+import { useTheme } from '@/composables/useTheme'
 import {
   applyUserSettings,
   getUserSettings,
@@ -20,6 +21,8 @@ const router = useRouter()
 const appReady = ref(false)
 let studyReminderTimer: number | null = null
 
+// 初始化主题系统
+const { watchSystemTheme } = useTheme()
 const validateToken = async (): Promise<boolean> => {
   const token =
     localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
@@ -180,6 +183,9 @@ const handleStorageChange = (e: StorageEvent) => {
 onMounted(async () => {
   console.log('🚀 App.vue 挂载')
 
+  // 监听系统主题变化
+  const cleanup = watchSystemTheme()
+
   const loadingInstance = ElLoading.service({
     fullscreen: true,
     text: '正在初始化...',
@@ -191,7 +197,6 @@ onMounted(async () => {
     userStore.restoreFromStorage()
     applyRuntimeSettings(getUserSettings())
 
-    // 【新增】先验证 token 是否有效
     console.log('2. 验证 token 有效性...')
     const isValid = await validateToken()
 
@@ -200,13 +205,11 @@ onMounted(async () => {
       const autoLoginSuccess = await userStore.tryAutoLogin?.()
       if (!autoLoginSuccess) {
         console.log('3.1 自动登录失败，跳转到登录页')
-        // 清除无效状态
         userStore.userState.isLoggedIn = false
         userStore.userState.userInfo = null
-
         router.push('/login')
       }
-      return // 重要：不再继续执行
+      return
     } else {
       console.log('3. Token 有效，已有登录状态')
     }
@@ -223,6 +226,11 @@ onMounted(async () => {
 
   window.addEventListener('storage', handleStorageChange)
   window.addEventListener('settings-changed', handleSettingsChanged as EventListener)
+
+  // 清理函数
+  onBeforeUnmount(() => {
+    cleanup()
+  })
 })
 
 onBeforeUnmount(() => {
@@ -248,50 +256,8 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
-/* 全局样式 - 数字孪生智慧校园主题 */
-:root {
-  /* 主色调：科技蓝 */
-  --primary-color: #165dff;
-  --primary-color-dark: #0e46cc;
-  --primary-color-light: #4c8aff;
-
-  /* 辅助色：浅红色 */
-  --accent-color: #f53f3f;
-  --accent-color-dark: #e13d3d;
-  --accent-color-light: #f76d6d;
-
-  /* 背景色：浅灰色 */
-  --bg-color: #f5f7fa;
-  --bg-color-light: #fafafb;
-  --bg-color-dark: #eef1f5;
-
-  /* 文字主色：深灰色 */
-  --text-color: #1d2129;
-  --text-color-secondary: #4e5969;
-  --text-color-light: #86909c;
-
-  /* 边框色 */
-  --border-color: #e5e6eb;
-  --border-color-light: #f2f3f5;
-
-  /* 白色 */
-  --white: #ffffff;
-
-  /* 阴影 */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.15);
-
-  /* 圆角 */
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
-
-  /* 过渡动画 */
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* 全局样式已迁移到 theme 系统，这里只保留必要的加载动画 */
+@import '@/styles/theme/index.css';
 
 * {
   box-sizing: border-box;
@@ -300,21 +266,15 @@ onBeforeUnmount(() => {
 }
 
 body {
-  font-family:
-    'Microsoft YaHei',
-    '微软雅黑',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
+  font-family: var(--font-family);
+  background-color: var(--color-bg);
+  color: var(--color-text);
   line-height: 1.6;
-  font-size: 14px;
+  font-size: var(--font-size-md);
   font-weight: 400;
+  transition:
+    background-color var(--transition-normal),
+    color var(--transition-normal);
 }
 
 .app-content {
@@ -331,19 +291,21 @@ body {
 
 /* 全局按钮样式 */
 button {
-  font-family: 'Microsoft YaHei', '微软雅黑', inherit;
+  font-family: var(--font-family);
   font-size: inherit;
   cursor: pointer;
   border: none;
   outline: none;
-  transition: var(--transition);
-  border-radius: var(--border-radius-md);
+  transition: var(--transition-normal);
+  border-radius: var(--radius-md);
   padding: 12px 20px;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  background-color: var(--color-bg-light);
+  color: var(--color-text);
 }
 
 button:disabled {
@@ -357,14 +319,14 @@ input[type='password'],
 input[type='email'],
 select,
 textarea {
-  font-family: 'Microsoft YaHei', '微软雅黑', inherit;
-  font-size: 14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
   padding: 12px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  background-color: var(--white);
-  color: var(--text-color);
-  transition: var(--transition);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  transition: var(--transition-normal);
   width: 100%;
 }
 
@@ -374,15 +336,15 @@ input[type='email']:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 input[type='text']::placeholder,
 input[type='password']::placeholder,
 input[type='email']::placeholder,
 textarea::placeholder {
-  color: var(--text-color-light);
+  color: var(--color-text-placeholder);
 }
 
 /* 全局标题样式 */
@@ -392,58 +354,58 @@ h3,
 h4,
 h5,
 h6 {
-  color: var(--text-color);
+  color: var(--color-text);
   font-weight: 600;
   margin: 0;
   line-height: 1.3;
-  font-family: 'Microsoft YaHei', '微软雅黑', inherit;
+  font-family: var(--font-family);
 }
 
 h1 {
-  font-size: 48px;
-  font-weight: 700; /* 微软雅黑 Bold */
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
 }
 
 h2 {
-  font-size: 32px;
+  font-size: var(--font-size-3xl);
 }
 
 h3 {
-  font-size: 24px;
+  font-size: var(--font-size-2xl);
 }
 
 h4 {
-  font-size: 18px;
+  font-size: var(--font-size-xl);
 }
 
 h5 {
-  font-size: 16px;
+  font-size: var(--font-size-lg);
 }
 
 h6 {
-  font-size: 14px;
+  font-size: var(--font-size-md);
 }
 
 /* 全局链接样式 */
 a {
-  color: var(--primary-color);
+  color: var(--color-primary);
   text-decoration: none;
-  transition: var(--transition);
+  transition: var(--transition-normal);
 }
 
 a:hover {
-  color: var(--primary-color-dark);
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
 /* 全局卡片样式 */
 .card {
-  background-color: var(--white);
-  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: 24px;
-  transition: var(--transition);
-  border: 1px solid var(--border-color-light);
+  padding: var(--spacing-lg);
+  transition: var(--transition-normal);
+  border: 1px solid var(--color-border-light);
 }
 
 .card:hover {
@@ -451,55 +413,45 @@ a:hover {
   transform: translateY(-2px);
 }
 
-/* 全局容器样式 */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-/* 悬浮效果 */
-.hover-lift {
-  transition: var(--transition);
-}
-
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
 /* 按钮变体 */
 .btn-primary {
-  background-color: var(--primary-color);
-  color: var(--white);
-  border: 1px solid var(--primary-color);
+  background-color: var(--color-primary);
+  color: white;
+  border: 1px solid var(--color-primary);
 }
 
-.btn-primary:hover {
-  background-color: var(--primary-color-dark);
-  border-color: var(--primary-color-dark);
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
-.btn-accent {
-  background-color: var(--accent-color);
-  color: var(--white);
-  border: 1px solid var(--accent-color);
+.btn-primary:active {
+  background-color: var(--color-primary-active);
 }
 
-.btn-accent:hover {
-  background-color: var(--accent-color-dark);
-  border-color: var(--accent-color-dark);
+.btn-success {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.btn-warning {
+  background-color: var(--color-warning);
+  color: white;
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  color: white;
 }
 
 .btn-outline {
   background-color: transparent;
-  color: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
 }
 
 .btn-outline:hover {
-  background-color: var(--primary-color);
-  color: var(--white);
+  background-color: var(--color-primary-light);
 }
 
 /* 模态框遮罩 */
@@ -513,14 +465,14 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal-backdrop);
   animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
-  background-color: var(--white);
-  border-radius: var(--border-radius-lg);
-  padding: 32px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
   max-width: 400px;
   width: 90%;
   max-height: 90vh;
@@ -528,13 +480,14 @@ a:hover {
   animation: slideIn 0.3s ease;
 }
 
+/* 加载动画 */
 .app-loading {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -568,76 +521,6 @@ a:hover {
   }
 }
 
-/* 你原有的其他样式保持不变 */
-:root {
-  /* 主色调：科技蓝 */
-  --primary-color: #165dff;
-  --primary-color-dark: #0e46cc;
-  --primary-color-light: #4c8aff;
-
-  /* 辅助色：浅红色 */
-  --accent-color: #f53f3f;
-  --accent-color-dark: #e13d3d;
-  --accent-color-light: #f76d6d;
-
-  /* 背景色：浅灰色 */
-  --bg-color: #f5f7fa;
-  --bg-color-light: #fafafb;
-  --bg-color-dark: #eef1f5;
-
-  /* 文字主色：深灰色 */
-  --text-color: #1d2129;
-  --text-color-secondary: #4e5969;
-  --text-color-light: #86909c;
-
-  /* 边框色 */
-  --border-color: #e5e6eb;
-  --border-color-light: #f2f3f5;
-
-  /* 白色 */
-  --white: #ffffff;
-
-  /* 阴影 */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.15);
-
-  /* 圆角 */
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
-
-  /* 过渡动画 */
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family:
-    'Microsoft YaHei',
-    '微软雅黑',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  line-height: 1.6;
-  font-size: 14px;
-  font-weight: 400;
-}
-
-/* 动画 */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -661,33 +544,33 @@ body {
 /* 响应式设计 */
 @media (max-width: 768px) {
   h1 {
-    font-size: 36px;
+    font-size: var(--font-size-3xl);
   }
 
   h2 {
-    font-size: 28px;
+    font-size: var(--font-size-2xl);
   }
 
   h3 {
-    font-size: 20px;
+    font-size: var(--font-size-xl);
   }
 
   .card {
-    padding: 20px;
+    padding: var(--spacing-md);
   }
 
-  .container {
-    padding: 0 16px;
+  .modal-content {
+    padding: var(--spacing-lg);
   }
 }
 
 @media (max-width: 480px) {
   h1 {
-    font-size: 28px;
+    font-size: var(--font-size-2xl);
   }
 
   .modal-content {
-    padding: 24px;
+    padding: var(--spacing-md);
   }
 }
 </style>

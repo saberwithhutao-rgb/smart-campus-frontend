@@ -92,18 +92,18 @@ onMounted(() => {
   top: 70px;
   left: 0;
   right: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   padding: 12px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .review-reminder-banner.has-overdue {
-  background: linear-gradient(135deg, #f56c6c 0%, #e13d3d 100%);
+  background: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger) 80%);
 }
 
 .banner-content {

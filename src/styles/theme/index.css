@@ -1,0 +1,14 @@
+/* src/styles/theme/index.css */
+/* 主题系统入口文件 */
+
+/* 1. 基础变量定义（浅色主题默认值） */
+@import '../variables.css';
+
+/* 2. 深色模式变量覆盖 */
+@import './dark.css';
+
+/* 3. 主题色方案 */
+@import './colors.css';
+
+/* 4. Element Plus 主题适配 */
+@import './element-override.css';

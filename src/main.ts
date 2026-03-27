@@ -8,7 +8,8 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
 
-import './styles/variables.css'
+// 引入主题样式（替换原来的 variables.css）
+import './styles/theme/index.css'
 
 const app = createApp(App)
 
@@ -23,5 +24,4 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(createPinia())
 app.use(router)
 
-// 直接挂载，所有初始化逻辑都在 App.vue 中处理
 app.mount('#app')

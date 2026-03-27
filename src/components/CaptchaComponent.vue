@@ -40,7 +40,7 @@ const captchaCanvas = ref<HTMLCanvasElement | null>(null)
 const getCaptcha = async () => {
   try {
     console.log('开始获取验证码...')
-    
+
     const response = await api.getCaptcha()
 
     console.log('验证码响应:', response)
@@ -52,9 +52,14 @@ const getCaptcha = async () => {
       // 检查是否是标准的 ApiResponse 格式 { code, message, data }
       const data = response as any
       const captchaData = data.data || data
-      
+
       console.log('captchaData.captchaId:', captchaData.captchaId)
-      console.log('captchaData.imageBase64:', captchaData.imageBase64 ? '已获取 (长度: ' + captchaData.imageBase64.length + ')' : '未获取')
+      console.log(
+        'captchaData.imageBase64:',
+        captchaData.imageBase64
+          ? '已获取 (长度: ' + captchaData.imageBase64.length + ')'
+          : '未获取',
+      )
       console.log('data.message:', data.message)
 
       // 处理后端标准格式：{ captchaId: string, imageBase64: string, message: string }
@@ -79,7 +84,7 @@ const getCaptcha = async () => {
         // 用户需要手动输入验证码
         emit('update:modelValue', '')
         emit('update:captchaId', captchaId.value)
-        
+
         console.log('验证码设置成功')
       }
       // 兼容其他可能的图片格式
@@ -121,11 +126,11 @@ const getCaptcha = async () => {
         drawCaptcha()
       }
     }
-} catch (error: unknown) {
-      console.error('获取验证码失败:', error)
-      console.error('错误详情:', (error as Error).message || '未知错误')
-      throw new Error('验证码获取失败，请重试')
-    }
+  } catch (error: unknown) {
+    console.error('获取验证码失败:', error)
+    console.error('错误详情:', (error as Error).message || '未知错误')
+    throw new Error('验证码获取失败，请重试')
+  }
 }
 
 const drawCaptcha = () => {
@@ -140,7 +145,7 @@ const drawCaptcha = () => {
   canvas.height = 40
 
   // 填充背景色
-  ctx.fillStyle = '#f0f0f0'
+  ctx.fillStyle = 'var(--color-bg-light, #f0f0f0)'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   // 绘制干扰线
@@ -162,7 +167,7 @@ const drawCaptcha = () => {
 
   // 绘制验证码文本
   ctx.font = '20px Arial'
-  ctx.fillStyle = '#333'
+  ctx.fillStyle = 'var(--color-text, #333)'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
@@ -198,9 +203,9 @@ onMounted(() => {
   width: 120px;
   height: 50px;
   cursor: pointer;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background-color: #f8f9fa;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-light);
   transition: all 0.3s ease;
   object-fit: contain;
   padding: 2px;
@@ -208,8 +213,8 @@ onMounted(() => {
 }
 
 .captcha-image:hover {
-  border-color: #409eff;
-  box-shadow: 0 0 8px rgba(64, 158, 255, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary-light);
   transform: scale(1.02);
 }
 
@@ -217,26 +222,26 @@ onMounted(() => {
   width: 120px;
   height: 50px;
   cursor: pointer;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background-color: #f8f9fa;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-light);
   transition: all 0.3s ease;
 }
 
 .captcha-canvas:hover {
-  border-color: #409eff;
-  box-shadow: 0 0 8px rgba(64, 158, 255, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary-light);
   transform: scale(1.02);
 }
 
 .refresh-hint {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-text-light);
   cursor: pointer;
   transition: color 0.3s ease;
 }
 
 .refresh-hint:hover {
-  color: #409eff;
+  color: var(--color-primary);
 }
 </style>

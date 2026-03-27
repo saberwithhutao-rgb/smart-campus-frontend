@@ -1,3 +1,161 @@
+<script setup lang="ts">
+import GlobalNavbar from '@/components/GlobalNavbar.vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
+import {
+  DEFAULT_USER_SETTINGS,
+  applyThemeSettings,
+  applyUserSettings,
+  ensureNotificationPermission,
+  getUserSettings,
+  saveUserSettings,
+  syncAnonymousStudyAnalytics,
+  syncPublicProfileSnapshot,
+  type UserSettings,
+} from '@/utils/userSettings'
+import { useTheme } from '@/composables/useTheme'
+
+const router = useRouter()
+const isSaving = ref(false)
+
+// 获取主题管理
+const {
+  currentMode,
+  currentColor,
+  toggleDarkMode,
+  setThemeColor,
+  themeColorOptions: colorOptions,
+} = useTheme()
+
+// 设置数据
+const settings = reactive<UserSettings>({ ...DEFAULT_USER_SETTINGS })
+
+// 加载设置
+const loadSettings = () => {
+  Object.assign(settings, getUserSettings())
+}
+
+// 恢复默认
+const resetSettings = () => {
+  Object.assign(settings, DEFAULT_USER_SETTINGS)
+  applyThemeSettings(settings)
+  ElMessage.info('已恢复为默认设置，保存后生效')
+}
+
+// 处理设置变更
+const handleDarkModeChange = (val: boolean) => {
+  toggleDarkMode()
+}
+
+const handleThemeColorChange = (val: string) => {
+  setThemeColor(val as any)
+}
+
+const handleSystemNotificationChange = async (val: boolean) => {
+  if (!val) {
+    ElMessage.info('已关闭系统通知')
+    return
+  }
+
+  const permission = await ensureNotificationPermission()
+  if (permission === 'granted') {
+    ElMessage.success('系统通知已开启，后续将优先使用浏览器通知')
+    return
+  }
+
+  if (permission === 'unsupported') {
+    ElMessage.warning('当前浏览器不支持系统通知，将仅使用站内提醒')
+    return
+  }
+
+  ElMessage.warning('浏览器通知权限未开启，将继续使用站内提醒')
+}
+
+const handleStudyReminderChange = (val: boolean) => {
+  if (!val) {
+    localStorage.removeItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
+    ElMessage.info('已关闭每日学习提醒')
+    return
+  }
+
+  ElMessage.success('已开启每日学习提醒，应用打开期间会按天提醒')
+}
+
+const handlePublicProfileChange = (val: boolean) => {
+  if (val) {
+    syncPublicProfileSnapshot()
+    ElMessage.success('已开启公开个人资料')
+    return
+  }
+
+  localStorage.removeItem(STORAGE_KEYS.PUBLIC_PROFILE_SNAPSHOT)
+  ElMessage.info('已设为私密资料，仅保留本人可见')
+}
+
+const handleShareDataChange = (val: boolean) => {
+  if (val) {
+    ElMessage.success('已开启匿名学习数据共享，仅同步统计结果')
+    return
+  }
+
+  syncAnonymousStudyAnalytics()
+  ElMessage.info('已关闭学习数据共享，并清除本地匿名统计')
+}
+
+// 处理特效开关
+const handleBubbleEffectChange = (val: boolean) => {
+  window.dispatchEvent(new CustomEvent('bubble-effect-change', { detail: val }))
+}
+
+// 处理数量变化
+const handleBubbleCountChange = (val: number) => {
+  window.dispatchEvent(new CustomEvent('bubble-count-change', { detail: val }))
+}
+
+// 处理大小变化
+const handleBubbleSizeChange = (val: number) => {
+  window.dispatchEvent(new CustomEvent('bubble-size-change', { detail: val }))
+}
+
+// 保存设置时触发总事件
+const saveSettings = async () => {
+  isSaving.value = true
+  try {
+    const nextSettings = { ...settings }
+    saveUserSettings(nextSettings)
+    applyUserSettings(nextSettings)
+    window.dispatchEvent(
+      new CustomEvent('settings-changed', {
+        detail: nextSettings,
+      }),
+    )
+
+    if (nextSettings.publicProfile) {
+      syncPublicProfileSnapshot()
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.PUBLIC_PROFILE_SNAPSHOT)
+    }
+
+    if (!nextSettings.shareData) {
+      syncAnonymousStudyAnalytics()
+    }
+
+    ElMessage.success('设置保存成功')
+    setTimeout(() => router.back(), 1500)
+  } catch {
+    ElMessage.error('保存失败')
+  } finally {
+    isSaving.value = false
+  }
+}
+
+onMounted(() => {
+  loadSettings()
+})
+</script>
+
 <template>
   <div class="settings">
     <GlobalNavbar />
@@ -43,7 +201,10 @@
                   <span class="setting-label">深色模式</span>
                   <span class="setting-desc">切换深色/浅色主题</span>
                 </div>
-                <el-switch v-model="settings.darkMode" @change="handleDarkModeChange" />
+                <el-switch
+                  :model-value="currentMode === 'dark'"
+                  @update:model-value="handleDarkModeChange"
+                />
               </div>
 
               <div class="setting-item">
@@ -51,7 +212,19 @@
                   <span class="setting-label">主题颜色</span>
                   <span class="setting-desc">选择您的主题色</span>
                 </div>
-                <el-color-picker v-model="settings.themeColor" @change="handleThemeColorChange" />
+                <div class="theme-color-options">
+                  <button
+                    v-for="option in colorOptions"
+                    :key="option.value"
+                    class="theme-color-btn"
+                    :class="{ active: currentColor === option.value }"
+                    :style="{ backgroundColor: option.color }"
+                    @click="handleThemeColorChange(option.value)"
+                    :title="option.label"
+                  >
+                    <span v-if="currentColor === option.value" class="check-icon">✓</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -180,155 +353,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import GlobalNavbar from '@/components/GlobalNavbar.vue'
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { STORAGE_KEYS } from '@/utils/storageKeys'
-import {
-  DEFAULT_USER_SETTINGS,
-  applyThemeSettings,
-  applyUserSettings,
-  ensureNotificationPermission,
-  getUserSettings,
-  saveUserSettings,
-  syncAnonymousStudyAnalytics,
-  syncPublicProfileSnapshot,
-  type UserSettings,
-} from '@/utils/userSettings'
-
-const router = useRouter()
-const isSaving = ref(false)
-
-// 设置数据
-const settings = reactive<UserSettings>({ ...DEFAULT_USER_SETTINGS })
-
-// 加载设置
-const loadSettings = () => {
-  Object.assign(settings, getUserSettings())
-}
-
-// 恢复默认
-const resetSettings = () => {
-  Object.assign(settings, DEFAULT_USER_SETTINGS)
-  applyThemeSettings(settings)
-  ElMessage.info('已恢复为默认设置，保存后生效')
-}
-
-// 处理设置变更
-const handleDarkModeChange = (val: boolean) => {
-  document.documentElement.classList.toggle('dark', val)
-}
-
-const handleThemeColorChange = (val: string) => {
-  document.documentElement.style.setProperty('--primary-color', val)
-}
-
-const handleSystemNotificationChange = async (val: boolean) => {
-  if (!val) {
-    ElMessage.info('已关闭系统通知')
-    return
-  }
-
-  const permission = await ensureNotificationPermission()
-  if (permission === 'granted') {
-    ElMessage.success('系统通知已开启，后续将优先使用浏览器通知')
-    return
-  }
-
-  if (permission === 'unsupported') {
-    ElMessage.warning('当前浏览器不支持系统通知，将仅使用站内提醒')
-    return
-  }
-
-  ElMessage.warning('浏览器通知权限未开启，将继续使用站内提醒')
-}
-
-const handleStudyReminderChange = (val: boolean) => {
-  if (!val) {
-    localStorage.removeItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
-    ElMessage.info('已关闭每日学习提醒')
-    return
-  }
-
-  ElMessage.success('已开启每日学习提醒，应用打开期间会按天提醒')
-}
-
-const handlePublicProfileChange = (val: boolean) => {
-  if (val) {
-    syncPublicProfileSnapshot()
-    ElMessage.success('已开启公开个人资料')
-    return
-  }
-
-  localStorage.removeItem(STORAGE_KEYS.PUBLIC_PROFILE_SNAPSHOT)
-  ElMessage.info('已设为私密资料，仅保留本人可见')
-}
-
-const handleShareDataChange = (val: boolean) => {
-  if (val) {
-    ElMessage.success('已开启匿名学习数据共享，仅同步统计结果')
-    return
-  }
-
-  syncAnonymousStudyAnalytics()
-  ElMessage.info('已关闭学习数据共享，并清除本地匿名统计')
-}
-
-// 处理特效开关
-const handleBubbleEffectChange = (val: boolean) => {
-  window.dispatchEvent(new CustomEvent('bubble-effect-change', { detail: val }))
-}
-
-// 处理数量变化
-const handleBubbleCountChange = (val: number) => {
-  window.dispatchEvent(new CustomEvent('bubble-count-change', { detail: val }))
-}
-
-// 处理大小变化
-const handleBubbleSizeChange = (val: number) => {
-  window.dispatchEvent(new CustomEvent('bubble-size-change', { detail: val }))
-}
-
-// 保存设置时触发总事件
-const saveSettings = async () => {
-  isSaving.value = true
-  try {
-    const nextSettings = { ...settings }
-    saveUserSettings(nextSettings)
-    applyUserSettings(nextSettings)
-    window.dispatchEvent(
-      new CustomEvent('settings-changed', {
-        detail: nextSettings,
-      }),
-    )
-
-    if (nextSettings.publicProfile) {
-      syncPublicProfileSnapshot()
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.PUBLIC_PROFILE_SNAPSHOT)
-    }
-
-    if (!nextSettings.shareData) {
-      syncAnonymousStudyAnalytics()
-    }
-
-    ElMessage.success('设置保存成功')
-    setTimeout(() => router.back(), 1500)
-  } catch {
-    ElMessage.error('保存失败')
-  } finally {
-    isSaving.value = false
-  }
-}
-
-onMounted(() => {
-  loadSettings()
-  applyThemeSettings(settings)
-})
-</script>
 
 <style scoped>
 .settings {
@@ -518,6 +542,44 @@ onMounted(() => {
   color: #f56c6c;
   transform: translateY(-2px);
   background: rgba(245, 108, 108, 0.05);
+}
+
+.theme-color-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.theme-color-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-color-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.theme-color-btn.active {
+  border-color: var(--color-text);
+  box-shadow:
+    0 0 0 2px var(--color-bg-card),
+    0 0 0 4px currentColor;
+}
+
+.check-icon {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 768px) {

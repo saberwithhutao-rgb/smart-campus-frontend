@@ -49,7 +49,7 @@ const loadSettings = () => {
 const settings = ref(loadSettings())
 const isEnabled = ref(settings.value.enabled)
 
-// 淡蓝色系颜色池
+// 淡蓝色系颜色池（使用当前主题色的变体，但因为气泡特效是独立特效，保持原有颜色）
 const blueColors = [
   'rgba(173, 216, 230,', // 浅蓝
   'rgba(176, 224, 230,', // 粉蓝

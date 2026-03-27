@@ -252,7 +252,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 全局变量 - 与首页保持一致 */
+/* 全局变量 - 使用 CSS 变量 */
 :root {
   /* 主色调 */
   --primary-color: #409eff;
@@ -300,8 +300,8 @@ onUnmounted(() => {
 body {
   font-size: 14px;
   line-height: 1.5;
-  color: var(--text-color-dark);
-  background-color: var(--bg-color);
+  color: var(--color-text);
+  background-color: var(--color-bg);
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
@@ -319,11 +319,11 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  background-color: var(--white);
+  background-color: var(--color-bg-card);
   box-shadow: var(--shadow-sm);
   z-index: 100;
   height: 70px;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .navbar-container {
@@ -350,9 +350,9 @@ body {
 
 .logo-placeholder {
   padding: 8px 16px;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: #fff;
-  border-radius: var(--border-radius-md);
+  border-radius: var(--radius-md);
   font-size: 16px;
   font-weight: 600;
 }
@@ -373,19 +373,19 @@ body {
   padding: 12px 16px;
   font-size: 16px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
   cursor: pointer;
   transition: var(--transition);
-  border-radius: var(--border-radius-md);
+  border-radius: var(--radius-md);
 }
 
 .nav-item:hover {
-  color: var(--primary-color);
-  background-color: var(--bg-color-light);
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
 }
 
 .nav-item.active {
-  color: var(--primary-color);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -401,9 +401,9 @@ body {
   position: absolute;
   top: 100%;
   left: 0;
-  background-color: var(--white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   padding: 12px 0;
   min-width: 160px;
@@ -414,21 +414,21 @@ body {
 .submenu-item {
   padding: 12px 20px;
   font-size: 14px;
-  color: var(--text-color);
+  color: var(--color-text);
   cursor: pointer;
   transition: var(--transition);
   white-space: nowrap;
 }
 
 .submenu-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
 }
 
 /* 移动端子菜单 */
 .mobile-submenu {
-  background-color: var(--bg-color-light);
-  border-radius: var(--border-radius-md);
+  background-color: var(--color-bg-light);
+  border-radius: var(--radius-md);
   margin-top: 8px;
   padding: 8px 0;
   display: flex;
@@ -438,15 +438,15 @@ body {
 .mobile-submenu-item {
   padding: 10px 20px;
   font-size: 14px;
-  color: var(--text-color);
+  color: var(--color-text);
   cursor: pointer;
   transition: var(--transition);
-  border-radius: var(--border-radius-md);
+  border-radius: var(--radius-md);
 }
 
 .mobile-submenu-item:hover {
-  background-color: var(--primary-color);
-  color: var(--white);
+  background-color: var(--color-primary);
+  color: var(--color-bg-card);
 }
 
 /* 右侧操作区 - 与首页保持一致 */
@@ -462,10 +462,10 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: #fff;
-  border: 1px solid var(--primary-color);
-  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   transition: var(--transition);
@@ -473,8 +473,8 @@ body {
 }
 
 .btn-login:hover {
-  background-color: var(--primary-color-dark);
-  border-color: var(--primary-color-dark);
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .login-icon {
@@ -489,9 +489,9 @@ body {
 .btn-user-center {
   padding: 10px 20px;
   background-color: transparent;
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   transition: var(--transition);
@@ -499,9 +499,9 @@ body {
 }
 
 .btn-user-center:hover {
-  background-color: var(--bg-color-light);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background-color: var(--color-bg-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* 个人中心下拉菜单 */
@@ -509,9 +509,9 @@ body {
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: var(--white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   padding: 8px 0;
   min-width: 140px;
@@ -522,34 +522,34 @@ body {
 .dropdown-item {
   padding: 12px 20px;
   font-size: 14px;
-  color: var(--text-color);
+  color: var(--color-text);
   cursor: pointer;
   transition: var(--transition);
 }
 
 .dropdown-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
 }
 
 .dropdown-item.register {
-  color: var(--primary-color);
-  border-bottom: 1px solid var(--border-color-light);
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--color-border-light);
   margin-bottom: 8px;
   padding-bottom: 8px;
 }
 
 .dropdown-item.register:hover {
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: #fff;
 }
 
 .dropdown-item.logout {
-  color: #f56c6c;
+  color: var(--color-danger);
 }
 
 .dropdown-item.logout:hover {
-  background-color: #f56c6c;
+  background-color: var(--color-danger);
   color: #fff;
 }
 
@@ -568,7 +568,7 @@ body {
 /* 顶部标题栏 */
 .title-bar {
   height: 60px;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -598,10 +598,10 @@ body {
   left: 10px;
   z-index: 99;
   padding: 8px 16px;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: var(--border-radius-md);
+  border-radius: var(--radius-md);
   font-size: 14px;
   cursor: pointer;
   display: none;
@@ -611,7 +611,7 @@ body {
 .sidebar {
   width: 280px;
   background-color: #fff;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--color-border);
   padding: 20px 0;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
@@ -624,13 +624,13 @@ body {
 
 .sidebar-header {
   padding: 0 20px 20px;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .sidebar-title {
   font-size: 20px;
   font-weight: bold;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -641,21 +641,21 @@ body {
 .sidebar-item {
   padding: 16px 20px;
   font-size: 16px;
-  color: var(--text-color);
+  color: var(--color-text);
   cursor: pointer;
   transition: var(--transition);
   border-left: 3px solid transparent;
 }
 
 .sidebar-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
 }
 
 .sidebar-item-active {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color) !important;
-  border-left-color: var(--primary-color);
+  background-color: var(--color-bg-light);
+  color: var(--color-primary) !important;
+  border-left-color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -684,25 +684,25 @@ body {
 .time-btn {
   flex: 1;
   padding: 12px 16px;
-  background-color: #f5f7fa;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-bg-light);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
   cursor: pointer;
   transition: var(--transition);
 }
 
 .time-btn:hover {
-  background-color: #e6f7ff;
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .time-btn.active {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
   box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
 }
@@ -730,7 +730,7 @@ body {
   border-bottom: 1px solid #e8e8e8;
   font-size: 16px;
   font-weight: bold;
-  color: var(--text-color-dark);
+  color: var(--color-text);
   text-align: left;
 }
 
@@ -761,7 +761,7 @@ body {
 /* 统计模块提示文字 */
 .module-hint {
   font-size: 14px;
-  color: var(--text-color-dark);
+  color: var(--color-text);
   background-color: #fff;
   padding: 10px;
   margin: 0;
@@ -794,7 +794,7 @@ body {
   border-radius: 8px;
   font-size: 14px;
   line-height: 1.6;
-  color: var(--text-color-dark);
+  color: var(--color-text);
   transition: all 0.3s ease;
   margin-top: 100px;
   align-self: center;
@@ -807,14 +807,14 @@ body {
 /* 加载状态 */
 .loading {
   font-size: 16px;
-  color: var(--primary-color);
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 /* 无数据状态 */
 .no-data {
   font-size: 16px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
   font-weight: 500;
 }
 
@@ -866,7 +866,7 @@ body {
 
 .btn-primary {
   padding: 8px 20px;
-  background-color: #409eff;
+  background-color: var(--color-primary);
   color: white;
   border: none;
   border-radius: 4px;
@@ -875,7 +875,7 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: #66b1ff;
+  background-color: var(--color-primary-hover);
 }
 
 .btn-primary:disabled {
@@ -885,7 +885,7 @@ body {
 
 .error-message {
   background-color: #fef0f0;
-  color: #f56c6c;
+  color: var(--color-danger);
   padding: 15px;
   border-radius: 4px;
   margin-bottom: 20px;
@@ -895,7 +895,7 @@ body {
 }
 
 .retry-btn {
-  background-color: #f56c6c;
+  background-color: var(--color-danger);
   color: white;
   border: none;
   padding: 6px 12px;
@@ -906,7 +906,8 @@ body {
 }
 
 .retry-btn:hover {
-  background-color: #f78989;
+  background-color: var(--color-danger);
+  opacity: 0.8;
 }
 
 .loading-container {
@@ -923,7 +924,7 @@ body {
   height: 40px;
   border: 4px solid rgba(64, 158, 255, 0.2);
   border-radius: 50%;
-  border-top-color: #409eff;
+  border-top-color: var(--color-primary);
   animation: spin 1s ease-in-out infinite;
   margin-bottom: 16px;
 }
@@ -935,7 +936,7 @@ body {
 }
 
 .loading-container p {
-  color: var(--text-color-medium);
+  color: var(--color-text-secondary);
   font-size: 16px;
   margin: 0;
 }
@@ -1119,13 +1120,13 @@ h4 {
 .progress-label {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-color-dark);
+  color: var(--color-text);
 }
 
 .progress-percentage {
   font-size: 14px;
   font-weight: bold;
-  color: var(--primary-color);
+  color: var(--color-primary);
 }
 
 .progress-bar {
@@ -1157,7 +1158,7 @@ h4 {
 .chart-item h3 {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-color-dark);
+  color: var(--color-text);
   margin-bottom: 10px;
   text-align: center;
   /* 确保标题与下方图表水平中心对齐 */
@@ -1237,9 +1238,9 @@ h4 {
     top: 100%;
     left: 0;
     right: 0;
-    background-color: #fff;
+    background-color: var(--color-bg-card);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--color-border);
     padding: 16px;
     gap: 8px;
   }
@@ -1247,7 +1248,7 @@ h4 {
   .nav-item {
     padding: 12px 16px;
     border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-border);
   }
 
   /* 主体内容区适配 */

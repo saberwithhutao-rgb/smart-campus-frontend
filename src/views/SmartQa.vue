@@ -454,7 +454,7 @@ const sendMessage = async () => {
       stream: true,
     })
 
-    const response = await fetch('/ai/chat/send', {
+    const response = await fetch('/api/ai/chat/send', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

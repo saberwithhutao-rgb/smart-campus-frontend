@@ -1,0 +1,53 @@
+/* src/styles/theme/element-override.css */
+/* 覆盖 Element Plus 组件样式，使其适配主题系统 */
+
+:root,
+[data-theme='dark'] {
+  /* Element Plus 主要变量覆盖 */
+  --el-color-primary: var(--color-primary);
+  --el-color-primary-light-3: var(--color-primary-hover);
+  --el-color-primary-light-5: var(--color-primary-light);
+  --el-color-primary-dark-2: var(--color-primary-active);
+
+  --el-bg-color: var(--color-bg-card);
+  --el-bg-color-page: var(--color-bg);
+  --el-bg-color-overlay: var(--color-bg-card);
+
+  --el-text-color-primary: var(--color-text);
+  --el-text-color-regular: var(--color-text-secondary);
+  --el-text-color-secondary: var(--color-text-light);
+  --el-text-color-placeholder: var(--color-text-placeholder);
+
+  --el-border-color: var(--color-border);
+  --el-border-color-light: var(--color-border-light);
+  --el-border-color-lighter: var(--color-border-light);
+
+  --el-fill-color-blank: var(--color-bg-card);
+  --el-fill-color-light: var(--color-bg-light);
+
+  --el-box-shadow: var(--shadow-md);
+  --el-box-shadow-light: var(--shadow-sm);
+}
+
+/* 弹窗遮罩层深色模式适配 */
+[data-theme='dark'] .el-dialog {
+  --el-dialog-bg-color: var(--color-bg-card);
+}
+
+[data-theme='dark'] .el-message {
+  --el-message-bg-color: var(--color-bg-card);
+}
+
+[data-theme='dark'] .el-card {
+  --el-card-bg-color: var(--color-bg-card);
+  --el-card-border-color: var(--color-border);
+}
+
+[data-theme='dark'] .el-input__wrapper {
+  background-color: var(--color-bg-light);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+[data-theme='dark'] .el-select .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}

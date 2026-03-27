@@ -1,0 +1,42 @@
+/* src/styles/theme/colors.css */
+/* 可配置的主题色方案 */
+
+/* 蓝色主题（默认） */
+[data-theme-color='blue'] {
+  --color-primary: #165dff;
+  --color-primary-hover: #4c8aff;
+  --color-primary-active: #0e46cc;
+  --color-primary-light: rgba(22, 93, 255, 0.1);
+}
+
+/* 绿色主题 */
+[data-theme-color='green'] {
+  --color-primary: #52c41a;
+  --color-primary-hover: #73d13d;
+  --color-primary-active: #389e0d;
+  --color-primary-light: rgba(82, 196, 26, 0.1);
+}
+
+/* 紫色主题 */
+[data-theme-color='purple'] {
+  --color-primary: #722ed1;
+  --color-primary-hover: #9254de;
+  --color-primary-active: #531dab;
+  --color-primary-light: rgba(114, 46, 209, 0.1);
+}
+
+/* 橙色主题 */
+[data-theme-color='orange'] {
+  --color-primary: #fa8c16;
+  --color-primary-hover: #ffa940;
+  --color-primary-active: #d46b08;
+  --color-primary-light: rgba(250, 140, 22, 0.1);
+}
+
+/* 粉色主题 */
+[data-theme-color='pink'] {
+  --color-primary: #eb2f96;
+  --color-primary-hover: #f759ab;
+  --color-primary-active: #c41d7f;
+  --color-primary-light: rgba(235, 47, 150, 0.1);
+}

@@ -33,7 +33,7 @@ const showNumber = computed(() => props.showNumber && (props.count ?? 0) > 0)
   justify-content: center;
   min-width: 8px;
   height: 8px;
-  background-color: #f56c6c;
+  background-color: var(--color-danger);
   border-radius: 50%;
   margin-left: 8px;
   vertical-align: middle;
@@ -45,7 +45,7 @@ const showNumber = computed(() => props.showNumber && (props.count ?? 0) > 0)
   font-size: 11px;
   font-weight: 500;
   color: white;
-  background-color: #f56c6c;
+  background-color: var(--color-danger);
   border-radius: 9px;
   padding: 0 4px;
   line-height: 18px;
