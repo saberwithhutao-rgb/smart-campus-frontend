@@ -108,6 +108,10 @@ const handleSuccessResponse = (response: AxiosResponse) => {
     return res
   }
 
+  if (config.url?.includes('/verify/email') || config.url?.includes('/password/reset/send')) {
+    return res
+  }
+
   // 跳过全局错误处理
   if (config.skipGlobalError) {
     return res

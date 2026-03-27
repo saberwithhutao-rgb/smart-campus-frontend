@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '../api/index'
+import { api, ApiResponse } from '../api/index'
 
 const router = useRouter()
 
@@ -59,9 +59,28 @@ const validateUsername = (username: string): string => {
 // 验证密码强度
 const validatePassword = (password: string): string => {
   if (!password) return '密码不能为空'
-  if (password.length < 6) return '密码长度不能少于6位'
-  if (!/[a-zA-Z]/.test(password)) return '密码必须包含字母'
-  if (!/\d/.test(password)) return '密码必须包含数字'
+
+  // 长度限制
+  if (password.length < 8) return '密码长度不能少于8位'
+  if (password.length > 20) return '密码长度不能超过20位'
+
+  // 必须包含大写字母
+  if (!/[A-Z]/.test(password)) return '密码必须包含至少一个大写字母'
+
+  // 必须包含小写字母
+  if (!/[a-z]/.test(password)) return '密码必须包含至少一个小写字母'
+
+  // 必须包含数字
+  if (!/\d/.test(password)) return '密码必须包含至少一个数字'
+
+  // 可选：特殊字符（不强制，但给提示）
+  // if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(password)) {
+  //   return '建议包含特殊字符（!@#$%^&*等）以增强安全性'
+  // }
+
+  // 不允许空格
+  if (password.includes(' ')) return '密码不能包含空格'
+
   return ''
 }
 
@@ -72,17 +91,20 @@ const validateConfirmPassword = (password: string, confirmPassword: string): str
   return ''
 }
 
-// 验证邮箱格式（加强QQ邮箱验证）
+// 验证邮箱格式（加强邮箱验证）
 const validateEmail = (email: string): string => {
   if (!email.trim()) return '邮箱不能为空'
 
-  // 基础邮箱格式验证
+  // 基础邮箱格式验证（支持所有常见邮箱）
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email)) return '邮箱格式不正确'
 
-  // QQ邮箱特定验证
-  const qqEmailRegex = /^[1-9]\d{4,10}@qq\.com$/i
-  if (!qqEmailRegex.test(email)) return '请输入正确的QQ邮箱（如：12345@qq.com）'
+  // 可选：域名白名单（如果要限制只能某些域名）
+  // const allowedDomains = ['qq.com', '163.com', 'gmail.com', 'outlook.com', 'foxmail.com']
+  // const domain = email.split('@')[1]
+  // if (!allowedDomains.includes(domain)) {
+  //   return '请使用支持的邮箱（QQ、163、Gmail、Outlook、Foxmail）'
+  // }
 
   return ''
 }
@@ -93,6 +115,55 @@ const validateVerifyCode = (verifyCode: string): string => {
   if (!/^\d{6}$/.test(verifyCode)) return '验证码应为6位数字'
   return ''
 }
+
+const passwordStrength = computed(() => {
+  const pwd = form.password
+  if (!pwd) return 'none'
+
+  let strength = 0
+
+  // 长度
+  if (pwd.length >= 8) strength++
+  if (pwd.length >= 12) strength++
+
+  // 字符类型
+  if (/[a-z]/.test(pwd)) strength++
+  if (/[A-Z]/.test(pwd)) strength++
+  if (/\d/.test(pwd)) strength++
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(pwd)) strength++
+
+  if (strength <= 3) return 'weak'
+  if (strength <= 5) return 'medium'
+  return 'strong'
+})
+
+// 强度文本
+const strengthText = computed(() => {
+  switch (passwordStrength.value) {
+    case 'weak':
+      return '弱'
+    case 'medium':
+      return '中'
+    case 'strong':
+      return '强'
+    default:
+      return ''
+  }
+})
+
+// 强度颜色
+const strengthColor = computed(() => {
+  switch (passwordStrength.value) {
+    case 'weak':
+      return '#f56c6c'
+    case 'medium':
+      return '#e6a23c'
+    case 'strong':
+      return '#67c23a'
+    default:
+      return '#909399'
+  }
+})
 
 // 实时字段验证
 watch(
@@ -161,7 +232,7 @@ const sendVerifyCode = async () => {
   isSendingVerifyCode.value = true
   try {
     // 修改：只需要email参数
-    const response = await api.sendVerifyCode(form.email)
+    const response = (await api.sendVerifyCode(form.email)) as unknown as ApiResponse<null>
 
     console.log('邮箱验证码响应:', response)
 
@@ -230,12 +301,12 @@ const handleRegister = async () => {
 
   try {
     // 修改：只需要4个字段
-    const response = await api.register({
+    const response = (await api.register({
       username: form.username,
       password: form.password,
       email: form.email,
       verifyCode: form.verifyCode,
-    })
+    })) as unknown as ApiResponse<null>
 
     if (response.code === 200) {
       // 注册成功
@@ -303,7 +374,7 @@ const goToLogin = () => {
             id="password"
             v-model="form.password"
             :type="isPasswordVisible ? 'text' : 'password'"
-            placeholder="至少6位，需包含字母和数字"
+            placeholder="8-20位，需包含大写字母、小写字母和数字"
             :class="['form-control', { error: fieldErrors.password }]"
           />
           <button
@@ -319,25 +390,12 @@ const goToLogin = () => {
           {{ fieldErrors.password }}
         </div>
         <div v-else class="field-hint">
-          密码强度：<span
-            :class="{
-              weak: form.password.length < 6,
-              medium:
-                form.password.length >= 6 &&
-                (!/[a-zA-Z]/.test(form.password) || !/\d/.test(form.password)),
-              strong:
-                form.password.length >= 6 &&
-                /[a-zA-Z]/.test(form.password) &&
-                /\d/.test(form.password),
-            }"
-          >
-            {{
-              form.password.length < 6
-                ? '弱'
-                : !/[a-zA-Z]/.test(form.password) || !/\d/.test(form.password)
-                  ? '中'
-                  : '强'
-            }}
+          密码强度：
+          <span :style="{ color: strengthColor, fontWeight: 'bold' }">
+            {{ strengthText }}
+          </span>
+          <span v-if="form.password && passwordStrength !== 'strong'" class="strength-tip">
+            （建议使用大小写字母、数字和特殊字符组合）
           </span>
         </div>
       </div>
@@ -369,12 +427,12 @@ const goToLogin = () => {
 
       <!-- 在邮箱输入框下方添加 -->
       <div class="form-group">
-        <label for="email">QQ邮箱 <span class="required">*</span></label>
+        <label for="email">邮箱 <span class="required">*</span></label>
         <input
           id="email"
           v-model="form.email"
           type="email"
-          placeholder="请输入QQ邮箱（如：12345@qq.com）"
+          placeholder="请输入邮箱地址"
           :class="[
             'form-control',
             { error: fieldErrors.email || errorMessage.includes('邮箱已被注册') },
@@ -390,7 +448,7 @@ const goToLogin = () => {
           <small>请使用其他邮箱或<a href="#" @click.prevent="goToLogin">直接登录</a></small>
         </div>
         <div v-else-if="!fieldErrors.email" class="field-hint">
-          请使用QQ邮箱注册，验证码将发送到此邮箱
+          请使用有效的邮箱地址，验证码将发送到此邮箱
         </div>
       </div>
 

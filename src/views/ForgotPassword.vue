@@ -42,12 +42,26 @@ const validateEmail = (email: string): string => {
   if (!emailRegex.test(email)) return '邮箱格式不正确'
   return ''
 }
-
+// 验证密码强度（加强版）
 const validatePassword = (password: string): string => {
   if (!password) return '密码不能为空'
-  if (password.length < 6) return '密码长度不能少于6位'
-  if (!/[a-zA-Z]/.test(password)) return '密码必须包含字母'
-  if (!/\d/.test(password)) return '密码必须包含数字'
+
+  // 长度限制
+  if (password.length < 8) return '密码长度不能少于8位'
+  if (password.length > 20) return '密码长度不能超过20位'
+
+  // 必须包含大写字母
+  if (!/[A-Z]/.test(password)) return '密码必须包含至少一个大写字母'
+
+  // 必须包含小写字母
+  if (!/[a-z]/.test(password)) return '密码必须包含至少一个小写字母'
+
+  // 必须包含数字
+  if (!/\d/.test(password)) return '密码必须包含至少一个数字'
+
+  // 不允许空格
+  if (password.includes(' ')) return '密码不能包含空格'
+
   return ''
 }
 
@@ -227,12 +241,12 @@ onMounted(() => {
       <!-- 步骤1：验证身份 -->
       <div v-if="step === 1">
         <div class="form-group">
-          <label for="email">QQ邮箱</label>
+          <label for="email">邮箱</label>
           <input
             id="email"
             v-model="form.email"
             type="email"
-            placeholder="请输入注册时使用的QQ邮箱"
+            placeholder="请输入注册时使用的邮箱"
             class="form-control"
           />
           <div class="field-hint">验证码将发送到此邮箱</div>
@@ -297,26 +311,32 @@ onMounted(() => {
             id="newPassword"
             v-model="form.newPassword"
             type="password"
-            placeholder="至少6位，需包含字母和数字"
+            placeholder="8-20位，需包含大写字母、小写字母和数字"
             class="form-control"
           />
           <div class="field-hint">
-            密码强度：<span
+            密码强度：
+            <span
               :class="{
-                weak: form.newPassword.length < 6,
+                weak: form.newPassword.length < 8,
                 medium:
-                  form.newPassword.length >= 6 &&
-                  (!/[a-zA-Z]/.test(form.newPassword) || !/\d/.test(form.newPassword)),
+                  form.newPassword.length >= 8 &&
+                  (!/[A-Z]/.test(form.newPassword) ||
+                    !/[a-z]/.test(form.newPassword) ||
+                    !/\d/.test(form.newPassword)),
                 strong:
-                  form.newPassword.length >= 6 &&
-                  /[a-zA-Z]/.test(form.newPassword) &&
+                  form.newPassword.length >= 8 &&
+                  /[A-Z]/.test(form.newPassword) &&
+                  /[a-z]/.test(form.newPassword) &&
                   /\d/.test(form.newPassword),
               }"
             >
               {{
-                form.newPassword.length < 6
+                form.newPassword.length < 8
                   ? '弱'
-                  : !/[a-zA-Z]/.test(form.newPassword) || !/\d/.test(form.newPassword)
+                  : !/[A-Z]/.test(form.newPassword) ||
+                      !/[a-z]/.test(form.newPassword) ||
+                      !/\d/.test(form.newPassword)
                     ? '中'
                     : '强'
               }}
