@@ -973,15 +973,40 @@ const updateArrowVisibility = () => {
 
         <!-- 底部发布区域 -->
         <div class="publish-bar">
-          <div class="publish-topic-select">
-            <Select
-              v-model="publishCategoryId"
-              :category-list="categoryList"
-              placeholder="选择话题"
-              style="width: 100%"
-            />
+          <!-- 第一行：选择话题 + 上传图片 -->
+          <div class="publish-row">
+            <div class="publish-topic-select">
+              <Select
+                v-model="publishCategoryId"
+                :category-list="categoryList"
+                placeholder="选择话题"
+                style="width: 100%"
+              />
+            </div>
+            <div class="upload-section">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                style="display: none"
+                ref="fileInput"
+                @change="handleImageUpload"
+              />
+              <el-button
+                type="primary"
+                plain
+                icon="Upload"
+                @click="$refs.fileInput && ($refs.fileInput as HTMLInputElement).click()"
+                :loading="uploadLoading"
+              >
+                上传图片
+              </el-button>
+            </div>
           </div>
+
+          <!-- 第二行：输入区域 -->
           <div class="publish-input-wrapper">
+            <!-- 图片预览区域 -->
             <div v-if="imageUrls.length > 0" class="image-preview-container">
               <div
                 v-for="(url, index) in imageUrls"

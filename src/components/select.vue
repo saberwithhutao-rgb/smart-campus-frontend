@@ -30,7 +30,9 @@ const emit = defineEmits<{
 }>()
 
 const isOpen = ref(false)
+const triggerRef = ref<HTMLElement | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
+const dropdownDirection = ref<'down' | 'up'>('down') // 下拉方向
 
 // 当前选中的分类名称
 const selectedName = computed(() => {
@@ -39,8 +41,27 @@ const selectedName = computed(() => {
   return selected ? selected.name : props.placeholder
 })
 
+// 计算下拉方向（向上还是向下）
+const calculateDirection = () => {
+  if (!triggerRef.value) return
+
+  const rect = triggerRef.value.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  const spaceAbove = rect.top
+
+  // 如果下方空间不足，且上方空间足够，就向上弹出
+  if (spaceBelow < 200 && spaceAbove > 200) {
+    dropdownDirection.value = 'up'
+  } else {
+    dropdownDirection.value = 'down'
+  }
+}
+
 // 切换下拉框
 const toggleDropdown = () => {
+  if (!isOpen.value) {
+    calculateDirection()
+  }
   isOpen.value = !isOpen.value
 }
 
@@ -52,23 +73,38 @@ const selectCategory = (category: Category) => {
 
 // 点击外部关闭
 const handleClickOutside = (event: MouseEvent) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+  if (
+    triggerRef.value &&
+    !triggerRef.value.contains(event.target as Node) &&
+    dropdownRef.value &&
+    !dropdownRef.value.contains(event.target as Node)
+  ) {
     isOpen.value = false
   }
 }
 
-// 监听全局点击
+// 监听滚动和窗口大小变化，重新计算方向
+const handleScroll = () => {
+  if (isOpen.value) {
+    calculateDirection()
+  }
+}
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('scroll', handleScroll)
+  window.addEventListener('resize', handleScroll)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', handleScroll)
 })
 </script>
 
 <template>
-  <div class="custom-select" ref="dropdownRef">
+  <div class="custom-select" ref="triggerRef">
     <div class="select-trigger" @click="toggleDropdown">
       <span class="select-value" :class="{ placeholder: !modelValue }">
         {{ selectedName }}
@@ -77,7 +113,7 @@ onUnmounted(() => {
     </div>
 
     <transition name="dropdown">
-      <div v-if="isOpen" class="select-dropdown">
+      <div v-if="isOpen" ref="dropdownRef" class="select-dropdown" :class="[dropdownDirection]">
         <div
           v-for="category in categoryList"
           :key="category.id"
@@ -136,11 +172,23 @@ onUnmounted(() => {
   transform: rotate(180deg);
 }
 
-.select-dropdown {
+/* 下拉菜单 - 向下弹出 */
+.select-dropdown.down {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
   right: 0;
+}
+
+/* 下拉菜单 - 向上弹出 */
+.select-dropdown.up {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+}
+
+.select-dropdown {
   background: white;
   border: 1px solid #e5e5e5;
   border-radius: 12px;
@@ -189,5 +237,14 @@ onUnmounted(() => {
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+/* 向上弹出的动画 */
+.select-dropdown.up.dropdown-enter-from {
+  transform: translateY(8px);
+}
+
+.select-dropdown.up.dropdown-leave-to {
+  transform: translateY(8px);
 }
 </style>
