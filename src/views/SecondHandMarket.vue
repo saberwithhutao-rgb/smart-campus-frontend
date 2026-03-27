@@ -757,7 +757,15 @@ const updateArrowVisibility = () => {
             <!-- 帖子头部 -->
             <div class="post-header">
               <div class="author-info">
-                <div class="avatar">👤</div>
+                <div class="avatar">
+                  <img
+                    v-if="post.userAvatar"
+                    :src="getFullImageUrl(post.userAvatar)"
+                    alt="头像"
+                    class="avatar-img"
+                  />
+                  <span v-else>👤</span>
+                </div>
                 <div class="author-text">
                   <div class="author-name">{{ post.userName || '未知用户' }}</div>
                   <div class="post-time">
@@ -837,7 +845,15 @@ const updateArrowVisibility = () => {
 
               <div v-else class="comments-list">
                 <div class="comment-item" v-for="comment in post.comments || []" :key="comment.id">
-                  <div class="comment-avatar">👤</div>
+                  <div class="comment-avatar">
+                    <img
+                      v-if="comment.userAvatar"
+                      :src="getFullImageUrl(comment.userAvatar)"
+                      alt="头像"
+                      class="avatar-img"
+                    />
+                    <span v-else>👤</span>
+                  </div>
                   <div class="comment-content">
                     <div class="comment-header">
                       <span class="comment-author">{{ comment.userName || '未知用户' }}</span>
@@ -1271,12 +1287,39 @@ const updateArrowVisibility = () => {
 .avatar {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.comment-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .author-text {
@@ -1296,7 +1339,6 @@ const updateArrowVisibility = () => {
   margin-top: 2px;
 }
 
-/* 帖子内标签样式 (来自第二个块) */
 .post-card .topic-tag {
   font-size: 14px;
   padding: 6px 12px;

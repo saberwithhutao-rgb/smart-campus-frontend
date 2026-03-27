@@ -37,6 +37,7 @@ export interface Comment {
   postId: number
   userId: number
   userName?: string
+  userAvatar?: string
   canDelete?: boolean
   content: string
   createTime: string
@@ -54,6 +55,7 @@ export interface Post {
   categoryId: number
   userId: number
   userName?: string
+  userAvatar?: string
   canDelete?: boolean
   createTime: string
   auditStatus: number // 0-待审核，1-正常，2-违规
