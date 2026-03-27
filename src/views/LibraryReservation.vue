@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
-import { useUserStore } from '@/stores/user'
 import { useReservationCount } from '@/composables/useReservationCount'
 import type {
   Floor,
@@ -203,7 +202,6 @@ const checkUserActiveStatus = async () => {
 // 加载教室列表
 const loadClassrooms = async (floorId: number | string) => {
   try {
-    // 确保 floorId 是数字类型
     const numericFloorId = Number(floorId)
     if (isNaN(numericFloorId)) {
       console.error('楼层ID格式错误:', floorId)
@@ -216,11 +214,9 @@ const loadClassrooms = async (floorId: number | string) => {
 
     rooms.value = classroomList.map((room) => ({
       ...room,
-      // 初始化为 null，等待 available-seats 接口返回
-      availableSeats: null,
-      totalSeats: null,
-      // 初始化为 0，等待 available-seats 接口返回
-      occupancyRate: 0,
+      availableSeats: undefined,
+      totalSeats: undefined,
+      occupancyRate: undefined,
     }))
 
     console.log('修正后的教室数据:', rooms.value)
@@ -265,34 +261,19 @@ const loadSeats = async (classroomId: number) => {
   }
 }
 
-// 获取当前楼层的教室
-// const currentFloorRooms = computed(() => {
-//   if (!currentFloor.value) {
-//     return []
-//   }
-//   const floorNumber = currentFloor.value.id || currentFloor.value.floorNum
-//   const floorRooms = rooms.value.filter((room) => room.floorId === floorNumber)
-//   return floorRooms
-// })
-
-// 按空闲率排序的当前楼层教室
-// const sortedRooms = computed(() => {
-//   return [...currentFloorRooms.value].sort(
-//     (a, b) => (b.occupancyRate || 0) - (a.occupancyRate || 0),
-//   )
-// })
-
-// 推荐教室（当前楼层空闲率最高的教室）
+// 推荐教室
 const recommendedRooms = computed(() => {
   if (!currentFloor.value) return []
 
   const floorNumber = currentFloor.value.id || currentFloor.value.floorNum
   const floorRooms = rooms.value.filter((room) => room.floorId === floorNumber)
 
-  // 按空闲率排序
-  const sorted = [...floorRooms].sort((a, b) => (b.occupancyRate || 0) - (a.occupancyRate || 0))
+  const sorted = [...floorRooms].sort((a, b) => {
+    const rateA = a.occupancyRate ?? -1
+    const rateB = b.occupancyRate ?? -1
+    return rateB - rateA
+  })
 
-  // 取前3个作为推荐
   return sorted.slice(0, 3)
 })
 
@@ -365,13 +346,11 @@ const refreshAllClassroomData = async () => {
   try {
     isLoading.value = true
 
-    // 取消所有正在进行的请求
     currentRequests.forEach((controller) => {
       controller.abort()
     })
     currentRequests.clear()
 
-    // 获取当前楼层ID
     if (!currentFloor.value) {
       console.error('刷新教室数据失败: 当前楼层未设置')
       return
@@ -385,13 +364,10 @@ const refreshAllClassroomData = async () => {
 
     console.log('刷新当前楼层的教室数据，楼层ID:', floorId)
 
-    // 获取当前楼层的教室
     const floorRooms = rooms.value.filter((room) => room.floorId === floorId)
     console.log('当前楼层的教室数量:', floorRooms.length)
 
-    // 并行获取所有教室的可用座位数，但等待全部完成
     const promises = floorRooms.map(async (room) => {
-      // 创建 AbortController 用于取消请求
       const controller = new AbortController()
       currentRequests.set(room.id, controller)
 
@@ -402,7 +378,6 @@ const refreshAllClassroomData = async () => {
         if (roomIndex !== -1) {
           const targetRoom = rooms.value[roomIndex]
           if (targetRoom) {
-            // 双重保险检查
             targetRoom.availableSeats = availableSeats.availableSeats
             targetRoom.totalSeats = availableSeats.totalSeats
             targetRoom.occupancyRate = availableSeats.availableSeats / availableSeats.totalSeats
@@ -491,100 +466,17 @@ const getSeatLabel = (seatId: string): string => {
   return seatId
 }
 
-// 按行分组座位
-// const groupSeatsByRow = () => {
-//   const seats = currentRoomSeats.value
-//   const grouped: Record<string, string[]> = {}
-
-//   Object.keys(seats).forEach((seatId) => {
-//     const parts = seatId.split('-')
-//     if (parts.length >= 3) {
-//       // 格式: roomId-seatCode (如 A1, B2)
-//       const seatCode = parts[2]
-//       // 添加非空检查
-//       if (seatCode) {
-//         // 提取行标签 (如 A, B)
-//         const rowLabel = seatCode.match(/[A-Za-z]+/)?.[0] || 'Unknown'
-//         if (!grouped[rowLabel]) {
-//           grouped[rowLabel] = []
-//         }
-//         grouped[rowLabel].push(seatId)
-//       }
-//     }
-//   })
-
-//   // 按行标签排序
-//   const sorted: Record<string, string[]> = {}
-//   Object.keys(grouped)
-//     .sort()
-//     .forEach((rowLabel) => {
-//       // 确保数组存在
-//       const rowSeats = grouped[rowLabel]
-//       if (rowSeats) {
-//         // 按座位编码排序
-//         rowSeats.sort()
-//         sorted[rowLabel] = rowSeats
-//       }
-//     })
-
-//   return sorted
-// }
-
-// 获取最大列数
-// const getMaxColumn = () => {
-//   const seats = currentRoomSeats.value
-//   let maxColumn = 0
-
-//   Object.keys(seats).forEach((seatId) => {
-//     const parts = seatId.split('-')
-//     if (parts.length >= 3) {
-//       // 格式: roomId-seatCode (如 A1, B2)
-//       const seatCode = parts[2]
-//       // 添加非空检查
-//       if (seatCode) {
-//         // 提取列号 (如 1, 2)
-//         const column = parseInt(seatCode.match(/\d+/)?.[0] || '0')
-//         if (column > maxColumn) {
-//           maxColumn = column
-//         }
-//       }
-//     }
-//   })
-
-//   return maxColumn
-// }
-
-// 获取座位状态类名
-// const getSeatClass = (status: SeatStatus) => {
-//   const baseClass = 'seat'
-//   switch (status) {
-//     case 'available':
-//       return `${baseClass} available`
-//     case 'occupied':
-//     case 'reserved':
-//       return `${baseClass} occupied`
-//     case 'selected':
-//       return `${baseClass} selected`
-//     case 'podium':
-//       return `${baseClass} podium`
-//     case 'door':
-//       return `${baseClass} door`
-//     case 'empty':
-//       return `${baseClass} empty`
-//     default:
-//       return baseClass
-//   }
-// }
-
 // 获取教室占用率颜色
-const getOccupancyColor = (rate: number) => {
-  if (rate >= 0.7) return '#52c41a' // 绿色 - 空闲多
-  if (rate >= 0.4) return '#faad14' // 橙色 - 中等
-  return '#f5222d' // 红色 - 空闲少
+const getOccupancyColor = (rate: number | undefined) => {
+  if (rate === undefined) return '#ccc'
+  if (rate >= 0.7) return '#52c41a'
+  if (rate >= 0.4) return '#faad14'
+  return '#f5222d'
 }
 
 // 获取教室状态文字
-const getRoomStatusText = (rate: number) => {
+const getRoomStatusText = (rate: number | undefined) => {
+  if (rate === undefined) return '加载中'
   if (rate >= 0.7) return '空闲'
   if (rate >= 0.4) return '适中'
   return '紧张'
