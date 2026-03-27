@@ -978,30 +978,10 @@ const updateArrowVisibility = () => {
               v-model="publishCategoryId"
               :category-list="categoryList"
               placeholder="选择话题"
-              style="width: 140px"
+              style="width: 100%"
             />
           </div>
           <div class="publish-input-wrapper">
-            <div class="input-item upload-section">
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                style="display: none"
-                ref="fileInput"
-                @change="handleImageUpload"
-              />
-              <el-button
-                type="primary"
-                plain
-                icon="Upload"
-                @click="$refs.fileInput && ($refs.fileInput as HTMLInputElement).click()"
-                :loading="uploadLoading"
-              >
-                上传图片
-              </el-button>
-            </div>
-            <!-- 发布区域的图片预览 -->
             <div v-if="imageUrls.length > 0" class="image-preview-container">
               <div
                 v-for="(url, index) in imageUrls"
@@ -1032,21 +1012,21 @@ const updateArrowVisibility = () => {
                 @keyup.enter.ctrl="handlePublish"
               />
             </div>
-          </div>
-          <div class="publish-action">
-            <el-button
-              type="primary"
-              @click="handlePublish"
-              :disabled="
-                !postTitle.trim() ||
-                !postContent.trim() ||
-                !publishCategoryId ||
-                publishCategoryId === ''
-              "
-              :loading="publishing"
-            >
-              发布
-            </el-button>
+            <div class="publish-action">
+              <el-button
+                type="primary"
+                @click="handlePublish"
+                :disabled="
+                  !postTitle.trim() ||
+                  !postContent.trim() ||
+                  !publishCategoryId ||
+                  publishCategoryId === ''
+                "
+                :loading="publishing"
+              >
+                发布
+              </el-button>
+            </div>
           </div>
         </div>
 
@@ -1068,7 +1048,7 @@ const updateArrowVisibility = () => {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding-top: 70px;
-  padding-bottom: 100px;
+  padding-bottom: 120px;
 }
 
 .main-content {
@@ -1119,14 +1099,10 @@ const updateArrowVisibility = () => {
   transition: all 0.2s ease;
   font-size: 16px;
   color: #666;
-  overflow: visible;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 .scroll-arrow:hover {
   background: rgba(255, 255, 255, 1);
-  opacity: 0.9;
   transform: translateY(-50%) scale(1.05);
 }
 
@@ -1138,7 +1114,7 @@ const updateArrowVisibility = () => {
   right: 0;
 }
 
-/* 标签通用样式 (来自第二个块) */
+/* 标签通用样式 */
 .topics-bar .topic-tag {
   padding: 8px 16px;
   border-radius: 20px;
@@ -1150,82 +1126,64 @@ const updateArrowVisibility = () => {
   border: 1px solid #e8e8e8;
 }
 
-/* 标签默认样式 (非主题色) */
 .topics-bar .topic-tag:not([class*='topic-']) {
   background-color: #ffffff !important;
   color: #000000 !important;
   border: 1px solid #e5e5e5 !important;
-  box-shadow: none !important;
 }
 
 .topics-bar .topic-tag:not([class*='topic-']):hover {
   background-color: #f5f5f5 !important;
-  color: #000000 !important;
-  border-color: #e5e5e5 !important;
-  box-shadow: none !important;
 }
 
 .topics-bar .topic-tag:not([class*='topic-']).active {
   background-color: #f5f5f5 !important;
-  color: #000000 !important;
-  border-color: #e5e5e5 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* 主题标签颜色 (来自第二个块) */
+/* 主题标签颜色 */
 .topics-bar .topic-tag.topic-daily {
   background-color: #e53e3e;
   color: #ffffff;
-  border-color: #e53e3e;
 }
 .topics-bar .topic-tag.topic-study {
   background-color: #4299e1;
   color: #ffffff;
-  border-color: #4299e1;
 }
 .topics-bar .topic-tag.topic-food {
   background-color: #ed8936;
   color: #ffffff;
-  border-color: #ed8936;
 }
 .topics-bar .topic-tag.topic-activity {
   background-color: #38b2ac;
   color: #ffffff;
-  border-color: #38b2ac;
 }
 .topics-bar .topic-tag.topic-help {
   background-color: #9f7aea;
   color: #ffffff;
-  border-color: #9f7aea;
 }
 .topics-bar .topic-tag.topic-lost {
   background-color: #e53e3e;
   color: #ffffff;
-  border-color: #e53e3e;
 }
 .topics-bar .topic-tag.topic-love {
   background-color: #ec4899;
   color: #ffffff;
-  border-color: #ec4899;
 }
 .topics-bar .topic-tag.topic-secondhand {
   background-color: #718096;
   color: #ffffff;
-  border-color: #718096;
 }
 
 .topics-bar .topic-tag:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  opacity: 0.9;
 }
 
 .topics-bar .topic-tag.active {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  opacity: 1;
 }
 
-/* 标签激活态加深 (来自第二个块) */
 .topics-bar .topic-tag.topic-daily.active {
   background-color: #c53030;
 }
@@ -1256,6 +1214,7 @@ const updateArrowVisibility = () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  margin-bottom: 20px;
 }
 
 .post-card {
@@ -1303,25 +1262,6 @@ const updateArrowVisibility = () => {
   object-fit: cover;
 }
 
-.comment-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.comment-avatar .avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .author-text {
   display: flex;
   flex-direction: column;
@@ -1340,14 +1280,14 @@ const updateArrowVisibility = () => {
 }
 
 .post-card .topic-tag {
-  font-size: 14px;
-  padding: 6px 12px;
+  font-size: 12px;
+  padding: 4px 12px;
   border-radius: 20px;
   font-weight: 500;
   white-space: nowrap;
   cursor: default;
-  margin-left: 10px;
 }
+
 .post-card .topic-tag.topic-daily {
   background-color: #e53e3e;
   color: #ffffff;
@@ -1410,10 +1350,9 @@ const updateArrowVisibility = () => {
 .post-image-item img {
   max-width: 200px;
   max-height: 150px;
-  border-radius: 4px;
+  border-radius: 8px;
   border: 1px solid #eee;
   cursor: pointer;
-  margin-top: 8px;
   transition: transform 0.2s ease;
 }
 
@@ -1436,15 +1375,10 @@ const updateArrowVisibility = () => {
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
-  user-select: none;
 }
 
 .action-btn:hover {
   color: #1890ff;
-}
-
-.action-btn.active {
-  color: #ff4d4f;
 }
 
 .action-btn.delete-btn:hover {
@@ -1503,6 +1437,7 @@ const updateArrowVisibility = () => {
   justify-content: center;
   font-size: 16px;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .comment-content {
@@ -1608,39 +1543,29 @@ const updateArrowVisibility = () => {
   margin: 0;
 }
 
-/* ==================== 优化后的发布栏样式 (来自第一个块) ==================== */
+/* ==================== 发布栏样式 - 修复布局 ==================== */
 .publish-bar {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 700px;
+  background: white;
   padding: 16px 20px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 100;
+}
+
+/* 第一行：选择话题 + 上传图片 */
+.publish-row {
   display: flex;
   gap: 12px;
-  align-items: flex-start;
-  transition: all 0.3s ease;
-}
-
-/* 响应式居中 */
-@media (min-width: 768px) {
-  .publish-bar {
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 700px;
-    border-radius: 20px 20px 0 0;
-  }
-}
-
-@media (max-width: 767px) {
-  .publish-bar {
-    padding: 12px 16px;
-    gap: 8px;
-  }
+  align-items: center;
 }
 
 .publish-topic-select {
@@ -1648,19 +1573,43 @@ const updateArrowVisibility = () => {
   width: 110px;
 }
 
+.publish-topic-select :deep(.el-select) {
+  width: 100%;
+}
+
+/* 上传按钮 */
+.upload-section {
+  flex-shrink: 0;
+}
+
+.upload-section :deep(.el-button) {
+  border-radius: 24px;
+  background-color: #f5f7fa;
+  border: 1px solid #e5e5e5;
+  color: #606266;
+  transition: all 0.2s ease;
+}
+
+.upload-section :deep(.el-button:hover) {
+  background-color: #eef2f6;
+  color: #409eff;
+  border-color: #409eff;
+}
+
+/* 第二行：输入区域 */
 .publish-input-wrapper {
   flex: 1;
-  min-width: 0;
 }
 
 .input-item {
   margin-bottom: 8px;
 }
+
 .input-item:last-child {
   margin-bottom: 0;
 }
 
-/* 优化输入框样式 */
+/* 输入框样式 */
 .input-item :deep(.el-input__wrapper) {
   border-radius: 24px;
   background-color: #f5f7fa;
@@ -1668,9 +1617,11 @@ const updateArrowVisibility = () => {
   transition: all 0.2s ease;
   box-shadow: none;
 }
+
 .input-item :deep(.el-input__wrapper:hover) {
   background-color: #eef2f6;
 }
+
 .input-item :deep(.el-input__wrapper.is-focus) {
   background-color: #fff;
   border-color: #409eff;
@@ -1686,54 +1637,48 @@ const updateArrowVisibility = () => {
   padding: 12px 16px;
   resize: none;
 }
+
 .input-item :deep(.el-textarea__inner:hover) {
   background-color: #eef2f6;
 }
+
 .input-item :deep(.el-textarea__inner:focus) {
   background-color: #fff;
   border-color: #409eff;
   box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
 }
 
-/* 上传按钮样式 */
-.upload-section :deep(.el-button) {
-  border-radius: 24px;
-  background-color: #f5f7fa;
-  border: 1px solid transparent;
-  color: #606266;
-  transition: all 0.2s ease;
-}
-.upload-section :deep(.el-button:hover) {
-  background-color: #eef2f6;
-  color: #409eff;
-}
-.upload-section :deep(.el-button:active) {
-  transform: scale(0.98);
+/* 发布按钮 */
+.publish-action {
+  display: flex;
+  justify-content: flex-end;
 }
 
-/* 发布按钮样式 */
 .publish-action :deep(.el-button) {
   border-radius: 24px;
-  padding: 10px 24px;
+  padding: 10px 28px;
   font-weight: 500;
   background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
   border: none;
   transition: all 0.2s ease;
 }
+
 .publish-action :deep(.el-button:hover) {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
+
 .publish-action :deep(.el-button:active) {
   transform: translateY(0);
 }
+
 .publish-action :deep(.el-button.is-disabled) {
   background: #e0e3e7;
   transform: none;
   box-shadow: none;
 }
 
-/* 图片预览容器优化 */
+/* 图片预览容器 */
 .image-preview-container {
   display: flex;
   flex-wrap: wrap;
@@ -1754,6 +1699,7 @@ const updateArrowVisibility = () => {
   transition: all 0.2s ease;
   border: 2px solid #f0f0f0;
 }
+
 .image-preview-item:hover {
   transform: scale(1.05);
   border-color: #409eff;
@@ -1782,63 +1728,58 @@ const updateArrowVisibility = () => {
   opacity: 0;
   transition: all 0.2s ease;
   font-size: 12px;
-  backdrop-filter: blur(4px);
 }
+
 .image-preview-item:hover .image-delete-btn {
   opacity: 1;
 }
+
 .image-delete-btn:hover {
   background: #ff4d4f;
   transform: scale(1.1);
 }
 
-/* 标题输入框特殊样式 */
-.input-item:first-child :deep(.el-input__wrapper) {
-  padding: 4px 16px;
-}
-
-/* ==================== 移动端适配补充 ==================== */
+/* ==================== 移动端适配 ==================== */
 @media (max-width: 768px) {
   .content-area {
     padding: 12px;
   }
+
   .topics-bar {
     padding: 8px 12px;
     gap: 8px;
   }
+
   .topic-tag {
     padding: 6px 12px;
     font-size: 13px;
   }
+
   .publish-bar {
     padding: 12px 16px;
   }
+
   .publish-topic-select {
-    width: 95px;
+    width: 90px;
   }
+
+  .upload-section :deep(.el-button) {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
   .image-preview-item {
     width: 52px;
     height: 52px;
   }
+
   .publish-action :deep(.el-button) {
-    padding: 8px 18px;
+    padding: 8px 20px;
     font-size: 13px;
   }
-  .input-item :deep(.el-textarea__inner) {
-    font-size: 13px;
-    padding: 10px 14px;
-  }
+
   .post-actions {
     gap: 20px;
-  }
-  .image-preview-container {
-    max-height: 80px;
-  }
-  .post-preview-content {
-    max-width: 95%;
-  }
-  .post-preview-image {
-    max-height: 70vh;
   }
 }
 </style>
