@@ -226,8 +226,12 @@ const loadCategories = async () => {
     console.log('开始加载分类...')
     const res = await forumApi.getCategories()
     console.log('加载分类返回:', res)
-    categoryList.value = res || []
+    categoryList.value = res
     console.log('分类列表:', categoryList.value)
+
+    if (categoryList.value.length > 0 && !publishCategoryId.value) {
+      publishCategoryId.value = categoryList.value[0]!.id
+    }
   } catch (error) {
     ElMessage.error('加载分类失败')
     console.error('加载分类失败:', error)
@@ -1043,7 +1047,7 @@ const updateArrowVisibility = () => {
 </template>
 
 <style scoped>
-/* 样式保持不变 */
+/* ==================== 基础布局与容器 ==================== */
 .campus-forum {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -1060,6 +1064,7 @@ const updateArrowVisibility = () => {
   margin: 0 auto;
 }
 
+/* ==================== 主题标签滚动区域 ==================== */
 .topics-container {
   position: relative;
   margin-bottom: 20px;
@@ -1117,11 +1122,23 @@ const updateArrowVisibility = () => {
   right: 0;
 }
 
+/* 标签通用样式 (来自第二个块) */
+.topics-bar .topic-tag {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8e8e8;
+}
+
+/* 标签默认样式 (非主题色) */
 .topics-bar .topic-tag:not([class*='topic-']) {
   background-color: #ffffff !important;
   color: #000000 !important;
   border: 1px solid #e5e5e5 !important;
-  border-radius: 20px !important;
   box-shadow: none !important;
 }
 
@@ -1139,6 +1156,86 @@ const updateArrowVisibility = () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
+/* 主题标签颜色 (来自第二个块) */
+.topics-bar .topic-tag.topic-daily {
+  background-color: #e53e3e;
+  color: #ffffff;
+  border-color: #e53e3e;
+}
+.topics-bar .topic-tag.topic-study {
+  background-color: #4299e1;
+  color: #ffffff;
+  border-color: #4299e1;
+}
+.topics-bar .topic-tag.topic-food {
+  background-color: #ed8936;
+  color: #ffffff;
+  border-color: #ed8936;
+}
+.topics-bar .topic-tag.topic-activity {
+  background-color: #38b2ac;
+  color: #ffffff;
+  border-color: #38b2ac;
+}
+.topics-bar .topic-tag.topic-help {
+  background-color: #9f7aea;
+  color: #ffffff;
+  border-color: #9f7aea;
+}
+.topics-bar .topic-tag.topic-lost {
+  background-color: #e53e3e;
+  color: #ffffff;
+  border-color: #e53e3e;
+}
+.topics-bar .topic-tag.topic-love {
+  background-color: #ec4899;
+  color: #ffffff;
+  border-color: #ec4899;
+}
+.topics-bar .topic-tag.topic-secondhand {
+  background-color: #718096;
+  color: #ffffff;
+  border-color: #718096;
+}
+
+.topics-bar .topic-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0.9;
+}
+
+.topics-bar .topic-tag.active {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 1;
+}
+
+/* 标签激活态加深 (来自第二个块) */
+.topics-bar .topic-tag.topic-daily.active {
+  background-color: #c53030;
+}
+.topics-bar .topic-tag.topic-study.active {
+  background-color: #3182ce;
+}
+.topics-bar .topic-tag.topic-food.active {
+  background-color: #dd6b20;
+}
+.topics-bar .topic-tag.topic-activity.active {
+  background-color: #319795;
+}
+.topics-bar .topic-tag.topic-help.active {
+  background-color: #805ad5;
+}
+.topics-bar .topic-tag.topic-lost.active {
+  background-color: #c53030;
+}
+.topics-bar .topic-tag.topic-love.active {
+  background-color: #d53f8c;
+}
+.topics-bar .topic-tag.topic-secondhand.active {
+  background-color: #4a5568;
+}
+
+/* ==================== 帖子卡片 ==================== */
 .posts-container {
   display: flex;
   flex-direction: column;
@@ -1199,6 +1296,7 @@ const updateArrowVisibility = () => {
   margin-top: 2px;
 }
 
+/* 帖子内标签样式 (来自第二个块) */
 .post-card .topic-tag {
   font-size: 14px;
   padding: 6px 12px;
@@ -1208,147 +1306,37 @@ const updateArrowVisibility = () => {
   cursor: default;
   margin-left: 10px;
 }
-
 .post-card .topic-tag.topic-daily {
   background-color: #e53e3e;
   color: #ffffff;
 }
-
 .post-card .topic-tag.topic-study {
   background-color: #4299e1;
   color: #ffffff;
 }
-
 .post-card .topic-tag.topic-food {
   background-color: #ed8936;
   color: #ffffff;
 }
-
 .post-card .topic-tag.topic-activity {
   background-color: #38b2ac;
   color: #ffffff;
 }
-
 .post-card .topic-tag.topic-help {
   background-color: #9f7aea;
   color: #ffffff;
 }
-
 .post-card .topic-tag.topic-lost {
   background-color: #e53e3e;
   color: #ffffff;
 }
-
 .post-card .topic-tag.topic-love {
   background-color: #ec4899;
   color: #ffffff;
 }
-
 .post-card .topic-tag.topic-secondhand {
   background-color: #718096;
   color: #ffffff;
-}
-
-.topics-bar .topic-tag {
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e8e8e8;
-}
-
-.topics-bar .topic-tag.topic-daily {
-  background-color: #e53e3e;
-  color: #ffffff;
-  border-color: #e53e3e;
-}
-
-.topics-bar .topic-tag.topic-study {
-  background-color: #4299e1;
-  color: #ffffff;
-  border-color: #4299e1;
-}
-
-.topics-bar .topic-tag.topic-food {
-  background-color: #ed8936;
-  color: #ffffff;
-  border-color: #ed8936;
-}
-
-.topics-bar .topic-tag.topic-activity {
-  background-color: #38b2ac;
-  color: #ffffff;
-  border-color: #38b2ac;
-}
-
-.topics-bar .topic-tag.topic-help {
-  background-color: #9f7aea;
-  color: #ffffff;
-  border-color: #9f7aea;
-}
-
-.topics-bar .topic-tag.topic-lost {
-  background-color: #e53e3e;
-  color: #ffffff;
-  border-color: #e53e3e;
-}
-
-.topics-bar .topic-tag.topic-love {
-  background-color: #ec4899;
-  color: #ffffff;
-  border-color: #ec4899;
-}
-
-.topics-bar .topic-tag.topic-secondhand {
-  background-color: #718096;
-  color: #ffffff;
-  border-color: #718096;
-}
-
-.topics-bar .topic-tag:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  opacity: 0.9;
-}
-
-.topics-bar .topic-tag.active {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  opacity: 1;
-}
-
-.topics-bar .topic-tag.topic-daily.active {
-  background-color: #c53030;
-}
-
-.topics-bar .topic-tag.topic-study.active {
-  background-color: #3182ce;
-}
-
-.topics-bar .topic-tag.topic-food.active {
-  background-color: #dd6b20;
-}
-
-.topics-bar .topic-tag.topic-activity.active {
-  background-color: #319795;
-}
-
-.topics-bar .topic-tag.topic-help.active {
-  background-color: #805ad5;
-}
-
-.topics-bar .topic-tag.topic-lost.active {
-  background-color: #c53030;
-}
-
-.topics-bar .topic-tag.topic-love.active {
-  background-color: #d53f8c;
-}
-
-.topics-bar .topic-tag.topic-secondhand.active {
-  background-color: #4a5568;
 }
 
 .post-content {
@@ -1429,6 +1417,7 @@ const updateArrowVisibility = () => {
   font-size: 13px;
 }
 
+/* ==================== 评论区 ==================== */
 .comments-section {
   margin-top: 16px;
   padding-top: 16px;
@@ -1503,6 +1492,16 @@ const updateArrowVisibility = () => {
   margin: 0;
 }
 
+.comment-delete {
+  color: #ff4d4f;
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+.comment-delete:hover {
+  color: #ff7875;
+}
+
 .no-comments {
   text-align: center;
   padding: 20px;
@@ -1510,17 +1509,15 @@ const updateArrowVisibility = () => {
   font-size: 14px;
 }
 
-.loading-state {
-  text-align: center;
-  padding: 40px;
-  color: #8c8c8c;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+.comment-input-area {
+  margin-top: 12px;
 }
 
+.comment-upload-section {
+  margin-bottom: 8px;
+}
+
+.loading-state,
 .loading-comments {
   text-align: center;
   padding: 20px;
@@ -1550,25 +1547,6 @@ const updateArrowVisibility = () => {
   padding: 20px;
 }
 
-.comment-delete {
-  color: #ff4d4f;
-  cursor: pointer;
-  font-size: 14px;
-  transition: color 0.2s ease;
-}
-
-.comment-delete:hover {
-  color: #ff7875;
-}
-
-.comment-input-area {
-  margin-top: 12px;
-}
-
-.comment-upload-section {
-  margin-bottom: 8px;
-}
-
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -1588,63 +1566,156 @@ const updateArrowVisibility = () => {
   margin: 0;
 }
 
+/* ==================== 优化后的发布栏样式 (来自第一个块) ==================== */
 .publish-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 700px;
-  background: white;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
   padding: 16px 20px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   gap: 12px;
-  align-items: flex-end;
+  align-items: flex-start;
+  transition: all 0.3s ease;
+}
+
+/* 响应式居中 */
+@media (min-width: 768px) {
+  .publish-bar {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 700px;
+    border-radius: 20px 20px 0 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .publish-bar {
+    padding: 12px 16px;
+    gap: 8px;
+  }
 }
 
 .publish-topic-select {
   flex-shrink: 0;
+  width: 110px;
 }
 
 .publish-input-wrapper {
   flex: 1;
+  min-width: 0;
 }
 
 .input-item {
   margin-bottom: 8px;
 }
-
-.publish-action {
-  flex-shrink: 0;
+.input-item:last-child {
+  margin-bottom: 0;
 }
 
-.upload-section {
-  margin-bottom: 8px;
+/* 优化输入框样式 */
+.input-item :deep(.el-input__wrapper) {
+  border-radius: 24px;
+  background-color: #f5f7fa;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+.input-item :deep(.el-input__wrapper:hover) {
+  background-color: #eef2f6;
+}
+.input-item :deep(.el-input__wrapper.is-focus) {
+  background-color: #fff;
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
 }
 
+.input-item :deep(.el-textarea__inner) {
+  border-radius: 20px;
+  background-color: #f5f7fa;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  padding: 12px 16px;
+  resize: none;
+}
+.input-item :deep(.el-textarea__inner:hover) {
+  background-color: #eef2f6;
+}
+.input-item :deep(.el-textarea__inner:focus) {
+  background-color: #fff;
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+}
+
+/* 上传按钮样式 */
+.upload-section :deep(.el-button) {
+  border-radius: 24px;
+  background-color: #f5f7fa;
+  border: 1px solid transparent;
+  color: #606266;
+  transition: all 0.2s ease;
+}
+.upload-section :deep(.el-button:hover) {
+  background-color: #eef2f6;
+  color: #409eff;
+}
+.upload-section :deep(.el-button:active) {
+  transform: scale(0.98);
+}
+
+/* 发布按钮样式 */
+.publish-action :deep(.el-button) {
+  border-radius: 24px;
+  padding: 10px 24px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  border: none;
+  transition: all 0.2s ease;
+}
+.publish-action :deep(.el-button:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+.publish-action :deep(.el-button:active) {
+  transform: translateY(0);
+}
+.publish-action :deep(.el-button.is-disabled) {
+  background: #e0e3e7;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 图片预览容器优化 */
 .image-preview-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 12px;
-  max-height: 100px;
+  max-height: 80px;
   overflow-y: auto;
+  padding: 4px 0;
 }
 
 .image-preview-item {
   position: relative;
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
+  border: 2px solid #f0f0f0;
 }
-
 .image-preview-item:hover {
   transform: scale(1.05);
+  border-color: #409eff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .preview-image {
@@ -1655,13 +1726,13 @@ const updateArrowVisibility = () => {
 
 .image-delete-btn {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: 4px;
+  right: 4px;
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #000000;
-  color: #ffffff;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1669,65 +1740,61 @@ const updateArrowVisibility = () => {
   opacity: 0;
   transition: all 0.2s ease;
   font-size: 12px;
-  border: none;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
 }
-
 .image-preview-item:hover .image-delete-btn {
   opacity: 1;
 }
-
 .image-delete-btn:hover {
-  background: #333333;
+  background: #ff4d4f;
+  transform: scale(1.1);
 }
 
-.preview-error p {
-  font-size: 16px;
-  margin: 0;
+/* 标题输入框特殊样式 */
+.input-item:first-child :deep(.el-input__wrapper) {
+  padding: 4px 16px;
 }
 
+/* ==================== 移动端适配补充 ==================== */
 @media (max-width: 768px) {
   .content-area {
     padding: 12px;
   }
-
   .topics-bar {
     padding: 8px 12px;
     gap: 8px;
   }
-
   .topic-tag {
     padding: 6px 12px;
     font-size: 13px;
   }
-
   .publish-bar {
-    padding: 12px;
-    gap: 8px;
+    padding: 12px 16px;
   }
-
   .publish-topic-select {
-    width: 110px !important;
+    width: 95px;
   }
-
+  .image-preview-item {
+    width: 52px;
+    height: 52px;
+  }
+  .publish-action :deep(.el-button) {
+    padding: 8px 18px;
+    font-size: 13px;
+  }
+  .input-item :deep(.el-textarea__inner) {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
   .post-actions {
     gap: 20px;
   }
-
   .image-preview-container {
     max-height: 80px;
   }
-
-  .image-preview-item {
-    width: 60px;
-    height: 60px;
-  }
-
   .post-preview-content {
     max-width: 95%;
   }
-
   .post-preview-image {
     max-height: 70vh;
   }

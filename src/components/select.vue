@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 // 分类类型
 interface Category {
   id: number
@@ -14,16 +13,16 @@ const props = defineProps({
   categoryList: {
     type: Array as () => Category[],
     required: true,
-    default: () => []
+    default: () => [],
   },
   modelValue: {
     type: [Number, String],
-    default: ''
+    default: '',
   },
   placeholder: {
     type: String,
-    default: '选择分类'
-  }
+    default: '选择分类',
+  },
 })
 
 // 定义emit
@@ -42,6 +41,7 @@ const handleChange = (value: number | string) => {
     <el-select
       :model-value="modelValue"
       :placeholder="placeholder"
+      :teleported="true"
       @update:model-value="handleChange"
     >
       <el-option
