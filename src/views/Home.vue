@@ -82,236 +82,8 @@ onMounted(() => {
 /* 主容器 */
 .smart-campus-home {
   min-height: 100vh;
-  background-color: var(--bg-color);
-  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
-}
-
-/* 顶部导航栏 */
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--white);
-  box-shadow: var(--shadow-sm);
-  z-index: 100;
-  border-bottom: 1px solid var(--border-color-light);
-}
-
-.navbar-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  height: 70px;
-}
-
-/* Logo区域 */
-.logo {
-  display: flex;
-  align-items: center;
-}
-
-.logo-placeholder {
-  padding: 8px 16px;
-  background-color: var(--primary-color);
-  color: var(--white);
-  border-radius: var(--border-radius-md);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* 导航菜单 */
-.nav-menu {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-
-.nav-menu.mobile-menu {
-  display: none;
-}
-
-.nav-item {
-  position: relative;
-  padding: 12px 16px;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-  border-radius: var(--border-radius-md);
-}
-
-.nav-item:hover {
-  color: var(--primary-color);
-  background-color: var(--bg-color-light);
-}
-
-.nav-item.active {
-  color: var(--primary-color);
-  font-weight: 600;
-}
-
-.nav-item.has-submenu::after {
-  content: '▼';
-  margin-left: 6px;
-  font-size: 12px;
-  transition: var(--transition);
-}
-
-/* 子菜单悬浮层 */
-.submenu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background-color: var(--white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 12px 0;
-  min-width: 160px;
-  z-index: 200;
-  animation: slideDown 0.2s ease;
-}
-
-.submenu-item {
-  padding: 12px 20px;
-  font-size: 14px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-  white-space: nowrap;
-}
-
-.submenu-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
-}
-
-/* 移动端子菜单 */
-.mobile-submenu {
-  background-color: var(--bg-color-light);
-  border-radius: var(--border-radius-md);
-  margin-top: 8px;
-  padding: 8px 0;
-}
-
-.mobile-submenu-item {
-  padding: 10px 20px;
-  font-size: 14px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.mobile-submenu-item:hover {
-  background-color: var(--primary-color);
-  color: var(--white);
-}
-
-/* 右侧操作区 */
-.nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-/* 登录按钮 */
-.btn-login {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background-color: var(--primary-color);
-  color: var(--white);
-  border: 1px solid var(--primary-color);
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  transition: var(--transition);
-}
-
-.btn-login:hover {
-  background-color: var(--primary-color-dark);
-  border-color: var(--primary-color-dark);
-}
-
-.login-icon {
-  font-size: 16px;
-}
-
-/* 个人中心 */
-.user-center {
-  position: relative;
-}
-
-.btn-user-center {
-  padding: 10px 20px;
-  background-color: transparent;
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  transition: var(--transition);
-}
-
-.btn-user-center:hover {
-  background-color: var(--bg-color-light);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-/* 个人中心下拉菜单 */
-.user-center-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background-color: var(--white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 8px 0;
-  min-width: 140px;
-  z-index: 200;
-  margin-top: 8px;
-}
-
-.dropdown-item {
-  padding: 12px 20px;
-  font-size: 14px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.dropdown-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
-}
-
-.dropdown-item.register {
-  color: var(--primary-color);
-  border-bottom: 1px solid var(--border-color-light);
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-}
-
-.dropdown-item.register:hover {
-  background-color: var(--primary-color);
-  color: var(--white);
-}
-
-.dropdown-item.logout {
-  color: var(--accent-color);
-}
-
-.dropdown-item.logout:hover {
-  background-color: var(--accent-color);
-  color: var(--white);
+  background-color: var(--color-bg);
+  font-family: var(--font-family);
 }
 
 /* 主视觉区 */
@@ -323,11 +95,11 @@ onMounted(() => {
   justify-content: center;
   background: linear-gradient(
     135deg,
-    var(--primary-color) 0%,
-    var(--primary-color-light) 50%,
+    var(--color-primary) 0%,
+    var(--color-primary-light) 50%,
     #1e3a8a 100%
   );
-  color: var(--white);
+  color: var(--color-bg-card);
   position: relative;
   overflow: hidden;
 }
@@ -367,7 +139,7 @@ onMounted(() => {
 /* 底部功能模块区 */
 .features-section {
   padding: 80px 20px;
-  background: linear-gradient(180deg, var(--bg-color) 0%, #f8fafc 100%);
+  background: linear-gradient(180deg, var(--color-bg) 0%, #f8fafc 100%);
   position: relative;
 }
 
@@ -381,7 +153,7 @@ onMounted(() => {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    var(--primary-color-light) 50%,
+    var(--color-primary-light) 50%,
     transparent 100%
   );
 }
@@ -395,8 +167,8 @@ onMounted(() => {
 }
 
 .feature-card {
-  background-color: var(--white);
-  border-radius: var(--border-radius-xl);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-xl);
   padding: 40px 32px;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -435,114 +207,23 @@ onMounted(() => {
 .card-title {
   font-size: 24px;
   font-weight: 600;
-  color: var(--accent-color);
+  color: var(--color-danger);
   margin-bottom: 16px;
 }
 
 .card-description {
   font-size: 16px;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 12px;
 }
 
 .card-details {
   font-size: 14px;
-  color: var(--text-color-secondary);
+  color: var(--color-text-secondary);
   line-height: 1.5;
 }
 
-/* 登录弹窗样式 */
-.modal-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text-color);
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-color);
-}
-
-.form-group input {
-  padding: 12px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  transition: var(--transition);
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1);
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.btn-cancel {
-  flex: 1;
-  padding: 12px 20px;
-  background-color: transparent;
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  transition: var(--transition);
-}
-
-.btn-cancel:hover {
-  background-color: var(--bg-color-light);
-}
-
-.btn-login-submit {
-  flex: 1;
-  padding: 12px 20px;
-  background-color: var(--primary-color);
-  color: var(--white);
-  border: 1px solid var(--primary-color);
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  transition: var(--transition);
-}
-
-.btn-login-submit:hover {
-  background-color: var(--primary-color-dark);
-  border-color: var(--primary-color-dark);
-}
-
 /* 动画 */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -556,35 +237,6 @@ onMounted(() => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .navbar-container {
-    padding: 0 16px;
-    height: 60px;
-  }
-
-  .nav-menu {
-    display: none;
-  }
-
-  .nav-menu.mobile-menu {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: var(--white);
-    box-shadow: var(--shadow-lg);
-    border-top: 1px solid var(--border-color-light);
-    padding: 16px;
-    gap: 8px;
-  }
-
-  .nav-item {
-    padding: 12px 16px;
-    border-radius: var(--border-radius-md);
-    border: 1px solid var(--border-color-light);
-  }
-
   .hero-section {
     padding: 120px 16px 60px;
   }
@@ -608,16 +260,6 @@ onMounted(() => {
 
   .card-title {
     font-size: 20px;
-  }
-
-  .nav-actions {
-    gap: 12px;
-  }
-
-  .btn-login,
-  .btn-user-center {
-    padding: 8px 16px;
-    font-size: 13px;
   }
 }
 

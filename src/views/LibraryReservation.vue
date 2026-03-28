@@ -882,12 +882,35 @@ const handleSeatClick = async (seatId: string, status: SeatStatus) => {
 // 提交预约
 const submitReservation = async () => {
   const roomName = (reservationInfo.value as { room?: string }).room || ''
+
+  // 先计算结束时间，用于显示确认信息
+  const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value)
+  if (!slot) {
+    ElMessage.error('请选择时间')
+    return
+  }
+
+  const startTime = slot.start
+  const duration = reservationInfo.value.duration * 60 // 转换为分钟
+  const [hours, minutes] = startTime.split(':').map(Number)
+
+  // 计算结束时间
+  let totalMinutes = hours * 60 + minutes + duration
+  const nextDay = Math.floor(totalMinutes / (24 * 60))
+  totalMinutes = totalMinutes % (24 * 60)
+
+  const endHours = Math.floor(totalMinutes / 60)
+  const endMinutes = totalMinutes % 60
+  const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
+  const dateNote = nextDay > 0 ? ` (次日)` : ''
+
   ElMessageBox.confirm(
     `确认预约以下信息？<br/><br/>
     教室：${roomName}<br/>
     日期：${reservationInfo.value.date}<br/>
     时间：${reservationInfo.value.time}<br/>
     时长：${reservationInfo.value.duration}小时<br/>
+    结束时间：${endTime}${dateNote}<br/>
     座位：${reservationInfo.value.seats.join(', ')}`,
     '确认预约',
     {
@@ -899,35 +922,7 @@ const submitReservation = async () => {
   )
     .then(async () => {
       try {
-        const slot = timeSlots.find((t) => t.id === selectedTimeSlot.value)
-        if (!slot) {
-          ElMessage.error('请选择时间')
-          return
-        }
-
         const classroomId = parseInt(selectedRoom.value)
-        const startTime = slot.start
-        const duration = reservationInfo.value.duration * 60 // 转换为分钟
-
-        const timeParts = startTime.split(':').map(Number)
-        if (timeParts.length < 2) {
-          ElMessage.error('时间格式错误')
-          return
-        }
-        const [hours, minutes] = timeParts
-        if (
-          typeof hours !== 'number' ||
-          typeof minutes !== 'number' ||
-          isNaN(hours) ||
-          isNaN(minutes)
-        ) {
-          ElMessage.error('时间格式错误')
-          return
-        }
-
-        const endHours = hours + Math.floor((minutes + duration) / 60)
-        const endMinutes = (minutes + duration) % 60
-        const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
 
         // 为每个选中的座位创建预约
         for (const seatId of selectedSeats.value) {
@@ -1006,7 +1001,6 @@ const handleLeaveConfirm = async () => {
     await loadSeats(classroomId)
   } catch (error) {
     console.error('离开座位异常:', error)
-    ElMessage.error('系统内部错误，请稍后重试')
   }
 }
 
@@ -1033,7 +1027,6 @@ const handleLeaveSeatFromDetail = async (reservationId: number) => {
     await refreshAllClassroomData()
   } catch (error) {
     console.error('离开座位异常:', error)
-    ElMessage.error('系统内部错误，请稍后重试')
   }
 }
 
@@ -1073,7 +1066,6 @@ const handleOccupyConfirm = async () => {
     await refreshAllClassroomData()
   } catch (error) {
     console.error('占用座位异常:', error)
-    ElMessage.error('系统内部错误，请稍后重试')
   }
 }
 
@@ -1098,21 +1090,24 @@ const handleReserveSeatFromDetail = async () => {
   const startTime = slot?.start || '09:00'
   const duration = reservationInfo.value.duration // 使用用户选择的时长
 
-  // 修复后的代码段
-  const timeParts = startTime.split(':').map(Number)
-  if (timeParts.length < 2) {
-    ElMessage.error('时间格式错误')
-    return
-  }
-  const [hours, minutes] = timeParts
-  if (typeof hours !== 'number' || typeof minutes !== 'number' || isNaN(hours) || isNaN(minutes)) {
-    ElMessage.error('时间格式错误')
-    return
-  }
+  // ✅ 修复时间计算
+  const [hours, minutes] = startTime.split(':').map(Number)
 
-  const endHours = hours + Math.floor((minutes + duration) / 60)
-  const endMinutes = (minutes + duration) % 60
+  // 计算总分钟数
+  let totalMinutes = hours * 60 + minutes + duration * 60
+
+  // 处理跨天情况
+  const nextDay = Math.floor(totalMinutes / (24 * 60))
+  totalMinutes = totalMinutes % (24 * 60)
+
+  const endHours = Math.floor(totalMinutes / 60)
+  const endMinutes = totalMinutes % 60
+
+  // 格式化结束时间
   const endTime = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`
+
+  // 如果有跨天，在提示中显示
+  const dateNote = nextDay > 0 ? ` (次日)` : ''
 
   // 弹出确认预约弹窗
   ElMessageBox.confirm(
@@ -1140,7 +1135,7 @@ const handleReserveSeatFromDetail = async () => {
       </div>
       <div class="form-item">
         <span class="form-label">结束时间：</span>
-        <span class="form-value">${endTime}</span>
+        <span class="form-value">${endTime}${dateNote}</span>
       </div>
     </div>`,
     '确认预约',
@@ -1167,10 +1162,8 @@ const handleReserveSeatFromDetail = async () => {
       ElMessage.success('预约成功！')
 
       await loadSeats(parseInt(selectedRoom.value))
-
       await checkUserActiveStatus()
       await fetchActiveReservationCount()
-
       await refreshAllClassroomData()
     })
     .catch(() => {
