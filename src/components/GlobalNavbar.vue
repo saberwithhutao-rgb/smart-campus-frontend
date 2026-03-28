@@ -4,7 +4,7 @@
     <div class="navbar-container">
       <!-- Logo区域 -->
       <div class="logo" @click="goToIndex">
-        <div class="logo-placeholder">logo</div>
+        <img src="/src/img/logo.png" alt="智慧校园" class="logo-image" />
       </div>
 
       <!-- 导航菜单 -->
@@ -252,68 +252,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 全局变量 - 使用 CSS 变量 */
-:root {
-  /* 主色调 */
-  --primary-color: #409eff;
-  --primary-color-light: #e6f7ff;
-  --primary-color-dark: #1890ff;
-  --accent-color: #165dff;
-
-  /* 中性色 */
-  --text-color-dark: #333;
-  --text-color-medium: #666;
-  --text-color-light: #999;
-  --text-color: #333;
-  --text-color-secondary: #666;
-  --border-color: #e5e7eb;
-  --border-color-light: #f0f2f5;
-  --white: #fff;
-  --bg-color: #f5f7fa;
-  --bg-color-light: #f0f9ff;
-  --bg-color-white: #fff;
-
-  /* 阴影 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-
-  /* 圆角 */
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
-  --border-radius-2xl: 20px;
-
-  /* 过渡 */
-  --transition: all 0.3s ease;
-  --transition-fast: all 0.2s ease;
-}
-
-/* 全局样式 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--color-text);
-  background-color: var(--color-bg);
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
-
-/* 主容器 */
-.study-management-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 顶部导航栏 - 与首页保持一致 */
+/* 顶部导航栏 */
 .navbar {
   position: fixed;
   top: 0;
@@ -342,19 +281,19 @@ body {
   align-items: center;
   cursor: pointer;
   transition: opacity 0.3s ease;
+  height: 50px;
 }
 
 .logo:hover {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
-.logo-placeholder {
-  padding: 8px 16px;
-  background-color: var(--color-primary);
-  color: #fff;
-  border-radius: var(--radius-md);
-  font-size: 16px;
-  font-weight: 600;
+.logo-image {
+  height: 100%;
+  width: auto;
+  max-height: 45px;
+  object-fit: contain;
+  background-color: transparent;
 }
 
 /* 导航菜单 */
@@ -396,7 +335,7 @@ body {
   transition: var(--transition);
 }
 
-/* 子菜单悬浮层 - 与首页保持一致 */
+/* 子菜单悬浮层 */
 .submenu {
   position: absolute;
   top: 100%;
@@ -449,7 +388,7 @@ body {
   color: var(--color-bg-card);
 }
 
-/* 右侧操作区 - 与首页保持一致 */
+/* 右侧操作区 */
 .nav-actions {
   display: flex;
   align-items: center;
@@ -565,32 +504,6 @@ body {
   }
 }
 
-/* 顶部标题栏 */
-.title-bar {
-  height: 60px;
-  background-color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 70px;
-}
-
-.title-text {
-  color: #fff;
-  font-size: 20px;
-  font-weight: bold;
-  margin: 0;
-}
-
-/* 主体内容区 */
-.main-content {
-  display: flex;
-  flex: 1;
-  min-height: calc(100vh - 70px);
-  margin-top: 70px;
-  overflow: hidden;
-}
-
 /* 侧边栏切换按钮 */
 .sidebar-toggle {
   position: fixed;
@@ -610,7 +523,7 @@ body {
 /* 左侧功能栏 */
 .sidebar {
   width: 280px;
-  background-color: #fff;
+  background-color: var(--color-bg-card);
   border-right: 1px solid var(--color-border);
   padding: 20px 0;
   transition: var(--transition);
@@ -676,9 +589,9 @@ body {
   gap: 10px;
   margin-bottom: 20px;
   padding: 10px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .time-btn {
@@ -707,479 +620,7 @@ body {
   box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
 }
 
-/* 内容卡片 */
-/* 自定义卡片样式 */
-.custom-card {
-  margin-bottom: 20px;
-  background-color: #fff;
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
-  transition: box-shadow 0.3s ease;
-  overflow: hidden;
-}
-
-.custom-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* 卡片标题 - 左上角显示 */
-.card-title {
-  padding: 12px 20px;
-  background-color: #fafafa;
-  border-bottom: 1px solid #e8e8e8;
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--color-text);
-  text-align: left;
-}
-
-/* 卡片内容区 */
-.card-content {
-  padding: 20px;
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  position: relative;
-}
-
-/* 统计模块标题 */
-.module-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #666;
-  margin: 0;
-  padding: 0;
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 10;
-}
-
-/* 统计模块提示文字 */
-.module-hint {
-  font-size: 14px;
-  color: var(--color-text);
-  background-color: #fff;
-  padding: 10px;
-  margin: 0;
-  position: absolute;
-  top: 60px;
-  left: 20px;
-  z-index: 10;
-  line-height: 1.5;
-  max-width: calc(100% - 40px);
-  font-weight: bold;
-}
-
-/* 没有标题的提示文字 - 用于分析卡片 */
-.module-hint.no-title {
-  top: 20px;
-}
-
-/* 没有标题的卡片内容 - 调整分析内容的上边距 */
-.no-title-card .analysis-content {
-  margin-top: 60px;
-}
-
-/* 分析内容样式 - 用于显示后端返回的分析内容 */
-.analysis-content {
-  width: 100%;
-  min-height: 200px;
-  padding: 20px;
-  background-color: #fafafa;
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--color-text);
-  transition: all 0.3s ease;
-  margin-top: 100px;
-  align-self: center;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 加载状态 */
-.loading {
-  font-size: 16px;
-  color: var(--color-primary);
-  font-weight: 500;
-}
-
-/* 无数据状态 */
-.no-data {
-  font-size: 16px;
-  color: var(--color-text-light);
-  font-weight: 500;
-}
-
-/* 数据显示样式 */
-.analysis-content pre {
-  text-align: left;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 13px;
-  line-height: 1.4;
-  margin: 0;
-  padding: 10px;
-  background-color: #fff;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  max-height: 300px;
-  overflow-y: auto;
-  width: 100%;
-}
-
-/* 学习仪表板样式 */
-.study-dashboard {
-  padding: 20px;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.search-form {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.form-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.form-control {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.btn-primary {
-  padding: 8px 20px;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.btn-primary:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.btn-primary:disabled {
-  background-color: #c6e2ff;
-  cursor: not-allowed;
-}
-
-.error-message {
-  background-color: #fef0f0;
-  color: var(--color-danger);
-  padding: 15px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.retry-btn {
-  background-color: var(--color-danger);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s ease;
-}
-
-.retry-btn:hover {
-  background-color: var(--color-danger);
-  opacity: 0.8;
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  margin: 20px 0;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(64, 158, 255, 0.2);
-  border-radius: 50%;
-  border-top-color: var(--color-primary);
-  animation: spin 1s ease-in-out infinite;
-  margin-bottom: 16px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-container p {
-  color: var(--color-text-secondary);
-  font-size: 16px;
-  margin: 0;
-}
-
-.statistics-card,
-.suggestions-card {
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* 生成学习建议按钮容器 */
-.generate-suggestion-container {
-  text-align: center;
-  padding: 40px 20px;
-  margin-bottom: 20px;
-}
-
-/* 生成学习建议按钮 */
-.generate-suggestion-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 16px 32px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 50px;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: all 0.3s ease;
-  outline: none;
-  letter-spacing: 0.5px;
-}
-
-.generate-suggestion-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-  transform: translateY(-2px);
-}
-
-.generate-suggestion-btn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
-}
-
-.generate-suggestion-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  box-shadow: none;
-  opacity: 0.7;
-}
-
-/* 学习建议卡片标题 */
-.suggestions-card h3 {
-  color: #333;
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  text-align: left;
-  border-left: 4px solid #667eea;
-  padding-left: 12px;
-}
-
-/* 学习建议列表 */
-.suggestion-list {
-  background-color: white;
-  border-radius: 6px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-/* 学习建议项 */
-.suggestion-item {
-  padding: 16px;
-  margin-bottom: 12px;
-  background-color: #f8f9ff;
-  border-left: 4px solid #667eea;
-  border-radius: 4px;
-  line-height: 1.6;
-  color: #333;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.suggestion-item:last-child {
-  margin-bottom: 0;
-}
-
-.suggestion-item:hover {
-  background-color: #eef0ff;
-  transform: translateX(4px);
-}
-
-h3 {
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.stat-item {
-  background-color: white;
-  padding: 15px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  text-align: center;
-}
-
-.stat-label {
-  display: block;
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 5px;
-}
-
-.stat-value {
-  display: block;
-  font-size: 20px;
-  font-weight: bold;
-  color: #333;
-}
-
-.distribution-section {
-  margin-bottom: 20px;
-}
-
-h4 {
-  color: #666;
-  margin-bottom: 10px;
-}
-
-.distribution-list {
-  background-color: white;
-  padding: 15px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.distribution-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.distribution-item:last-child {
-  border-bottom: none;
-}
-
-/* 可视化图表模块 */
-.visualization-module {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  margin-bottom: 20px;
-  max-width: 1000px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* 完成率进度条 */
-.progress-bar-container {
-  margin-bottom: 20px;
-}
-
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.progress-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.progress-percentage {
-  font-size: 14px;
-  font-weight: bold;
-  color: var(--color-primary);
-}
-
-.progress-bar {
-  width: 100%;
-  height: 12px;
-  background-color: #f0f2f5;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: 6px;
-  transition: width 0.3s ease;
-}
-
-/* 图表容器 */
-.charts-container {
-  display: flex;
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.chart-item {
-  flex: 1;
-  min-height: 300px;
-}
-
-.chart-item h3 {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text);
-  margin-bottom: 10px;
-  text-align: center;
-  /* 确保标题与下方图表水平中心对齐 */
-  width: 100%;
-  display: block;
-}
-
-.donut-chart,
-.pie-chart {
-  width: 100%;
-  height: 280px;
-}
-
-/* 图表容器 */
-.echarts-container {
-  width: 100%;
-  height: 100%;
-  min-height: 260px;
-}
-
-/* 红点样式 - 让菜单项支持红点 */
+/* 红点样式 */
 .nav-item {
   position: relative;
   display: flex;
@@ -1197,31 +638,25 @@ h4 {
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
-  .charts-container {
-    flex-direction: column;
-  }
-
-  .chart-item {
-    min-height: 250px;
-  }
-
-  .donut-chart,
-  .pie-chart {
-    height: 230px;
-  }
-}
-
-/* 响应式设计 */
 @media (max-width: 1024px) {
-  /* 平板端适配 */
   .nav-menu {
     gap: 16px;
   }
 }
 
 @media (max-width: 768px) {
-  /* 移动端适配 */
+  .navbar {
+    height: 60px;
+  }
+
+  .logo {
+    height: 40px;
+  }
+
+  .logo-image {
+    max-height: 35px;
+  }
+
   .navbar-container {
     padding: 0 16px;
     height: 60px;
@@ -1239,7 +674,7 @@ h4 {
     left: 0;
     right: 0;
     background-color: var(--color-bg-card);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg);
     border-top: 1px solid var(--color-border);
     padding: 16px;
     gap: 8px;
@@ -1247,21 +682,14 @@ h4 {
 
   .nav-item {
     padding: 12px 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
   }
 
-  /* 主体内容区适配 */
-  .main-content {
-    min-height: calc(100vh - 60px);
-  }
-
-  /* 侧边栏切换按钮 */
   .sidebar-toggle {
     display: block;
   }
 
-  /* 左侧导航栏适配 */
   .sidebar {
     width: 280px;
     top: 60px;
@@ -1269,18 +697,15 @@ h4 {
     z-index: 100;
   }
 
-  /* 侧边栏折叠状态 */
   .sidebar-collapsed {
     transform: translateX(-100%);
   }
 
-  /* 右侧内容区适配 */
   .content-area {
     margin-left: 0;
     padding: 10px;
   }
 
-  /* 时间导航栏移动端适配 */
   .time-nav {
     flex-direction: column;
     gap: 8px;
@@ -1290,54 +715,6 @@ h4 {
   .time-btn {
     padding: 10px 14px;
     font-size: 13px;
-  }
-
-  /* 内容卡片适配 */
-  /* 自定义卡片移动端适配 */
-  .custom-card {
-    margin-bottom: 10px;
-  }
-
-  .card-content {
-    padding: 15px;
-    min-height: 250px;
-  }
-
-  /* 统计模块标题移动端适配 */
-  .module-title {
-    font-size: 16px;
-  }
-
-  /* 统计模块提示文字移动端适配 */
-  .module-hint {
-    font-size: 13px;
-    padding: 8px;
-    top: 55px;
-    max-width: calc(100% - 30px);
-    background-color: #fff;
-    font-weight: bold;
-  }
-
-  /* 没有标题的提示文字移动端适配 */
-  .module-hint.no-title {
-    top: 20px;
-  }
-
-  /* 没有标题的卡片内容移动端适配 */
-  .no-title-card .analysis-content {
-    margin-top: 50px;
-  }
-
-  /* 分析内容移动端适配 */
-  .analysis-content {
-    padding: 15px;
-    margin-top: 90px;
-    min-height: 180px;
-  }
-
-  /* 图表容器移动端适配 */
-  .echarts-container {
-    min-height: 220px;
   }
 }
 </style>
