@@ -374,12 +374,12 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   padding: 20px;
 }
 
 .forgot-form {
-  background-color: white;
+  background-color: var(--color-bg-card);
   padding: 45px;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -390,10 +390,10 @@ onMounted(() => {
 .forgot-form h2 {
   text-align: center;
   margin-bottom: 35px;
-  color: #333;
+  color: var(--color-text);
   font-size: 28px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -418,8 +418,8 @@ onMounted(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background-color: #e0e0e0;
-  color: #999;
+  background-color: var(--color-border);
+  color: var(--color-text-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -428,35 +428,35 @@ onMounted(() => {
 }
 
 .step.active .step-number {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  color: var(--color-bg-card);
 }
 
 .step.completed .step-number {
-  background-color: #52c41a;
-  color: white;
+  background-color: var(--color-success);
+  color: var(--color-bg-card);
 }
 
 .step-label {
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-light);
 }
 
 .step.active .step-label {
-  color: #667eea;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 .step-line {
   width: 60px;
   height: 2px;
-  background-color: #e0e0e0;
+  background-color: var(--color-border);
   margin: 0 15px;
   margin-bottom: 28px;
 }
 
 .step-line.active {
-  background-color: #52c41a;
+  background-color: var(--color-success);
 }
 
 /* 表单样式 */
@@ -467,7 +467,7 @@ onMounted(() => {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #555;
+  color: var(--color-text-secondary);
   font-weight: 500;
   font-size: 14px;
 }
@@ -475,32 +475,33 @@ onMounted(() => {
 .form-control {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 16px;
   transition: all 0.3s ease;
-  background-color: #fafafa;
+  background-color: var(--color-bg-light);
+  color: var(--color-text);
 }
 
 .form-control:focus {
   outline: none;
-  border-color: #667eea;
-  background-color: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .field-hint {
-  color: #909399;
+  color: var(--color-text-light);
   font-size: 12px;
   margin-top: 4px;
 }
 
 .error-alert {
-  background-color: #fef0f0;
-  border: 1px solid #fde2e2;
-  color: #f56c6c;
+  background-color: var(--color-danger-light, #fef0f0);
+  border: 1px solid var(--color-danger-light, #fde2e2);
+  color: var(--color-danger);
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 25px;
   font-size: 14px;
 }
@@ -518,10 +519,10 @@ onMounted(() => {
 
 .refresh-captcha-btn {
   padding: 0 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  color: var(--color-bg-card);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
@@ -544,20 +545,20 @@ onMounted(() => {
 .captcha-image {
   width: 120px;
   height: 40px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .captcha-image:hover {
   transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .captcha-hint {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-light);
 }
 
 /* 验证码输入 + 重发按钮 */
@@ -572,10 +573,10 @@ onMounted(() => {
 
 .resend-btn {
   padding: 0 20px;
-  background-color: #f5f5f5;
-  color: #666;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  background-color: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 14px;
   white-space: nowrap;
@@ -583,9 +584,9 @@ onMounted(() => {
 }
 
 .resend-btn:hover:not(:disabled) {
-  background-color: #e8e8e8;
-  border-color: #667eea;
-  color: #667eea;
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .resend-btn:disabled {
@@ -597,10 +598,10 @@ onMounted(() => {
 .submit-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  color: var(--color-bg-card);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
@@ -626,7 +627,7 @@ onMounted(() => {
 }
 
 .back-link a {
-  color: #667eea;
+  color: var(--color-primary);
   text-decoration: none;
   font-size: 14px;
 }
@@ -637,17 +638,17 @@ onMounted(() => {
 
 /* 密码强度 */
 .weak {
-  color: #f56c6c;
+  color: var(--color-danger);
   font-weight: bold;
 }
 
 .medium {
-  color: #e6a23c;
+  color: var(--color-warning);
   font-weight: bold;
 }
 
 .strong {
-  color: #67c23a;
+  color: var(--color-success);
   font-weight: bold;
 }
 </style>

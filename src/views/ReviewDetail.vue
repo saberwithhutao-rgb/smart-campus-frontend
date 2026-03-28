@@ -534,7 +534,7 @@ const goBack = () => router.go(-1)
 }
 
 .plan-detail-container {
-  background: #ffffff;
+  background: var(--color-bg-card);
   border-radius: 16px;
   padding: 30px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -554,7 +554,7 @@ const goBack = () => router.go(-1)
 .plan-header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -568,7 +568,7 @@ const goBack = () => router.go(-1)
   gap: 30px;
   margin-bottom: 25px;
   padding: 20px;
-  background: #f8f9fa;
+  background: var(--color-bg-light);
   border-radius: 12px;
 }
 
@@ -585,7 +585,7 @@ const goBack = () => router.go(-1)
 
 .card-header {
   padding: 16px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
 }
 
@@ -623,14 +623,14 @@ const goBack = () => router.go(-1)
   gap: 12px;
   margin-bottom: 24px;
   padding: 16px;
-  background-color: #f8f9fa;
+  background-color: var(--color-bg-light);
   border-radius: 8px;
 }
 
 .filter-label {
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: var(--color-text);
   white-space: nowrap;
 }
 
@@ -640,13 +640,14 @@ const goBack = () => router.go(-1)
 }
 
 .stage-select :deep(.el-input__wrapper) {
-  background-color: #ffffff;
+  background-color: var(--color-bg-card);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .stage-select :deep(.el-input__inner) {
   height: 40px;
   font-size: 14px;
+  color: var(--color-text);
 }
 
 /* 自定义选项 */
@@ -660,7 +661,7 @@ const goBack = () => router.go(-1)
 
 .option-count {
   font-size: 13px;
-  color: #909399;
+  color: var(--color-text-light);
 }
 
 /* ==================== 统计信息 ==================== */
@@ -669,7 +670,7 @@ const goBack = () => router.go(-1)
 }
 
 .stats-info :deep(.el-alert) {
-  background-color: #ecf5ff;
+  background-color: var(--color-primary-light);
   border: none;
   border-radius: 8px;
 }
@@ -693,7 +694,7 @@ const goBack = () => router.go(-1)
   gap: 12px;
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -706,13 +707,13 @@ const goBack = () => router.go(-1)
 
 .suggestion-card:hover {
   transform: translateX(4px);
-  border-color: #409eff;
+  border-color: var(--color-primary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .suggestion-card.current-version {
   background-color: #f0f9eb;
-  border-color: #67c23a;
+  border-color: var(--color-success);
 }
 
 .suggestion-card.current-version:hover {
@@ -728,12 +729,12 @@ const goBack = () => router.go(-1)
 
 .version-number {
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text);
 }
 
 .preview {
   font-size: 14px;
-  color: #606266;
+  color: var(--color-text-secondary);
   line-height: 1.6;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -757,12 +758,13 @@ const goBack = () => router.go(-1)
 .suggestion-dialog :deep(.el-dialog__header) {
   padding: 20px 30px !important;
   margin-right: 0 !important;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .suggestion-dialog :deep(.el-dialog__title) {
   font-size: 18px;
   font-weight: 600;
+  color: var(--color-text);
 }
 
 .suggestion-dialog :deep(.el-dialog__body) {
@@ -779,7 +781,7 @@ const goBack = () => router.go(-1)
 
 /* ==================== 时间线样式 ==================== */
 :deep(.el-timeline-item__timestamp) {
-  color: #909399;
+  color: var(--color-text-light);
   font-size: 13px;
   font-weight: 400;
 }
@@ -789,17 +791,17 @@ const goBack = () => router.go(-1)
 }
 
 :deep(.el-timeline-item__tail) {
-  border-left: 2px solid #e4e7ed;
+  border-left: 2px solid var(--color-border);
 }
 
 :deep(.el-timeline-item__node--primary) {
-  background-color: #409eff;
-  border-color: #409eff;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 :deep(.el-timeline-item__node--info) {
-  background-color: #909399;
-  border-color: #909399;
+  background-color: var(--color-text-light);
+  border-color: var(--color-text-light);
 }
 
 /* ==================== 确认完成对话框 ==================== */
@@ -811,11 +813,12 @@ const goBack = () => router.go(-1)
 .complete-confirm p {
   margin: 8px 0;
   font-size: 16px;
+  color: var(--color-text);
 }
 
 .complete-confirm .tip {
   font-size: 14px;
-  color: #909399;
+  color: var(--color-text-light);
 }
 
 .warning-icon {

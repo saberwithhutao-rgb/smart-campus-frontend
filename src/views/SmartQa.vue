@@ -801,10 +801,10 @@ watch(
   gap: 8px;
   margin-left: 12px;
   padding: 4px 12px;
-  background-color: #e3f2fd;
+  background-color: var(--color-primary-light);
   border-radius: 16px;
   font-size: 13px;
-  color: #1976d2;
+  color: var(--color-primary);
 }
 
 .remove-file {
@@ -812,12 +812,12 @@ watch(
   border: none;
   cursor: pointer;
   font-size: 16px;
-  color: #999;
+  color: var(--color-text-light);
   padding: 0 4px;
 }
 
 .remove-file:hover {
-  color: #f44336;
+  color: var(--color-danger);
 }
 
 .file-input-hidden {
@@ -825,19 +825,19 @@ watch(
 }
 
 .send-button:disabled {
-  background-color: #ccc;
+  background-color: var(--color-text-light);
   cursor: not-allowed;
 }
 
 .send-button:disabled:hover {
-  background-color: #ccc;
+  background-color: var(--color-text-light);
   box-shadow: none;
 }
 
 .smart-qa-container {
   min-height: 100vh;
-  background-color: #f5f7fa;
-  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+  background-color: var(--color-bg);
+  font-family: var(--font-family);
   display: flex;
   flex-direction: column;
 }
@@ -847,11 +847,11 @@ watch(
   top: 0;
   left: 0;
   right: 0;
-  background-color: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background-color: var(--color-bg-card);
+  box-shadow: var(--shadow-sm);
   z-index: 100;
   height: 70px;
-  border-bottom: 1px solid #eef1f5;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .navbar-container {
@@ -866,9 +866,9 @@ watch(
 
 .logo-placeholder {
   padding: 8px 16px;
-  background-color: #165dff;
+  background-color: var(--color-primary);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 16px;
   font-weight: 600;
 }
@@ -884,15 +884,15 @@ watch(
   padding: 12px 16px;
   font-size: 16px;
   font-weight: 500;
-  color: #1d2129;
+  color: var(--color-text);
   cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 8px;
+  transition: var(--transition);
+  border-radius: var(--radius-md);
 }
 
 .nav-item:hover {
-  color: #165dff;
-  background-color: #fafafb;
+  color: var(--color-primary);
+  background-color: var(--color-bg-light);
 }
 
 .nav-item.has-submenu::after {
@@ -905,10 +905,10 @@ watch(
   position: absolute;
   top: 100%;
   left: 0;
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   padding: 12px 0;
   min-width: 160px;
   z-index: 101;
@@ -922,15 +922,15 @@ watch(
 .submenu-item {
   padding: 12px 20px;
   font-size: 14px;
-  color: #1d2129;
+  color: var(--color-text);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   white-space: nowrap;
 }
 
 .submenu-item:hover {
-  background-color: #fafafb;
-  color: #165dff;
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
 }
 
 .nav-actions {
@@ -944,19 +944,19 @@ watch(
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background-color: #165dff;
+  background-color: var(--color-primary);
   color: #fff;
-  border: 1px solid #165dff;
-  border-radius: 8px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   cursor: pointer;
 }
 
 .btn-login:hover {
-  background-color: #0e46cc;
-  border-color: #0e46cc;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .login-icon {
@@ -966,19 +966,19 @@ watch(
 .btn-user-center {
   padding: 10px 20px;
   background-color: transparent;
-  color: #1d2129;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   cursor: pointer;
 }
 
 .btn-user-center:hover {
-  background-color: #fafafb;
-  border-color: #165dff;
-  color: #165dff;
+  background-color: var(--color-bg-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .user-center {
@@ -989,10 +989,10 @@ watch(
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
   min-width: 120px;
   z-index: 102;
 }
@@ -1000,22 +1000,22 @@ watch(
 .dropdown-item {
   padding: 10px 16px;
   font-size: 14px;
-  color: #1d2129;
+  color: var(--color-text);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
 }
 
 .dropdown-item:hover {
-  background-color: #fafafb;
-  color: #165dff;
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
 }
 
 .dropdown-item.logout {
-  color: #f53f3f;
+  color: var(--color-danger);
 }
 
 .dropdown-item.logout:hover {
-  background-color: #fff2f2;
+  background-color: var(--color-danger-light);
 }
 
 /* ===== 主要修复部分 ===== */
@@ -1034,10 +1034,10 @@ watch(
   left: 10px;
   z-index: 99;
   padding: 8px 16px;
-  background-color: #165dff;
+  background-color: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   cursor: pointer;
   display: none;
@@ -1045,14 +1045,13 @@ watch(
 
 .sidebar {
   width: 280px;
-  background-color: #fff;
-  border-right: 1px solid #e5e7eb;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background-color: var(--color-bg-card);
+  border-right: 1px solid var(--color-border);
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
   flex-shrink: 0;
   position: relative;
   z-index: 2;
-  /* 关键修改：flex 布局 + 固定高度 */
   display: flex;
   flex-direction: column;
   height: calc(100vh - 70px);
@@ -1061,7 +1060,7 @@ watch(
 
 .sidebar-header {
   padding: 0 20px 20px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-border-light);
   flex-shrink: 0;
 }
 
@@ -1073,9 +1072,9 @@ watch(
 .sidebar-item {
   padding: 16px 20px;
   font-size: 16px;
-  color: #1d2129;
+  color: var(--color-text);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   border-left: 3px solid transparent;
   display: flex;
   align-items: center;
@@ -1083,14 +1082,14 @@ watch(
 }
 
 .sidebar-item:hover {
-  background-color: #fafafb;
-  color: #165dff;
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
 }
 
 .sidebar-item-active {
-  background-color: #fafafb;
-  color: #165dff !important;
-  border-left-color: #165dff;
+  background-color: var(--color-bg-light);
+  color: var(--color-primary) !important;
+  border-left-color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -1104,7 +1103,7 @@ watch(
   overflow-y: auto;
   padding: 12px;
   margin-top: 8px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--color-border);
 }
 
 .history-item {
@@ -1112,20 +1111,20 @@ watch(
   align-items: flex-start;
   padding: 12px;
   margin-bottom: 8px;
-  background-color: #f5f7fa;
-  border-radius: 8px;
+  background-color: var(--color-bg-light);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s;
   position: relative;
 }
 
 .history-item:hover {
-  background-color: #e9ecef;
+  background-color: var(--color-bg-dark);
 }
 
 .history-item-active {
-  background-color: #e3f2fd;
-  border-left: 3px solid #1976d2;
+  background-color: var(--color-primary-light);
+  border-left: 3px solid var(--color-primary);
 }
 
 .history-item-content {
@@ -1136,7 +1135,7 @@ watch(
 .history-item-title {
   font-weight: 500;
   font-size: 14px;
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -1149,7 +1148,7 @@ watch(
 
 .history-item-preview {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -1158,12 +1157,12 @@ watch(
 
 .history-item-time {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-light);
 }
 
 .history-item-count {
   font-size: 11px;
-  color: #1976d2;
+  color: var(--color-primary);
   margin-top: 2px;
 }
 
@@ -1184,7 +1183,7 @@ watch(
   padding: 4px;
   cursor: pointer;
   font-size: 14px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: background-color 0.2s;
 }
 
@@ -1193,11 +1192,11 @@ watch(
 }
 
 .delete-btn:hover {
-  color: #f44336;
+  color: var(--color-danger);
 }
 
 .rename-btn:hover {
-  color: #1976d2;
+  color: var(--color-primary);
 }
 
 .history-loading,
@@ -1205,7 +1204,7 @@ watch(
 .loading-history {
   text-align: center;
   padding: 20px;
-  color: #999;
+  color: var(--color-text-light);
   font-size: 14px;
 }
 
@@ -1214,44 +1213,44 @@ watch(
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #f5f7fa;
+  background-color: var(--color-bg);
   padding: 20px;
   min-width: 0;
-  height: calc(100vh - 70px); /* 固定高度，减去导航栏 */
-  overflow: hidden; /* 防止整体滚动 */
+  height: calc(100vh - 70px);
+  overflow: hidden;
 }
 
 .chat-header {
-  background-color: #fff;
+  background-color: var(--color-bg-card);
   padding: 16px 20px;
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0; /* 新增：固定不滚动 */
+  flex-shrink: 0;
 }
 
 .chat-messages {
   flex: 1;
-  background-color: #fff;
-  border-radius: 12px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   padding: 20px;
-  overflow-y: auto; /* 独立滚动 */
+  overflow-y: auto;
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  min-height: 0; /* 关键：flex 子项溢出修复 */
+  min-height: 0;
 }
 
 .chat-input-area {
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: 20px;
-  flex-shrink: 0; /* 新增：固定不滚动 */
+  flex-shrink: 0;
 }
 
 .chat-ai-info {
@@ -1267,12 +1266,12 @@ watch(
 .ai-name {
   font-size: 18px;
   font-weight: bold;
-  color: #1d2129;
+  color: var(--color-text);
 }
 
 .chat-header-actions {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-light);
 }
 
 .session-title {
@@ -1300,26 +1299,26 @@ watch(
 }
 
 .message-bubble {
-  background-color: #fafafb;
+  background-color: var(--color-bg-light);
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 14px;
   line-height: 1.5;
-  color: #1d2129;
+  color: var(--color-text);
   position: relative;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .message-item-user .message-bubble {
-  background-color: #165dff;
+  background-color: var(--color-primary);
   color: #fff;
 }
 
 .message-bubble.loading {
-  background-color: #f0f2f5;
-  color: #86909c;
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-light);
   position: relative;
   min-height: 20px;
 }
@@ -1348,7 +1347,7 @@ watch(
 
 .message-time {
   font-size: 12px;
-  color: #86909c;
+  color: var(--color-text-light);
   margin-top: 4px;
   text-align: right;
 }
@@ -1363,21 +1362,23 @@ watch(
 
 .upload-button {
   padding: 8px 16px;
-  background-color: #4c8aff;
-  color: #fff;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
 }
 
 .upload-button:hover {
-  background-color: #165dff;
+  background-color: var(--color-primary);
+  color: #fff;
 }
 
 .upload-button-active {
-  background-color: #165dff;
+  background-color: var(--color-primary);
+  color: #fff;
 }
 
 .input-mode {
@@ -1394,45 +1395,48 @@ watch(
 .message-input {
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   font-size: 14px;
-  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+  font-family: var(--font-family);
   resize: none;
   min-height: 44px;
   max-height: 120px;
   line-height: 1.5;
-  transition: all 0.3s ease;
+  transition: var(--transition);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
 }
 
 .message-input:focus {
   outline: none;
-  border-color: #165dff;
-  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .send-button {
   padding: 0 24px;
-  background-color: #f53f3f;
+  background-color: var(--color-danger);
   color: #fff;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   align-self: flex-end;
   height: 44px;
 }
 
 .send-button:hover {
-  background-color: #e13d3d;
+  background-color: var(--color-danger);
+  opacity: 0.85;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .input-tip {
   font-size: 12px;
-  color: #86909c;
+  color: var(--color-text-light);
   text-align: center;
 }
 
@@ -1454,16 +1458,16 @@ watch(
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  border: 2px dashed #e5e7eb;
-  border-radius: 12px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all 0.3s ease;
-  background-color: #fafafb;
+  transition: var(--transition);
+  background-color: var(--color-bg-light);
 }
 
 .upload-box:hover {
-  border-color: #165dff;
-  background-color: rgba(22, 93, 255, 0.05);
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
 }
 
 .upload-icon {
@@ -1473,14 +1477,14 @@ watch(
 
 .upload-text {
   font-size: 16px;
-  color: #1d2129;
+  color: var(--color-text);
   margin-bottom: 8px;
   text-align: center;
 }
 
 .upload-hint {
   font-size: 14px;
-  color: #86909c;
+  color: var(--color-text-light);
   text-align: center;
 }
 
@@ -1492,48 +1496,49 @@ watch(
 
 .upload-submit {
   padding: 10px 24px;
-  background-color: #f53f3f;
+  background-color: var(--color-danger);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
 }
 
 .upload-submit:hover:not(:disabled) {
-  background-color: #e13d3d;
+  background-color: var(--color-danger);
+  opacity: 0.85;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .upload-submit:disabled {
-  background-color: #ccc;
+  background-color: var(--color-text-light);
   cursor: not-allowed;
 }
 
 .upload-cancel {
   padding: 10px 24px;
   background-color: transparent;
-  color: #1d2129;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
 }
 
 .upload-cancel:hover {
-  background-color: #fafafb;
-  border-color: #165dff;
-  color: #165dff;
+  background-color: var(--color-bg-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .right-sidebar {
   width: 320px;
-  background-color: #fff;
-  border-left: 1px solid #e5e7eb;
+  background-color: var(--color-bg-card);
+  border-left: 1px solid var(--color-border);
   padding: 20px;
-  flex-shrink: 0; /* 防止被压缩 */
+  flex-shrink: 0;
 }
 
 /* 重命名对话框 */
@@ -1551,16 +1556,16 @@ watch(
 }
 
 .dialog {
-  background-color: white;
-  border-radius: 12px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   width: 400px;
   max-width: 90%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
 }
 
 .dialog-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1569,7 +1574,7 @@ watch(
 .dialog-header h3 {
   margin: 0;
   font-size: 18px;
-  color: #333;
+  color: var(--color-text);
 }
 
 .dialog-close {
@@ -1577,7 +1582,7 @@ watch(
   border: none;
   font-size: 18px;
   cursor: pointer;
-  color: #999;
+  color: var(--color-text-light);
 }
 
 .dialog-body {
@@ -1587,20 +1592,22 @@ watch(
 .dialog-input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   transition: border-color 0.2s;
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
 }
 
 .dialog-input:focus {
   outline: none;
-  border-color: #1976d2;
+  border-color: var(--color-primary);
 }
 
 .dialog-footer {
   padding: 16px 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -1608,7 +1615,7 @@ watch(
 
 .dialog-btn {
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   cursor: pointer;
   border: none;
@@ -1616,23 +1623,23 @@ watch(
 }
 
 .dialog-btn.cancel {
-  background-color: #f5f5f5;
-  color: #666;
+  background-color: var(--color-bg-light);
+  color: var(--color-text-secondary);
 }
 
 .dialog-btn.confirm {
-  background-color: #1976d2;
+  background-color: var(--color-primary);
   color: white;
 }
 
 .dialog-btn.confirm:hover {
-  background-color: #1565c0;
+  background-color: var(--color-primary-hover);
 }
 
 .file-format-hint {
   margin-left: 12px;
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-light);
 }
 
 /* 移动端适配 */

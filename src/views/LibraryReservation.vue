@@ -1831,7 +1831,7 @@ const grid = computed(() => {
 <style scoped>
 .library-reservation {
   min-height: 100vh;
-  background-color: var(--bg-color);
+  background-color: var(--color-bg);
   padding-top: 70px;
 }
 
@@ -1847,13 +1847,13 @@ const grid = computed(() => {
 .page-title {
   font-size: 32px;
   font-weight: 700;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 24px;
   text-align: center;
 }
 
 .info-card {
-  background: var(--white);
+  background: var(--color-bg-card);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
@@ -1870,7 +1870,7 @@ const grid = computed(() => {
 .card-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -1888,12 +1888,12 @@ const grid = computed(() => {
 
 .info-item label {
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
   white-space: nowrap;
 }
 
 .room-selection-area {
-  background: var(--white);
+  background: var(--color-bg-card);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
@@ -1907,7 +1907,7 @@ const grid = computed(() => {
 .floor-selector h3 {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 12px;
 }
 
@@ -1919,9 +1919,9 @@ const grid = computed(() => {
 
 .floor-btn {
   padding: 10px 20px;
-  border: 1px solid var(--border-color);
-  background: var(--white);
-  color: var(--text-color);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s;
@@ -1929,20 +1929,20 @@ const grid = computed(() => {
 }
 
 .floor-btn:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .floor-btn.active {
-  background: var(--primary-color);
-  color: var(--white);
-  border-color: var(--primary-color);
+  background: var(--color-primary);
+  color: var(--color-bg-card);
+  border-color: var(--color-primary);
 }
 
 .room-selector h3 {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 12px;
 }
 
@@ -1953,23 +1953,23 @@ const grid = computed(() => {
 }
 
 .room-card {
-  border: 2px solid var(--border-color);
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   padding: 16px;
   cursor: pointer;
   transition: all 0.3s;
-  background: var(--white);
+  background: var(--color-bg-card);
 }
 
 .room-card:hover {
-  border-color: var(--primary-color);
+  border-color: var(--color-primary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
 .room-card.active {
-  border-color: var(--primary-color);
-  background: var(--primary-color-light);
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
   box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
 }
 
@@ -1983,7 +1983,7 @@ const grid = computed(() => {
 .room-name {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .room-status {
@@ -2010,17 +2010,17 @@ const grid = computed(() => {
 .stat-label {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
 }
 
 .stat-value {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .seat-selection-area {
-  background: var(--white);
+  background: var(--color-bg-card);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
@@ -2059,7 +2059,7 @@ const grid = computed(() => {
   gap: 16px;
   margin-bottom: 24px;
   padding: 16px;
-  background: var(--bg-color-light);
+  background: var(--color-bg-light);
   border-radius: 8px;
   flex-wrap: wrap;
 }
@@ -2069,7 +2069,7 @@ const grid = computed(() => {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .legend-seat {
@@ -2096,22 +2096,22 @@ const grid = computed(() => {
 }
 
 .legend-seat.available {
-  background: #52c41a;
+  background: var(--color-success);
   border-color: #389e0d;
 }
 
 .legend-seat.occupied {
-  background: #f5222d;
+  background: var(--color-danger);
   border-color: #cf1322;
 }
 
 .legend-seat.selected {
-  background: #1890ff;
+  background: var(--color-primary);
   border-color: #096dd9;
 }
 
 .legend-seat.reserved {
-  background: #f5222d;
+  background: var(--color-danger);
   border-color: #cf1322;
 }
 
@@ -2126,7 +2126,7 @@ const grid = computed(() => {
 }
 
 .legend-seat.window {
-  background: #1890ff;
+  background: var(--color-primary);
   border-color: #096dd9;
 }
 
@@ -2148,7 +2148,7 @@ const grid = computed(() => {
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--color-primary);
   margin-bottom: 12px;
 }
 
@@ -2163,8 +2163,8 @@ const grid = computed(() => {
 }
 
 .room-card.recommended {
-  border-color: #52c41a;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  border-color: var(--color-success);
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, #e6f7ff 100%);
   position: relative;
   overflow: hidden;
 }
@@ -2176,14 +2176,14 @@ const grid = computed(() => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #52c41a 0%, #73d13d 100%);
+  background: linear-gradient(90deg, var(--color-success) 0%, #73d13d 100%);
 }
 
 .room-badge {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  background: linear-gradient(135deg, var(--color-success) 0%, #73d13d 100%);
   color: white;
   padding: 4px 10px;
   border-radius: 10px;
@@ -2199,10 +2199,10 @@ const grid = computed(() => {
 .all-rooms-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 2px solid var(--border-color-light);
+  border-bottom: 2px solid var(--color-border-light);
 }
 
 .occupancy-bar {
@@ -2215,7 +2215,7 @@ const grid = computed(() => {
 
 .occupancy-fill {
   height: 100%;
-  background: linear-gradient(90deg, #52c41a 0%, #73d13d 100%);
+  background: linear-gradient(90deg, var(--color-success) 0%, #73d13d 100%);
   transition: width 0.3s ease;
   border-radius: 3px;
 }
@@ -2224,10 +2224,10 @@ const grid = computed(() => {
 .seat-map {
   position: relative;
   padding: 20px;
-  border: 2px solid #e6e6e6;
+  border: 2px solid var(--color-border);
   border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-md);
   margin: 20px 0;
   display: flex;
   flex-direction: column;
@@ -2242,10 +2242,10 @@ const grid = computed(() => {
   text-align: center;
   font-size: 20px;
   font-weight: 600;
-  color: #1890ff;
+  color: var(--color-primary);
   margin-bottom: 15px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #e6f7ff;
+  border-bottom: 2px solid var(--color-primary-light);
   width: 100%;
 }
 
@@ -2315,7 +2315,7 @@ const grid = computed(() => {
   justify-content: center;
   width: 40px;
   height: 80px;
-  background: #1890ff;
+  background: var(--color-primary);
   color: #fff;
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
@@ -2329,12 +2329,12 @@ const grid = computed(() => {
 /* 座位区域 */
 .seats-container {
   margin: 10px 0;
-  margin-left: 50px; /* 留出窗户位置 */
-  margin-right: 50px; /* 留出门口位置 */
-  background: #f9f9f9;
+  margin-left: 50px;
+  margin-right: 50px;
+  background: var(--color-bg-light);
   padding: 20px;
   border-radius: 8px;
-  border: 1px solid #e6e6e6;
+  border: 1px solid var(--color-border);
   width: calc(100% - 100px);
   height: 300px;
   box-sizing: border-box;
@@ -2360,7 +2360,7 @@ const grid = computed(() => {
   text-align: center;
   font-size: 14px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0 0;
   height: 44px;
   display: flex;
@@ -2387,7 +2387,7 @@ const grid = computed(() => {
   text-align: center;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   height: 44px;
   display: flex;
   align-items: center;
@@ -2407,15 +2407,15 @@ const grid = computed(() => {
 .seat {
   width: 100%;
   height: 44px;
-  border: 2px solid #d9d9d9;
+  border: 2px solid var(--color-border);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: 500;
-  color: #333;
-  background: #ffffff;
+  color: var(--color-text);
+  background: var(--color-bg-card);
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -2423,35 +2423,35 @@ const grid = computed(() => {
 
 .seat:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   z-index: 5;
 }
 
 /* 座位状态 */
 .available {
-  background: #52c41a;
+  background: var(--color-success);
   color: #fff;
   border-color: #389e0d;
 }
 
 .occupied,
 .reserved {
-  background: #f5222d;
+  background: var(--color-danger);
   color: #fff;
   border-color: #cf1322;
 }
 
 .selected {
-  background: #1890ff;
+  background: var(--color-primary);
   color: #fff;
   border-color: #096dd9;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.3);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 .empty {
-  background: #f0f0f0;
-  color: #999;
-  border-color: #e0e0e0;
+  background: var(--color-bg-light);
+  color: var(--color-text-light);
+  border-color: var(--color-border);
   cursor: not-allowed;
 }
 
@@ -2478,11 +2478,11 @@ const grid = computed(() => {
   justify-content: center;
   align-items: center;
   height: 400px;
-  border: 2px dashed #e6e6e6;
-  background: #f9f9f9;
+  border: 2px dashed var(--color-border);
+  background: var(--color-bg-light);
   border-radius: 12px;
   font-size: 16px;
-  color: #999;
+  color: var(--color-text-light);
   margin: 20px 0;
 }
 
@@ -2501,12 +2501,12 @@ const grid = computed(() => {
 .form-label {
   width: 100px;
   font-weight: 500;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .form-value {
   flex: 1;
-  color: #333;
+  color: var(--color-text);
   font-weight: 500;
 }
 
@@ -2560,7 +2560,7 @@ const grid = computed(() => {
 .selected-info {
   margin-top: 20px;
   padding: 16px;
-  background: #f0f9ff;
+  background: var(--color-primary-light);
   border-radius: 8px;
   border: 1px solid #d6e4ff;
 }
@@ -2576,12 +2576,12 @@ const grid = computed(() => {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #1890ff;
+  color: var(--color-primary);
 }
 
 .seat-count {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .selected-seats {
@@ -2597,7 +2597,7 @@ const grid = computed(() => {
   align-items: center;
   justify-content: center;
   padding: 40px;
-  background: #f9f9f9;
+  background: var(--color-bg-light);
   border-radius: 8px;
   margin: 20px 0;
 }
@@ -2605,8 +2605,8 @@ const grid = computed(() => {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #1890ff;
+  border: 4px solid var(--color-border);
+  border-top: 4px solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -2624,10 +2624,10 @@ const grid = computed(() => {
 .no-data {
   text-align: center;
   padding: 40px;
-  background: #f9f9f9;
+  background: var(--color-bg-light);
   border-radius: 8px;
   margin: 20px 0;
-  color: #999;
+  color: var(--color-text-light);
 }
 
 .confirm-info {
@@ -2639,16 +2639,21 @@ const grid = computed(() => {
 .confirm-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.confirm-item:last-child {
+  border-bottom: none;
 }
 
 .confirm-item label {
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: var(--color-text);
 }
 
 .confirm-item span {
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .seat-action-buttons {
@@ -2668,18 +2673,18 @@ const grid = computed(() => {
 }
 
 .leave-btn {
-  background: #f56c6c;
+  background: var(--color-danger);
   color: #fff;
 }
 
 .enter-btn {
-  background: #67c23a;
+  background: var(--color-success);
   color: #fff;
 }
 
 .remaining-time {
   font-size: 9px;
-  color: #666;
+  color: var(--color-text-secondary);
   text-align: center;
   margin-top: 2px;
 }
@@ -2690,34 +2695,35 @@ const grid = computed(() => {
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: #999;
+  color: var(--color-text-light);
 }
 
 .no-seats p {
   margin: 4px 0;
 }
+
 /* 按钮悬停效果 */
 .enter-btn:hover {
-  background: linear-gradient(135deg, #389e0d 0%, #52c41a 100%);
+  background: linear-gradient(135deg, #389e0d 0%, var(--color-success) 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(82, 196, 26, 0.4);
 }
 
 .leave-btn {
-  background: linear-gradient(135deg, #f5222d 0%, #ff4d4f 100%);
+  background: linear-gradient(135deg, var(--color-danger) 0%, #ff4d4f 100%);
   color: white;
   box-shadow: 0 2px 6px rgba(245, 34, 45, 0.3);
 }
 
 .leave-btn:hover {
-  background: linear-gradient(135deg, #cf1322 0%, #f5222d 100%);
+  background: linear-gradient(135deg, #cf1322 0%, var(--color-danger) 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(245, 34, 45, 0.4);
 }
 
 .remaining-time {
   font-size: 10px;
-  color: #faad14;
+  color: var(--color-warning);
   font-weight: 600;
   background: #fff7e6;
   padding: 2px 8px;
@@ -2772,9 +2778,9 @@ const grid = computed(() => {
 .selected-info {
   margin-top: 24px;
   padding: 16px;
-  background: var(--bg-color-light);
+  background: var(--color-bg-light);
   border-radius: 8px;
-  border-left: 4px solid var(--primary-color);
+  border-left: 4px solid var(--color-primary);
 }
 
 .selected-header {
@@ -2787,12 +2793,12 @@ const grid = computed(() => {
 .selected-header h4 {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
 .seat-count {
-  background: var(--primary-color);
+  background: var(--color-primary);
   color: white;
   padding: 2px 8px;
   border-radius: 10px;
@@ -2814,7 +2820,7 @@ const grid = computed(() => {
   display: flex;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .confirm-item:last-child {
@@ -2823,11 +2829,11 @@ const grid = computed(() => {
 
 .confirm-item label {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .confirm-item span {
-  color: var(--text-color);
+  color: var(--color-text-secondary);
 }
 
 /* 响应式设计 */

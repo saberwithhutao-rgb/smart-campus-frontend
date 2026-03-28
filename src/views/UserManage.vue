@@ -287,12 +287,12 @@ const handleLogout = () => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 30px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   min-height: 100vh;
 }
 
 .container-content {
-  background-color: white;
+  background-color: var(--color-bg-card);
   border-radius: 16px;
   padding: 30px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -304,14 +304,14 @@ const handleLogout = () => {
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--color-border-light);
 }
 
 .header h2 {
-  color: #333;
+  color: var(--color-text);
   font-size: 32px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -320,10 +320,10 @@ const handleLogout = () => {
 
 .logout-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #f56c6c 0%, #f04a4a 100%);
+  background: linear-gradient(135deg, var(--color-danger) 0%, #f04a4a 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
@@ -331,7 +331,7 @@ const handleLogout = () => {
 }
 
 .logout-btn:hover {
-  background: linear-gradient(135deg, #f78989 0%, #f56c6c 100%);
+  background: linear-gradient(135deg, #f78989 0%, var(--color-danger) 100%);
   box-shadow: 0 4px 12px rgba(245, 108, 108, 0.3);
   transform: translateY(-1px);
 }
@@ -352,26 +352,27 @@ const handleLogout = () => {
 .search-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 14px;
   transition: all 0.3s ease;
-  background-color: #fafafa;
+  background-color: var(--color-bg-light);
+  color: var(--color-text);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
-  background-color: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .add-user-btn {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
@@ -390,8 +391,8 @@ const handleLogout = () => {
 .user-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: white;
-  border-radius: 12px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
@@ -400,13 +401,13 @@ const handleLogout = () => {
 .user-table td {
   padding: 16px;
   text-align: left;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .user-table th {
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+  background: linear-gradient(135deg, var(--color-bg-light) 0%, #e4e9f2 100%);
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -417,7 +418,7 @@ const handleLogout = () => {
 }
 
 .user-table tr:hover {
-  background-color: #f8f9ff;
+  background-color: var(--color-bg-light);
   transition: background-color 0.3s ease;
 }
 
@@ -433,11 +434,11 @@ const handleLogout = () => {
 }
 
 .role-tag.user {
-  background: linear-gradient(135deg, #409eff 0%, #3a8ee6 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #3a8ee6 100%);
 }
 
 .role-tag.admin {
-  background: linear-gradient(135deg, #67c23a 0%, #5cb85c 100%);
+  background: linear-gradient(135deg, var(--color-success) 0%, #5cb85c 100%);
 }
 
 .actions {
@@ -447,10 +448,10 @@ const handleLogout = () => {
 
 .edit-btn {
   padding: 8px 16px;
-  background: linear-gradient(135deg, #e6a23c 0%, #d8902b 100%);
+  background: linear-gradient(135deg, var(--color-warning) 0%, #d8902b 100%);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 13px;
@@ -458,17 +459,17 @@ const handleLogout = () => {
 }
 
 .edit-btn:hover {
-  background: linear-gradient(135deg, #ebb563 0%, #e6a23c 100%);
+  background: linear-gradient(135deg, #ebb563 0%, var(--color-warning) 100%);
   box-shadow: 0 2px 8px rgba(230, 162, 60, 0.3);
   transform: translateY(-1px);
 }
 
 .delete-btn {
   padding: 8px 16px;
-  background: linear-gradient(135deg, #f56c6c 0%, #f04a4a 100%);
+  background: linear-gradient(135deg, var(--color-danger) 0%, #f04a4a 100%);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 13px;
@@ -476,7 +477,7 @@ const handleLogout = () => {
 }
 
 .delete-btn:hover {
-  background: linear-gradient(135deg, #f78989 0%, #f56c6c 100%);
+  background: linear-gradient(135deg, #f78989 0%, var(--color-danger) 100%);
   box-shadow: 0 2px 8px rgba(245, 108, 108, 0.3);
   transform: translateY(-1px);
 }
@@ -497,8 +498,8 @@ const handleLogout = () => {
 }
 
 .dialog {
-  background-color: white;
-  border-radius: 12px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   width: 100%;
   max-width: 500px;
@@ -510,12 +511,12 @@ const handleLogout = () => {
   justify-content: space-between;
   align-items: center;
   padding: 24px 24px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .dialog-header h3 {
   margin: 0;
-  color: #333;
+  color: var(--color-text);
   font-size: 20px;
   font-weight: 600;
 }
@@ -524,7 +525,7 @@ const handleLogout = () => {
   background: none;
   border: none;
   font-size: 24px;
-  color: #909399;
+  color: var(--color-text-light);
   cursor: pointer;
   padding: 0;
   width: 34px;
@@ -537,8 +538,8 @@ const handleLogout = () => {
 }
 
 .close-btn:hover {
-  color: #606266;
-  background-color: #f5f7fa;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-light);
 }
 
 .dialog-body {
@@ -556,7 +557,7 @@ const handleLogout = () => {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #555;
+  color: var(--color-text-secondary);
   font-weight: 500;
   font-size: 14px;
 }
@@ -564,22 +565,23 @@ const handleLogout = () => {
 .form-control {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 14px;
   transition: all 0.3s ease;
-  background-color: #fafafa;
+  background-color: var(--color-bg-light);
+  color: var(--color-text);
 }
 
 .form-control:focus {
   outline: none;
-  border-color: #667eea;
-  background-color: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .error-message {
-  color: #f56c6c;
+  color: var(--color-danger);
   font-size: 12px;
   margin-top: 6px;
   display: flex;
@@ -592,15 +594,15 @@ const handleLogout = () => {
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px 24px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--color-border-light);
 }
 
 .cancel-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #909399 0%, #73767a 100%);
+  background: linear-gradient(135deg, var(--color-text-light) 0%, #73767a 100%);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
@@ -608,17 +610,17 @@ const handleLogout = () => {
 }
 
 .cancel-btn:hover {
-  background: linear-gradient(135deg, #a6a9ad 0%, #909399 100%);
+  background: linear-gradient(135deg, #a6a9ad 0%, var(--color-text-light) 100%);
   box-shadow: 0 2px 8px rgba(144, 147, 153, 0.3);
   transform: translateY(-1px);
 }
 
 .confirm-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
@@ -675,4 +677,3 @@ const handleLogout = () => {
   }
 }
 </style>
-

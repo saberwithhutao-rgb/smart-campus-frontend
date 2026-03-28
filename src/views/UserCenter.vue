@@ -315,8 +315,8 @@ const getUserStatusText = (status?: number) => {
 /* 主容器 */
 .user-center {
   min-height: 100vh;
-  background-color: var(--bg-color);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-bg);
+  font-family: var(--font-family);
   display: flex;
   flex-direction: column;
 }
@@ -327,7 +327,7 @@ const getUserStatusText = (status?: number) => {
   flex: 1;
   margin-top: 70px;
   padding: 24px;
-  background-color: var(--bg-color);
+  background-color: var(--color-bg);
   min-height: calc(100vh - 70px);
 }
 
@@ -341,8 +341,8 @@ const getUserStatusText = (status?: number) => {
 /* 个人信息卡片 */
 .profile-card,
 .security-card {
-  background-color: var(--surface-color);
-  border-radius: 12px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   padding: 24px;
   margin-bottom: 24px;
@@ -358,7 +358,7 @@ const getUserStatusText = (status?: number) => {
 
 .profile-header {
   margin-bottom: 24px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border-light);
   padding-bottom: 16px;
   display: flex;
   align-items: center;
@@ -369,7 +369,7 @@ const getUserStatusText = (status?: number) => {
 .profile-title {
   font-size: 20px;
   font-weight: 600;
-  color: #1d2129;
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -400,8 +400,8 @@ const getUserStatusText = (status?: number) => {
   margin-top: -12px;
   padding: 12px 16px;
   border-radius: 10px;
-  background: #f5f7fa;
-  color: #606266;
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
   font-size: 13px;
 }
 
@@ -418,8 +418,8 @@ const getUserStatusText = (status?: number) => {
   height: 120px;
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid #f0f9ff;
-  background-color: var(--bg-color);
+  border: 3px solid var(--color-primary-light);
+  background-color: var(--color-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -437,7 +437,7 @@ const getUserStatusText = (status?: number) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
   font-size: 48px;
   font-weight: 600;
@@ -452,18 +452,18 @@ const getUserStatusText = (status?: number) => {
 .btn-text {
   padding: 6px 16px;
   background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   font-size: 13px;
-  color: #606266;
+  color: var(--color-text-secondary);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .btn-text:hover {
-  background-color: var(--bg-color);
-  border-color: #409eff;
-  color: #409eff;
+  background-color: var(--color-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* 信息网格 */
@@ -471,9 +471,9 @@ const getUserStatusText = (status?: number) => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px 30px;
-  background-color: var(--bg-color-light);
+  background-color: var(--color-bg-light);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .info-item {
@@ -485,19 +485,19 @@ const getUserStatusText = (status?: number) => {
 
 .info-label {
   font-weight: 500;
-  color: #909399;
+  color: var(--color-text-light);
   min-width: 60px;
   margin-right: 8px;
 }
 
 .info-value {
-  color: #303133;
+  color: var(--color-text);
   font-weight: 500;
   word-break: break-word;
 }
 
 .info-placeholder {
-  color: #c0c4cc;
+  color: var(--color-text-placeholder);
   font-size: 14px;
   font-style: italic;
   margin-left: 4px;
@@ -513,10 +513,10 @@ const getUserStatusText = (status?: number) => {
 
 .btn-primary {
   padding: 10px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -531,9 +531,9 @@ const getUserStatusText = (status?: number) => {
 .btn-secondary {
   padding: 10px 24px;
   background-color: transparent;
-  color: #667eea;
-  border: 1px solid #667eea;
-  border-radius: 8px;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -541,7 +541,7 @@ const getUserStatusText = (status?: number) => {
 }
 
 .btn-secondary:hover {
-  background-color: #f0f9ff;
+  background-color: var(--color-primary-light);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
@@ -549,14 +549,14 @@ const getUserStatusText = (status?: number) => {
 /* 账号安全卡片 */
 .card-header {
   margin-bottom: 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border-light);
   padding-bottom: 12px;
 }
 
 .card-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1d2129;
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -574,31 +574,31 @@ const getUserStatusText = (status?: number) => {
 
 .security-label {
   font-weight: 500;
-  color: #909399;
+  color: var(--color-text-light);
   min-width: 80px;
 }
 
 .security-value {
-  color: #303133;
+  color: var(--color-text);
 }
 
 /* 状态标签 */
 .status-badge {
   display: inline-block;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 500;
 }
 
 .status-active {
-  background-color: #f0f9eb;
-  color: #67c23a;
+  background-color: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .status-inactive {
-  background-color: #fef0f0;
-  color: #f56c6c;
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
 }
 
 /* 响应式设计 */

@@ -549,7 +549,7 @@ onMounted(() => {
 <style scoped>
 .profile-edit {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
 }
 
 .main-content {
@@ -626,9 +626,9 @@ onMounted(() => {
 .card-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
   margin: 0 0 8px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -636,7 +636,7 @@ onMounted(() => {
 
 .card-subtitle {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-light);
   margin: 0;
 }
 
@@ -644,7 +644,7 @@ onMounted(() => {
 .avatar-edit-section {
   margin-bottom: 40px;
   padding: 24px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, var(--color-bg-light) 0%, #e9ecef 100%);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.8);
 }
@@ -659,12 +659,12 @@ onMounted(() => {
 .avatar-label {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
 }
 
 .avatar-hint {
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-light);
   background: rgba(255, 255, 255, 0.5);
   padding: 2px 8px;
   border-radius: 12px;
@@ -685,9 +685,9 @@ onMounted(() => {
   height: 120px;
   border-radius: 50%;
   overflow: hidden;
-  border: 4px solid white;
+  border: 4px solid var(--color-bg-card);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  background-color: #f5f7fa;
+  background-color: var(--color-bg-light);
   transition: transform 0.3s ease;
 }
 
@@ -707,7 +707,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
   font-size: 48px;
   font-weight: 600;
@@ -719,7 +719,7 @@ onMounted(() => {
   right: 0;
   width: 24px;
   height: 24px;
-  background: #52c41a;
+  background: var(--color-success);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -727,7 +727,7 @@ onMounted(() => {
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
-  border: 2px solid white;
+  border: 2px solid var(--color-bg-card);
   box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
 }
 
@@ -752,7 +752,7 @@ onMounted(() => {
 }
 
 .btn-upload {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
@@ -763,15 +763,15 @@ onMounted(() => {
 }
 
 .btn-cancel {
-  background: white;
-  color: #666;
-  border: 1px solid #ddd;
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 }
 
 .btn-cancel:hover {
-  background: #f5f5f5;
-  border-color: #f56c6c;
-  color: #f56c6c;
+  background: var(--color-bg-light);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
   transform: translateY(-2px);
 }
 
@@ -795,13 +795,13 @@ onMounted(() => {
 
 :deep(.el-form-item__label) {
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
   font-size: 14px;
 }
 
 /* 只读字段 */
 .readonly-item {
-  background: #f8f9fa;
+  background: var(--color-bg-light);
   padding: 8px 16px;
   border-radius: 12px;
   margin-bottom: 16px;
@@ -814,15 +814,15 @@ onMounted(() => {
 }
 
 .readonly-field {
-  color: #333;
+  color: var(--color-text);
   font-size: 14px;
   font-weight: 500;
 }
 
 .field-hint {
   font-size: 12px;
-  color: #999;
-  background: #e9ecef;
+  color: var(--color-text-light);
+  background: var(--color-border-light);
   padding: 2px 8px;
   border-radius: 12px;
 }
@@ -846,12 +846,12 @@ onMounted(() => {
 }
 
 :deep(.el-radio__input.is-checked + .el-radio__label) {
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 :deep(.el-radio__input.is-checked .el-radio__inner) {
-  background: #667eea;
-  border-color: #667eea;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 /* 自定义输入框 */
@@ -860,12 +860,12 @@ onMounted(() => {
 }
 
 .input-icon {
-  color: #999;
+  color: var(--color-text-light);
   transition: color 0.3s ease;
 }
 
 :deep(.el-input__wrapper:hover) .input-icon {
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 /* 自定义选择框 */
@@ -901,7 +901,7 @@ onMounted(() => {
 }
 
 :deep(.custom-option:hover) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
 }
 
@@ -932,7 +932,7 @@ onMounted(() => {
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
@@ -949,13 +949,13 @@ onMounted(() => {
 
 .btn-cancel-outline {
   background: transparent;
-  color: #666;
-  border: 2px solid #ddd;
+  color: var(--color-text-secondary);
+  border: 2px solid var(--color-border);
 }
 
 .btn-cancel-outline:hover {
-  border-color: #f56c6c;
-  color: #f56c6c;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
   transform: translateY(-2px);
   background: rgba(245, 108, 108, 0.05);
 }
@@ -977,7 +977,7 @@ onMounted(() => {
 .autocomplete-item {
   padding: 8px 12px;
   font-size: 14px;
-  color: #333;
+  color: var(--color-text);
 }
 
 /* 下拉框容器样式 */
@@ -988,12 +988,12 @@ onMounted(() => {
 
 /* 选项悬停效果 */
 :deep(.el-autocomplete-suggestion__list li:hover) {
-  background-color: #f5f7fa;
+  background-color: var(--color-bg-light);
 }
 
 /* 选中项高亮 */
 :deep(.el-autocomplete-suggestion__list li.highlighted) {
-  background-color: #ecf5ff;
+  background-color: var(--color-primary-light);
 }
 
 :deep(.el-autocomplete .el-input__wrapper),
@@ -1002,7 +1002,7 @@ onMounted(() => {
   padding: 4px 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
-  background-color: #fff;
+  background-color: var(--color-bg-card);
   border: none;
   width: 100%;
   box-sizing: border-box;
@@ -1024,6 +1024,7 @@ onMounted(() => {
   line-height: 40px;
   border: none;
   background: transparent;
+  color: var(--color-text);
 }
 
 /* 响应式设计 */

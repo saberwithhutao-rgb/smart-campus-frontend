@@ -255,12 +255,12 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   padding: 20px;
 }
 
 .login-form {
-  background-color: white;
+  background-color: var(--color-bg-card);
   padding: 45px;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -277,19 +277,19 @@ onMounted(() => {
 .login-form h2 {
   text-align: center;
   margin-bottom: 35px;
-  color: #333;
+  color: var(--color-text);
   font-size: 28px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .error-alert {
-  background-color: #fef0f0;
-  border: 1px solid #fde2e2;
-  color: #f56c6c;
+  background-color: var(--color-danger-light, #fef0f0);
+  border: 1px solid var(--color-danger-light, #fde2e2);
+  color: var(--color-danger);
   padding: 12px 16px;
   border-radius: 8px;
   margin-bottom: 25px;
@@ -306,7 +306,7 @@ onMounted(() => {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #555;
+  color: var(--color-text-secondary);
   font-weight: 500;
   font-size: 14px;
   text-transform: uppercase;
@@ -316,18 +316,19 @@ onMounted(() => {
 .form-control {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.3s ease;
-  background-color: #fafafa;
+  background-color: var(--color-bg-light);
+  color: var(--color-text);
 }
 
 .form-control:focus {
   outline: none;
-  border-color: #667eea;
-  background-color: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .password-input {
@@ -349,12 +350,12 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: var(--color-text-light);
   transition: color 0.3s ease;
 }
 
 .password-toggle:hover {
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 .captcha-input {
@@ -370,8 +371,8 @@ onMounted(() => {
 .login-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  color: var(--color-bg-card);
   border: none;
   border-radius: 8px;
   font-size: 16px;
@@ -384,7 +385,7 @@ onMounted(() => {
 }
 
 .login-button:hover {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4091 100%);
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, #6a4091 100%);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
   transform: translateY(-1px);
 }
@@ -397,19 +398,19 @@ onMounted(() => {
 .register-link {
   text-align: center;
   margin-top: 25px;
-  color: #777;
+  color: var(--color-text-secondary);
   font-size: 14px;
 }
 
 .register-link a {
-  color: #667eea;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
 }
 
 .register-link a:hover {
-  color: #5a6fd8;
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
@@ -419,13 +420,13 @@ onMounted(() => {
 }
 
 .forgot-link a {
-  color: #909399;
+  color: var(--color-text-light);
   text-decoration: none;
   font-size: 13px;
 }
 
 .forgot-link a:hover {
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 .captcha-input {
@@ -440,8 +441,8 @@ onMounted(() => {
 
 .send-captcha-btn {
   padding: 14px 18px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  color: var(--color-bg-card);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -453,7 +454,7 @@ onMounted(() => {
 }
 
 .send-captcha-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4091 100%);
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, #6a4091 100%);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   transform: translateY(-1px);
 }
@@ -478,7 +479,7 @@ onMounted(() => {
 .captcha-image {
   width: 120px;
   height: 40px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s;
@@ -486,14 +487,14 @@ onMounted(() => {
 
 .captcha-image:hover {
   transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .captcha-text-container {
   padding: 10px;
-  background-color: #f8f9fa;
+  background-color: var(--color-bg-light);
   border-radius: 4px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border);
 }
 
 .captcha-text-display {
@@ -502,14 +503,14 @@ onMounted(() => {
 }
 
 .captcha-label {
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .captcha-value {
-  color: #1890ff;
+  color: var(--color-primary);
   font-size: 18px;
   letter-spacing: 3px;
-  background-color: #f0f0f0;
+  background-color: var(--color-border);
   padding: 2px 8px;
   border-radius: 3px;
   font-family: 'Courier New', monospace;
@@ -517,7 +518,7 @@ onMounted(() => {
 
 .captcha-hint {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-light);
   margin-top: 4px;
 }
 
@@ -530,7 +531,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  color: #555;
+  color: var(--color-text-secondary);
   font-size: 14px;
 }
 

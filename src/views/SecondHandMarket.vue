@@ -1069,7 +1069,7 @@ const updateArrowVisibility = () => {
 /* ==================== 基础布局与容器 ==================== */
 .campus-forum {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, var(--color-bg) 0%, #c3cfe2 100%);
   padding-top: 70px;
   padding-bottom: 120px;
 }
@@ -1112,7 +1112,7 @@ const updateArrowVisibility = () => {
   height: 32px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.8);
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1121,7 +1121,7 @@ const updateArrowVisibility = () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   font-size: 16px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .scroll-arrow:hover {
@@ -1146,21 +1146,21 @@ const updateArrowVisibility = () => {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--color-border);
 }
 
 .topics-bar .topic-tag:not([class*='topic-']) {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border: 1px solid #e5e5e5 !important;
+  background-color: var(--color-bg-card) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
 }
 
 .topics-bar .topic-tag:not([class*='topic-']):hover {
-  background-color: #f5f5f5 !important;
+  background-color: var(--color-bg-light) !important;
 }
 
 .topics-bar .topic-tag:not([class*='topic-']).active {
-  background-color: #f5f5f5 !important;
+  background-color: var(--color-bg-light) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -1241,12 +1241,12 @@ const updateArrowVisibility = () => {
 }
 
 .post-card {
-  background: white;
+  background: var(--color-bg-card);
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--color-border);
 }
 
 .post-card:hover {
@@ -1270,7 +1270,7 @@ const updateArrowVisibility = () => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1293,12 +1293,12 @@ const updateArrowVisibility = () => {
 .author-name {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .post-time {
   font-size: 12px;
-  color: #8c8c8c;
+  color: var(--color-text-light);
   margin-top: 2px;
 }
 
@@ -1351,13 +1351,13 @@ const updateArrowVisibility = () => {
 .post-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   margin: 0 0 8px 0;
 }
 
 .post-text {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
   line-height: 1.6;
   margin: 0;
   margin-bottom: 12px;
@@ -1374,7 +1374,7 @@ const updateArrowVisibility = () => {
   max-width: 200px;
   max-height: 150px;
   border-radius: 8px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border);
   cursor: pointer;
   transition: transform 0.2s ease;
 }
@@ -1387,25 +1387,25 @@ const updateArrowVisibility = () => {
   display: flex;
   gap: 24px;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--color-border-light);
 }
 
 .action-btn {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #8c8c8c;
+  color: var(--color-text-light);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
 }
 
 .action-btn:hover {
-  color: #1890ff;
+  color: var(--color-primary);
 }
 
 .action-btn.delete-btn:hover {
-  color: #ff4d4f;
+  color: var(--color-danger);
 }
 
 .action-btn .icon {
@@ -1420,7 +1420,7 @@ const updateArrowVisibility = () => {
 .comments-section {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 2px solid #f0f0f0;
+  border-top: 2px solid var(--color-border-light);
   animation: slideDown 0.3s ease;
 }
 
@@ -1446,7 +1446,7 @@ const updateArrowVisibility = () => {
   gap: 12px;
   margin-bottom: 12px;
   padding: 12px;
-  background: #fafafa;
+  background: var(--color-bg-light);
   border-radius: 12px;
 }
 
@@ -1477,35 +1477,36 @@ const updateArrowVisibility = () => {
 .comment-author {
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text);
 }
 
 .comment-time {
   font-size: 12px;
-  color: #8c8c8c;
+  color: var(--color-text-light);
 }
 
 .comment-text {
   font-size: 13px;
-  color: #4a4a4a;
+  color: var(--color-text-secondary);
   line-height: 1.5;
   margin: 0;
 }
 
 .comment-delete {
-  color: #ff4d4f;
+  color: var(--color-danger);
   cursor: pointer;
   font-size: 14px;
   transition: color 0.2s ease;
 }
 .comment-delete:hover {
-  color: #ff7875;
+  color: var(--color-danger);
+  opacity: 0.8;
 }
 
 .no-comments {
   text-align: center;
   padding: 20px;
-  color: #8c8c8c;
+  color: var(--color-text-light);
   font-size: 14px;
 }
 
@@ -1521,7 +1522,7 @@ const updateArrowVisibility = () => {
 .loading-comments {
   text-align: center;
   padding: 20px;
-  color: #8c8c8c;
+  color: var(--color-text-light);
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -1550,7 +1551,7 @@ const updateArrowVisibility = () => {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  background: white;
+  background: var(--color-bg-card);
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
@@ -1562,7 +1563,7 @@ const updateArrowVisibility = () => {
 
 .empty-text {
   font-size: 14px;
-  color: #8c8c8c;
+  color: var(--color-text-light);
   margin: 0;
 }
 
@@ -1574,7 +1575,7 @@ const updateArrowVisibility = () => {
   transform: translateX(-50%);
   width: 100%;
   max-width: 700px;
-  background: white;
+  background: var(--color-bg-card);
   padding: 16px 20px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   border-radius: 20px 20px 0 0;
@@ -1607,16 +1608,16 @@ const updateArrowVisibility = () => {
 
 .upload-section :deep(.el-button) {
   border-radius: 24px;
-  background-color: #f5f7fa;
-  border: 1px solid #e5e5e5;
-  color: #606266;
+  background-color: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
   transition: all 0.2s ease;
 }
 
 .upload-section :deep(.el-button:hover) {
-  background-color: #eef2f6;
-  color: #409eff;
-  border-color: #409eff;
+  background-color: var(--color-bg-dark);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 /* 第二行：输入区域 */
@@ -1635,40 +1636,41 @@ const updateArrowVisibility = () => {
 /* 输入框样式 */
 .input-item :deep(.el-input__wrapper) {
   border-radius: 24px;
-  background-color: #f5f7fa;
+  background-color: var(--color-bg-light);
   border: 1px solid transparent;
   transition: all 0.2s ease;
   box-shadow: none;
 }
 
 .input-item :deep(.el-input__wrapper:hover) {
-  background-color: #eef2f6;
+  background-color: var(--color-bg-dark);
 }
 
 .input-item :deep(.el-input__wrapper.is-focus) {
-  background-color: #fff;
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+  background-color: var(--color-bg-card);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 .input-item :deep(.el-textarea__inner) {
   border-radius: 20px;
-  background-color: #f5f7fa;
+  background-color: var(--color-bg-light);
   border: 1px solid transparent;
   transition: all 0.2s ease;
   font-size: 14px;
   padding: 12px 16px;
   resize: none;
+  color: var(--color-text);
 }
 
 .input-item :deep(.el-textarea__inner:hover) {
-  background-color: #eef2f6;
+  background-color: var(--color-bg-dark);
 }
 
 .input-item :deep(.el-textarea__inner:focus) {
-  background-color: #fff;
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+  background-color: var(--color-bg-card);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 /* 发布按钮 */
@@ -1681,7 +1683,7 @@ const updateArrowVisibility = () => {
   border-radius: 24px;
   padding: 10px 28px;
   font-weight: 500;
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   border: none;
   transition: all 0.2s ease;
 }
@@ -1696,7 +1698,7 @@ const updateArrowVisibility = () => {
 }
 
 .publish-action :deep(.el-button.is-disabled) {
-  background: #e0e3e7;
+  background: var(--color-text-light);
   transform: none;
   box-shadow: none;
 }
@@ -1720,12 +1722,12 @@ const updateArrowVisibility = () => {
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 2px solid #f0f0f0;
+  border: 2px solid var(--color-border-light);
 }
 
 .image-preview-item:hover {
   transform: scale(1.05);
-  border-color: #409eff;
+  border-color: var(--color-primary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -1758,7 +1760,7 @@ const updateArrowVisibility = () => {
 }
 
 .image-delete-btn:hover {
-  background: #ff4d4f;
+  background: var(--color-danger);
   transform: scale(1.1);
 }
 

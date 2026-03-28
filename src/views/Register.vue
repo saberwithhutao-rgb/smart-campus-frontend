@@ -501,12 +501,12 @@ const goToLogin = () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   padding: 20px;
 }
 
 .register-form {
-  background-color: white;
+  background-color: var(--color-bg-card);
   padding: 45px;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -523,10 +523,10 @@ const goToLogin = () => {
 .register-form h2 {
   text-align: center;
   margin-bottom: 35px;
-  color: #333;
+  color: var(--color-text);
   font-size: 28px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -544,15 +544,15 @@ const goToLogin = () => {
 }
 
 .message-alert.error {
-  background-color: #fef0f0;
-  border: 1px solid #fde2e2;
-  color: #f56c6c;
+  background-color: var(--color-danger-light);
+  border: 1px solid rgba(245, 108, 108, 0.3);
+  color: var(--color-danger);
 }
 
 .message-alert.success {
-  background-color: #f0f9ff;
-  border: 1px solid #bae6fd;
-  color: #0284c7;
+  background-color: var(--color-primary-light);
+  border: 1px solid rgba(64, 158, 255, 0.3);
+  color: var(--color-primary);
 }
 
 .form-group {
@@ -562,7 +562,7 @@ const goToLogin = () => {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #555;
+  color: var(--color-text-secondary);
   font-weight: 500;
   font-size: 14px;
   text-transform: uppercase;
@@ -572,18 +572,19 @@ const goToLogin = () => {
 .form-control {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.3s ease;
-  background-color: #fafafa;
+  background-color: var(--color-bg-light);
+  color: var(--color-text);
 }
 
 .form-control:focus {
   outline: none;
-  border-color: #667eea;
-  background-color: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .password-input {
@@ -605,12 +606,12 @@ const goToLogin = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: var(--color-text-light);
   transition: color 0.3s ease;
 }
 
 .password-toggle:hover {
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 .captcha-input {
@@ -626,7 +627,7 @@ const goToLogin = () => {
 .register-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -640,7 +641,7 @@ const goToLogin = () => {
 }
 
 .register-button:hover {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4091 100%);
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, #6a4091 100%);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
   transform: translateY(-1px);
 }
@@ -653,25 +654,25 @@ const goToLogin = () => {
 .login-link {
   text-align: center;
   margin-top: 25px;
-  color: #777;
+  color: var(--color-text-light);
   font-size: 14px;
 }
 
 .login-link a {
-  color: #667eea;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
 }
 
 .login-link a:hover {
-  color: #5a6fd8;
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
 .send-captcha-btn {
   padding: 14px 18px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -684,7 +685,7 @@ const goToLogin = () => {
 }
 
 .send-captcha-btn:hover {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4091 100%);
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, #6a4091 100%);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   transform: translateY(-1px);
 }
@@ -704,7 +705,7 @@ const goToLogin = () => {
 .captcha-image {
   width: 120px;
   height: 40px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s;
@@ -717,9 +718,9 @@ const goToLogin = () => {
 
 .captcha-text-container {
   padding: 10px;
-  background-color: #f8f9fa;
+  background-color: var(--color-bg-light);
   border-radius: 4px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border-light);
 }
 
 .captcha-text-display {
@@ -728,14 +729,14 @@ const goToLogin = () => {
 }
 
 .captcha-label {
-  color: #666;
+  color: var(--color-text-light);
 }
 
 .captcha-value {
-  color: #1890ff;
+  color: var(--color-primary);
   font-size: 18px;
   letter-spacing: 3px;
-  background-color: #f0f0f0;
+  background-color: var(--color-bg-dark);
   padding: 2px 8px;
   border-radius: 3px;
   font-family: 'Courier New', monospace;
@@ -743,7 +744,7 @@ const goToLogin = () => {
 
 .captcha-hint {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-light);
   margin-top: 4px;
 }
 
@@ -754,12 +755,13 @@ const goToLogin = () => {
 }
 
 .send-captcha-btn:not(:disabled) {
-  background-color: #52c41a;
+  background: var(--color-success);
   color: white;
 }
 
 .send-captcha-btn:not(:disabled):hover {
-  background-color: #40a51f;
+  background: var(--color-success);
+  opacity: 0.85;
 }
 
 /* 禁用按钮样式 */
@@ -769,51 +771,51 @@ button:disabled {
 }
 
 .required {
-  color: #f56c6c;
+  color: var(--color-danger);
 }
 
 .field-error {
-  color: #f56c6c;
+  color: var(--color-danger);
   font-size: 12px;
   margin-top: 4px;
   padding: 4px 8px;
-  background-color: #fef0f0;
+  background-color: var(--color-danger-light);
   border-radius: 4px;
-  border-left: 3px solid #f56c6c;
+  border-left: 3px solid var(--color-danger);
 }
 
 .field-hint {
-  color: #909399;
+  color: var(--color-text-light);
   font-size: 12px;
   margin-top: 4px;
   padding: 4px 8px;
-  background-color: #f8f9fa;
+  background-color: var(--color-bg-light);
   border-radius: 4px;
 }
 
 .form-control.error {
-  border-color: #f56c6c;
-  background-color: #fef0f0;
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-light);
 }
 
 .form-control.error:focus {
-  border-color: #f56c6c;
+  border-color: var(--color-danger);
   box-shadow: 0 0 0 3px rgba(245, 108, 108, 0.1);
 }
 
 /* 密码强度指示 */
 .weak {
-  color: #f56c6c;
+  color: var(--color-danger);
   font-weight: bold;
 }
 
 .medium {
-  color: #e6a23c;
+  color: var(--color-warning);
   font-weight: bold;
 }
 
 .strong {
-  color: #67c23a;
+  color: var(--color-success);
   font-weight: bold;
 }
 
@@ -824,28 +826,28 @@ button:disabled {
 }
 
 .register-button:disabled {
-  background: linear-gradient(135deg, #cccccc 0%, #999999 100%);
+  background: linear-gradient(135deg, var(--color-text-light) 0%, #999999 100%);
   transform: none;
   box-shadow: none;
 }
 
 .register-button:disabled:hover {
-  background: linear-gradient(135deg, #cccccc 0%, #999999 100%);
+  background: linear-gradient(135deg, var(--color-text-light) 0%, #999999 100%);
   transform: none;
   box-shadow: none;
 }
 
 /* 验证码按钮的禁用状态 */
 .send-captcha-btn:disabled {
-  background: linear-gradient(135deg, #cccccc 0%, #999999 100%);
+  background: linear-gradient(135deg, var(--color-text-light) 0%, #999999 100%);
   transform: none;
   box-shadow: none;
 }
 
 /* 错误状态样式 */
 .form-control.error {
-  border-color: #f56c6c;
-  background-color: #fef0f0;
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-light);
   animation: shake 0.5s ease-in-out;
 }
 
@@ -870,17 +872,17 @@ button:disabled {
 }
 
 .field-error {
-  color: #f56c6c;
+  color: var(--color-danger);
   font-size: 14px;
   margin-top: 6px;
   padding: 8px 12px;
-  background-color: #fef0f0;
+  background-color: var(--color-danger-light);
   border-radius: 4px;
-  border-left: 3px solid #f56c6c;
+  border-left: 3px solid var(--color-danger);
 }
 
 .field-error a {
-  color: #409eff;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 </style>

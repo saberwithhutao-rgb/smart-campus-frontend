@@ -718,303 +718,14 @@ watch([studyPlans, completionRate], () => {
   </div>
 </template>
 
-<style>
-:root {
-  /* 主色调：科技蓝 */
-  --primary-color: #165dff;
-  --primary-color-dark: #0e46cc;
-  --primary-color-light: #4c8aff;
-
-  /* 辅助色：浅红色 */
-  --accent-color: #f53f3f;
-  --accent-color-dark: #e13d3d;
-  --accent-color-light: #f76d6d;
-
-  /* 背景色：浅灰色 */
-  --bg-color: #f5f7fa;
-  --bg-color-light: #fafafb;
-  --bg-color-dark: #eef1f5;
-
-  /* 文字主色：深灰色 */
-  --text-color: #1d2129;
-  --text-color-secondary: #4e5969;
-  --text-color-light: #86909c;
-
-  /* 边框和阴影 */
-  --border-color-light: #f0f2f5;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
-
-  /* 圆角 */
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
-  --border-radius-full: 9999px;
-
-  /* 过渡 */
-  --transition: all 0.3s ease;
-}
-</style>
-
 <style scoped>
 /* 主容器 */
 .smart-qa-container {
   min-height: 100vh;
-  background-color: var(--bg-color);
-  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+  background-color: var(--color-bg);
+  font-family: var(--font-family);
   display: flex;
   flex-direction: column;
-}
-
-/* 顶部导航栏 - 保持不变 */
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--surface-color);
-  box-shadow: var(--shadow-sm);
-  z-index: 100;
-  height: 70px;
-  border-bottom: 1px solid var(--border-color-light);
-}
-
-.navbar-container {
-  max-width: 100%;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  height: 100%;
-}
-
-/* Logo区域 */
-.logo {
-  display: flex;
-  align-items: center;
-}
-
-.logo-placeholder {
-  padding: 8px 16px;
-  background-color: var(--primary-color);
-  color: #fff;
-  border-radius: var(--border-radius-md);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* 导航菜单 */
-.nav-menu {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-
-.nav-menu.mobile-menu {
-  display: none;
-}
-
-.nav-item {
-  position: relative;
-  padding: 12px 16px;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-  border-radius: var(--border-radius-md);
-}
-
-.nav-item:hover {
-  color: var(--primary-color);
-  background-color: var(--bg-color-light);
-}
-
-.nav-item.active {
-  color: var(--primary-color);
-  font-weight: 600;
-}
-
-.nav-item.has-submenu {
-  position: relative;
-}
-
-.nav-item.has-submenu::after {
-  content: '▼';
-  margin-left: 6px;
-  font-size: 12px;
-}
-
-/* 子菜单悬浮层 */
-.submenu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background-color: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 12px 0;
-  min-width: 160px;
-  z-index: 200;
-  animation: slideDown 0.2s ease;
-  display: block;
-}
-
-.submenu-item {
-  padding: 12px 20px;
-  font-size: 14px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-  white-space: nowrap;
-}
-
-.submenu-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
-}
-
-/* 移动端子菜单 */
-.mobile-submenu {
-  background-color: var(--bg-color-light);
-  border-radius: var(--border-radius-md);
-  margin-top: 8px;
-  padding: 8px 0;
-  display: block;
-}
-
-.mobile-submenu-item {
-  padding: 10px 20px;
-  font-size: 14px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.mobile-submenu-item:hover {
-  background-color: var(--primary-color);
-  color: #fff;
-}
-
-/* 右侧操作区 */
-.nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-/* 登录按钮 */
-.btn-login {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background-color: var(--primary-color);
-  color: #fff;
-  border: 1px solid var(--primary-color);
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  transition: var(--transition);
-  cursor: pointer;
-}
-
-.btn-login:hover {
-  background-color: var(--primary-color-dark);
-  border-color: var(--primary-color-dark);
-}
-
-.login-icon {
-  font-size: 16px;
-}
-
-/* 个人中心 */
-.user-center {
-  position: relative;
-}
-
-.btn-user-center {
-  padding: 10px 20px;
-  background-color: transparent;
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  transition: var(--transition);
-  cursor: pointer;
-}
-
-.btn-user-center:hover {
-  background-color: var(--bg-color-light);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-/* 个人中心下拉菜单 */
-.user-center-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background-color: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 8px 0;
-  min-width: 140px;
-  z-index: 200;
-  margin-top: 8px;
-}
-
-.dropdown-item {
-  padding: 12px 20px;
-  font-size: 14px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.dropdown-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
-}
-
-.dropdown-item.register {
-  color: var(--primary-color);
-  border-bottom: 1px solid var(--border-color-light);
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-}
-
-.dropdown-item.register:hover {
-  background-color: var(--primary-color);
-  color: #fff;
-}
-
-.dropdown-item.logout {
-  color: var(--accent-color);
-}
-
-.dropdown-item.logout:hover {
-  background-color: var(--accent-color);
-  color: #fff;
-}
-
-/* 动画 */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* ========== 主要修复部分 ========== */
@@ -1033,14 +744,14 @@ watch([studyPlans, completionRate], () => {
 /* 左侧功能栏 - 恢复为相对定位/固定定位混合，确保不被内容覆盖 */
 .sidebar {
   width: 280px;
-  background-color: var(--surface-color);
-  border-right: 1px solid var(--border-color);
+  background-color: var(--color-bg-card);
+  border-right: 1px solid var(--color-border);
   padding: 20px 0;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
   position: relative;
   z-index: 2;
-  flex-shrink: 0; /* 防止侧边栏被压缩 */
+  flex-shrink: 0;
   height: fit-content;
   min-height: calc(100vh - 70px);
   overflow-y: auto;
@@ -1055,13 +766,13 @@ watch([studyPlans, completionRate], () => {
 
 .sidebar-header {
   padding: 0 20px 20px;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .sidebar-title {
   font-size: 20px;
   font-weight: bold;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -1072,21 +783,21 @@ watch([studyPlans, completionRate], () => {
 .sidebar-item {
   padding: 16px 20px;
   font-size: 16px;
-  color: var(--text-color);
+  color: var(--color-text);
   cursor: pointer;
   transition: var(--transition);
   border-left: 3px solid transparent;
 }
 
 .sidebar-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
 }
 
 .sidebar-item-active {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color) !important;
-  border-left-color: var(--primary-color);
+  background-color: var(--color-bg-light);
+  color: var(--color-primary) !important;
+  border-left-color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -1099,13 +810,13 @@ watch([studyPlans, completionRate], () => {
 /* 中间学习计划区域 - 保持宽屏，确保不被侧边栏遮挡 */
 .study-main {
   flex: 1;
-  background-color: var(--bg-color);
+  background-color: var(--color-bg);
   padding: 20px;
   max-width: calc(100% - 280px);
   overflow-y: auto;
   position: relative;
   z-index: 1;
-  min-width: 0; /* 防止flex子项溢出 */
+  min-width: 0;
 }
 
 /* 移动端侧边栏切换按钮 */
@@ -1115,10 +826,10 @@ watch([studyPlans, completionRate], () => {
   left: 10px;
   z-index: 99;
   padding: 8px 16px;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: var(--border-radius-md);
+  border-radius: var(--radius-md);
   font-size: 14px;
   cursor: pointer;
   display: none;
@@ -1140,7 +851,7 @@ watch([studyPlans, completionRate], () => {
   display: block;
 }
 
-/* ========== 以下是原有样式，保持不变 ========== */
+/* ========== 以下是原有样式，已迁移到CSS变量 ========== */
 
 /* 智能复习占位区 */
 .review-placeholder {
@@ -1149,8 +860,8 @@ watch([studyPlans, completionRate], () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 40px 20px;
   text-align: center;
@@ -1163,7 +874,7 @@ watch([studyPlans, completionRate], () => {
 
 .review-text {
   font-size: 18px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
 /* 学习计划主区域 */
@@ -1175,11 +886,11 @@ watch([studyPlans, completionRate], () => {
 
 /* 完成度模块 */
 .completion-section {
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   padding: 20px 24px;
-  border: 1px solid var(--border-color-light);
+  border: 1px solid var(--color-border-light);
   margin-bottom: 20px;
 }
 
@@ -1193,38 +904,38 @@ watch([studyPlans, completionRate], () => {
 .completion-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
 .completion-value {
   font-size: 28px;
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--color-primary);
 }
 
 .completion-bar-container {
   height: 10px;
-  background-color: var(--bg-color-light);
-  border-radius: var(--border-radius-full);
+  background-color: var(--color-bg-light);
+  border-radius: var(--radius-full);
   overflow: hidden;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .completion-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-color-light) 100%);
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: var(--border-radius-full);
+  border-radius: var(--radius-full);
 }
 
 /* 学习计划区域 */
 .plan-section {
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   padding: 20px 24px;
-  border: 1px solid var(--border-color-light);
+  border: 1px solid var(--color-border-light);
   position: relative;
 }
 
@@ -1234,19 +945,19 @@ watch([studyPlans, completionRate], () => {
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .plan-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
 .plan-stats {
   font-size: 14px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
 /* 计划列表 */
@@ -1262,31 +973,31 @@ watch([studyPlans, completionRate], () => {
   justify-content: space-between;
   align-items: flex-start;
   padding: 18px 20px;
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   gap: 16px;
   position: relative;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid var(--border-color-light);
+  border: 1px solid var(--color-border-light);
   cursor: pointer;
 }
 
 .plan-item:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   transform: translateY(-2px);
-  border-color: var(--primary-color-light);
+  border-color: var(--color-primary-light);
 }
 
 /* 已完成计划的样式 */
 .plan-item-completed {
-  background-color: #f9fafb;
-  border-color: var(--border-color);
+  background-color: var(--color-bg-light);
+  border-color: var(--color-border);
   opacity: 0.8;
 }
 
 .plan-item-completed .plan-name {
-  color: var(--text-color-light);
+  color: var(--color-text-light);
   text-decoration: line-through;
 }
 
@@ -1309,7 +1020,7 @@ watch([studyPlans, completionRate], () => {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: var(--primary-color);
+  accent-color: var(--color-primary);
 }
 
 .plan-info {
@@ -1319,13 +1030,13 @@ watch([studyPlans, completionRate], () => {
 .plan-name {
   font-size: 16px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 4px;
 }
 
 .plan-description {
   font-size: 13px;
-  color: var(--text-color-secondary);
+  color: var(--color-text-secondary);
   margin-bottom: 6px;
   line-height: 1.5;
 }
@@ -1341,8 +1052,8 @@ watch([studyPlans, completionRate], () => {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 12px;
-  background-color: var(--bg-color-dark);
-  color: var(--text-color-secondary);
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-secondary);
 }
 
 /* 计划右侧 */
@@ -1365,28 +1076,28 @@ watch([studyPlans, completionRate], () => {
 /* 难度标签 */
 .plan-difficulty {
   padding: 3px 10px;
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 500;
   color: #fff;
 }
 
 .difficulty-hard {
-  background-color: var(--accent-color);
+  background-color: var(--color-danger);
 }
 
 .difficulty-medium {
-  background-color: #f7ba1e;
+  background-color: var(--color-warning);
 }
 
 .difficulty-easy {
-  background-color: #52c41a;
+  background-color: var(--color-success);
 }
 
 /* 时间信息 */
 .plan-time-info {
   font-size: 12px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
   white-space: nowrap;
 }
 
@@ -1398,18 +1109,18 @@ watch([studyPlans, completionRate], () => {
 }
 
 .status-active {
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
 .status-completed {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .status-paused {
-  background-color: #fff3e0;
-  color: #f57c00;
+  background-color: var(--color-warning-light);
+  color: var(--color-warning);
 }
 
 /* 操作按钮 */
@@ -1421,7 +1132,7 @@ watch([studyPlans, completionRate], () => {
 .action-btn {
   padding: 4px 10px;
   border: none;
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 400;
   cursor: pointer;
@@ -1431,22 +1142,23 @@ watch([studyPlans, completionRate], () => {
 }
 
 .edit-btn {
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: #fff;
 }
 
 .edit-btn:hover {
-  background-color: var(--primary-color-dark);
+  background-color: var(--color-primary-hover);
   transform: translateY(-1px);
 }
 
 .delete-btn {
-  background-color: var(--accent-color);
+  background-color: var(--color-danger);
   color: #fff;
 }
 
 .delete-btn:hover {
-  background-color: var(--accent-color-dark);
+  background-color: var(--color-danger);
+  opacity: 0.85;
   transform: translateY(-1px);
 }
 
@@ -1457,9 +1169,9 @@ watch([studyPlans, completionRate], () => {
   align-items: center;
   justify-content: center;
   padding: 60px 40px;
-  background-color: var(--bg-color-light);
-  border-radius: var(--border-radius-md);
-  color: var(--text-color-light);
+  background-color: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  color: var(--color-text-light);
   text-align: center;
 }
 
@@ -1471,13 +1183,13 @@ watch([studyPlans, completionRate], () => {
 .empty-text {
   font-size: 16px;
   font-weight: 500;
-  color: var(--text-color-secondary);
+  color: var(--color-text-secondary);
   margin-bottom: 8px;
 }
 
 .empty-tip {
   font-size: 14px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
 /* 加载状态 */
@@ -1492,8 +1204,8 @@ watch([studyPlans, completionRate], () => {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--bg-color-dark);
-  border-top: 3px solid var(--primary-color);
+  border: 3px solid var(--color-bg-dark);
+  border-top: 3px solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -1501,7 +1213,7 @@ watch([studyPlans, completionRate], () => {
 
 .loading-text {
   font-size: 14px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
 @keyframes spin {
@@ -1519,10 +1231,10 @@ watch([studyPlans, completionRate], () => {
   bottom: 30px;
   right: 30px;
   padding: 12px 28px;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--radius-lg);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -1532,7 +1244,7 @@ watch([studyPlans, completionRate], () => {
 }
 
 .add-plan-btn:hover {
-  background-color: var(--primary-color-dark);
+  background-color: var(--color-primary-hover);
   box-shadow: var(--shadow-xl);
   transform: translateY(-2px);
 }
@@ -1554,7 +1266,7 @@ watch([studyPlans, completionRate], () => {
 }
 
 .modal-content {
-  background-color: var(--background-white);
+  background-color: var(--color-bg-card);
   border-radius: 20px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   width: 100%;
@@ -1562,7 +1274,7 @@ watch([studyPlans, completionRate], () => {
   max-height: 90vh;
   overflow-y: auto;
   animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border: 1px solid rgba(64, 158, 255, 0.1);
+  border: 1px solid var(--color-primary-light);
 }
 
 @keyframes modalFadeIn {
@@ -1590,17 +1302,17 @@ watch([studyPlans, completionRate], () => {
   justify-content: space-between;
   align-items: center;
   padding: 24px 28px;
-  border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(135deg, #f9fafc 0%, #f3f6f9 100%);
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(135deg, var(--color-bg-light) 0%, #f3f6f9 100%);
   border-radius: 20px 20px 0 0;
 }
 
 .modal-title {
   font-size: 22px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
-  background: linear-gradient(135deg, var(--primary-color) 0%, #0052d9 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #0052d9 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1610,7 +1322,7 @@ watch([studyPlans, completionRate], () => {
   background: none;
   border: none;
   font-size: 28px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
   cursor: pointer;
   padding: 0;
   width: 40px;
@@ -1624,7 +1336,7 @@ watch([studyPlans, completionRate], () => {
 }
 
 .modal-close:hover {
-  background-color: var(--danger-color);
+  background-color: var(--color-danger);
   color: white;
   transform: rotate(90deg);
 }
@@ -1642,7 +1354,7 @@ watch([studyPlans, completionRate], () => {
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
   letter-spacing: 0.3px;
 }
 
@@ -1651,12 +1363,12 @@ watch([studyPlans, completionRate], () => {
 .form-textarea {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid var(--border-color);
+  border: 2px solid var(--color-border);
   border-radius: 12px;
   font-size: 15px;
   transition: all 0.3s ease;
-  background-color: var(--background-white);
-  color: var(--text-color);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
 }
 
 .form-textarea {
@@ -1668,15 +1380,15 @@ watch([studyPlans, completionRate], () => {
 .form-input:hover,
 .form-select:hover,
 .form-textarea:hover {
-  border-color: var(--primary-color-light);
+  border-color: var(--color-primary-light);
 }
 
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-light);
   transform: translateY(-1px);
 }
 
@@ -1705,7 +1417,7 @@ watch([studyPlans, completionRate], () => {
 }
 
 .required {
-  color: var(--danger-color);
+  color: var(--color-danger);
   margin-left: 4px;
   font-size: 16px;
 }
@@ -1725,8 +1437,8 @@ watch([studyPlans, completionRate], () => {
   justify-content: flex-end;
   gap: 16px;
   padding: 24px 28px;
-  border-top: 1px solid var(--border-color);
-  background-color: #fafbfc;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg-light);
   border-radius: 0 0 20px 20px;
 }
 
@@ -1743,27 +1455,27 @@ watch([studyPlans, completionRate], () => {
 }
 
 .cancel-btn {
-  background-color: white;
-  color: var(--text-color);
-  border: 2px solid var(--border-color);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
 }
 
 .cancel-btn:hover {
-  background-color: #f5f7fa;
-  border-color: var(--text-color-light);
+  background-color: var(--color-bg-light);
+  border-color: var(--color-text-light);
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
 
 .confirm-btn {
-  background: linear-gradient(135deg, var(--primary-color) 0%, #0052d9 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #0052d9 100%);
   color: white;
-  box-shadow: 0 8px 18px -6px var(--primary-color);
+  box-shadow: 0 8px 18px -6px var(--color-primary);
 }
 
 .confirm-btn:hover {
   background: linear-gradient(135deg, #0052d9 0%, #0036b3 100%);
-  box-shadow: 0 10px 24px -6px var(--primary-color);
+  box-shadow: 0 10px 24px -6px var(--color-primary);
   transform: translateY(-2px);
 }
 
@@ -1775,9 +1487,9 @@ watch([studyPlans, completionRate], () => {
 #edit-plan-end-date,
 #plan-start-date,
 #plan-end-date {
-  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+  font-family: var(--font-family);
   font-size: 15px;
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .form-group.half {
@@ -1839,17 +1551,17 @@ watch([studyPlans, completionRate], () => {
     top: 100%;
     left: 0;
     right: 0;
-    background-color: var(--surface-color);
+    background-color: var(--color-bg-card);
     box-shadow: var(--shadow-lg);
-    border-top: 1px solid var(--border-color-light);
+    border-top: 1px solid var(--color-border-light);
     padding: 16px;
     gap: 8px;
   }
 
   .nav-item {
     padding: 12px 16px;
-    border-radius: var(--border-radius-md);
-    border: 1px solid var(--border-color-light);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-light);
   }
 
   .main-content {

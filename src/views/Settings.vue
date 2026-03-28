@@ -357,7 +357,7 @@ onMounted(() => {
 <style scoped>
 .settings {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
 }
 
 .main-content {
@@ -424,9 +424,9 @@ onMounted(() => {
 .card-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
   margin: 0 0 8px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -434,7 +434,7 @@ onMounted(() => {
 
 .card-subtitle {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-light);
   margin: 0;
 }
 
@@ -446,7 +446,7 @@ onMounted(() => {
 
 .settings-section {
   padding: 24px;
-  background: #f8f9fa;
+  background: var(--color-bg-light);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.8);
 }
@@ -457,14 +457,14 @@ onMounted(() => {
   gap: 8px;
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   margin: 0 0 20px 0;
   padding-bottom: 12px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--color-border);
 }
 
 .section-icon {
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 .setting-item {
@@ -472,7 +472,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .setting-item:last-child {
@@ -487,14 +487,14 @@ onMounted(() => {
   display: block;
   font-size: 15px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 4px;
 }
 
 .setting-desc {
   display: block;
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-light);
 }
 
 .settings-actions {
@@ -516,7 +516,7 @@ onMounted(() => {
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
@@ -533,13 +533,13 @@ onMounted(() => {
 
 .btn-reset {
   background: transparent;
-  color: #666;
-  border: 2px solid #ddd;
+  color: var(--color-text-secondary);
+  border: 2px solid var(--color-border);
 }
 
 .btn-reset:hover {
-  border-color: #f56c6c;
-  color: #f56c6c;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
   transform: translateY(-2px);
   background: rgba(245, 108, 108, 0.05);
 }

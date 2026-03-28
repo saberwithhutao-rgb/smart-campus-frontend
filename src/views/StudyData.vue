@@ -453,7 +453,7 @@ onUnmounted(() => {
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
-  background-color: #f5f7fa;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 70px);
   margin-top: 70px;
 }
@@ -464,16 +464,16 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
   margin-bottom: 24px;
-  background: white;
+  background: var(--color-bg-card);
   padding: 16px 24px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .time-range-selector label {
   font-size: 14px;
   font-weight: 500;
-  color: #606266;
+  color: var(--color-text-secondary);
 }
 
 :deep(.el-select) {
@@ -482,9 +482,9 @@ onUnmounted(() => {
 
 /* 加载状态 */
 .loading-container {
-  background: white;
+  background: var(--color-bg-card);
   padding: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
@@ -498,7 +498,7 @@ onUnmounted(() => {
 /* 卡片通用样式 */
 .statistics-card,
 .suggestions-card {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   border: none;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -515,7 +515,7 @@ onUnmounted(() => {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text);
 }
 
 /* 建议卡片操作区 */
@@ -527,7 +527,7 @@ onUnmounted(() => {
 
 .suggestions-time {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-text-light);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -539,9 +539,9 @@ onUnmounted(() => {
 
 /* 统计项 */
 .stat-item {
-  background: #f8f9fa;
+  background: var(--color-bg-light);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   text-align: center;
   transition: all 0.3s ease;
   margin-bottom: 16px;
@@ -549,13 +549,13 @@ onUnmounted(() => {
 
 .stat-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .stat-label {
   display: block;
   font-size: 14px;
-  color: #909399;
+  color: var(--color-text-light);
   margin-bottom: 8px;
 }
 
@@ -563,7 +563,7 @@ onUnmounted(() => {
   display: block;
   font-size: 24px;
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text);
   line-height: 1.3;
 }
 
@@ -574,16 +574,16 @@ onUnmounted(() => {
 
 /* 图表容器 */
 .chart-container {
-  background: white;
+  background: var(--color-bg-card);
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .chart-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text);
   margin: 0 0 16px 0;
 }
 
@@ -596,8 +596,8 @@ onUnmounted(() => {
 .chart-legend {
   margin-top: 16px;
   padding: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
 }
 
 .legend-item {
@@ -606,8 +606,8 @@ onUnmounted(() => {
   gap: 8px;
   padding: 8px 0;
   font-size: 14px;
-  color: #606266;
-  border-bottom: 1px solid #e4e7ed;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .legend-item:last-child {
@@ -626,13 +626,13 @@ onUnmounted(() => {
 }
 
 .legend-value {
-  color: #909399;
+  color: var(--color-text-light);
 }
 
 /* 科目卡片 */
 .subject-card {
   margin-bottom: 12px;
-  background: #f8f9fa;
+  background: var(--color-bg-light);
   border: none;
 }
 
@@ -646,7 +646,7 @@ onUnmounted(() => {
 .subject-name {
   font-size: 14px;
   font-weight: 500;
-  color: #606266;
+  color: var(--color-text-secondary);
 }
 
 /* 建议内容 */
@@ -656,12 +656,12 @@ onUnmounted(() => {
   gap: 12px;
   font-size: 14px;
   line-height: 1.6;
-  color: #606266;
+  color: var(--color-text-secondary);
 }
 
 .suggestion-content .el-icon {
   font-size: 18px;
-  color: #409eff;
+  color: var(--color-primary);
 }
 
 /* 空状态 */
@@ -671,13 +671,13 @@ onUnmounted(() => {
 }
 
 .suggestions-empty .el-icon {
-  color: #c0c4cc;
+  color: var(--color-text-light);
 }
 
 :deep(.el-divider__text) {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--color-text);
 }
 
 /* 响应式设计 */

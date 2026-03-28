@@ -841,7 +841,7 @@ onMounted(async () => {
 <style scoped>
 .sports-reservation {
   min-height: 100vh;
-  background-color: var(--bg-color);
+  background-color: var(--color-bg);
   padding-top: 70px;
 }
 
@@ -857,14 +857,14 @@ onMounted(async () => {
 .page-title {
   font-size: 32px;
   font-weight: 700;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 24px;
   text-align: center;
 }
 
 .info-card {
-  background: var(--white);
-  border-radius: 12px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: var(--shadow-sm);
@@ -880,7 +880,7 @@ onMounted(async () => {
 .card-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -898,13 +898,13 @@ onMounted(async () => {
 
 .info-item label {
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
   white-space: nowrap;
 }
 
 .court-selection-area {
-  background: var(--white);
-  border-radius: 12px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: var(--shadow-sm);
@@ -917,7 +917,7 @@ onMounted(async () => {
 .venue-selector h3 {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 12px;
 }
 
@@ -932,10 +932,10 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  border: 1px solid var(--border-color);
-  background: var(--white);
-  color: var(--text-color);
-  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s;
   font-size: 14px;
@@ -943,16 +943,16 @@ onMounted(async () => {
 }
 
 .venue-btn:hover {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
 }
 
 .venue-btn.active {
-  background: var(--primary-color);
-  color: var(--white);
-  border-color: var(--primary-color);
+  background: var(--color-primary);
+  color: var(--color-bg-card);
+  border-color: var(--color-primary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -966,8 +966,8 @@ onMounted(async () => {
   gap: 16px;
   margin-bottom: 24px;
   padding: 16px;
-  background: var(--bg-color-light);
-  border-radius: 8px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
   flex-wrap: wrap;
 }
 
@@ -976,7 +976,7 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .legend-court {
@@ -993,17 +993,17 @@ onMounted(async () => {
 }
 
 .legend-court.available {
-  background: #52c41a;
+  background: var(--color-success);
   border-color: #389e0d;
 }
 
 .legend-court.occupied {
-  background: #f5222d;
+  background: var(--color-danger);
   border-color: #cf1322;
 }
 
 .legend-court.selected {
-  background: #1890ff;
+  background: var(--color-primary);
   border-color: #096dd9;
 }
 
@@ -1012,8 +1012,8 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   padding: 32px;
-  background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
-  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, #e6f7ff 100%);
+  border-radius: var(--radius-lg);
   overflow: auto;
   border: 2px solid #d6e4ff;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -1022,7 +1022,7 @@ onMounted(async () => {
 .court-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -1035,7 +1035,7 @@ onMounted(async () => {
   max-width: 100%;
   padding: 10px;
   background: rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .court {
@@ -1046,7 +1046,7 @@ onMounted(async () => {
   justify-content: center;
   font-size: 14px;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s;
   border: 2px solid;
@@ -1056,7 +1056,7 @@ onMounted(async () => {
 }
 
 .court.available {
-  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  background: linear-gradient(135deg, var(--color-success) 0%, #73d13d 100%);
   color: white;
   border-color: #389e0d;
 }
@@ -1067,7 +1067,7 @@ onMounted(async () => {
 }
 
 .court.occupied {
-  background: linear-gradient(135deg, #f5222d 0%, #ff4d4f 100%);
+  background: linear-gradient(135deg, var(--color-danger) 0%, #ff4d4f 100%);
   color: white;
   border-color: #cf1322;
   cursor: pointer;
@@ -1086,7 +1086,7 @@ onMounted(async () => {
   right: -3px;
   width: 14px;
   height: 14px;
-  background: #faad14;
+  background: var(--color-warning);
   border: 2px solid white;
   border-radius: 50%;
   animation: pulse 1.5s ease-in-out infinite;
@@ -1125,7 +1125,7 @@ onMounted(async () => {
 }
 
 .court.selected {
-  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #40a9ff 100%);
   color: white;
   border-color: #096dd9;
   box-shadow: 0 6px 16px rgba(24, 144, 255, 0.6);
@@ -1173,9 +1173,9 @@ onMounted(async () => {
 .selected-info {
   margin-top: 24px;
   padding: 16px;
-  background: var(--bg-color-light);
-  border-radius: 8px;
-  border-left: 4px solid var(--primary-color);
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--color-primary);
 }
 
 .selected-header {
@@ -1188,12 +1188,12 @@ onMounted(async () => {
 .selected-header h4 {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
 .seat-count {
-  background: var(--primary-color);
+  background: var(--color-primary);
   color: white;
   padding: 2px 8px;
   border-radius: 10px;
@@ -1212,8 +1212,8 @@ onMounted(async () => {
   justify-content: center;
   gap: 16px;
   padding: 24px;
-  background: var(--white);
-  border-radius: 12px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
 
@@ -1225,7 +1225,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .confirm-item:last-child {
@@ -1234,11 +1234,11 @@ onMounted(async () => {
 
 .confirm-item label {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .confirm-item span {
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .court-detail {
@@ -1249,7 +1249,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .detail-item:last-child {
@@ -1258,25 +1258,25 @@ onMounted(async () => {
 
 .detail-item label {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .detail-item span {
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .status-available {
-  color: #52c41a;
+  color: var(--color-success);
   font-weight: 600;
 }
 
 .status-reserved {
-  color: #faad14;
+  color: var(--color-warning);
   font-weight: 600;
 }
 
 .status-occupied {
-  color: #f5222d;
+  color: var(--color-danger);
   font-weight: 600;
 }
 
@@ -1287,6 +1287,7 @@ onMounted(async () => {
 .no-reservation {
   padding: 40px 0;
   text-align: center;
+  color: var(--color-text-light);
 }
 
 /* 响应式设计 */

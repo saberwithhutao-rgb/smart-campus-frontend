@@ -222,35 +222,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 复用原有全局变量 */
-:root {
-  --primary-color: #165dff;
-  --primary-color-dark: #0e46cc;
-  --primary-color-light: #4c8aff;
-  --accent-color: #f53f3f;
-  --accent-color-dark: #e13d3d;
-  --bg-color: #f5f7fa;
-  --bg-color-light: #fafafb;
-  --bg-color-dark: #eef1f5;
-  --text-color: #1d2129;
-  --text-color-secondary: #4e5969;
-  --text-color-light: #86909c;
-  --border-color: #e5e7eb;
-  --border-color-light: #f0f2f5;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
-  --transition: all 0.3s ease;
-}
-
+/* 复用原有全局变量 - 改为使用 CSS 变量 */
 .smart-qa-container {
   min-height: 100vh;
-  background-color: var(--bg-color);
-  font-family: 'Microsoft YaHei', sans-serif;
+  background-color: var(--color-bg);
+  font-family: var(--font-family);
   display: flex;
   flex-direction: column;
 }
@@ -270,10 +246,10 @@ onUnmounted(() => {
   left: 10px;
   z-index: 98;
   padding: 8px 16px;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: var(--border-radius-md);
+  border-radius: var(--radius-md);
   font-size: 14px;
   cursor: pointer;
   display: none;
@@ -281,8 +257,8 @@ onUnmounted(() => {
 
 .sidebar {
   width: 280px;
-  background-color: #fff;
-  border-right: 1px solid var(--border-color);
+  background-color: var(--color-bg-card);
+  border-right: 1px solid var(--color-border);
   padding: 20px 0;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
@@ -293,13 +269,13 @@ onUnmounted(() => {
 
 .sidebar-header {
   padding: 0 20px 20px;
-  border-bottom: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .sidebar-title {
   font-size: 20px;
   font-weight: bold;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -310,21 +286,21 @@ onUnmounted(() => {
 .sidebar-item {
   padding: 16px 20px;
   font-size: 16px;
-  color: var(--text-color);
+  color: var(--color-text);
   cursor: pointer;
   transition: var(--transition);
   border-left: 3px solid transparent;
 }
 
 .sidebar-item:hover {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color);
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
 }
 
 .sidebar-item-active {
-  background-color: var(--bg-color-light);
-  color: var(--primary-color) !important;
-  border-left-color: var(--primary-color);
+  background-color: var(--color-bg-light);
+  color: var(--color-primary) !important;
+  border-left-color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -336,7 +312,7 @@ onUnmounted(() => {
 
 .study-main {
   flex: 1;
-  background-color: var(--bg-color);
+  background-color: var(--color-bg);
   padding: 20px;
   overflow-y: auto;
   position: relative;
@@ -349,11 +325,11 @@ onUnmounted(() => {
 
 /* 模块通用样式 */
 .review-section {
-  background-color: #fff;
-  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 24px;
-  border: 1px solid var(--border-color-light);
+  border: 1px solid var(--color-border-light);
 }
 
 .section-header {
@@ -366,13 +342,13 @@ onUnmounted(() => {
 .section-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0;
 }
 
 .section-stats {
   font-size: 14px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
 .section-footer {
@@ -380,7 +356,7 @@ onUnmounted(() => {
   justify-content: center;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid var(--border-color-light);
+  border-top: 1px solid var(--color-border-light);
 }
 
 /* 任务卡片列表 */
@@ -395,15 +371,15 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background-color: #fff;
-  border: 1px solid var(--border-color-light);
-  border-radius: var(--border-radius-md);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
   transition: var(--transition);
 }
 
 .task-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--primary-color-light);
+  border-color: var(--color-primary-light);
 }
 
 .task-left {
@@ -420,7 +396,7 @@ onUnmounted(() => {
 .task-title {
   font-size: 16px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 4px;
 }
 
@@ -428,11 +404,11 @@ onUnmounted(() => {
   display: flex;
   gap: 16px;
   font-size: 13px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
 .task-subject {
-  color: var(--primary-color);
+  color: var(--color-primary);
 }
 
 .task-right {
@@ -449,7 +425,7 @@ onUnmounted(() => {
 
 .review-stage {
   font-size: 13px;
-  color: var(--text-color-secondary);
+  color: var(--color-text-secondary);
 }
 
 /* 计划卡片列表 */
@@ -464,16 +440,16 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background-color: #fff;
-  border: 1px solid var(--border-color-light);
-  border-radius: var(--border-radius-md);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: var(--transition);
 }
 
 .plan-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--primary-color);
+  border-color: var(--color-primary);
   transform: translateY(-2px);
 }
 
@@ -494,7 +470,7 @@ onUnmounted(() => {
 .plan-title {
   font-size: 16px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 4px;
 }
 
@@ -506,7 +482,7 @@ onUnmounted(() => {
 
 .plan-subject {
   font-size: 13px;
-  color: var(--text-color-secondary);
+  color: var(--color-text-secondary);
 }
 
 .plan-card-right {
@@ -517,11 +493,11 @@ onUnmounted(() => {
 
 .plan-time {
   font-size: 13px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
 .arrow-icon {
-  color: var(--text-color-light);
+  color: var(--color-text-light);
   font-size: 16px;
 }
 
@@ -532,7 +508,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 48px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
 .empty-icon {
@@ -544,15 +520,15 @@ onUnmounted(() => {
   font-size: 16px;
   font-weight: 500;
   margin-bottom: 8px;
-  color: var(--text-color-secondary);
+  color: var(--color-text-secondary);
 }
 
 .empty-tip {
   font-size: 14px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
-/* 艾宾浩斯弹窗样式（保持不变） */
+/* 艾宾浩斯弹窗样式 */
 .ebbinghaus-container {
   display: flex;
   flex-direction: column;
@@ -560,9 +536,9 @@ onUnmounted(() => {
 }
 
 .curve-image-container {
-  background: white;
+  background: var(--color-bg-card);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -579,13 +555,13 @@ onUnmounted(() => {
 .curve-description h4 {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text);
   margin: 0 0 12px 0;
 }
 
 .curve-description p {
   font-size: 14px;
-  color: var(--text-color-secondary);
+  color: var(--color-text-secondary);
   margin: 8px 0;
 }
 
@@ -601,23 +577,23 @@ onUnmounted(() => {
   gap: 8px;
   margin-bottom: 8px;
   font-size: 14px;
-  color: var(--text-color);
+  color: var(--color-text);
 }
 
 .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--primary-color);
+  background: var(--color-primary);
   display: inline-block;
 }
 
 .note {
-  color: var(--text-color-light);
+  color: var(--color-text-light);
   font-style: italic;
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid var(--border-color-light);
+  border-top: 1px solid var(--color-border-light);
 }
 
 .task-card-left {
@@ -638,7 +614,7 @@ onUnmounted(() => {
 .task-title {
   font-size: 16px;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--color-text);
   margin-bottom: 4px;
 }
 
@@ -650,7 +626,7 @@ onUnmounted(() => {
 
 .task-subject {
   font-size: 13px;
-  color: var(--text-color-secondary);
+  color: var(--color-text-secondary);
 }
 
 .task-card-right {
@@ -661,7 +637,7 @@ onUnmounted(() => {
 
 .task-date {
   font-size: 13px;
-  color: var(--text-color-light);
+  color: var(--color-text-light);
 }
 
 .task-status {
@@ -732,7 +708,7 @@ onUnmounted(() => {
   .plan-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-    border-color: var(--primary-color);
+    border-color: var(--color-primary);
   }
 
   .arrow-icon {
@@ -741,7 +717,7 @@ onUnmounted(() => {
 
   .plan-card:hover .arrow-icon {
     transform: translateX(4px);
-    color: var(--primary-color);
+    color: var(--color-primary);
   }
 }
 </style>

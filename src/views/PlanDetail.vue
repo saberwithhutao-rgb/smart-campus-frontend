@@ -350,9 +350,9 @@ const goBack = () => router.go(-1)
 /* 全局容器样式 */
 .smart-qa-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  color: #333;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, var(--color-bg) 0%, #c3cfe2 100%);
+  color: var(--color-text);
+  font-family: var(--font-family);
 }
 
 .main-content {
@@ -363,15 +363,15 @@ const goBack = () => router.go(-1)
 }
 
 .plan-detail-container {
-  background: #ffffff;
-  border-radius: 16px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
   padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
   transition: all 0.3s ease;
 }
 
 .plan-detail-container:hover {
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-xl);
 }
 
 .loading {
@@ -388,13 +388,13 @@ const goBack = () => router.go(-1)
 
 .header-actions .el-button {
   font-size: 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: all 0.3s ease;
 }
 
 .header-actions .el-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 /* 标题和描述 */
@@ -402,13 +402,13 @@ h1 {
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 12px;
-  color: #2c3e50;
+  color: var(--color-text);
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .description {
   font-size: 17px;
-  color: #7f8c8d;
+  color: var(--color-text-secondary);
   line-height: 1.7;
   margin-bottom: 25px;
 }
@@ -425,25 +425,25 @@ h1 {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: #f8f9fa;
-  border-radius: 10px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
   transition: all 0.3s ease;
 }
 
 .info-item:hover {
-  background: #e9ecef;
+  background: var(--color-bg-dark);
   transform: translateY(-3px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .label {
   font-weight: 600;
   margin-right: 10px;
-  color: #34495e;
+  color: var(--color-text);
 }
 
 .value {
-  color: #7f8c8d;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
@@ -457,13 +457,13 @@ h1 {
 .action-section .el-button {
   font-size: 15px;
   padding: 12px 24px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   transition: all 0.3s ease;
 }
 
 .action-section .el-button:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 /* 生成的学习计划卡片 */
@@ -472,14 +472,14 @@ h1 {
 }
 
 .plan-card {
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
 }
 
 .plan-card:hover {
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .card-header {
@@ -487,7 +487,7 @@ h1 {
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
   color: white;
 }
 
@@ -500,15 +500,15 @@ h1 {
 .plan-content.markdown-body {
   padding: 25px;
   line-height: 1.9;
-  color: #333;
-  background: #ffffff;
+  color: var(--color-text);
+  background: var(--color-bg-card);
 }
 
 /* 历史计划弹窗 */
 .el-dialog {
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
 }
 
 .history-list {
@@ -521,14 +521,14 @@ h1 {
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: 15px;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm);
 }
 
 .history-card:hover {
   transform: translateX(8px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .history-preview {
@@ -539,7 +539,7 @@ h1 {
   font-size: 17px;
   font-weight: 600;
   margin-bottom: 10px;
-  color: #2c3e50;
+  color: var(--color-text);
 }
 
 .history-meta {
@@ -550,7 +550,7 @@ h1 {
 
 .history-content {
   font-size: 15px;
-  color: #7f8c8d;
+  color: var(--color-text-secondary);
   line-height: 1.7;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -564,7 +564,7 @@ h1 {
 
 .back-btn {
   margin-bottom: 25px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: all 0.3s ease;
 }
 
