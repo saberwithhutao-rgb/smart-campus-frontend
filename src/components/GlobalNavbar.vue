@@ -281,7 +281,7 @@ onUnmounted(() => {
   align-items: center;
   cursor: pointer;
   transition: opacity 0.3s ease;
-  height: 50px;
+  height: 60px;
 }
 
 .logo:hover {
@@ -291,7 +291,7 @@ onUnmounted(() => {
 .logo-image {
   height: 100%;
   width: auto;
-  max-height: 45px;
+  max-height: 55px;
   object-fit: contain;
   background-color: transparent;
 }
@@ -650,11 +650,11 @@ onUnmounted(() => {
   }
 
   .logo {
-    height: 40px;
+    height: 45px;
   }
 
   .logo-image {
-    max-height: 35px;
+    max-height: 42px;
   }
 
   .navbar-container {

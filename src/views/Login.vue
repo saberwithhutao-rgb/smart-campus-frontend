@@ -265,7 +265,7 @@ onMounted(() => {
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 420px;
+  max-width: 520px;
   transition: transform 0.3s ease;
 }
 
