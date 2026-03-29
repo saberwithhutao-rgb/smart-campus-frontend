@@ -1012,10 +1012,10 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   padding: 32px;
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, #e6f7ff 100%);
+  background: var(--color-bg-light);
   border-radius: var(--radius-lg);
   overflow: auto;
-  border: 2px solid #d6e4ff;
+  border: 2px solid var(--color-border);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -1056,7 +1056,7 @@ onMounted(async () => {
 }
 
 .court.available {
-  background: linear-gradient(135deg, var(--color-success) 0%, #73d13d 100%);
+  background: var(--color-success);
   color: white;
   border-color: #389e0d;
 }
@@ -1067,7 +1067,7 @@ onMounted(async () => {
 }
 
 .court.occupied {
-  background: linear-gradient(135deg, var(--color-danger) 0%, #ff4d4f 100%);
+  background: var(--color-danger);
   color: white;
   border-color: #cf1322;
   cursor: pointer;
@@ -1125,7 +1125,7 @@ onMounted(async () => {
 }
 
 .court.selected {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #40a9ff 100%);
+  background: var(--color-primary);
   color: white;
   border-color: #096dd9;
   box-shadow: 0 6px 16px rgba(24, 144, 255, 0.6);
@@ -1155,11 +1155,11 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
-  border: 1px solid #ffd591;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 13px;
-  color: #d46b08;
+  color: var(--color-text-secondary);
 }
 
 .tip-icon {

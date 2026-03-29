@@ -29,7 +29,118 @@
   --el-box-shadow-light: var(--shadow-sm);
 }
 
-/* 弹窗遮罩层深色模式适配 */
+/* ==================== 输入框 ==================== */
+[data-theme='dark'] .el-input__wrapper {
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+[data-theme='dark'] .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+[data-theme='dark'] .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+/* ==================== 下拉选择框 ==================== */
+[data-theme='dark'] .el-select .el-input__wrapper {
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+[data-theme='dark'] .el-select .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--color-primary) inset;
+}
+
+[data-theme='dark'] .el-select-dropdown {
+  background-color: var(--color-bg-card);
+  border-color: var(--color-border);
+}
+
+[data-theme='dark'] .el-select-dropdown__item {
+  color: var(--color-text);
+}
+
+[data-theme='dark'] .el-select-dropdown__item:hover {
+  background-color: var(--color-bg-light);
+}
+
+[data-theme='dark'] .el-select-dropdown__item.selected {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* ==================== 数字输入框 ==================== */
+[data-theme='dark'] .el-input-number .el-input__wrapper {
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+[data-theme='dark'] .el-input-number__decrease,
+[data-theme='dark'] .el-input-number__increase {
+  background-color: var(--color-bg-light);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+[data-theme='dark'] .el-input-number__decrease:hover,
+[data-theme='dark'] .el-input-number__increase:hover {
+  background-color: var(--color-bg-dark);
+}
+
+/* ==================== 日期选择器 ==================== */
+[data-theme='dark'] .el-date-editor .el-input__wrapper {
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+[data-theme='dark'] .el-picker-panel {
+  background-color: var(--color-bg-card);
+  border-color: var(--color-border);
+}
+
+[data-theme='dark'] .el-picker-panel__body {
+  background-color: var(--color-bg-card);
+}
+
+[data-theme='dark'] .el-date-table td.available:hover {
+  background-color: var(--color-bg-light);
+}
+
+[data-theme='dark'] .el-date-table td.current:not(.disabled) .el-date-table-cell__text {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+[data-theme='dark'] .el-date-table td.today .el-date-table-cell__text {
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] .el-date-table td.today.current .el-date-table-cell__text {
+  color: #fff;
+}
+
+/* ==================== 按钮 ==================== */
+[data-theme='dark'] .el-button--primary.is-plain {
+  background-color: var(--color-bg-card);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] .el-button--primary.is-plain:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] .el-button.is-disabled {
+  background-color: var(--color-bg-light);
+  border-color: var(--color-border);
+  color: var(--color-text-light);
+}
+
+/* ==================== 弹窗 ==================== */
 [data-theme='dark'] .el-dialog {
   --el-dialog-bg-color: var(--color-bg-card);
 }
@@ -43,11 +154,67 @@
   --el-card-border-color: var(--color-border);
 }
 
-[data-theme='dark'] .el-input__wrapper {
-  background-color: var(--color-bg-light);
-  box-shadow: 0 0 0 1px var(--color-border) inset;
+/* ==================== 标签页 ==================== */
+[data-theme='dark'] .el-tabs__item {
+  color: var(--color-text-secondary);
 }
 
-[data-theme='dark'] .el-select .el-input__wrapper:hover {
-  box-shadow: 0 0 0 1px var(--color-primary) inset;
+[data-theme='dark'] .el-tabs__item.is-active {
+  color: var(--color-primary);
+}
+
+/* ==================== 时间线 ==================== */
+[data-theme='dark'] .el-timeline-item__timestamp {
+  color: var(--color-text-light);
+}
+
+[data-theme='dark'] .el-timeline-item__tail {
+  border-left-color: var(--color-border);
+}
+
+/* ==================== 标签 ==================== */
+[data-theme='dark'] .el-tag {
+  background-color: var(--color-bg-light);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+[data-theme='dark'] .el-tag--info {
+  background-color: var(--color-bg-light);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+[data-theme='dark'] .el-tag--primary {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+[data-theme='dark'] .el-tag--success {
+  background-color: var(--color-success-light);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+[data-theme='dark'] .el-tag--warning {
+  background-color: var(--color-warning-light);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+[data-theme='dark'] .el-tag--danger {
+  background-color: var(--color-danger-light);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+/* ==================== 骨架屏 ==================== */
+[data-theme='dark'] .el-skeleton__item {
+  background-color: var(--color-bg-light);
+}
+
+/* ==================== 空状态 ==================== */
+[data-theme='dark'] .el-empty__description {
+  color: var(--color-text-light);
 }

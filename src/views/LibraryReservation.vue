@@ -2045,11 +2045,11 @@ const grid = computed(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
-  border: 1px solid #ffd591;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
   border-radius: 6px;
   font-size: 13px;
-  color: #d46b08;
 }
 
 .tip-icon {
@@ -2169,8 +2169,8 @@ const grid = computed(() => {
 }
 
 .room-card.recommended {
-  border-color: var(--color-success);
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, #e6f7ff 100%);
+  background: var(--color-bg-card);
+  border-color: var(--color-primary);
   position: relative;
   overflow: hidden;
 }
@@ -2182,20 +2182,7 @@ const grid = computed(() => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--color-success) 0%, #73d13d 100%);
-}
-
-.room-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: linear-gradient(135deg, var(--color-success) 0%, #73d13d 100%);
-  color: white;
-  padding: 4px 10px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  z-index: 1;
+  background: var(--color-success);
 }
 
 .all-rooms-section {
@@ -2221,7 +2208,7 @@ const grid = computed(() => {
 
 .occupancy-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-success) 0%, #73d13d 100%);
+  background: var(--color-success);
   transition: width 0.3s ease;
   border-radius: 3px;
 }
