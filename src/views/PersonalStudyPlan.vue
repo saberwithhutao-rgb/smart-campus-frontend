@@ -41,6 +41,10 @@ const minDate = computed(() => {
   return `${year}-${month}-${day}`
 })
 
+const isPlanCompleted = (plan: StudyPlan) => {
+  return plan.status === 'completed'
+}
+
 const subjectOptions = [
   { value: '数学', label: '数学' },
   { value: '英语', label: '英语' },
@@ -271,8 +275,10 @@ const deletePlan = async (id: number) => {
 /**
  * 切换计划完成状态
  */
-const toggleComplete = async (plan: StudyPlan) => {
-  if (plan.status !== 'completed') {
+const toggleComplete = async (plan: StudyPlan, event: Event) => {
+  const checkbox = event.target as HTMLInputElement
+
+  if (checkbox.checked && plan.status !== 'completed') {
     try {
       await ElMessageBox.confirm(`确定要完成计划「${plan.title}」吗？`, '确认完成', {
         confirmButtonText: '确定',
@@ -280,13 +286,14 @@ const toggleComplete = async (plan: StudyPlan) => {
         type: 'info',
       })
     } catch {
+      checkbox.checked = false
       return
     }
   }
 
-  // 执行状态切换
   await studyPlanStore.togglePlanComplete(plan.id)
 }
+</script>
 
 /**
  * 格式化日期显示
@@ -445,8 +452,8 @@ watch([studyPlans, completionRate], () => {
                   <div class="plan-complete">
                     <input
                       type="checkbox"
-                      :checked="plan.status === 'completed'"
-                      @change="toggleComplete(plan)"
+                      :checked="isPlanCompleted(plan)"
+                      @change="toggleComplete(plan, $event)"
                       @click.stop
                       class="complete-checkbox"
                     />

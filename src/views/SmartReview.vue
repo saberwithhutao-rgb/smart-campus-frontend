@@ -75,7 +75,8 @@
             </div>
           </div>
 
-          <div class="plan-list">
+          <!-- ✅ 添加条件判断：有数据时显示列表，无数据时显示空状态 -->
+          <div v-if="studyPlanStore.completedPlansWithReviewStatus.length > 0" class="plan-list">
             <div
               v-for="plan in studyPlanStore.completedPlansWithReviewStatus"
               :key="plan.id"
@@ -104,6 +105,16 @@
                 </div>
                 <el-icon class="arrow-icon"><ArrowRight /></el-icon>
               </div>
+            </div>
+          </div>
+
+          <div v-else class="empty-state">
+            <div class="empty-icon">📭</div>
+            <div class="empty-text">暂无复习计划</div>
+            <div class="empty-tip">
+              请先前往
+              <el-link type="primary" @click="goToStudyPlan">学习计划页面</el-link>
+              创建并完成计划
             </div>
           </div>
         </div>

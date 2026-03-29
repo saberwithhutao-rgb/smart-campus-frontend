@@ -16,6 +16,7 @@ const form = reactive({
 
 // 密码是否可见
 const isPasswordVisible = ref(false)
+const isConfirmPasswordVisible = ref(false)
 
 // 是否正在发送邮箱验证码
 const isSendingVerifyCode = ref(false)
@@ -44,6 +45,10 @@ const isError = computed(() => {
 // 切换密码可见性
 const togglePasswordVisibility = () => {
   isPasswordVisible.value = !isPasswordVisible.value
+}
+
+const toggleConfirmPasswordVisibility = () => {
+  isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value
 }
 
 // ==================== 验证函数 ====================
@@ -407,17 +412,17 @@ const goToLogin = () => {
           <input
             id="confirmPassword"
             v-model="form.confirmPassword"
-            :type="isPasswordVisible ? 'text' : 'password'"
+            :type="isConfirmPasswordVisible ? 'text' : 'password'"
             placeholder="请再次输入密码"
             :class="['form-control', { error: fieldErrors.confirmPassword }]"
           />
           <button
             type="button"
-            @click="togglePasswordVisibility"
+            @click="toggleConfirmPasswordVisibility"
             class="password-toggle"
-            :title="isPasswordVisible ? '隐藏密码' : '显示密码'"
+            :title="isConfirmPasswordVisible ? '隐藏密码' : '显示密码'"
           >
-            {{ isPasswordVisible ? '👁️' : '👁️‍🗨️' }}
+            {{ isConfirmPasswordVisible ? '👁️' : '👁️‍🗨️' }}
           </button>
         </div>
         <div v-if="fieldErrors.confirmPassword" class="field-error">
