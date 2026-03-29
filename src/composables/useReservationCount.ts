@@ -6,7 +6,6 @@ export function useReservationCount() {
   const activeCount = ref(0)
   const isLoading = ref(false)
 
-  // 最大预约数量
   const MAX_RESERVATIONS = 3
 
   // 检查用户是否达到最大预约数量

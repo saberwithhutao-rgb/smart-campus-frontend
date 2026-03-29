@@ -1347,6 +1347,7 @@ const grid = computed(() => {
                 v-model="selectedDate"
                 type="date"
                 placeholder="选择日期"
+                :disabled="isAtMaxLimit"
                 :disabled-date="
                   (date: Date) => {
                     const today = new Date()
@@ -1362,7 +1363,11 @@ const grid = computed(() => {
             </div>
             <div class="info-item">
               <label>预约时间：</label>
-              <el-select v-model="selectedTimeSlot" placeholder="选择预约时间">
+              <el-select
+                v-model="selectedTimeSlot"
+                placeholder="选择预约时间"
+                :disabled="isAtMaxLimit"
+              >
                 <el-option
                   v-for="slot in timeSlots"
                   :key="slot.id"
@@ -1378,6 +1383,7 @@ const grid = computed(() => {
                 :min="1"
                 :max="maxDuration"
                 :step="1"
+                :disabled="isAtMaxLimit"
               />
               <span style="margin-left: 8px">小时</span>
             </div>

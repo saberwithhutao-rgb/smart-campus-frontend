@@ -293,7 +293,6 @@ const toggleComplete = async (plan: StudyPlan, event: Event) => {
 
   await studyPlanStore.togglePlanComplete(plan.id)
 }
-</script>
 
 /**
  * 格式化日期显示
