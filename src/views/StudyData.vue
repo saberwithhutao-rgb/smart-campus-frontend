@@ -279,7 +279,7 @@ const renderCharts = () => {
             avoidLabelOverlap: false,
             itemStyle: {
               borderRadius: 10,
-              borderColor: '#fff',
+              borderColor: 'var(--color-bg-card)',
               borderWidth: 2,
             },
             label: {
@@ -323,7 +323,7 @@ const renderCharts = () => {
             avoidLabelOverlap: false,
             itemStyle: {
               borderRadius: 10,
-              borderColor: '#fff',
+              borderColor: 'var(--color-bg-card)',
               borderWidth: 2,
             },
             label: {

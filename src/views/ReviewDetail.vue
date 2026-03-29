@@ -191,7 +191,9 @@
       :close-on-click-modal="false"
     >
       <div class="complete-confirm">
-        <el-icon class="warning-icon" size="40" color="#E6A23C"><WarningFilled /></el-icon>
+        <el-icon class="warning-icon" size="40" color="var(--color-warning)"
+          ><WarningFilled
+        /></el-icon>
         <p>确定已完成本次复习吗？</p>
         <p class="tip">完成后将自动生成下一次复习任务</p>
       </div>
@@ -712,12 +714,13 @@ const goBack = () => router.go(-1)
 }
 
 .suggestion-card.current-version {
-  background-color: #f0f9eb;
+  background-color: var(--color-success-light);
   border-color: var(--color-success);
 }
 
 .suggestion-card.current-version:hover {
-  background-color: #e1f3d8;
+  background-color: var(--color-success-light);
+  opacity: 0.8;
 }
 
 .version-badge {

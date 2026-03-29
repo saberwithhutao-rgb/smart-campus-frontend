@@ -9,9 +9,13 @@
 
   /* ==================== 辅助色 ==================== */
   --color-success: #52c41a;
+  --color-success-light: rgba(82, 196, 26, 0.1);
   --color-warning: #faad14;
+  --color-warning-light: rgba(250, 173, 20, 0.1);
   --color-danger: #f53f3f;
+  --color-danger-light: rgba(245, 63, 63, 0.1);
   --color-info: #909399;
+  --color-info-light: rgba(144, 147, 153, 0.1);
 
   /* ==================== 背景色 ==================== */
   --color-bg: #f5f7fa;

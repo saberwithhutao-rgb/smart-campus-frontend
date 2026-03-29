@@ -270,8 +270,6 @@ const scrollToBottom = () => {
 
 // 安全更新消息的函数
 const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) => {
-  console.log('🟡 safeUpdateMessage 被调用', { index, content, isLoading })
-
   if (index < 0 || index >= messages.value.length) {
     console.error('❌ 消息索引超出范围:', index)
     return
