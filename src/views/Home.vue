@@ -42,6 +42,7 @@ onMounted(() => {
 
     <!-- 主视觉区 -->
     <section class="hero-section">
+      <!-- 形状容器 - 漂浮形状背景 -->
       <div class="shape-container">
         <!-- 三角形 -->
         <div
@@ -117,6 +118,7 @@ onMounted(() => {
           style="top: 25%; left: 35%; animation-duration: 27s; animation-delay: 3s"
         ></div>
       </div>
+
       <div class="hero-content">
         <h1 class="hero-title">数字孪生 智慧校园</h1>
       </div>
@@ -171,7 +173,7 @@ onMounted(() => {
   position: relative;
   overflow: hidden;
 
-  /* 动态渐变背景 - 使用主题色变量 */
+  /* 动态渐变背景 */
   background: linear-gradient(
     135deg,
     var(--color-primary) 0%,
@@ -184,154 +186,7 @@ onMounted(() => {
   animation: gradientShift 8s ease infinite;
 }
 
-/* 基础形状样式 */
-.floating-shape {
-  position: absolute;
-  opacity: 0.2;
-  animation: floatAround 20s infinite ease-in-out;
-  filter: blur(0.5px);
-}
-
-/* 三角形 */
-.shape-triangle {
-  width: 0;
-  height: 0;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-bottom: 35px solid rgba(255, 255, 255, 0.6);
-}
-
-/* 正方形 */
-.shape-square {
-  width: 30px;
-  height: 30px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-}
-
-/* 圆形 */
-.shape-circle {
-  width: 30px;
-  height: 30px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 50%;
-}
-
-/* 长方形 */
-.shape-rectangle {
-  width: 45px;
-  height: 25px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 6px;
-}
-
-/* 菱形 */
-.shape-diamond {
-  width: 30px;
-  height: 30px;
-  background: rgba(255, 255, 255, 0.5);
-  transform: rotate(45deg);
-}
-
-/* 六边形 */
-.shape-hexagon {
-  width: 30px;
-  height: 17px;
-  background: rgba(255, 255, 255, 0.5);
-  position: relative;
-}
-
-.shape-hexagon::before,
-.shape-hexagon::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-}
-
-.shape-hexagon::before {
-  bottom: 100%;
-  border-bottom: 10px solid rgba(255, 255, 255, 0.5);
-}
-
-.shape-hexagon::after {
-  top: 100%;
-  border-top: 10px solid rgba(255, 255, 255, 0.5);
-}
-
-/* 星形 */
-.shape-star {
-  position: relative;
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-bottom: 30px solid rgba(255, 255, 255, 0.5);
-}
-
-.shape-star::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  left: -15px;
-  width: 0;
-  height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-top: 30px solid rgba(255, 255, 255, 0.5);
-}
-
-/* 十字形 */
-.shape-cross {
-  position: relative;
-  width: 10px;
-  height: 30px;
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.shape-cross::before {
-  content: '';
-  position: absolute;
-  width: 30px;
-  height: 10px;
-  background: rgba(255, 255, 255, 0.5);
-  top: 10px;
-  left: -10px;
-}
-
-/* 心形 */
-.shape-heart {
-  position: relative;
-  width: 30px;
-  height: 27px;
-  background: rgba(255, 255, 255, 0.5);
-  transform: rotate(-45deg);
-  border-radius: 50% 50% 0 0;
-}
-
-.shape-heart::before,
-.shape-heart::after {
-  content: '';
-  position: absolute;
-  width: 30px;
-  height: 27px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 50%;
-}
-
-.shape-heart::before {
-  top: -15px;
-  left: 0;
-}
-
-.shape-heart::after {
-  top: 0;
-  left: 15px;
-}
-
-/* 光晕效果 */
+/* 光晕效果 - 增强可见度 */
 .hero-section::before {
   content: '';
   position: absolute;
@@ -340,15 +195,41 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 70%),
+    radial-gradient(circle at 10% 80%, rgba(255, 255, 255, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
   pointer-events: none;
-  animation: pulseGlow 4s ease-in-out infinite alternate;
+  animation: pulseGlow 3s ease-in-out infinite alternate;
   z-index: 1;
 }
 
-/* 漂浮形状容器 */
+/* 粒子效果 - 增强可见度 */
+.hero-section::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(3px 3px at 15% 25%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(2px 2px at 35% 45%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(4px 4px at 55% 65%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(2px 2px at 75% 35%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(3px 3px at 85% 85%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(2px 2px at 95% 15%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(4px 4px at 5% 55%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(3px 3px at 45% 85%, rgba(255, 255, 255, 0.45), transparent);
+  background-size: 300px 300px;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  animation: floatParticles 25s linear infinite;
+  z-index: 1;
+}
+
+/* 形状容器 */
 .shape-container {
   position: absolute;
   top: 0;
@@ -359,31 +240,157 @@ onMounted(() => {
   z-index: 1;
 }
 
+/* 基础形状样式 - 增大尺寸，增强透明度 */
+.floating-shape {
+  position: absolute;
+  opacity: 0.35;
+  animation: floatAround 20s infinite ease-in-out;
+  filter: blur(0.5px);
+}
+
+/* 三角形 */
+.shape-triangle {
+  width: 0;
+  height: 0;
+  border-left: 35px solid transparent;
+  border-right: 35px solid transparent;
+  border-bottom: 60px solid rgba(255, 255, 255, 0.7);
+}
+
+/* 正方形 */
+.shape-square {
+  width: 55px;
+  height: 55px;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
+}
+
+/* 圆形 */
+.shape-circle {
+  width: 55px;
+  height: 55px;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 50%;
+}
+
+/* 长方形 */
+.shape-rectangle {
+  width: 75px;
+  height: 45px;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 10px;
+}
+
+/* 菱形 */
+.shape-diamond {
+  width: 55px;
+  height: 55px;
+  background: rgba(255, 255, 255, 0.65);
+  transform: rotate(45deg);
+}
+
+/* 六边形 */
+.shape-hexagon {
+  width: 55px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.65);
+  position: relative;
+}
+
+.shape-hexagon::before,
+.shape-hexagon::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 27px solid transparent;
+  border-right: 27px solid transparent;
+}
+
+.shape-hexagon::before {
+  bottom: 100%;
+  border-bottom: 18px solid rgba(255, 255, 255, 0.65);
+}
+
+.shape-hexagon::after {
+  top: 100%;
+  border-top: 18px solid rgba(255, 255, 255, 0.65);
+}
+
+/* 星形 */
+.shape-star {
+  position: relative;
+  width: 0;
+  height: 0;
+  border-left: 27px solid transparent;
+  border-right: 27px solid transparent;
+  border-bottom: 55px solid rgba(255, 255, 255, 0.65);
+}
+
+.shape-star::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: -27px;
+  width: 0;
+  height: 0;
+  border-left: 27px solid transparent;
+  border-right: 27px solid transparent;
+  border-top: 55px solid rgba(255, 255, 255, 0.65);
+}
+
+/* 十字形 */
+.shape-cross {
+  position: relative;
+  width: 18px;
+  height: 55px;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.shape-cross::before {
+  content: '';
+  position: absolute;
+  width: 55px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.65);
+  top: 18px;
+  left: -18px;
+}
+
+/* 心形 */
+.shape-heart {
+  position: relative;
+  width: 55px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.65);
+  transform: rotate(-45deg);
+  border-radius: 50% 50% 0 0;
+}
+
+.shape-heart::before,
+.shape-heart::after {
+  content: '';
+  position: absolute;
+  width: 55px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 50%;
+}
+
+.shape-heart::before {
+  top: -28px;
+  left: 0;
+}
+
+.shape-heart::after {
+  top: 0;
+  left: 28px;
+}
+
+/* 文字内容 */
 .hero-content {
   position: relative;
   z-index: 2;
-}
-
-.hero-section::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image:
-    radial-gradient(2px 2px at 20% 30%, rgba(255, 255, 255, 0.3), transparent),
-    radial-gradient(3px 3px at 60% 70%, rgba(255, 255, 255, 0.2), transparent),
-    radial-gradient(1px 1px at 80% 20%, rgba(255, 255, 255, 0.4), transparent),
-    radial-gradient(2px 2px at 40% 90%, rgba(255, 255, 255, 0.25), transparent),
-    radial-gradient(3px 3px at 90% 50%, rgba(255, 255, 255, 0.2), transparent);
-  background-size: 200px 200px;
-  background-repeat: no-repeat;
-  pointer-events: none;
-  animation: floatParticles 20s linear infinite;
-}
-
-.hero-content {
   max-width: 800px;
   text-align: center;
 }
@@ -490,30 +497,33 @@ onMounted(() => {
   line-height: 1.5;
 }
 
-/* 漂浮动画 */
+/* ==================== 动画定义 ==================== */
+
+/* 漂浮动画 - 更明显的移动 */
 @keyframes floatAround {
   0% {
     transform: translateY(0px) translateX(0px) rotate(0deg);
-    opacity: 0.15;
+    opacity: 0.3;
   }
   25% {
-    transform: translateY(-40px) translateX(30px) rotate(90deg);
-    opacity: 0.25;
+    transform: translateY(-60px) translateX(45px) rotate(120deg);
+    opacity: 0.55;
   }
   50% {
-    transform: translateY(20px) translateX(-20px) rotate(180deg);
-    opacity: 0.2;
+    transform: translateY(35px) translateX(-35px) rotate(240deg);
+    opacity: 0.45;
   }
   75% {
-    transform: translateY(-20px) translateX(40px) rotate(270deg);
-    opacity: 0.25;
+    transform: translateY(-30px) translateX(55px) rotate(360deg);
+    opacity: 0.5;
   }
   100% {
-    transform: translateY(0px) translateX(0px) rotate(360deg);
-    opacity: 0.15;
+    transform: translateY(0px) translateX(0px) rotate(480deg);
+    opacity: 0.3;
   }
 }
 
+/* 渐变位移动画 */
 @keyframes gradientShift {
   0% {
     background-position: 0% 0%;
@@ -526,47 +536,25 @@ onMounted(() => {
   }
 }
 
+/* 光晕脉冲动画 */
 @keyframes pulseGlow {
   0% {
-    opacity: 0.6;
+    opacity: 0.5;
+    transform: scale(1);
   }
   100% {
     opacity: 1;
+    transform: scale(1.05);
   }
 }
 
-/* 响应式：移动端减少形状数量 */
-@media (max-width: 768px) {
-  .floating-shape {
-    opacity: 0.1;
-    transform: scale(0.8);
-  }
-}
-
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 0%;
-  }
-  50% {
-    background-position: 100% 100%;
-  }
-  100% {
-    background-position: 0% 0%;
-  }
-}
-
-@keyframes pulseGlow {
-  0% {
-    opacity: 0.6;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
+/* 粒子漂浮动画 */
 @keyframes floatParticles {
   0% {
     background-position:
+      0% 0%,
+      0% 0%,
+      0% 0%,
       0% 0%,
       0% 0%,
       0% 0%,
@@ -575,15 +563,18 @@ onMounted(() => {
   }
   100% {
     background-position:
-      200px 200px,
-      -200px 100px,
-      100px -150px,
-      -100px 200px,
-      150px -100px;
+      300px 300px,
+      -250px 150px,
+      200px -200px,
+      -150px 300px,
+      250px -150px,
+      -300px 200px,
+      150px 250px,
+      -200px -100px;
   }
 }
 
-/* 动画 */
+/* 文字淡入动画 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -595,7 +586,8 @@ onMounted(() => {
   }
 }
 
-/* 响应式设计 */
+/* ==================== 响应式设计 ==================== */
+
 @media (max-width: 768px) {
   .hero-section {
     padding: 120px 16px 60px;
@@ -620,6 +612,12 @@ onMounted(() => {
 
   .card-title {
     font-size: 20px;
+  }
+
+  /* 移动端形状淡化 */
+  .floating-shape {
+    opacity: 0.15;
+    transform: scale(0.8);
   }
 }
 
