@@ -217,152 +217,154 @@ onMounted(() => {
 
 <template>
   <div class="forgot-container">
-    <div class="forgot-form">
-      <h2>找回密码</h2>
+    <div class="forgot-form-wrapper">
+      <div class="forgot-form">
+        <h2>找回密码</h2>
 
-      <!-- 步骤指示器 -->
-      <div class="steps">
-        <div class="step" :class="{ active: step === 1, completed: step > 1 }">
-          <div class="step-number">1</div>
-          <div class="step-label">验证身份</div>
-        </div>
-        <div class="step-line" :class="{ active: step > 1 }"></div>
-        <div class="step" :class="{ active: step === 2 }">
-          <div class="step-number">2</div>
-          <div class="step-label">重置密码</div>
-        </div>
-      </div>
-
-      <!-- 错误提示 -->
-      <div v-if="errorMessage" class="error-alert">
-        {{ errorMessage }}
-      </div>
-
-      <!-- 步骤1：验证身份 -->
-      <div v-if="step === 1">
-        <div class="form-group">
-          <label for="email">邮箱</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            placeholder="请输入注册时使用的邮箱"
-            class="form-control"
-          />
-          <div class="field-hint">验证码将发送到此邮箱</div>
+        <!-- 步骤指示器 -->
+        <div class="steps">
+          <div class="step" :class="{ active: step === 1, completed: step > 1 }">
+            <div class="step-number">1</div>
+            <div class="step-label">验证身份</div>
+          </div>
+          <div class="step-line" :class="{ active: step > 1 }"></div>
+          <div class="step" :class="{ active: step === 2 }">
+            <div class="step-number">2</div>
+            <div class="step-label">重置密码</div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="captcha">图形验证码</label>
-          <div class="captcha-input">
+        <!-- 错误提示 -->
+        <div v-if="errorMessage" class="error-alert">
+          {{ errorMessage }}
+        </div>
+
+        <!-- 步骤1：验证身份 -->
+        <div v-if="step === 1">
+          <div class="form-group">
+            <label for="email">邮箱</label>
             <input
-              id="captcha"
-              v-model="form.captcha"
-              type="text"
-              placeholder="请输入验证码"
+              id="email"
+              v-model="form.email"
+              type="email"
+              placeholder="请输入注册时使用的邮箱"
               class="form-control"
-              maxlength="4"
-              style="text-transform: uppercase"
             />
-            <button @click="getCaptcha" class="refresh-captcha-btn" :disabled="isGettingCaptcha">
-              {{ isGettingCaptcha ? '加载中' : '刷新' }}
-            </button>
+            <div class="field-hint">验证码将发送到此邮箱</div>
           </div>
-          <div class="captcha-image-container">
-            <img
-              :src="captchaBase64"
-              alt="验证码"
-              @click="getCaptcha"
-              class="captcha-image"
-              title="点击刷新验证码"
-            />
-            <div class="captcha-hint">点击图片刷新验证码</div>
+
+          <div class="form-group">
+            <label for="captcha">图形验证码</label>
+            <div class="captcha-input">
+              <input
+                id="captcha"
+                v-model="form.captcha"
+                type="text"
+                placeholder="请输入验证码"
+                class="form-control"
+                maxlength="4"
+                style="text-transform: uppercase"
+              />
+              <button @click="getCaptcha" class="refresh-captcha-btn" :disabled="isGettingCaptcha">
+                {{ isGettingCaptcha ? '加载中' : '刷新' }}
+              </button>
+            </div>
+            <div class="captcha-image-container">
+              <img
+                :src="captchaBase64"
+                alt="验证码"
+                @click="getCaptcha"
+                class="captcha-image"
+                title="点击刷新验证码"
+              />
+              <div class="captcha-hint">点击图片刷新验证码</div>
+            </div>
           </div>
+
+          <button @click="sendResetCode" class="submit-button" :disabled="isSendingCode">
+            {{ isSendingCode ? '发送中...' : '发送验证码' }}
+          </button>
         </div>
 
-        <button @click="sendResetCode" class="submit-button" :disabled="isSendingCode">
-          {{ isSendingCode ? '发送中...' : '发送验证码' }}
-        </button>
-      </div>
+        <!-- 步骤2：重置密码 -->
+        <div v-if="step === 2">
+          <div class="form-group">
+            <label for="verifyCode">邮箱验证码</label>
+            <div class="verify-input">
+              <input
+                id="verifyCode"
+                v-model="form.verifyCode"
+                type="text"
+                placeholder="请输入6位数字验证码"
+                class="form-control"
+                maxlength="6"
+              />
+              <button @click="sendResetCode" class="resend-btn" :disabled="!canSendCode">
+                {{ canSendCode ? '重新发送' : `${countdown}秒后重试` }}
+              </button>
+            </div>
+            <div class="field-hint">验证码10分钟内有效</div>
+          </div>
 
-      <!-- 步骤2：重置密码 -->
-      <div v-if="step === 2">
-        <div class="form-group">
-          <label for="verifyCode">邮箱验证码</label>
-          <div class="verify-input">
+          <div class="form-group">
+            <label for="newPassword">新密码</label>
             <input
-              id="verifyCode"
-              v-model="form.verifyCode"
-              type="text"
-              placeholder="请输入6位数字验证码"
+              id="newPassword"
+              v-model="form.newPassword"
+              type="password"
+              placeholder="8-20位，需包含大写字母、小写字母和数字"
               class="form-control"
-              maxlength="6"
             />
-            <button @click="sendResetCode" class="resend-btn" :disabled="!canSendCode">
-              {{ canSendCode ? '重新发送' : `${countdown}秒后重试` }}
-            </button>
-          </div>
-          <div class="field-hint">验证码10分钟内有效</div>
-        </div>
-
-        <div class="form-group">
-          <label for="newPassword">新密码</label>
-          <input
-            id="newPassword"
-            v-model="form.newPassword"
-            type="password"
-            placeholder="8-20位，需包含大写字母、小写字母和数字"
-            class="form-control"
-          />
-          <div class="field-hint">
-            密码强度：
-            <span
-              :class="{
-                weak: form.newPassword.length < 8,
-                medium:
-                  form.newPassword.length >= 8 &&
-                  (!/[A-Z]/.test(form.newPassword) ||
-                    !/[a-z]/.test(form.newPassword) ||
-                    !/\d/.test(form.newPassword)),
-                strong:
-                  form.newPassword.length >= 8 &&
-                  /[A-Z]/.test(form.newPassword) &&
-                  /[a-z]/.test(form.newPassword) &&
-                  /\d/.test(form.newPassword),
-              }"
-            >
-              {{
-                form.newPassword.length < 8
-                  ? '弱'
-                  : !/[A-Z]/.test(form.newPassword) ||
+            <div class="field-hint">
+              密码强度：
+              <span
+                :class="{
+                  weak: form.newPassword.length < 8,
+                  medium:
+                    form.newPassword.length >= 8 &&
+                    (!/[A-Z]/.test(form.newPassword) ||
                       !/[a-z]/.test(form.newPassword) ||
-                      !/\d/.test(form.newPassword)
-                    ? '中'
-                    : '强'
-              }}
-            </span>
+                      !/\d/.test(form.newPassword)),
+                  strong:
+                    form.newPassword.length >= 8 &&
+                    /[A-Z]/.test(form.newPassword) &&
+                    /[a-z]/.test(form.newPassword) &&
+                    /\d/.test(form.newPassword),
+                }"
+              >
+                {{
+                  form.newPassword.length < 8
+                    ? '弱'
+                    : !/[A-Z]/.test(form.newPassword) ||
+                        !/[a-z]/.test(form.newPassword) ||
+                        !/\d/.test(form.newPassword)
+                      ? '中'
+                      : '强'
+                }}
+              </span>
+            </div>
           </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">确认新密码</label>
+            <input
+              id="confirmPassword"
+              v-model="form.confirmPassword"
+              type="password"
+              placeholder="请再次输入新密码"
+              class="form-control"
+            />
+          </div>
+
+          <button @click="handleReset" class="submit-button" :disabled="isResetting">
+            {{ isResetting ? '重置中...' : '重置密码' }}
+          </button>
         </div>
 
-        <div class="form-group">
-          <label for="confirmPassword">确认新密码</label>
-          <input
-            id="confirmPassword"
-            v-model="form.confirmPassword"
-            type="password"
-            placeholder="请再次输入新密码"
-            class="form-control"
-          />
+        <!-- 返回登录链接 -->
+        <div class="back-link">
+          <a href="#" @click.prevent="goToLogin">返回登录</a>
         </div>
-
-        <button @click="handleReset" class="submit-button" :disabled="isResetting">
-          {{ isResetting ? '重置中...' : '重置密码' }}
-        </button>
-      </div>
-
-      <!-- 返回登录链接 -->
-      <div class="back-link">
-        <a href="#" @click.prevent="goToLogin">返回登录</a>
       </div>
     </div>
   </div>
@@ -370,21 +372,43 @@ onMounted(() => {
 
 <style scoped>
 .forgot-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
-  padding: 20px;
+  width: 100%;
+  background-image: url('../img/bg_login.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--color-bg-dark);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0;
 }
 
+/* 表单外层包装器 - 控制位置 */
+.forgot-form-wrapper {
+  width: 30%;
+  max-width: 480px;
+  min-width: 320px;
+  margin-right: 5%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 表单样式 */
 .forgot-form {
   background-color: var(--color-bg-card);
   padding: 45px;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 520px;
+  transition: transform 0.3s ease;
+}
+
+.forgot-form:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
 }
 
 .forgot-form h2 {
@@ -393,7 +417,7 @@ onMounted(() => {
   color: var(--color-text);
   font-size: 28px;
   font-weight: 600;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -428,7 +452,7 @@ onMounted(() => {
 }
 
 .step.active .step-number {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: var(--color-bg-card);
 }
 
@@ -481,6 +505,7 @@ onMounted(() => {
   transition: all 0.3s ease;
   background-color: var(--color-bg-light);
   color: var(--color-text);
+  box-sizing: border-box;
 }
 
 .form-control:focus {
@@ -497,8 +522,8 @@ onMounted(() => {
 }
 
 .error-alert {
-  background-color: var(--color-danger-light, #fef0f0);
-  border: 1px solid var(--color-danger-light, #fde2e2);
+  background-color: var(--color-danger-light);
+  border: 1px solid var(--color-danger-light);
   color: var(--color-danger);
   padding: 12px 16px;
   border-radius: var(--radius-md);
@@ -519,7 +544,7 @@ onMounted(() => {
 
 .refresh-captcha-btn {
   padding: 0 20px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: var(--color-bg-card);
   border: none;
   border-radius: var(--radius-md);
@@ -532,7 +557,7 @@ onMounted(() => {
 
 .refresh-captcha-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px var(--color-primary-light);
 }
 
 .captcha-image-container {
@@ -598,7 +623,7 @@ onMounted(() => {
 .submit-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: var(--color-bg-card);
   border: none;
   border-radius: var(--radius-md);
@@ -611,7 +636,7 @@ onMounted(() => {
 
 .submit-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 6px 20px var(--color-primary-light);
 }
 
 .submit-button:disabled {
@@ -650,5 +675,90 @@ onMounted(() => {
 .strong {
   color: var(--color-success);
   font-weight: bold;
+}
+
+/* ========== 响应式适配 ========== */
+
+/* 大屏幕 (1440px+) */
+@media (min-width: 1440px) {
+  .forgot-form-wrapper {
+    width: 28%;
+    max-width: 520px;
+    margin-right: 6%;
+  }
+
+  .forgot-form {
+    padding: 45px 40px;
+  }
+}
+
+/* 桌面 (1024px - 1440px) */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .forgot-form-wrapper {
+    width: 32%;
+    max-width: 450px;
+    margin-right: 5%;
+  }
+
+  .forgot-form {
+    padding: 38px 32px;
+  }
+}
+
+/* 小桌面/大平板 (768px - 1024px) - 表单居中 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .forgot-container {
+    justify-content: center;
+  }
+
+  .forgot-form-wrapper {
+    width: 60%;
+    max-width: 450px;
+    margin-right: 0;
+  }
+
+  .forgot-form {
+    background-color: var(--color-bg-card);
+  }
+}
+
+/* 移动端 (小于768px) */
+@media (max-width: 767px) {
+  .forgot-container {
+    justify-content: center;
+    background-position: 30% center;
+  }
+
+  .forgot-form-wrapper {
+    width: 90%;
+    min-width: auto;
+    margin-right: 0;
+    max-height: 85vh;
+  }
+
+  .forgot-form {
+    padding: 30px 24px;
+  }
+
+  .forgot-form h2 {
+    font-size: 24px;
+    margin-bottom: 28px;
+  }
+
+  .captcha-input {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .refresh-captcha-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .captcha-image {
+    width: 100%;
+    height: auto;
+    min-height: 45px;
+  }
 }
 </style>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { api, ApiResponse } from '../api/index'
+import { api } from '../api/index'
+import type { ApiResponse } from '../api/index'
 
 const router = useRouter()
 
@@ -346,177 +347,194 @@ const goToLogin = () => {
 
 <template>
   <div class="register-container">
-    <div class="register-form">
-      <h2>智慧校园平台 - 注册</h2>
+    <div class="register-form-wrapper">
+      <div class="register-form">
+        <h2>智慧校园平台 - 注册</h2>
 
-      <!-- 错误/成功提示 -->
-      <div v-if="errorMessage" :class="['message-alert', isError ? 'error' : 'success']">
-        {{ errorMessage }}
-      </div>
-
-      <!-- 用户名 -->
-      <div class="form-group">
-        <label for="username">用户名 <span class="required">*</span></label>
-        <input
-          id="username"
-          v-model="form.username"
-          type="text"
-          placeholder="3-20位字母、数字、下划线"
-          :class="['form-control', { error: fieldErrors.username }]"
-          maxlength="20"
-        />
-        <div v-if="fieldErrors.username" class="field-error">
-          {{ fieldErrors.username }}
+        <!-- 错误/成功提示 -->
+        <div v-if="errorMessage" :class="['message-alert', isError ? 'error' : 'success']">
+          {{ errorMessage }}
         </div>
-        <div v-else class="field-hint">用户名将用于登录，注册后不可修改</div>
-      </div>
 
-      <!-- 密码 -->
-      <div class="form-group">
-        <label for="password">密码 <span class="required">*</span></label>
-        <div class="password-input">
+        <!-- 用户名 -->
+        <div class="form-group">
+          <label for="username">用户名 <span class="required">*</span></label>
           <input
-            id="password"
-            v-model="form.password"
-            :type="isPasswordVisible ? 'text' : 'password'"
-            placeholder="8-20位，需包含大写字母、小写字母和数字"
-            :class="['form-control', { error: fieldErrors.password }]"
-          />
-          <button
-            type="button"
-            @click="togglePasswordVisibility"
-            class="password-toggle"
-            :title="isPasswordVisible ? '隐藏密码' : '显示密码'"
-          >
-            {{ isPasswordVisible ? '👁️' : '👁️‍🗨️' }}
-          </button>
-        </div>
-        <div v-if="fieldErrors.password" class="field-error">
-          {{ fieldErrors.password }}
-        </div>
-        <div v-else class="field-hint">
-          密码强度：
-          <span :style="{ color: strengthColor, fontWeight: 'bold' }">
-            {{ strengthText }}
-          </span>
-          <span v-if="form.password && passwordStrength !== 'strong'" class="strength-tip">
-            （建议使用大小写字母、数字和特殊字符组合）
-          </span>
-        </div>
-      </div>
-
-      <!-- 确认密码 -->
-      <div class="form-group">
-        <label for="confirmPassword">确认密码 <span class="required">*</span></label>
-        <div class="password-input">
-          <input
-            id="confirmPassword"
-            v-model="form.confirmPassword"
-            :type="isConfirmPasswordVisible ? 'text' : 'password'"
-            placeholder="请再次输入密码"
-            :class="['form-control', { error: fieldErrors.confirmPassword }]"
-          />
-          <button
-            type="button"
-            @click="toggleConfirmPasswordVisibility"
-            class="password-toggle"
-            :title="isConfirmPasswordVisible ? '隐藏密码' : '显示密码'"
-          >
-            {{ isConfirmPasswordVisible ? '👁️' : '👁️‍🗨️' }}
-          </button>
-        </div>
-        <div v-if="fieldErrors.confirmPassword" class="field-error">
-          {{ fieldErrors.confirmPassword }}
-        </div>
-      </div>
-
-      <!-- 在邮箱输入框下方添加 -->
-      <div class="form-group">
-        <label for="email">邮箱 <span class="required">*</span></label>
-        <input
-          id="email"
-          v-model="form.email"
-          type="email"
-          placeholder="请输入邮箱地址"
-          :class="[
-            'form-control',
-            { error: fieldErrors.email || errorMessage.includes('邮箱已被注册') },
-          ]"
-        />
-        <div v-if="fieldErrors.email" class="field-error">
-          {{ fieldErrors.email }}
-        </div>
-        <!-- 专门显示邮箱相关的后端错误 -->
-        <div v-if="errorMessage.includes('邮箱已被注册')" class="field-error">
-          <span style="color: #f56c6c">⚠️</span> {{ errorMessage }}
-          <br />
-          <small>请使用其他邮箱或<a href="#" @click.prevent="goToLogin">直接登录</a></small>
-        </div>
-        <div v-else-if="!fieldErrors.email" class="field-hint">
-          请使用有效的邮箱地址，验证码将发送到此邮箱
-        </div>
-      </div>
-
-      <!-- 邮箱验证码 -->
-      <div class="form-group">
-        <label for="verifyCode">邮箱验证码 <span class="required">*</span></label>
-        <div class="captcha-input">
-          <input
-            id="verifyCode"
-            v-model="form.verifyCode"
+            id="username"
+            v-model="form.username"
             type="text"
-            placeholder="请输入6位数字验证码"
-            :class="['form-control', { error: fieldErrors.verifyCode }]"
-            maxlength="6"
+            placeholder="3-20位字母、数字、下划线"
+            :class="['form-control', { error: fieldErrors.username }]"
+            maxlength="20"
           />
-          <button
-            @click="sendVerifyCode"
-            class="send-captcha-btn"
-            :disabled="isSendingVerifyCode || !form.email"
-            :title="!form.email ? '请先填写邮箱' : ''"
-          >
-            {{ isSendingVerifyCode ? '发送中...' : '发送验证码' }}
-          </button>
+          <div v-if="fieldErrors.username" class="field-error">
+            {{ fieldErrors.username }}
+          </div>
+          <div v-else class="field-hint">用户名将用于登录，注册后不可修改</div>
         </div>
-        <div v-if="fieldErrors.verifyCode" class="field-error">
-          {{ fieldErrors.verifyCode }}
+
+        <!-- 密码 -->
+        <div class="form-group">
+          <label for="password">密码 <span class="required">*</span></label>
+          <div class="password-input">
+            <input
+              id="password"
+              v-model="form.password"
+              :type="isPasswordVisible ? 'text' : 'password'"
+              placeholder="8-20位，需包含大写字母、小写字母和数字"
+              :class="['form-control', { error: fieldErrors.password }]"
+            />
+            <button
+              type="button"
+              @click="togglePasswordVisibility"
+              class="password-toggle"
+              :title="isPasswordVisible ? '隐藏密码' : '显示密码'"
+            >
+              {{ isPasswordVisible ? '👁️' : '👁️‍🗨️' }}
+            </button>
+          </div>
+          <div v-if="fieldErrors.password" class="field-error">
+            {{ fieldErrors.password }}
+          </div>
+          <div v-else class="field-hint">
+            密码强度：
+            <span :style="{ color: strengthColor, fontWeight: 'bold' }">
+              {{ strengthText }}
+            </span>
+            <span v-if="form.password && passwordStrength !== 'strong'" class="strength-tip">
+              （建议使用大小写字母、数字和特殊字符组合）
+            </span>
+          </div>
         </div>
-        <div v-else class="field-hint">验证码10分钟内有效</div>
+
+        <!-- 确认密码 -->
+        <div class="form-group">
+          <label for="confirmPassword">确认密码 <span class="required">*</span></label>
+          <div class="password-input">
+            <input
+              id="confirmPassword"
+              v-model="form.confirmPassword"
+              :type="isConfirmPasswordVisible ? 'text' : 'password'"
+              placeholder="请再次输入密码"
+              :class="['form-control', { error: fieldErrors.confirmPassword }]"
+            />
+            <button
+              type="button"
+              @click="toggleConfirmPasswordVisibility"
+              class="password-toggle"
+              :title="isConfirmPasswordVisible ? '隐藏密码' : '显示密码'"
+            >
+              {{ isConfirmPasswordVisible ? '👁️' : '👁️‍🗨️' }}
+            </button>
+          </div>
+          <div v-if="fieldErrors.confirmPassword" class="field-error">
+            {{ fieldErrors.confirmPassword }}
+          </div>
+        </div>
+
+        <!-- 邮箱 -->
+        <div class="form-group">
+          <label for="email">邮箱 <span class="required">*</span></label>
+          <input
+            id="email"
+            v-model="form.email"
+            type="email"
+            placeholder="请输入邮箱地址"
+            :class="[
+              'form-control',
+              { error: fieldErrors.email || errorMessage.includes('邮箱已被注册') },
+            ]"
+          />
+          <div v-if="fieldErrors.email" class="field-error">
+            {{ fieldErrors.email }}
+          </div>
+          <div v-if="errorMessage.includes('邮箱已被注册')" class="field-error">
+            <span style="color: #f56c6c">⚠️</span> {{ errorMessage }}
+            <br />
+            <small>请使用其他邮箱或<a href="#" @click.prevent="goToLogin">直接登录</a></small>
+          </div>
+          <div v-else-if="!fieldErrors.email" class="field-hint">
+            请使用有效的邮箱地址，验证码将发送到此邮箱
+          </div>
+        </div>
+
+        <!-- 邮箱验证码 -->
+        <div class="form-group">
+          <label for="verifyCode">邮箱验证码 <span class="required">*</span></label>
+          <div class="captcha-input">
+            <input
+              id="verifyCode"
+              v-model="form.verifyCode"
+              type="text"
+              placeholder="请输入6位数字验证码"
+              :class="['form-control', { error: fieldErrors.verifyCode }]"
+              maxlength="6"
+            />
+            <button
+              @click="sendVerifyCode"
+              class="send-captcha-btn"
+              :disabled="isSendingVerifyCode || !form.email"
+              :title="!form.email ? '请先填写邮箱' : ''"
+            >
+              {{ isSendingVerifyCode ? '发送中...' : '发送验证码' }}
+            </button>
+          </div>
+          <div v-if="fieldErrors.verifyCode" class="field-error">
+            {{ fieldErrors.verifyCode }}
+          </div>
+          <div v-else class="field-hint">验证码10分钟内有效</div>
+        </div>
+
+        <!-- 注册按钮 -->
+        <button
+          @click="handleRegister"
+          class="register-button"
+          :disabled="!isFormValid"
+          :title="!isFormValid ? '请填写完整的表单信息' : ''"
+        >
+          注册
+        </button>
+
+        <!-- 登录链接 -->
+        <div class="login-link">已有账号？<a href="#" @click.prevent="goToLogin">立即登录</a></div>
       </div>
-
-      <!-- 注册按钮 -->
-      <button
-        @click="handleRegister"
-        class="register-button"
-        :disabled="!isFormValid"
-        :title="!isFormValid ? '请填写完整的表单信息' : ''"
-      >
-        注册
-      </button>
-
-      <!-- 登录链接 -->
-      <div class="login-link">已有账号？<a href="#" @click.prevent="goToLogin">立即登录</a></div>
     </div>
   </div>
 </template>
 
 <style scoped>
 .register-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
-  padding: 20px;
+  width: 100%;
+  background-image: url('../img/bg_login.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--color-bg-dark);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0;
 }
 
+/* 表单外层包装器 - 控制位置 */
+.register-form-wrapper {
+  width: 30%;
+  max-width: 480px;
+  min-width: 320px;
+  margin-right: 5%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 表单样式 */
 .register-form {
   background-color: var(--color-bg-card);
   padding: 45px;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 520px;
   transition: transform 0.3s ease;
 }
 
@@ -531,7 +549,7 @@ const goToLogin = () => {
   color: var(--color-text);
   font-size: 28px;
   font-weight: 600;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -550,13 +568,13 @@ const goToLogin = () => {
 
 .message-alert.error {
   background-color: var(--color-danger-light);
-  border: 1px solid rgba(245, 108, 108, 0.3);
+  border: 1px solid var(--color-danger-light);
   color: var(--color-danger);
 }
 
 .message-alert.success {
   background-color: var(--color-primary-light);
-  border: 1px solid rgba(64, 158, 255, 0.3);
+  border: 1px solid var(--color-primary-light);
   color: var(--color-primary);
 }
 
@@ -583,6 +601,7 @@ const goToLogin = () => {
   transition: all 0.3s ease;
   background-color: var(--color-bg-light);
   color: var(--color-text);
+  box-sizing: border-box;
 }
 
 .form-control:focus {
@@ -632,8 +651,8 @@ const goToLogin = () => {
 .register-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: var(--color-bg-card);
   border: none;
   border-radius: 8px;
   font-size: 16px;
@@ -646,20 +665,25 @@ const goToLogin = () => {
 }
 
 .register-button:hover {
-  background: linear-gradient(135deg, var(--color-primary-hover) 0%, #6a4091 100%);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
+  box-shadow: 0 6px 20px var(--color-primary-light);
   transform: translateY(-1px);
 }
 
 .register-button:active {
   transform: translateY(1px);
-  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 3px 10px var(--color-primary-light);
+}
+
+.register-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .login-link {
   text-align: center;
   margin-top: 25px;
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
   font-size: 14px;
 }
 
@@ -677,8 +701,8 @@ const goToLogin = () => {
 
 .send-captcha-btn {
   padding: 14px 18px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: var(--color-bg-card);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -689,12 +713,18 @@ const goToLogin = () => {
   min-width: 110px;
 }
 
-.send-captcha-btn:hover {
-  background: linear-gradient(135deg, var(--color-primary-hover) 0%, #6a4091 100%);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+.send-captcha-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
+  box-shadow: 0 4px 12px var(--color-primary-light);
   transform: translateY(-1px);
 }
 
+.send-captcha-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 验证码图片相关 */
 .captcha-display {
   margin-top: 10px;
   text-align: center;
@@ -718,14 +748,14 @@ const goToLogin = () => {
 
 .captcha-image:hover {
   transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .captcha-text-container {
   padding: 10px;
   background-color: var(--color-bg-light);
   border-radius: 4px;
-  border: 1px solid var(--color-border-light);
+  border: 1px solid var(--color-border);
 }
 
 .captcha-text-display {
@@ -734,14 +764,14 @@ const goToLogin = () => {
 }
 
 .captcha-label {
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
 }
 
 .captcha-value {
   color: var(--color-primary);
   font-size: 18px;
   letter-spacing: 3px;
-  background-color: var(--color-bg-dark);
+  background-color: var(--color-border);
   padding: 2px 8px;
   border-radius: 3px;
   font-family: 'Courier New', monospace;
@@ -754,11 +784,6 @@ const goToLogin = () => {
 }
 
 /* 修改邮箱验证码按钮样式 */
-.send-captcha-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .send-captcha-btn:not(:disabled) {
   background: var(--color-success);
   color: white;
@@ -825,24 +850,12 @@ button:disabled {
 }
 
 /* 禁用状态的按钮 */
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .register-button:disabled {
   background: linear-gradient(135deg, var(--color-text-light) 0%, #999999 100%);
   transform: none;
   box-shadow: none;
 }
 
-.register-button:disabled:hover {
-  background: linear-gradient(135deg, var(--color-text-light) 0%, #999999 100%);
-  transform: none;
-  box-shadow: none;
-}
-
-/* 验证码按钮的禁用状态 */
 .send-captcha-btn:disabled {
   background: linear-gradient(135deg, var(--color-text-light) 0%, #999999 100%);
   transform: none;
@@ -889,5 +902,90 @@ button:disabled {
 .field-error a {
   color: var(--color-primary);
   text-decoration: underline;
+}
+
+/* ========== 响应式适配 ========== */
+
+/* 大屏幕 (1440px+) */
+@media (min-width: 1440px) {
+  .register-form-wrapper {
+    width: 28%;
+    max-width: 520px;
+    margin-right: 6%;
+  }
+
+  .register-form {
+    padding: 45px 40px;
+  }
+}
+
+/* 桌面 (1024px - 1440px) */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .register-form-wrapper {
+    width: 32%;
+    max-width: 450px;
+    margin-right: 5%;
+  }
+
+  .register-form {
+    padding: 38px 32px;
+  }
+}
+
+/* 小桌面/大平板 (768px - 1024px) - 表单居中 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .register-container {
+    justify-content: center;
+  }
+
+  .register-form-wrapper {
+    width: 60%;
+    max-width: 450px;
+    margin-right: 0;
+  }
+
+  .register-form {
+    background-color: var(--color-bg-card);
+  }
+}
+
+/* 移动端 (小于768px) */
+@media (max-width: 767px) {
+  .register-container {
+    justify-content: center;
+    background-position: 30% center;
+  }
+
+  .register-form-wrapper {
+    width: 90%;
+    min-width: auto;
+    margin-right: 0;
+    max-height: 85vh;
+  }
+
+  .register-form {
+    padding: 30px 24px;
+  }
+
+  .register-form h2 {
+    font-size: 24px;
+    margin-bottom: 28px;
+  }
+
+  .captcha-input {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .send-captcha-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .captcha-image {
+    width: 100%;
+    height: auto;
+    min-height: 45px;
+  }
 }
 </style>

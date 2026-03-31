@@ -273,7 +273,7 @@ onMounted(() => {
   max-width: 480px;
   min-width: 320px;
   margin-right: 5%;
-  max-height: 80vh;
+  max-height: 90vh;
   overflow-y: auto;
 }
 
