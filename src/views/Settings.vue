@@ -21,24 +21,15 @@ const { currentColor, toggleDarkMode, setThemeColor, themeColorOptions: colorOpt
 const settings = computed(() => settingsStore.settings)
 
 const resetSettings = () => {
-  // 1. 重置 Store 数据
   settingsStore.reset()
-
-  // 2. 获取重置后的值
   const resetSettings = settingsStore.settings
 
-  // 3. 应用深色模式（直接设置，不依赖 toggleDarkMode）
-  const html = document.documentElement
-  if (resetSettings.darkMode) {
-    html.setAttribute('data-theme', 'dark')
-  } else {
-    html.removeAttribute('data-theme')
-  }
+  // 使用 useTheme 的方法设置深色模式
+  const { setThemeMode } = useTheme()
+  setThemeMode(resetSettings.darkMode ? 'dark' : 'light')
 
-  // 4. 应用主题色
   setThemeColor(resetSettings.themeColor as any)
 
-  // 5. 触发气泡特效事件
   window.dispatchEvent(
     new CustomEvent('bubble-effect-change', {
       detail: resetSettings.bubbleEffect,
@@ -55,14 +46,11 @@ const resetSettings = () => {
     }),
   )
 
-  // 6. 触发设置变更事件（通知其他组件）
   window.dispatchEvent(
     new CustomEvent('settings-changed', {
       detail: resetSettings,
     }),
   )
-
-  // 7. Store 的 watch 会自动保存到 localStorage，不需要手动调用
 
   ElMessage.info('已恢复为默认设置')
 }
