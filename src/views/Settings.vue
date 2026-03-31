@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useSettingsStore } from '@/stores/settings'
@@ -20,16 +20,24 @@ const { currentColor, toggleDarkMode, setThemeColor, themeColorOptions: colorOpt
 
 const settings = computed(() => settingsStore.settings)
 
-const resetSettings = () => {
+const resetSettings = async () => {
+  // 1. 重置 Store 数据
   settingsStore.reset()
+
+  // 2. 等待一个微任务，让 store 更新完成
+  await nextTick()
+
+  // 3. 获取重置后的值
   const resetSettings = settingsStore.settings
 
-  // 使用 useTheme 的方法设置深色模式
+  // 4. 使用 useTheme 的方法设置深色模式
   const { setThemeMode } = useTheme()
   setThemeMode(resetSettings.darkMode ? 'dark' : 'light')
 
+  // 5. 应用主题色
   setThemeColor(resetSettings.themeColor as any)
 
+  // 6. 触发气泡特效事件
   window.dispatchEvent(
     new CustomEvent('bubble-effect-change', {
       detail: resetSettings.bubbleEffect,
@@ -46,6 +54,7 @@ const resetSettings = () => {
     }),
   )
 
+  // 7. 触发设置变更事件
   window.dispatchEvent(
     new CustomEvent('settings-changed', {
       detail: resetSettings,
