@@ -3,32 +3,25 @@ import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-// 路由实例
 const router = useRouter()
+const isMobile = ref(false)
 
-const isMobile = ref(false) // 移动端标识
-
-// 检查屏幕尺寸
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 768
 }
 
-// 跳转到智能问答页面
 const goToSmartQA = () => {
   router.push('/ai/chat')
 }
 
-// 跳转到学习管理页面
 const goToStudyLife = () => {
   router.push('/campus/library-reservation')
 }
 
-// 跳转到竞赛管理页面
 const goToCompetitionManagement = () => {
   router.push('/career/competitions')
 }
 
-// 监听窗口大小变化
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
@@ -37,86 +30,43 @@ onMounted(() => {
 
 <template>
   <div class="smart-campus-home">
-    <!-- 顶部导航栏 -->
     <GlobalNavbar />
 
     <!-- 主视觉区 -->
     <section class="hero-section">
-      <!-- 形状容器 - 漂浮形状背景 -->
+      <!-- 形状容器 - 必须在 hero-section 内部 -->
       <div class="shape-container">
-        <!-- 三角形 -->
-        <div
-          class="floating-shape shape-triangle"
-          style="top: 10%; left: 5%; animation-duration: 18s; animation-delay: 0s"
-        ></div>
-        <div
-          class="floating-shape shape-triangle"
-          style="top: 70%; left: 85%; animation-duration: 22s; animation-delay: 2s"
-        ></div>
+        <!-- 三角形 - 加大加亮 -->
+        <div class="floating-shape shape-triangle" style="top: 5%; left: 8%"></div>
+        <div class="floating-shape shape-triangle" style="top: 75%; left: 82%"></div>
 
         <!-- 正方形 -->
-        <div
-          class="floating-shape shape-square"
-          style="top: 20%; left: 80%; animation-duration: 20s; animation-delay: 1s"
-        ></div>
-        <div
-          class="floating-shape shape-square"
-          style="top: 65%; left: 15%; animation-duration: 25s; animation-delay: 3s"
-        ></div>
+        <div class="floating-shape shape-square" style="top: 15%; left: 75%"></div>
+        <div class="floating-shape shape-square" style="top: 60%; left: 12%"></div>
 
         <!-- 圆形 -->
-        <div
-          class="floating-shape shape-circle"
-          style="top: 15%; left: 60%; animation-duration: 19s; animation-delay: 0.5s"
-        ></div>
-        <div
-          class="floating-shape shape-circle"
-          style="top: 80%; left: 40%; animation-duration: 23s; animation-delay: 4s"
-        ></div>
+        <div class="floating-shape shape-circle" style="top: 10%; left: 55%"></div>
+        <div class="floating-shape shape-circle" style="top: 85%; left: 35%"></div>
 
         <!-- 长方形 -->
-        <div
-          class="floating-shape shape-rectangle"
-          style="top: 30%; left: 25%; animation-duration: 21s; animation-delay: 1.5s"
-        ></div>
-        <div
-          class="floating-shape shape-rectangle"
-          style="top: 50%; left: 90%; animation-duration: 24s; animation-delay: 2.5s"
-        ></div>
+        <div class="floating-shape shape-rectangle" style="top: 25%; left: 20%"></div>
+        <div class="floating-shape shape-rectangle" style="top: 45%; left: 88%"></div>
 
         <!-- 菱形 -->
-        <div
-          class="floating-shape shape-diamond"
-          style="top: 45%; left: 10%; animation-duration: 17s; animation-delay: 3.5s"
-        ></div>
-        <div
-          class="floating-shape shape-diamond"
-          style="top: 85%; left: 70%; animation-duration: 26s; animation-delay: 0.8s"
-        ></div>
+        <div class="floating-shape shape-diamond" style="top: 40%; left: 5%"></div>
+        <div class="floating-shape shape-diamond" style="top: 80%; left: 65%"></div>
 
         <!-- 六边形 -->
-        <div
-          class="floating-shape shape-hexagon"
-          style="top: 55%; left: 50%; animation-duration: 28s; animation-delay: 2.2s"
-        ></div>
+        <div class="floating-shape shape-hexagon" style="top: 50%; left: 45%"></div>
 
         <!-- 星形 -->
-        <div
-          class="floating-shape shape-star"
-          style="top: 75%; left: 55%; animation-duration: 30s; animation-delay: 1.2s"
-        ></div>
+        <div class="floating-shape shape-star" style="top: 70%; left: 50%"></div>
 
         <!-- 十字形 -->
-        <div
-          class="floating-shape shape-cross"
-          style="top: 35%; left: 45%; animation-duration: 16s; animation-delay: 4.5s"
-        ></div>
+        <div class="floating-shape shape-cross" style="top: 30%; left: 40%"></div>
 
         <!-- 心形 -->
-        <div
-          class="floating-shape shape-heart"
-          style="top: 25%; left: 35%; animation-duration: 27s; animation-delay: 3s"
-        ></div>
+        <div class="floating-shape shape-heart" style="top: 20%; left: 30%"></div>
       </div>
 
       <div class="hero-content">
@@ -127,24 +77,21 @@ onMounted(() => {
     <!-- 底部功能模块区 -->
     <section class="features-section">
       <div class="features-container">
-        <!-- 学习模块 - 点击跳转到智能问答页面 -->
-        <div class="feature-card learning-card hover-lift" @click="goToSmartQA">
+        <div class="feature-card" @click="goToSmartQA">
           <div class="card-icon">📚</div>
           <h3 class="card-title">学习模块</h3>
           <p class="card-description">数智孪生助学</p>
           <p class="card-details">个性计划+AI高效备考</p>
         </div>
 
-        <!-- 生活模块 -->
-        <div class="feature-card life-card hover-lift" @click="goToStudyLife">
+        <div class="feature-card" @click="goToStudyLife">
           <div class="card-icon">🏠</div>
           <h3 class="card-title">生活模块</h3>
           <p class="card-description">孪生校园智管</p>
           <p class="card-details">行为监测健康/图书馆服务</p>
         </div>
 
-        <!-- 竞赛模块 -->
-        <div class="feature-card competition-card hover-lift" @click="goToCompetitionManagement">
+        <div class="feature-card" @click="goToCompetitionManagement">
           <div class="card-icon">🏆</div>
           <h3 class="card-title">竞赛模块</h3>
           <p class="card-description">数字赋能竞赛</p>
@@ -156,7 +103,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 主容器 */
 .smart-campus-home {
   min-height: 100vh;
   background-color: var(--color-bg);
@@ -172,21 +118,18 @@ onMounted(() => {
   justify-content: center;
   position: relative;
   overflow: hidden;
-
-  /* 动态渐变背景 */
   background: linear-gradient(
     135deg,
     var(--color-primary) 0%,
-    var(--color-primary-active) 25%,
-    var(--color-primary-hover) 50%,
-    var(--color-primary-light) 75%,
+    var(--color-primary-active) 30%,
+    var(--color-primary-hover) 70%,
     var(--color-primary) 100%
   );
   background-size: 200% 200%;
   animation: gradientShift 8s ease infinite;
 }
 
-/* 光晕效果 - 增强可见度 */
+/* 光晕效果 - 增强版 */
 .hero-section::before {
   content: '';
   position: absolute;
@@ -195,17 +138,17 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
-    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.35) 0%, transparent 60%),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 70%),
-    radial-gradient(circle at 10% 80%, rgba(255, 255, 255, 0.25) 0%, transparent 50%),
-    radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 70%),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.45) 0%, transparent 70%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 80%),
+    radial-gradient(circle at 10% 80%, rgba(255, 255, 255, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
   pointer-events: none;
   animation: pulseGlow 3s ease-in-out infinite alternate;
   z-index: 1;
 }
 
-/* 粒子效果 - 增强可见度 */
+/* 粒子效果 */
 .hero-section::after {
   content: '';
   position: absolute;
@@ -214,18 +157,18 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   background-image:
-    radial-gradient(3px 3px at 15% 25%, rgba(255, 255, 255, 0.5), transparent),
-    radial-gradient(2px 2px at 35% 45%, rgba(255, 255, 255, 0.45), transparent),
-    radial-gradient(4px 4px at 55% 65%, rgba(255, 255, 255, 0.5), transparent),
-    radial-gradient(2px 2px at 75% 35%, rgba(255, 255, 255, 0.4), transparent),
-    radial-gradient(3px 3px at 85% 85%, rgba(255, 255, 255, 0.45), transparent),
-    radial-gradient(2px 2px at 95% 15%, rgba(255, 255, 255, 0.4), transparent),
-    radial-gradient(4px 4px at 5% 55%, rgba(255, 255, 255, 0.5), transparent),
-    radial-gradient(3px 3px at 45% 85%, rgba(255, 255, 255, 0.45), transparent);
-  background-size: 300px 300px;
+    radial-gradient(4px 4px at 15% 25%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(3px 3px at 35% 45%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(5px 5px at 55% 65%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(3px 3px at 75% 35%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(4px 4px at 85% 85%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(3px 3px at 95% 15%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(5px 5px at 5% 55%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(4px 4px at 45% 85%, rgba(255, 255, 255, 0.55), transparent);
+  background-size: 400px 400px;
   background-repeat: no-repeat;
   pointer-events: none;
-  animation: floatParticles 25s linear infinite;
+  animation: floatParticles 30s linear infinite;
   z-index: 1;
 }
 
@@ -240,60 +183,60 @@ onMounted(() => {
   z-index: 1;
 }
 
-/* 基础形状样式 - 增大尺寸，增强透明度 */
+/* 漂浮形状 - 加大加亮 */
 .floating-shape {
   position: absolute;
-  opacity: 0.35;
+  opacity: 0.5;
   animation: floatAround 20s infinite ease-in-out;
-  filter: blur(0.5px);
+  filter: blur(1px);
 }
 
 /* 三角形 */
 .shape-triangle {
   width: 0;
   height: 0;
-  border-left: 35px solid transparent;
-  border-right: 35px solid transparent;
-  border-bottom: 60px solid rgba(255, 255, 255, 0.7);
+  border-left: 45px solid transparent;
+  border-right: 45px solid transparent;
+  border-bottom: 78px solid rgba(255, 255, 255, 0.8);
 }
 
 /* 正方形 */
 .shape-square {
-  width: 55px;
-  height: 55px;
-  background: rgba(255, 255, 255, 0.65);
+  width: 70px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.75);
   border-radius: 12px;
 }
 
 /* 圆形 */
 .shape-circle {
-  width: 55px;
-  height: 55px;
-  background: rgba(255, 255, 255, 0.65);
+  width: 70px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.75);
   border-radius: 50%;
 }
 
 /* 长方形 */
 .shape-rectangle {
-  width: 75px;
-  height: 45px;
-  background: rgba(255, 255, 255, 0.65);
-  border-radius: 10px;
+  width: 95px;
+  height: 55px;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 12px;
 }
 
 /* 菱形 */
 .shape-diamond {
-  width: 55px;
-  height: 55px;
-  background: rgba(255, 255, 255, 0.65);
+  width: 70px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.75);
   transform: rotate(45deg);
 }
 
 /* 六边形 */
 .shape-hexagon {
-  width: 55px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.65);
+  width: 70px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.75);
   position: relative;
 }
 
@@ -303,18 +246,18 @@ onMounted(() => {
   position: absolute;
   width: 0;
   height: 0;
-  border-left: 27px solid transparent;
-  border-right: 27px solid transparent;
+  border-left: 35px solid transparent;
+  border-right: 35px solid transparent;
 }
 
 .shape-hexagon::before {
   bottom: 100%;
-  border-bottom: 18px solid rgba(255, 255, 255, 0.65);
+  border-bottom: 22px solid rgba(255, 255, 255, 0.75);
 }
 
 .shape-hexagon::after {
   top: 100%;
-  border-top: 18px solid rgba(255, 255, 255, 0.65);
+  border-top: 22px solid rgba(255, 255, 255, 0.75);
 }
 
 /* 星形 */
@@ -322,47 +265,47 @@ onMounted(() => {
   position: relative;
   width: 0;
   height: 0;
-  border-left: 27px solid transparent;
-  border-right: 27px solid transparent;
-  border-bottom: 55px solid rgba(255, 255, 255, 0.65);
+  border-left: 35px solid transparent;
+  border-right: 35px solid transparent;
+  border-bottom: 70px solid rgba(255, 255, 255, 0.75);
 }
 
 .shape-star::before {
   content: '';
   position: absolute;
-  top: 18px;
-  left: -27px;
+  top: 22px;
+  left: -35px;
   width: 0;
   height: 0;
-  border-left: 27px solid transparent;
-  border-right: 27px solid transparent;
-  border-top: 55px solid rgba(255, 255, 255, 0.65);
+  border-left: 35px solid transparent;
+  border-right: 35px solid transparent;
+  border-top: 70px solid rgba(255, 255, 255, 0.75);
 }
 
 /* 十字形 */
 .shape-cross {
   position: relative;
-  width: 18px;
-  height: 55px;
-  background: rgba(255, 255, 255, 0.65);
+  width: 22px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.75);
 }
 
 .shape-cross::before {
   content: '';
   position: absolute;
-  width: 55px;
-  height: 18px;
-  background: rgba(255, 255, 255, 0.65);
-  top: 18px;
-  left: -18px;
+  width: 70px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.75);
+  top: 24px;
+  left: -24px;
 }
 
 /* 心形 */
 .shape-heart {
   position: relative;
-  width: 55px;
-  height: 50px;
-  background: rgba(255, 255, 255, 0.65);
+  width: 70px;
+  height: 63px;
+  background: rgba(255, 255, 255, 0.75);
   transform: rotate(-45deg);
   border-radius: 50% 50% 0 0;
 }
@@ -371,20 +314,20 @@ onMounted(() => {
 .shape-heart::after {
   content: '';
   position: absolute;
-  width: 55px;
-  height: 50px;
-  background: rgba(255, 255, 255, 0.65);
+  width: 70px;
+  height: 63px;
+  background: rgba(255, 255, 255, 0.75);
   border-radius: 50%;
 }
 
 .shape-heart::before {
-  top: -28px;
+  top: -35px;
   left: 0;
 }
 
 .shape-heart::after {
   top: 0;
-  left: 28px;
+  left: 35px;
 }
 
 /* 文字内容 */
@@ -401,35 +344,19 @@ onMounted(() => {
   text-align: center;
   letter-spacing: 2px;
   animation: fadeInUp 0.8s ease;
-  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.85) 100%);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.9) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
-/* 底部功能模块区 */
+/* 底部模块 */
 .features-section {
   padding: 80px 20px;
   background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-light) 100%);
   position: relative;
-}
-
-.features-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--color-primary-light) 50%,
-    transparent 100%
-  );
 }
 
 .features-container {
@@ -442,35 +369,18 @@ onMounted(() => {
 
 .feature-card {
   background-color: var(--color-bg-card);
-  border-radius: var(--radius-xl);
+  border-radius: 24px;
   padding: 40px 32px;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border: 1px solid var(--color-primary-light);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s ease;
   cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.feature-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, var(--color-primary-light), transparent);
-  transition: left 0.5s;
 }
 
 .feature-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
-
-.feature-card:hover::before {
-  left: 100%;
 }
 
 .card-icon {
@@ -494,36 +404,32 @@ onMounted(() => {
 .card-details {
   font-size: 14px;
   color: var(--color-text-secondary);
-  line-height: 1.5;
 }
 
-/* ==================== 动画定义 ==================== */
-
-/* 漂浮动画 - 更明显的移动 */
+/* ==================== 动画 ==================== */
 @keyframes floatAround {
   0% {
     transform: translateY(0px) translateX(0px) rotate(0deg);
-    opacity: 0.3;
+    opacity: 0.4;
   }
   25% {
-    transform: translateY(-60px) translateX(45px) rotate(120deg);
-    opacity: 0.55;
+    transform: translateY(-80px) translateX(60px) rotate(120deg);
+    opacity: 0.7;
   }
   50% {
-    transform: translateY(35px) translateX(-35px) rotate(240deg);
-    opacity: 0.45;
+    transform: translateY(50px) translateX(-50px) rotate(240deg);
+    opacity: 0.6;
   }
   75% {
-    transform: translateY(-30px) translateX(55px) rotate(360deg);
-    opacity: 0.5;
+    transform: translateY(-40px) translateX(70px) rotate(360deg);
+    opacity: 0.65;
   }
   100% {
     transform: translateY(0px) translateX(0px) rotate(480deg);
-    opacity: 0.3;
+    opacity: 0.4;
   }
 }
 
-/* 渐变位移动画 */
 @keyframes gradientShift {
   0% {
     background-position: 0% 0%;
@@ -536,7 +442,6 @@ onMounted(() => {
   }
 }
 
-/* 光晕脉冲动画 */
 @keyframes pulseGlow {
   0% {
     opacity: 0.5;
@@ -544,11 +449,10 @@ onMounted(() => {
   }
   100% {
     opacity: 1;
-    transform: scale(1.05);
+    transform: scale(1.08);
   }
 }
 
-/* 粒子漂浮动画 */
 @keyframes floatParticles {
   0% {
     background-position:
@@ -563,18 +467,17 @@ onMounted(() => {
   }
   100% {
     background-position:
-      300px 300px,
-      -250px 150px,
-      200px -200px,
-      -150px 300px,
-      250px -150px,
-      -300px 200px,
-      150px 250px,
-      -200px -100px;
+      400px 400px,
+      -350px 200px,
+      300px -300px,
+      -200px 400px,
+      350px -200px,
+      -400px 300px,
+      200px 350px,
+      -300px -150px;
   }
 }
 
-/* 文字淡入动画 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -586,52 +489,30 @@ onMounted(() => {
   }
 }
 
-/* ==================== 响应式设计 ==================== */
-
+/* 响应式 */
 @media (max-width: 768px) {
   .hero-section {
-    padding: 120px 16px 60px;
+    padding: 100px 16px 60px;
   }
-
   .hero-title {
-    font-size: 56px;
+    font-size: 48px;
   }
-
-  .features-section {
-    padding: 60px 16px;
-  }
-
   .features-container {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
   }
-
   .feature-card {
-    padding: 32px 24px;
+    padding: 28px 20px;
   }
-
-  .card-title {
-    font-size: 20px;
-  }
-
-  /* 移动端形状淡化 */
   .floating-shape {
-    opacity: 0.15;
-    transform: scale(0.8);
+    opacity: 0.25;
+    transform: scale(0.7);
   }
 }
 
 @media (max-width: 480px) {
   .hero-title {
-    font-size: 48px;
-  }
-
-  .feature-card {
-    padding: 24px 20px;
-  }
-
-  .card-icon {
-    font-size: 40px;
+    font-size: 36px;
   }
 }
 </style>
