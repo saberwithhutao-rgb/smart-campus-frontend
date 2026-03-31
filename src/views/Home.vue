@@ -42,6 +42,81 @@ onMounted(() => {
 
     <!-- 主视觉区 -->
     <section class="hero-section">
+      <div class="shape-container">
+        <!-- 三角形 -->
+        <div
+          class="floating-shape shape-triangle"
+          style="top: 10%; left: 5%; animation-duration: 18s; animation-delay: 0s"
+        ></div>
+        <div
+          class="floating-shape shape-triangle"
+          style="top: 70%; left: 85%; animation-duration: 22s; animation-delay: 2s"
+        ></div>
+
+        <!-- 正方形 -->
+        <div
+          class="floating-shape shape-square"
+          style="top: 20%; left: 80%; animation-duration: 20s; animation-delay: 1s"
+        ></div>
+        <div
+          class="floating-shape shape-square"
+          style="top: 65%; left: 15%; animation-duration: 25s; animation-delay: 3s"
+        ></div>
+
+        <!-- 圆形 -->
+        <div
+          class="floating-shape shape-circle"
+          style="top: 15%; left: 60%; animation-duration: 19s; animation-delay: 0.5s"
+        ></div>
+        <div
+          class="floating-shape shape-circle"
+          style="top: 80%; left: 40%; animation-duration: 23s; animation-delay: 4s"
+        ></div>
+
+        <!-- 长方形 -->
+        <div
+          class="floating-shape shape-rectangle"
+          style="top: 30%; left: 25%; animation-duration: 21s; animation-delay: 1.5s"
+        ></div>
+        <div
+          class="floating-shape shape-rectangle"
+          style="top: 50%; left: 90%; animation-duration: 24s; animation-delay: 2.5s"
+        ></div>
+
+        <!-- 菱形 -->
+        <div
+          class="floating-shape shape-diamond"
+          style="top: 45%; left: 10%; animation-duration: 17s; animation-delay: 3.5s"
+        ></div>
+        <div
+          class="floating-shape shape-diamond"
+          style="top: 85%; left: 70%; animation-duration: 26s; animation-delay: 0.8s"
+        ></div>
+
+        <!-- 六边形 -->
+        <div
+          class="floating-shape shape-hexagon"
+          style="top: 55%; left: 50%; animation-duration: 28s; animation-delay: 2.2s"
+        ></div>
+
+        <!-- 星形 -->
+        <div
+          class="floating-shape shape-star"
+          style="top: 75%; left: 55%; animation-duration: 30s; animation-delay: 1.2s"
+        ></div>
+
+        <!-- 十字形 -->
+        <div
+          class="floating-shape shape-cross"
+          style="top: 35%; left: 45%; animation-duration: 16s; animation-delay: 4.5s"
+        ></div>
+
+        <!-- 心形 -->
+        <div
+          class="floating-shape shape-heart"
+          style="top: 25%; left: 35%; animation-duration: 27s; animation-delay: 3s"
+        ></div>
+      </div>
       <div class="hero-content">
         <h1 class="hero-title">数字孪生 智慧校园</h1>
       </div>
@@ -109,6 +184,154 @@ onMounted(() => {
   animation: gradientShift 8s ease infinite;
 }
 
+/* 基础形状样式 */
+.floating-shape {
+  position: absolute;
+  opacity: 0.2;
+  animation: floatAround 20s infinite ease-in-out;
+  filter: blur(0.5px);
+}
+
+/* 三角形 */
+.shape-triangle {
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 35px solid rgba(255, 255, 255, 0.6);
+}
+
+/* 正方形 */
+.shape-square {
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+}
+
+/* 圆形 */
+.shape-circle {
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+/* 长方形 */
+.shape-rectangle {
+  width: 45px;
+  height: 25px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+}
+
+/* 菱形 */
+.shape-diamond {
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.5);
+  transform: rotate(45deg);
+}
+
+/* 六边形 */
+.shape-hexagon {
+  width: 30px;
+  height: 17px;
+  background: rgba(255, 255, 255, 0.5);
+  position: relative;
+}
+
+.shape-hexagon::before,
+.shape-hexagon::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+}
+
+.shape-hexagon::before {
+  bottom: 100%;
+  border-bottom: 10px solid rgba(255, 255, 255, 0.5);
+}
+
+.shape-hexagon::after {
+  top: 100%;
+  border-top: 10px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 星形 */
+.shape-star {
+  position: relative;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-bottom: 30px solid rgba(255, 255, 255, 0.5);
+}
+
+.shape-star::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: -15px;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 30px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 十字形 */
+.shape-cross {
+  position: relative;
+  width: 10px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.shape-cross::before {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  top: 10px;
+  left: -10px;
+}
+
+/* 心形 */
+.shape-heart {
+  position: relative;
+  width: 30px;
+  height: 27px;
+  background: rgba(255, 255, 255, 0.5);
+  transform: rotate(-45deg);
+  border-radius: 50% 50% 0 0;
+}
+
+.shape-heart::before,
+.shape-heart::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 27px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+.shape-heart::before {
+  top: -15px;
+  left: 0;
+}
+
+.shape-heart::after {
+  top: 0;
+  left: 15px;
+}
+
+/* 光晕效果 */
 .hero-section::before {
   content: '';
   position: absolute;
@@ -122,6 +345,23 @@ onMounted(() => {
     radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
   pointer-events: none;
   animation: pulseGlow 4s ease-in-out infinite alternate;
+  z-index: 1;
+}
+
+/* 漂浮形状容器 */
+.shape-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
 }
 
 .hero-section::after {
@@ -250,7 +490,59 @@ onMounted(() => {
   line-height: 1.5;
 }
 
-/* 动画 */
+/* 漂浮动画 */
+@keyframes floatAround {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.15;
+  }
+  25% {
+    transform: translateY(-40px) translateX(30px) rotate(90deg);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translateY(20px) translateX(-20px) rotate(180deg);
+    opacity: 0.2;
+  }
+  75% {
+    transform: translateY(-20px) translateX(40px) rotate(270deg);
+    opacity: 0.25;
+  }
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(360deg);
+    opacity: 0.15;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 响应式：移动端减少形状数量 */
+@media (max-width: 768px) {
+  .floating-shape {
+    opacity: 0.1;
+    transform: scale(0.8);
+  }
+}
+
 @keyframes gradientShift {
   0% {
     background-position: 0% 0%;
