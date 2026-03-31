@@ -142,108 +142,110 @@ onMounted(() => {
 
 <template>
   <div class="login-container">
-    <div class="login-form">
-      <h2>智慧校园平台 - 登录</h2>
+    <div class="login-form-wrapper">
+      <div class="login-form">
+        <h2>智慧校园平台 - 登录</h2>
 
-      <!-- 错误提示 -->
-      <div v-if="errorMessage" class="error-alert">
-        {{ errorMessage }}
-      </div>
-
-      <!-- 用户名 -->
-      <div class="form-group">
-        <label for="username">用户名</label>
-        <input
-          id="username"
-          v-model="form.username"
-          type="text"
-          placeholder="请输入用户名"
-          class="form-control"
-        />
-      </div>
-
-      <!-- 密码 -->
-      <div class="form-group">
-        <label for="password">密码</label>
-        <div class="password-input">
-          <input
-            id="password"
-            v-model="form.password"
-            :type="isPasswordVisible ? 'text' : 'password'"
-            placeholder="请输入密码"
-            class="form-control"
-          />
-          <button
-            type="button"
-            @click="togglePasswordVisibility"
-            class="password-toggle"
-            title="切换密码可见性"
-          >
-            {{ isPasswordVisible ? '👁️' : '👁️‍🗨️' }}
-          </button>
+        <!-- 错误提示 -->
+        <div v-if="errorMessage" class="error-alert">
+          {{ errorMessage }}
         </div>
-      </div>
 
-      <!-- 图形验证码 -->
-      <div class="form-group">
-        <label for="captcha">图形验证码</label>
-        <div class="captcha-input">
+        <!-- 用户名 -->
+        <div class="form-group">
+          <label for="username">用户名</label>
           <input
-            id="captcha"
-            v-model="form.captcha"
+            id="username"
+            v-model="form.username"
             type="text"
-            placeholder="请输入验证码"
+            placeholder="请输入用户名"
             class="form-control"
-            maxlength="4"
-            style="text-transform: uppercase"
           />
-          <button @click="getCaptcha" class="send-captcha-btn" :disabled="isGettingCaptcha">
-            {{ isGettingCaptcha ? '获取中...' : '刷新验证码' }}
-          </button>
         </div>
 
-        <!-- 验证码显示区域 -->
-        <div v-if="captchaData.captchaText" class="captcha-display">
-          <div v-if="captchaData.captchaBase64" class="captcha-image-container">
-            <img
-              :src="captchaData.captchaBase64"
-              alt="验证码"
-              @click="getCaptcha"
-              class="captcha-image"
-              title="点击刷新验证码"
+        <!-- 密码 -->
+        <div class="form-group">
+          <label for="password">密码</label>
+          <div class="password-input">
+            <input
+              id="password"
+              v-model="form.password"
+              :type="isPasswordVisible ? 'text' : 'password'"
+              placeholder="请输入密码"
+              class="form-control"
             />
-            <div class="captcha-hint">点击图片刷新验证码</div>
-          </div>
-          <div v-else class="captcha-text-container">
-            <div class="captcha-text-display">
-              <span class="captcha-label">验证码：</span>
-              <strong class="captcha-value">{{ captchaData.captchaText }}</strong>
-            </div>
-            <div class="captcha-hint">（请输入上方4位验证码，不区分大小写）</div>
+            <button
+              type="button"
+              @click="togglePasswordVisibility"
+              class="password-toggle"
+              title="切换密码可见性"
+            >
+              {{ isPasswordVisible ? '👁️' : '👁️‍🗨️' }}
+            </button>
           </div>
         </div>
-      </div>
 
-      <!-- 记住我选项 -->
-      <div class="form-group remember-me">
-        <label class="checkbox-label">
-          <input type="checkbox" v-model="form.rememberMe" />
-          <span>记住我（下次自动登录）</span>
-        </label>
-      </div>
+        <!-- 图形验证码 -->
+        <div class="form-group">
+          <label for="captcha">图形验证码</label>
+          <div class="captcha-input">
+            <input
+              id="captcha"
+              v-model="form.captcha"
+              type="text"
+              placeholder="请输入验证码"
+              class="form-control"
+              maxlength="4"
+              style="text-transform: uppercase"
+            />
+            <button @click="getCaptcha" class="send-captcha-btn" :disabled="isGettingCaptcha">
+              {{ isGettingCaptcha ? '获取中...' : '刷新验证码' }}
+            </button>
+          </div>
 
-      <!-- 登录按钮 -->
-      <button @click="handleLogin" class="login-button" :disabled="isLoggingIn">
-        {{ isLoggingIn ? '登录中...' : '登录' }}
-      </button>
+          <!-- 验证码显示区域 -->
+          <div v-if="captchaData.captchaText" class="captcha-display">
+            <div v-if="captchaData.captchaBase64" class="captcha-image-container">
+              <img
+                :src="captchaData.captchaBase64"
+                alt="验证码"
+                @click="getCaptcha"
+                class="captcha-image"
+                title="点击刷新验证码"
+              />
+              <div class="captcha-hint">点击图片刷新验证码</div>
+            </div>
+            <div v-else class="captcha-text-container">
+              <div class="captcha-text-display">
+                <span class="captcha-label">验证码：</span>
+                <strong class="captcha-value">{{ captchaData.captchaText }}</strong>
+              </div>
+              <div class="captcha-hint">（请输入上方4位验证码，不区分大小写）</div>
+            </div>
+          </div>
+        </div>
 
-      <!-- 注册链接 -->
-      <div class="register-link">
-        还没有账号？<a href="#" @click.prevent="goToRegister">立即注册</a>
-      </div>
+        <!-- 记住我选项 -->
+        <div class="form-group remember-me">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="form.rememberMe" />
+            <span>记住我（下次自动登录）</span>
+          </label>
+        </div>
 
-      <div class="forgot-link">
-        <a href="#" @click.prevent="goToForgotPassword">忘记密码？</a>
+        <!-- 登录按钮 -->
+        <button @click="handleLogin" class="login-button" :disabled="isLoggingIn">
+          {{ isLoggingIn ? '登录中...' : '登录' }}
+        </button>
+
+        <!-- 注册链接 -->
+        <div class="register-link">
+          还没有账号？<a href="#" @click.prevent="goToRegister">立即注册</a>
+        </div>
+
+        <div class="forgot-link">
+          <a href="#" @click.prevent="goToForgotPassword">忘记密码？</a>
+        </div>
       </div>
     </div>
   </div>
@@ -251,21 +253,37 @@ onMounted(() => {
 
 <style scoped>
 .login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
-  padding: 20px;
+  width: 100%;
+  background-image: url('../img/bg_login.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--color-bg-dark);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0;
 }
 
+/* 表单外层包装器 - 控制位置 */
+.login-form-wrapper {
+  width: 30%;
+  max-width: 480px;
+  min-width: 320px;
+  margin-right: 5%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* 保留原有的表单样式，只改定位相关 */
 .login-form {
   background-color: var(--color-bg-card);
   padding: 45px;
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 520px;
   transition: transform 0.3s ease;
 }
 
@@ -280,15 +298,15 @@ onMounted(() => {
   color: var(--color-text);
   font-size: 28px;
   font-weight: 600;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .error-alert {
-  background-color: var(--color-danger-light, #fef0f0);
-  border: 1px solid var(--color-danger-light, #fde2e2);
+  background-color: var(--color-danger-light);
+  border: 1px solid var(--color-danger-light);
   color: var(--color-danger);
   padding: 12px 16px;
   border-radius: 8px;
@@ -322,6 +340,7 @@ onMounted(() => {
   transition: all 0.3s ease;
   background-color: var(--color-bg-light);
   color: var(--color-text);
+  box-sizing: border-box;
 }
 
 .form-control:focus {
@@ -368,80 +387,9 @@ onMounted(() => {
   flex: 1;
 }
 
-.login-button {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
-  color: var(--color-bg-card);
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 10px;
-}
-
-.login-button:hover {
-  background: linear-gradient(135deg, var(--color-primary-hover) 0%, #6a4091 100%);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
-  transform: translateY(-1px);
-}
-
-.login-button:active {
-  transform: translateY(1px);
-  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
-}
-
-.register-link {
-  text-align: center;
-  margin-top: 25px;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-}
-
-.register-link a {
-  color: var(--color-primary);
-  text-decoration: none;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.register-link a:hover {
-  color: var(--color-primary-hover);
-  text-decoration: underline;
-}
-
-.forgot-link {
-  text-align: center;
-  margin-top: 15px;
-}
-
-.forgot-link a {
-  color: var(--color-text-light);
-  text-decoration: none;
-  font-size: 13px;
-}
-
-.forgot-link a:hover {
-  color: var(--color-primary);
-}
-
-.captcha-input {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.captcha-input .form-control {
-  flex: 1;
-}
-
 .send-captcha-btn {
   padding: 14px 18px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: var(--color-bg-card);
   border: none;
   border-radius: 8px;
@@ -454,8 +402,8 @@ onMounted(() => {
 }
 
 .send-captcha-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--color-primary-hover) 0%, #6a4091 100%);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
+  box-shadow: 0 4px 12px var(--color-primary-light);
   transform: translateY(-1px);
 }
 
@@ -539,5 +487,156 @@ onMounted(() => {
   width: 16px;
   height: 16px;
   cursor: pointer;
+}
+
+.login-button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: var(--color-bg-card);
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 10px;
+}
+
+.login-button:hover {
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
+  box-shadow: 0 6px 20px var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.login-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px var(--color-primary-light);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 25px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.register-link a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.register-link a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.forgot-link {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.forgot-link a {
+  color: var(--color-text-light);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.forgot-link a:hover {
+  color: var(--color-primary);
+}
+
+/* ========== 响应式适配 - 只改布局，不改颜色 ========== */
+
+/* 大屏幕 (1440px+) */
+@media (min-width: 1440px) {
+  .login-form-wrapper {
+    width: 28%;
+    max-width: 520px;
+    margin-right: 6%;
+  }
+
+  .login-form {
+    padding: 45px 40px;
+  }
+}
+
+/* 桌面 (1024px - 1440px) */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .login-form-wrapper {
+    width: 32%;
+    max-width: 450px;
+    margin-right: 5%;
+  }
+
+  .login-form {
+    padding: 38px 32px;
+  }
+}
+
+/* 小桌面/大平板 (768px - 1024px) - 表单居中 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .login-container {
+    justify-content: center;
+  }
+
+  .login-form-wrapper {
+    width: 60%;
+    max-width: 450px;
+    margin-right: 0;
+  }
+
+  .login-form {
+    background-color: var(--color-bg-card);
+  }
+}
+
+/* 移动端 (小于768px) */
+@media (max-width: 767px) {
+  .login-container {
+    justify-content: center;
+    background-position: 30% center;
+  }
+
+  .login-form-wrapper {
+    width: 90%;
+    min-width: auto;
+    margin-right: 0;
+    max-height: 85vh;
+  }
+
+  .login-form {
+    padding: 30px 24px;
+  }
+
+  .login-form h2 {
+    font-size: 24px;
+    margin-bottom: 28px;
+  }
+
+  .captcha-input {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .send-captcha-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .captcha-image {
+    width: 100%;
+    height: auto;
+    min-height: 45px;
+  }
 }
 </style>
