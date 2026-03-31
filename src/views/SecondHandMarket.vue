@@ -1270,7 +1270,7 @@ const updateArrowVisibility = () => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -549,7 +549,7 @@ onMounted(() => {
 <style scoped>
 .profile-edit {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
 }
 
 .main-content {
@@ -628,7 +628,7 @@ onMounted(() => {
   font-weight: 700;
   color: var(--color-text);
   margin: 0 0 8px 0;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -707,7 +707,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   font-size: 48px;
   font-weight: 600;
@@ -752,7 +752,7 @@ onMounted(() => {
 }
 
 .btn-upload {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
@@ -901,7 +901,7 @@ onMounted(() => {
 }
 
 :deep(.custom-option:hover) {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
 }
 
@@ -932,7 +932,7 @@ onMounted(() => {
 }
 
 .btn-save {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }

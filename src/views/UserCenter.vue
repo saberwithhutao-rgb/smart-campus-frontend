@@ -437,7 +437,7 @@ const getUserStatusText = (status?: number) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   font-size: 48px;
   font-weight: 600;
@@ -513,7 +513,7 @@ const getUserStatusText = (status?: number) => {
 
 .btn-primary {
   padding: 10px 24px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: #fff;
   border: none;
   border-radius: var(--radius-md);

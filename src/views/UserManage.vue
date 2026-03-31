@@ -287,7 +287,7 @@ const handleLogout = () => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 30px 20px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   min-height: 100vh;
 }
 
@@ -311,7 +311,7 @@ const handleLogout = () => {
   color: var(--color-text);
   font-size: 32px;
   font-weight: 600;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -369,7 +369,7 @@ const handleLogout = () => {
 
 .add-user-btn {
   padding: 12px 24px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -617,7 +617,7 @@ const handleLogout = () => {
 
 .confirm-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   border: none;
   border-radius: var(--radius-sm);

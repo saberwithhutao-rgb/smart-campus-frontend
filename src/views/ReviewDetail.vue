@@ -587,7 +587,7 @@ const goBack = () => router.go(-1)
 
 .card-header {
   padding: 16px 20px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
 }
 
