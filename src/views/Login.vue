@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { api } from '../api/index'
 import { useUserStore } from '../stores/user'
 import { autoLogin } from '../utils/autoLogin'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -57,15 +58,11 @@ const getCaptcha = async () => {
     }
 
     form.captcha = ''
-    errorMessage.value = '验证码已更新'
-    setTimeout(() => {
-      if (errorMessage.value === '验证码已更新') {
-        errorMessage.value = ''
-      }
-    }, 3000)
+
+    ElMessage.success('验证码已更新')
   } catch (error) {
     console.error('获取验证码失败:', error)
-    errorMessage.value = '获取验证码失败'
+    ElMessage.error('获取验证码失败')
   } finally {
     isGettingCaptcha.value = false
   }

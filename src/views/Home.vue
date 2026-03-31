@@ -97,7 +97,7 @@ onMounted(() => {
     135deg,
     var(--color-primary) 0%,
     var(--color-primary-light) 50%,
-    #1e3a8a 100%
+    var(--color-primary) 100%
   );
   color: var(--color-bg-card);
   position: relative;
@@ -127,7 +127,7 @@ onMounted(() => {
   font-weight: 700;
   text-align: center;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  background: linear-gradient(135deg, var(--color-bg-card) 0%, var(--color-primary-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -139,7 +139,7 @@ onMounted(() => {
 /* 底部功能模块区 */
 .features-section {
   padding: 80px 20px;
-  background: linear-gradient(180deg, var(--color-bg) 0%, #f8fafc 100%);
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-light) 100%);
   position: relative;
 }
 
@@ -172,7 +172,7 @@ onMounted(() => {
   padding: 40px 32px;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(22, 93, 255, 0.08);
+  border: 1px solid var(--color-primary-light);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
@@ -186,7 +186,7 @@ onMounted(() => {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(22, 93, 255, 0.05), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-primary-light), transparent);
   transition: left 0.5s;
 }
 
