@@ -16,22 +16,32 @@ const router = useRouter()
 const settingsStore = useSettingsStore()
 const isSaving = ref(false)
 
-const { currentColor, toggleDarkMode, setThemeColor, themeColorOptions: colorOptions } = useTheme()
+// ✅ 从 useTheme 获取实际的主题状态
+const {
+  currentMode,
+  currentColor,
+  toggleDarkMode,
+  setThemeMode,
+  setThemeColor,
+  themeColorOptions: colorOptions,
+} = useTheme()
 
 const settings = computed(() => settingsStore.settings)
+
+// ✅ UI 上显示的是实际主题状态
+const isDarkMode = computed(() => currentMode.value === 'dark')
 
 const resetSettings = async () => {
   // 1. 重置 Store 数据
   settingsStore.reset()
 
-  // 2. 等待一个微任务，让 store 更新完成
+  // 2. 等待 store 更新
   await nextTick()
 
   // 3. 获取重置后的值
   const resetSettings = settingsStore.settings
 
-  // 4. 使用 useTheme 的方法设置深色模式
-  const { setThemeMode } = useTheme()
+  // 4. 应用深色模式（使用 useTheme 的方法）
   setThemeMode(resetSettings.darkMode ? 'dark' : 'light')
 
   // 5. 应用主题色
@@ -65,7 +75,9 @@ const resetSettings = async () => {
 }
 
 const handleDarkModeChange = (val: boolean) => {
+  // ✅ 更新 store
   settingsStore.updateSetting('darkMode', val)
+  // ✅ 切换实际主题
   toggleDarkMode()
 }
 
@@ -222,10 +234,7 @@ onMounted(() => {
                   <span class="setting-label">深色模式</span>
                   <span class="setting-desc">切换深色/浅色主题</span>
                 </div>
-                <el-switch
-                  :model-value="settings.darkMode"
-                  @update:model-value="handleDarkModeChange"
-                />
+                <el-switch :model-value="isDarkMode" @update:model-value="handleDarkModeChange" />
               </div>
 
               <div class="setting-item">
