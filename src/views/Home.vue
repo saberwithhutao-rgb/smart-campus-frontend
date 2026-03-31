@@ -93,15 +93,20 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+
+  /* 动态渐变背景 - 使用主题色变量 */
   background: linear-gradient(
     135deg,
     var(--color-primary) 0%,
-    var(--color-primary-light) 50%,
+    var(--color-primary-active) 25%,
+    var(--color-primary-hover) 50%,
+    var(--color-primary-light) 75%,
     var(--color-primary) 100%
   );
-  color: var(--color-bg-card);
-  position: relative;
-  overflow: hidden;
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
 }
 
 .hero-section::before {
@@ -112,9 +117,30 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
   pointer-events: none;
+  animation: pulseGlow 4s ease-in-out infinite alternate;
+}
+
+.hero-section::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(3px 3px at 60% 70%, rgba(255, 255, 255, 0.2), transparent),
+    radial-gradient(1px 1px at 80% 20%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(2px 2px at 40% 90%, rgba(255, 255, 255, 0.25), transparent),
+    radial-gradient(3px 3px at 90% 50%, rgba(255, 255, 255, 0.2), transparent);
+  background-size: 200px 200px;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  animation: floatParticles 20s linear infinite;
 }
 
 .hero-content {
@@ -222,6 +248,47 @@ onMounted(() => {
   font-size: 14px;
   color: var(--color-text-secondary);
   line-height: 1.5;
+}
+
+/* 动画 */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes floatParticles {
+  0% {
+    background-position:
+      0% 0%,
+      0% 0%,
+      0% 0%,
+      0% 0%,
+      0% 0%;
+  }
+  100% {
+    background-position:
+      200px 200px,
+      -200px 100px,
+      100px -150px,
+      -100px 200px,
+      150px -100px;
+  }
 }
 
 /* 动画 */
