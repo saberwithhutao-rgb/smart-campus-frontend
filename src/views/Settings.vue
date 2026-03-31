@@ -22,11 +22,40 @@ const settings = computed(() => settingsStore.settings)
 
 const resetSettings = () => {
   settingsStore.reset()
-  if (settings.value.darkMode) {
-    toggleDarkMode()
+  const resetSettings = settingsStore.settings
+
+  // 直接根据重置后的值强制设置深色模式
+  const isDarkNow = document.documentElement.getAttribute('data-theme') === 'dark'
+  if (isDarkNow !== resetSettings.darkMode) {
+    toggleDarkMode() // 如果当前状态与目标状态不同，就切换
   }
-  setThemeColor(settings.value.themeColor as any)
-  ElMessage.info('已恢复为默认设置，保存后生效')
+
+  setThemeColor(resetSettings.themeColor as any)
+
+  window.dispatchEvent(
+    new CustomEvent('bubble-effect-change', {
+      detail: resetSettings.bubbleEffect,
+    }),
+  )
+  window.dispatchEvent(
+    new CustomEvent('bubble-count-change', {
+      detail: resetSettings.bubbleCount,
+    }),
+  )
+  window.dispatchEvent(
+    new CustomEvent('bubble-size-change', {
+      detail: resetSettings.bubbleSize,
+    }),
+  )
+
+  window.dispatchEvent(
+    new CustomEvent('settings-changed', {
+      detail: resetSettings,
+    }),
+  )
+
+  settingsStore.saveToStorage()
+  ElMessage.info('已恢复为默认设置')
 }
 
 const handleDarkModeChange = (val: boolean) => {
