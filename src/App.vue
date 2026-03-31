@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import MouseBubbles from '@/components/MouseBubbles.vue'
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
 import { ElMessage, ElLoading } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { useSettingsStore } from '@/stores/settings'
 import { useRouter } from 'vue-router'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import { api } from '@/api'
@@ -10,19 +11,20 @@ import ReviewReminderBanner from '@/components/ReviewReminderBanner.vue'
 import { useTheme } from '@/composables/useTheme'
 import {
   applyUserSettings,
-  getUserSettings,
   sendBrowserNotification,
   syncPublicProfileSnapshot,
-  type UserSettings,
 } from '@/utils/userSettings'
 
 const userStore = useUserStore()
+const settingsStore = useSettingsStore()
 const router = useRouter()
 const appReady = ref(false)
 let studyReminderTimer: number | null = null
 
-// 初始化主题系统
+const settings = computed(() => settingsStore.settings)
+
 const { watchSystemTheme } = useTheme()
+
 const validateToken = async (): Promise<boolean> => {
   const token =
     localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
@@ -42,10 +44,9 @@ const validateToken = async (): Promise<boolean> => {
     return false
   }
 }
-// 保留：时段问候功能
+
 const showGreetingMessage = () => {
-  const currentSettings = getUserSettings()
-  if (!currentSettings.systemNotification) return
+  if (!settings.value.systemNotification) return
 
   const GREETING_KEY = 'system_greeting_shown'
   const hasShownGreeting = localStorage.getItem(GREETING_KEY)
@@ -97,7 +98,7 @@ const clearStudyReminder = () => {
   }
 }
 
-const fireStudyReminder = (settings: UserSettings) => {
+const fireStudyReminder = () => {
   const todayKey = getDateKey(new Date())
   if (localStorage.getItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE) === todayKey) {
     return
@@ -105,7 +106,7 @@ const fireStudyReminder = (settings: UserSettings) => {
 
   const message = '今天的学习计划还没看，记得安排一下进度。'
   const sent =
-    settings.systemNotification &&
+    settings.value.systemNotification &&
     sendBrowserNotification('学习提醒', message, STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
 
   if (!sent) {
@@ -120,9 +121,9 @@ const fireStudyReminder = (settings: UserSettings) => {
   localStorage.setItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE, todayKey)
 }
 
-const scheduleStudyReminder = (settings: UserSettings) => {
+const scheduleStudyReminder = () => {
   clearStudyReminder()
-  if (!settings.studyReminder) return
+  if (!settings.value.studyReminder) return
 
   const now = new Date()
   const nextReminder = new Date()
@@ -134,56 +135,37 @@ const scheduleStudyReminder = (settings: UserSettings) => {
 
   const delay = nextReminder.getTime() - now.getTime()
   studyReminderTimer = window.setTimeout(() => {
-    fireStudyReminder(settings)
-    scheduleStudyReminder(getUserSettings())
+    fireStudyReminder()
+    scheduleStudyReminder()
   }, delay)
 }
 
-const applyRuntimeSettings = (settings: UserSettings) => {
-  applyUserSettings(settings)
-  scheduleStudyReminder(settings)
+const applyRuntimeSettings = () => {
+  applyUserSettings(settings.value)
+  scheduleStudyReminder()
 
-  if (settings.publicProfile) {
+  if (settings.value.publicProfile) {
     syncPublicProfileSnapshot()
   } else {
     localStorage.removeItem(STORAGE_KEYS.PUBLIC_PROFILE_SNAPSHOT)
   }
 
-  if (!settings.shareData) {
+  if (!settings.value.shareData) {
     localStorage.removeItem(STORAGE_KEYS.ANONYMOUS_STUDY_DATA)
   }
 }
 
-const handleSettingsChanged = (event: Event) => {
-  const customEvent = event as CustomEvent<UserSettings>
-  applyRuntimeSettings(customEvent.detail)
-}
+watch(
+  () => settings.value,
+  () => {
+    applyRuntimeSettings()
+  },
+  { deep: true },
+)
 
-// 保留：Storage 事件监听（多标签页同步）
-const handleStorageChange = (e: StorageEvent) => {
-  console.log('📡 Storage 事件:', e.key)
-
-  // 修复：使用 STORAGE_KEYS 而不是硬编码
-  if (e.key === STORAGE_KEYS.TOKEN || e.key === STORAGE_KEYS.TOKEN_ALT) {
-    if (!e.newValue) {
-      userStore.userState.isLoggedIn = false
-      userStore.userState.userInfo = null
-      if (!router.currentRoute.value.path.includes('/login')) {
-        router.replace('/login')
-      }
-    }
-  }
-
-  if (e.key === STORAGE_KEYS.USER_SETTINGS) {
-    applyRuntimeSettings(getUserSettings())
-  }
-}
-
-// 页面首次加载
 onMounted(async () => {
   console.log('🚀 App.vue 挂载')
 
-  // 监听系统主题变化
   const cleanup = watchSystemTheme()
 
   const loadingInstance = ElLoading.service({
@@ -193,27 +175,18 @@ onMounted(async () => {
   })
 
   try {
-    console.log('1. 开始恢复状态...')
     userStore.restoreFromStorage()
-    applyRuntimeSettings(getUserSettings())
+    applyRuntimeSettings()
 
-    console.log('2. 验证 token 有效性...')
     const isValid = await validateToken()
 
-    // App.vue onMounted 中的关键部分
     if (!isValid) {
-      console.log('3. Token 无效，尝试自动登录...')
-
       const currentPath = router.currentRoute.value.path
       const isAuthPage = currentPath === '/login' || currentPath === '/register'
 
-      if (isAuthPage) {
-        console.log('⏭️ 当前在登录/注册页面，跳过自动登录，保持当前页面')
-        // 不做任何跳转，让用户正常操作
-      } else {
+      if (!isAuthPage) {
         const autoLoginSuccess = await userStore.tryAutoLogin?.()
         if (!autoLoginSuccess) {
-          console.log('3.1 自动登录失败，跳转到登录页')
           userStore.userState.isLoggedIn = false
           userStore.userState.userInfo = null
           router.push('/login')
@@ -228,21 +201,34 @@ onMounted(async () => {
     loadingInstance.close()
     await nextTick()
     appReady.value = true
-    console.log('4. 应用就绪，appReady = true')
   }
 
   window.addEventListener('storage', handleStorageChange)
-  window.addEventListener('settings-changed', handleSettingsChanged as EventListener)
-
-  // 清理函数
-  onBeforeUnmount(() => {
-    cleanup()
-  })
 })
+
+const handleStorageChange = (e: StorageEvent) => {
+  if (e.key === STORAGE_KEYS.TOKEN || e.key === STORAGE_KEYS.TOKEN_ALT) {
+    if (!e.newValue) {
+      userStore.userState.isLoggedIn = false
+      userStore.userState.userInfo = null
+      if (!router.currentRoute.value.path.includes('/login')) {
+        router.replace('/login')
+      }
+    }
+  }
+
+  if (e.key === STORAGE_KEYS.USER_SETTINGS && e.newValue) {
+    try {
+      const newSettings = JSON.parse(e.newValue)
+      settingsStore.updateSettings(newSettings)
+    } catch (error) {
+      console.error('同步设置失败:', error)
+    }
+  }
+}
 
 onBeforeUnmount(() => {
   window.removeEventListener('storage', handleStorageChange)
-  window.removeEventListener('settings-changed', handleSettingsChanged as EventListener)
   clearStudyReminder()
 })
 </script>
@@ -263,9 +249,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
-/* 全局样式已迁移到 theme 系统，这里只保留必要的加载动画 */
-@import '@/styles/theme/index.css';
-
 * {
   box-sizing: border-box;
   margin: 0;
@@ -296,7 +279,6 @@ body {
   opacity: 1;
 }
 
-/* 全局按钮样式 */
 button {
   font-family: var(--font-family);
   font-size: inherit;
@@ -320,7 +302,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* 全局输入框样式 */
 input[type='text'],
 input[type='password'],
 input[type='email'],
@@ -354,7 +335,6 @@ textarea::placeholder {
   color: var(--color-text-placeholder);
 }
 
-/* 全局标题样式 */
 h1,
 h2,
 h3,
@@ -393,7 +373,6 @@ h6 {
   font-size: var(--font-size-md);
 }
 
-/* 全局链接样式 */
 a {
   color: var(--color-primary);
   text-decoration: none;
@@ -405,7 +384,6 @@ a:hover {
   text-decoration: underline;
 }
 
-/* 全局卡片样式 */
 .card {
   background-color: var(--color-bg-card);
   border-radius: var(--radius-lg);
@@ -420,7 +398,6 @@ a:hover {
   transform: translateY(-2px);
 }
 
-/* 按钮变体 */
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
@@ -461,7 +438,6 @@ a:hover {
   background-color: var(--color-primary-light);
 }
 
-/* 模态框遮罩 */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -487,7 +463,6 @@ a:hover {
   animation: slideIn 0.3s ease;
 }
 
-/* 加载动画 */
 .app-loading {
   position: fixed;
   top: 0;
@@ -548,7 +523,6 @@ a:hover {
   }
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   h1 {
     font-size: var(--font-size-3xl);

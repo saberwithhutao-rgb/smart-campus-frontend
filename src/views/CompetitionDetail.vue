@@ -485,17 +485,17 @@ onMounted(() => {
 }
 
 .badge.type {
-  background-color: var(--color-success-light, #f0f9eb);
+  background-color: var(--color-success-light);
   color: var(--color-success);
 }
 
 .badge.level {
-  background-color: var(--color-warning-light, #fdf6ec);
+  background-color: var(--color-warning-light);
   color: var(--color-warning);
 }
 
 .badge.active {
-  background-color: var(--color-success-light, #f0f9eb);
+  background-color: var(--color-success-light);
   color: var(--color-success);
 }
 

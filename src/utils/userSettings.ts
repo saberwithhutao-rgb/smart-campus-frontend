@@ -1,5 +1,10 @@
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 
+const getSystemDarkMode = (): boolean => {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
 export interface UserSettings {
   darkMode: boolean
   themeColor: string
@@ -30,7 +35,7 @@ export interface AnonymousStudyAnalytics {
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
-  darkMode: false,
+  darkMode: getSystemDarkMode(),
   themeColor: '#409eff',
   bubbleEffect: true,
   bubbleCount: 60,
@@ -73,6 +78,18 @@ export const applyThemeSettings = (settings: UserSettings) => {
   if (!isClient) return
   document.documentElement.classList.toggle('dark', settings.darkMode)
   document.documentElement.style.setProperty('--primary-color', settings.themeColor)
+}
+
+export const watchSystemTheme = (callback: (isDark: boolean) => void) => {
+  if (!isClient) return () => {}
+
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+    callback(e.matches)
+  }
+
+  mediaQuery.addEventListener('change', handler)
+  return () => mediaQuery.removeEventListener('change', handler)
 }
 
 export const applyUserSettings = (settings: UserSettings) => {

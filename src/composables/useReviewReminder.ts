@@ -1,112 +1,68 @@
-// composables/useReviewReminder.ts
 import { ref, computed, watch } from 'vue'
 import { useStudyPlanStore } from '@/stores/studyPlan'
 import { useUserStore } from '@/stores/user'
+import { useSettingsStore } from '@/stores/settings'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 
-// ✅ 全局单例实例
 let singletonInstance: ReturnType<typeof createReviewReminder> | null = null
 
-// ✅ 创建实例的函数（你原来的代码全部移到这里）
 function createReviewReminder() {
   const studyPlanStore = useStudyPlanStore()
   const userStore = useUserStore()
+  const settingsStore = useSettingsStore()
 
-  // 是否有待复习任务（原始状态）
   const hasPendingRaw = ref(false)
   const pendingCount = ref(0)
   const overdueCount = ref(0)
-
-  // ✅ 是否显示红点（考虑已读状态）
   const showRedDot = ref(false)
 
-  // 防止重复请求的标志
   let isRefreshing = false
-  // ✅ 新增：用于复用请求的 Promise
   let refreshPromise: Promise<void> | null = null
 
-  // 是否已登录
   const isLoggedIn = computed(() => userStore.userState.isLoggedIn)
+  const isReminderEnabled = computed(() => settingsStore.settings.studyReminder)
 
-  // 用户是否开启复习提醒
-  const isReminderEnabled = computed(() => {
-    const settings = localStorage.getItem(STORAGE_KEYS.USER_SETTINGS)
-    if (!settings) return true
-    try {
-      const parsed = JSON.parse(settings)
-      return parsed.studyReminder !== false
-    } catch {
-      return true
-    }
-  })
-
-  // 获取今天的日期字符串 YYYY-MM-DD
   const getTodayString = (): string => {
     const today = new Date()
     return today.toISOString().split('T')[0] ?? ''
   }
 
-  // ✅ 获取上次查看的日期（点击进入页面时记录）
   const getLastViewedDate = (): string | null => {
     return localStorage.getItem('review_reminder_last_viewed')
   }
 
-  // ✅ 标记已查看（点击智能复习时调用）
   const markAsViewed = (): void => {
     const today = getTodayString()
     localStorage.setItem('review_reminder_last_viewed', today)
-    // 立即更新红点状态
     updateRedDotState()
   }
 
-  // ✅ 更新红点显示状态
   const updateRedDotState = () => {
-    if (!hasPendingRaw.value) {
-      // 没有待复习任务，不显示红点
+    if (!isReminderEnabled.value) {
       showRedDot.value = false
       return
     }
 
-    // 有待复习任务，检查今天是否已查看过
+    if (!hasPendingRaw.value) {
+      showRedDot.value = false
+      return
+    }
+
     const lastViewedDate = getLastViewedDate()
     const today = getTodayString()
 
     if (lastViewedDate === today) {
-      // 今天已查看过，不显示红点
       showRedDot.value = false
     } else {
-      // 今天还没查看过，显示红点
       showRedDot.value = true
     }
   }
 
-  // 检查今天是否已经提醒过（用于横幅）
-  const hasRemindedToday = (): boolean => {
-    const lastDate = localStorage.getItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
-    return lastDate === getTodayString()
-  }
-
-  // 标记今日已提醒
-  const markRemindedToday = (): void => {
-    localStorage.setItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE, getTodayString())
-  }
-
-  // 重置提醒状态（跨日时调用）
-  const resetIfNewDay = (): void => {
-    const lastDate = localStorage.getItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
-    const today = getTodayString()
-    if (lastDate !== today) {
-      localStorage.removeItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
-    }
-  }
-
-  // 计算待复习任务状态（从 store 中计算，不发起请求）
   const updatePendingStatus = () => {
     const tasks = studyPlanStore.allReviewTasks
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // 计算待复习任务（pending 且 taskDate <= 今天）
     const pendingTasks = tasks.filter((task) => {
       if (task.status !== 'pending') return false
       const taskDate = new Date(task.taskDate)
@@ -114,7 +70,6 @@ function createReviewReminder() {
       return taskDate <= today
     })
 
-    // 计算逾期任务（pending 且 taskDate < 今天）
     const overdueTasks = tasks.filter((task) => {
       if (task.status !== 'pending') return false
       const taskDate = new Date(task.taskDate)
@@ -127,27 +82,19 @@ function createReviewReminder() {
     pendingCount.value = pendingTasks.length
     overdueCount.value = overdueTasks.length
 
-    // ✅ 如果从有任务变为无任务，清除查看记录
     if (oldHasPending && !hasPendingRaw.value) {
       localStorage.removeItem('review_reminder_last_viewed')
     }
 
-    // ✅ 更新红点显示状态
     updateRedDotState()
   }
 
-  // ✅ 刷新待复习任务状态（添加请求复用）
   const refreshPendingStatus = async () => {
-    // ✅ 如果已有正在进行的请求，复用 Promise
     if (refreshPromise) {
-      console.log('[复习提醒] 复用已有请求')
       return refreshPromise
     }
 
-    if (isRefreshing) {
-      console.log('[复习提醒] 已有请求进行中，跳过')
-      return
-    }
+    if (isRefreshing) return
 
     if (!isLoggedIn.value) {
       hasPendingRaw.value = false
@@ -160,7 +107,6 @@ function createReviewReminder() {
     try {
       isRefreshing = true
       refreshPromise = (async () => {
-        // ✅ 添加 fetchStudyPlans
         await studyPlanStore.fetchStudyPlans()
         await studyPlanStore.fetchPendingTasks()
         await studyPlanStore.fetchAllReviewTasks()
@@ -176,7 +122,6 @@ function createReviewReminder() {
     }
   }
 
-  // 监听 allReviewTasks 的变化
   watch(
     () => studyPlanStore.allReviewTasks,
     () => {
@@ -185,7 +130,6 @@ function createReviewReminder() {
     { deep: true },
   )
 
-  // 监听登录状态变化
   watch(
     isLoggedIn,
     async (loggedIn) => {
@@ -201,20 +145,36 @@ function createReviewReminder() {
     { immediate: true },
   )
 
-  // 每日重置提醒状态
-  const checkAndResetDaily = () => {
-    resetIfNewDay()
+  watch(
+    () => isReminderEnabled.value,
+    () => {
+      updateRedDotState()
+    },
+  )
+
+  const resetIfNewDay = () => {
+    const lastDate = localStorage.getItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
+    const today = getTodayString()
+    if (lastDate !== today) {
+      localStorage.removeItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
+    }
   }
 
-  checkAndResetDaily()
+  const hasRemindedToday = (): boolean => {
+    const lastDate = localStorage.getItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
+    return lastDate === getTodayString()
+  }
+
+  const markRemindedToday = (): void => {
+    localStorage.setItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE, getTodayString())
+  }
+
+  resetIfNewDay()
 
   return {
-    // 红点显示状态（供组件使用）
     showRedDot,
     pendingCount,
     overdueCount,
-
-    // 方法
     refreshPendingStatus,
     markRemindedToday,
     hasRemindedToday,
@@ -225,7 +185,6 @@ function createReviewReminder() {
   }
 }
 
-// ✅ 导出单例 hook
 export function useReviewReminder() {
   if (!singletonInstance) {
     singletonInstance = createReviewReminder()

@@ -763,7 +763,7 @@ onMounted(() => {
 }
 
 .tag.ongoing {
-  background-color: var(--color-success-light, #f0f9eb);
+  background-color: var(--color-success-light);
   color: var(--color-success);
 }
 

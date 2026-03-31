@@ -1,59 +1,47 @@
 <script setup lang="ts">
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useSettingsStore } from '@/stores/settings'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
-import {
-  DEFAULT_USER_SETTINGS,
-  applyThemeSettings,
-  applyUserSettings,
-  ensureNotificationPermission,
-  getUserSettings,
-  saveUserSettings,
-  syncAnonymousStudyAnalytics,
-  syncPublicProfileSnapshot,
-  type UserSettings,
-} from '@/utils/userSettings'
 import { useTheme } from '@/composables/useTheme'
+import {
+  ensureNotificationPermission,
+  syncPublicProfileSnapshot,
+  syncAnonymousStudyAnalytics,
+} from '@/utils/userSettings'
 
 const router = useRouter()
+const settingsStore = useSettingsStore()
 const isSaving = ref(false)
 
-// 获取主题管理
-const {
-  currentMode,
-  currentColor,
-  toggleDarkMode,
-  setThemeColor,
-  themeColorOptions: colorOptions,
-} = useTheme()
+const { currentColor, toggleDarkMode, setThemeColor, themeColorOptions: colorOptions } = useTheme()
 
-// 设置数据
-const settings = reactive<UserSettings>({ ...DEFAULT_USER_SETTINGS })
+const settings = computed(() => settingsStore.settings)
 
-// 加载设置
-const loadSettings = () => {
-  Object.assign(settings, getUserSettings())
-}
-
-// 恢复默认
 const resetSettings = () => {
-  Object.assign(settings, DEFAULT_USER_SETTINGS)
-  applyThemeSettings(settings)
+  settingsStore.reset()
+  if (settings.value.darkMode) {
+    toggleDarkMode()
+  }
+  setThemeColor(settings.value.themeColor as any)
   ElMessage.info('已恢复为默认设置，保存后生效')
 }
 
-// 处理设置变更
 const handleDarkModeChange = (val: boolean) => {
+  settingsStore.updateSetting('darkMode', val)
   toggleDarkMode()
 }
 
 const handleThemeColorChange = (val: string) => {
+  settingsStore.updateSetting('themeColor', val)
   setThemeColor(val as any)
 }
 
 const handleSystemNotificationChange = async (val: boolean) => {
+  settingsStore.updateSetting('systemNotification', val)
+
   if (!val) {
     ElMessage.info('已关闭系统通知')
     return
@@ -74,6 +62,8 @@ const handleSystemNotificationChange = async (val: boolean) => {
 }
 
 const handleStudyReminderChange = (val: boolean) => {
+  settingsStore.updateSetting('studyReminder', val)
+
   if (!val) {
     localStorage.removeItem(STORAGE_KEYS.STUDY_REMINDER_LAST_DATE)
     ElMessage.info('已关闭每日学习提醒')
@@ -84,6 +74,8 @@ const handleStudyReminderChange = (val: boolean) => {
 }
 
 const handlePublicProfileChange = (val: boolean) => {
+  settingsStore.updateSetting('publicProfile', val)
+
   if (val) {
     syncPublicProfileSnapshot()
     ElMessage.success('已开启公开个人资料')
@@ -95,6 +87,8 @@ const handlePublicProfileChange = (val: boolean) => {
 }
 
 const handleShareDataChange = (val: boolean) => {
+  settingsStore.updateSetting('shareData', val)
+
   if (val) {
     ElMessage.success('已开启匿名学习数据共享，仅同步统计结果')
     return
@@ -104,41 +98,37 @@ const handleShareDataChange = (val: boolean) => {
   ElMessage.info('已关闭学习数据共享，并清除本地匿名统计')
 }
 
-// 处理特效开关
 const handleBubbleEffectChange = (val: boolean) => {
+  settingsStore.updateSetting('bubbleEffect', val)
   window.dispatchEvent(new CustomEvent('bubble-effect-change', { detail: val }))
 }
 
-// 处理数量变化
 const handleBubbleCountChange = (val: number) => {
+  settingsStore.updateSetting('bubbleCount', val)
   window.dispatchEvent(new CustomEvent('bubble-count-change', { detail: val }))
 }
 
-// 处理大小变化
 const handleBubbleSizeChange = (val: number) => {
+  settingsStore.updateSetting('bubbleSize', val)
   window.dispatchEvent(new CustomEvent('bubble-size-change', { detail: val }))
 }
 
-// 保存设置时触发总事件
 const saveSettings = async () => {
   isSaving.value = true
   try {
-    const nextSettings = { ...settings }
-    saveUserSettings(nextSettings)
-    applyUserSettings(nextSettings)
     window.dispatchEvent(
       new CustomEvent('settings-changed', {
-        detail: nextSettings,
+        detail: settings.value,
       }),
     )
 
-    if (nextSettings.publicProfile) {
+    if (settings.value.publicProfile) {
       syncPublicProfileSnapshot()
     } else {
       localStorage.removeItem(STORAGE_KEYS.PUBLIC_PROFILE_SNAPSHOT)
     }
 
-    if (!nextSettings.shareData) {
+    if (!settings.value.shareData) {
       syncAnonymousStudyAnalytics()
     }
 
@@ -152,7 +142,7 @@ const saveSettings = async () => {
 }
 
 onMounted(() => {
-  loadSettings()
+  settingsStore.init()
 })
 </script>
 
@@ -162,7 +152,6 @@ onMounted(() => {
 
     <div class="main-content">
       <div class="settings-container">
-        <!-- 返回按钮 -->
         <div class="back-nav">
           <button class="btn-back" @click="router.back()">
             <svg class="back-icon" viewBox="0 0 24 24" width="20" height="20">
@@ -175,16 +164,13 @@ onMounted(() => {
           </button>
         </div>
 
-        <!-- 设置卡片 -->
         <div class="settings-card">
           <div class="card-header">
             <h2 class="card-title">设置</h2>
             <p class="card-subtitle">自定义您的使用体验</p>
           </div>
 
-          <!-- 设置选项 -->
           <div class="settings-sections">
-            <!-- 外观设置 -->
             <div class="settings-section">
               <h3 class="section-title">
                 <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20">
@@ -202,7 +188,7 @@ onMounted(() => {
                   <span class="setting-desc">切换深色/浅色主题</span>
                 </div>
                 <el-switch
-                  :model-value="currentMode === 'dark'"
+                  :model-value="settings.darkMode"
                   @update:model-value="handleDarkModeChange"
                 />
               </div>
@@ -228,7 +214,6 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- 特效设置 -->
             <div class="settings-section">
               <h3 class="section-title">
                 <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20">
@@ -245,7 +230,10 @@ onMounted(() => {
                   <span class="setting-label">鼠标气泡特效</span>
                   <span class="setting-desc">开启/关闭气泡特效</span>
                 </div>
-                <el-switch v-model="settings.bubbleEffect" @change="handleBubbleEffectChange" />
+                <el-switch
+                  :model-value="settings.bubbleEffect"
+                  @update:model-value="handleBubbleEffectChange"
+                />
               </div>
 
               <div class="setting-item" v-if="settings.bubbleEffect">
@@ -254,11 +242,11 @@ onMounted(() => {
                   <span class="setting-desc">最大 {{ settings.bubbleCount }} 个</span>
                 </div>
                 <el-slider
-                  v-model="settings.bubbleCount"
+                  :model-value="settings.bubbleCount"
                   :min="20"
                   :max="100"
                   :step="10"
-                  @change="handleBubbleCountChange"
+                  @update:model-value="handleBubbleCountChange"
                   style="width: 200px"
                 />
               </div>
@@ -269,17 +257,16 @@ onMounted(() => {
                   <span class="setting-desc">{{ settings.bubbleSize }}%</span>
                 </div>
                 <el-slider
-                  v-model="settings.bubbleSize"
+                  :model-value="settings.bubbleSize"
                   :min="30"
                   :max="150"
                   :step="10"
-                  @change="handleBubbleSizeChange"
+                  @update:model-value="handleBubbleSizeChange"
                   style="width: 200px"
                 />
               </div>
             </div>
 
-            <!-- 通知设置 -->
             <div class="settings-section">
               <h3 class="section-title">
                 <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20">
@@ -297,8 +284,8 @@ onMounted(() => {
                   <span class="setting-desc">接收系统消息提醒</span>
                 </div>
                 <el-switch
-                  v-model="settings.systemNotification"
-                  @change="handleSystemNotificationChange"
+                  :model-value="settings.systemNotification"
+                  @update:model-value="handleSystemNotificationChange"
                 />
               </div>
 
@@ -307,11 +294,13 @@ onMounted(() => {
                   <span class="setting-label">学习提醒</span>
                   <span class="setting-desc">每日学习计划提醒</span>
                 </div>
-                <el-switch v-model="settings.studyReminder" @change="handleStudyReminderChange" />
+                <el-switch
+                  :model-value="settings.studyReminder"
+                  @update:model-value="handleStudyReminderChange"
+                />
               </div>
             </div>
 
-            <!-- 隐私设置 -->
             <div class="settings-section">
               <h3 class="section-title">
                 <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20">
@@ -328,7 +317,10 @@ onMounted(() => {
                   <span class="setting-label">公开个人资料</span>
                   <span class="setting-desc">允许其他用户查看您的资料</span>
                 </div>
-                <el-switch v-model="settings.publicProfile" @change="handlePublicProfileChange" />
+                <el-switch
+                  :model-value="settings.publicProfile"
+                  @update:model-value="handlePublicProfileChange"
+                />
               </div>
 
               <div class="setting-item">
@@ -336,11 +328,13 @@ onMounted(() => {
                   <span class="setting-label">学习数据共享</span>
                   <span class="setting-desc">允许匿名学习数据用于改进服务</span>
                 </div>
-                <el-switch v-model="settings.shareData" @change="handleShareDataChange" />
+                <el-switch
+                  :model-value="settings.shareData"
+                  @update:model-value="handleShareDataChange"
+                />
               </div>
             </div>
 
-            <!-- 保存按钮 -->
             <div class="settings-actions">
               <button class="btn-save" @click="saveSettings" :disabled="isSaving">
                 {{ isSaving ? '保存中...' : '保存设置' }}

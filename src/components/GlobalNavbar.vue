@@ -617,7 +617,7 @@ onUnmounted(() => {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
   color: #fff;
-  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
+  box-shadow: 0 2px 4px var(--color-primary-light);
 }
 
 /* 红点样式 */

@@ -1434,7 +1434,7 @@ watch(
   margin-bottom: 32px;
   box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(85, 104, 211, 0.04);
+    0 0 0 1px var(--color-primary-light);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1446,8 +1446,8 @@ watch(
   align-items: center;
   padding: 20px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  background: linear-gradient(135deg, var(--color-primary) 0%, #6b4ba2 100%);
-  box-shadow: 0 2px 12px rgba(85, 104, 211, 0.25);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  box-shadow: 0 2px 12px var(--color-primary-light);
 }
 
 .chat-header-left {
@@ -1690,14 +1690,14 @@ watch(
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px var(--color-primary-light);
 }
 
 .suggestion-chip:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-bg-light);
-  box-shadow: 0 2px 8px rgba(85, 104, 211, 0.15);
+  box-shadow: 0 2px 8px var(--color-primary-light);
 }
 
 /* 等待 AI 时的提示条 */
@@ -1706,8 +1706,12 @@ watch(
   align-items: center;
   gap: 10px;
   padding: 10px 20px;
-  background: linear-gradient(90deg, var(--color-primary-light) 0%, #e0e7ff 100%);
-  border-top: 1px solid #c7d2fe;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-light) 0%,
+    var(--color-primary-light) 100%
+  );
+  border-top: 1px solid var(--color-primary-light);
   font-size: 13px;
   color: var(--color-primary);
   font-weight: 500;
@@ -1773,15 +1777,15 @@ watch(
 }
 
 .user-avatar {
-  background: linear-gradient(135deg, #6366f1 0%, #5568d3 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .ai-avatar {
-  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
   color: white;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .message-content {
@@ -1810,18 +1814,18 @@ watch(
 }
 
 .message-item.user .message-text {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #5568d3 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   border-bottom-right-radius: 4px;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  box-shadow: var(--shadow-md);
 }
 
 .message-item.ai .message-text {
   background-color: var(--color-bg-card);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .thinking-indicator {
@@ -1829,10 +1833,14 @@ watch(
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, #e0e7ff 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light) 0%,
+    var(--color-primary-light) 100%
+  );
+  border: 1px solid var(--color-primary-light);
   border-radius: 14px;
-  border: 1px solid #c7d2fe;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+  box-shadow: 0 2px 8px var(--color-primary-light);
 }
 
 .thinking-dots {
@@ -1918,7 +1926,7 @@ watch(
 
 .send-btn {
   padding: 12px 24px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, #5568d3 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -1927,13 +1935,13 @@ watch(
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--shadow-md);
   min-width: 80px;
 }
 
 .send-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-primary) 100%);
+  box-shadow: 0 4px 12px var(--color-primary-light);
 }
 
 .send-btn:disabled {
@@ -2726,7 +2734,7 @@ watch(
   .news-card {
     break-inside: avoid;
     box-shadow: none;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
   }
 }
 </style>

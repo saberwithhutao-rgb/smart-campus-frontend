@@ -19,8 +19,8 @@ const goToSmartQA = () => {
 }
 
 // 跳转到学习管理页面
-const goToStudyManagement = () => {
-  router.push('/campus/analysis')
+const goToStudyLife = () => {
+  router.push('/campus/library-reservation')
 }
 
 // 跳转到竞赛管理页面
@@ -59,7 +59,7 @@ onMounted(() => {
         </div>
 
         <!-- 生活模块 -->
-        <div class="feature-card life-card hover-lift" @click="goToStudyManagement">
+        <div class="feature-card life-card hover-lift" @click="goToStudyLife">
           <div class="card-icon">🏠</div>
           <h3 class="card-title">生活模块</h3>
           <p class="card-description">孪生校园智管</p>
