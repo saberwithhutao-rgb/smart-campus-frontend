@@ -264,11 +264,23 @@ const saveEditPlan = async () => {
 /**
  * 删除计划
  */
-const deletePlan = async (id: number) => {
-  if (confirm('确定要删除这个学习计划吗？')) {
+const deletePlan = async (plan: StudyPlan) => {
+  let message = ''
+  if (plan.status === 'completed') {
+    message = '确定要删除这个已完成的计划吗？删除后关联的复习数据也会被清除。'
+  } else {
+    message = '确定要删除这个计划吗？'
+  }
+  message += '数据会被永久清除（真的很久！）'
+
+  if (confirm(message)) {
     try {
-      await studyPlanStore.deletePlan(id)
-    } catch {}
+      await studyPlanStore.deletePlan(plan.id)
+      ElMessage.success('删除成功')
+    } catch (error) {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败，请重试')
+    }
   }
 }
 
