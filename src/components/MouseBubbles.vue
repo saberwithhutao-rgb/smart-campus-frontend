@@ -61,6 +61,22 @@ const blueColors = [
   'rgba(216, 245, 255,', // 淡青
 ]
 
+const applySettings = (newSettings: { enabled: boolean; maxCount: number; sizeScale: number }) => {
+  const wasEnabled = isEnabled.value
+  const willBeEnabled = newSettings.enabled
+
+  // 更新设置值
+  settings.value = { ...newSettings }
+
+  // 更新启用状态
+  isEnabled.value = willBeEnabled
+
+  // 如果从启用变为禁用，清除所有气泡
+  if (wasEnabled && !willBeEnabled) {
+    bubbles.value = []
+  }
+  // 如果从禁用变为启用，不需要做任何事，鼠标移动时会自动创建气泡
+}
 // 初始化画布
 const initCanvas = () => {
   const canvas = canvasRef.value
@@ -231,21 +247,12 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
 
 // 监听设置变化
 const handleSettingsChange = (event: CustomEvent) => {
-  const newSettings = event.detail
-  settings.value = {
-    enabled: newSettings.bubbleEffect ?? true,
-    maxCount: newSettings.bubbleCount ?? 60,
-    sizeScale: (newSettings.bubbleSize ?? 100) / 100,
-  }
-
-  // 如果从禁用变为启用，不清除现有气泡
-  // 如果从启用变为禁用，清除所有气泡
-  if (isEnabled.value && !settings.value.enabled) {
-    // 禁用时清除所有气泡
-    bubbles.value = []
-  }
-
-  isEnabled.value = settings.value.enabled
+  const detail = event.detail
+  applySettings({
+    enabled: detail.bubbleEffect ?? true,
+    maxCount: detail.bubbleCount ?? 60,
+    sizeScale: (detail.bubbleSize ?? 100) / 100,
+  })
 }
 
 // 单独监听特效开关
@@ -253,11 +260,6 @@ const handleBubbleEffectChange = (event: CustomEvent) => {
   const enabled = event.detail
   isEnabled.value = enabled
   settings.value.enabled = enabled
-
-  if (!enabled) {
-    // 关闭时清除所有气泡
-    bubbles.value = []
-  }
 }
 
 // 监听数量变化
@@ -275,8 +277,6 @@ const handleBubbleCountChange = (event: CustomEvent) => {
 const handleBubbleSizeChange = (event: CustomEvent) => {
   const size = event.detail
   settings.value.sizeScale = size / 100
-
-  // 不需要立即调整现有气泡，新气泡会使用新大小
 }
 
 onMounted(() => {
