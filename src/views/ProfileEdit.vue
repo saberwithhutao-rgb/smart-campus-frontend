@@ -514,11 +514,9 @@ const handleSubmit = async () => {
       grade: form.grade,
     })
 
-    if (Array.isArray(response)) {
+    if (response) {
       ElMessage.success('资料更新成功')
-      // 刷新用户资料
       await userStore.fetchUserProfile()
-      // 返回上一页
       setTimeout(() => {
         router.back()
       }, 1500)
