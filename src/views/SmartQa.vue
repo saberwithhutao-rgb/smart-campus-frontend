@@ -13,6 +13,12 @@ interface ChatMessage {
   isLoading?: boolean
 }
 
+interface CachedMessage {
+  messageIndex: number
+  content: string
+  isLoading: boolean
+}
+
 // 响应式数据
 const messages = ref<ChatMessage[]>([
   {
@@ -39,6 +45,8 @@ const renamingSession = ref<ConversationSession | null>(null)
 const newTitle = ref('')
 const loadingHistory = ref(false)
 const isVpnLikely = ref(false)
+
+const messageCache = new Map<string, CachedMessage>()
 
 // 用户状态管理
 const userStore = useUserStore()
@@ -93,39 +101,46 @@ const loadSessions = async () => {
 const loadSessionHistory = async (sessionId: string) => {
   loadingHistory.value = true
   console.log('加载会话:', sessionId, '请求URL:', `/ai/chat/history/${sessionId}`)
+
+  currentSessionId.value = sessionId
+  selectedSessionId.value = sessionId
+
   try {
     const response = await api.getSessionHistory(sessionId)
     if (Array.isArray(response)) {
       messages.value = []
 
-      // 添加历史消息
       response.forEach((item: SessionHistoryItem, index: number) => {
         let userContent = item.question
-        if (item.file) {
-          userContent = `📎 [文件] ${item.file.originalName}\n\n${item.question || '请分析这个文件'}`
+        if (item.fileName) {
+          userContent = `📎 [文件] ${item.fileName}\n\n${item.question || '请分析这个文件'}`
         }
 
-        // 添加用户问题
         messages.value.push({
           id: Date.now() + index * 2,
           content: userContent,
           sender: 'user',
-          timestamp: formatDateTime(item.createdAt),
+          timestamp: formatDateTime(item.createTime),
         })
 
-        // 添加AI回答
         messages.value.push({
           id: Date.now() + index * 2 + 1,
           content: item.answer,
           sender: 'ai',
-          timestamp: formatDateTime(item.createdAt),
+          timestamp: formatDateTime(item.createTime),
         })
       })
 
-      currentSessionId.value = sessionId
-      selectedSessionId.value = sessionId
-    } else {
-      console.error('返回数据不是数组:', response)
+      const cached = messageCache.get(sessionId)
+      if (cached) {
+        console.log('恢复缓存的消息')
+        if (cached.messageIndex < messages.value.length) {
+          messages.value[cached.messageIndex].content = cached.content
+          messages.value[cached.messageIndex].isLoading = cached.isLoading
+        }
+        messageCache.delete(sessionId)
+        scrollToBottom()
+      }
     }
   } catch (error) {
     console.error('加载历史消息失败:', error)
@@ -292,9 +307,16 @@ const safeUpdateMessage = (index: number, content: string, isLoading?: boolean) 
 }
 
 /**
- * ✅ 处理通义千问流式响应 - OpenAI 兼容格式
+ * 处理通义千问流式响应 - OpenAI 兼容格式
+ * @param response 响应对象
+ * @param aiMessageIndex AI消息索引
+ * @param requestSessionId 请求所属的会话ID
  */
-const processTongyiStream = async (response: Response, aiMessageIndex: number) => {
+const processTongyiStream = async (
+  response: Response,
+  aiMessageIndex: number,
+  requestSessionId: string,
+) => {
   const reader = response.body?.getReader()
   if (!reader) {
     throw new Error('无法读取响应流')
@@ -305,22 +327,13 @@ const processTongyiStream = async (response: Response, aiMessageIndex: number) =
   let buffer = ''
   let hasReceivedContent = false
 
-  const token =
-    localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
-  if (!token) {
-    console.error('❌ 未找到用户令牌，请重新登录')
-    safeUpdateMessage(aiMessageIndex, '请先登录', false)
-    return
-  }
-
   try {
     while (true) {
       const { done, value } = await reader.read()
 
       if (done) {
         console.log('✅ 流式响应完成')
-        safeUpdateMessage(aiMessageIndex, accumulatedText, false)
-
+        updateMessageBySession(requestSessionId, aiMessageIndex, accumulatedText, false)
         break
       }
 
@@ -335,7 +348,6 @@ const processTongyiStream = async (response: Response, aiMessageIndex: number) =
           const trimmedLine = line.trim()
           if (!trimmedLine.startsWith('data:')) continue
 
-          // 🟢 关键修复：使用 replace 去掉 "data:" 前缀
           let jsonStr = trimmedLine
           while (jsonStr.startsWith('data:')) {
             jsonStr = jsonStr.substring(5).trim()
@@ -357,9 +369,9 @@ const processTongyiStream = async (response: Response, aiMessageIndex: number) =
 
                   if (!hasReceivedContent && char.trim() !== '') {
                     hasReceivedContent = true
-                    safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+                    updateMessageBySession(requestSessionId, aiMessageIndex, accumulatedText, false)
                   } else if (hasReceivedContent) {
-                    safeUpdateMessage(aiMessageIndex, accumulatedText, false)
+                    updateMessageBySession(requestSessionId, aiMessageIndex, accumulatedText, false)
                   }
 
                   await new Promise((resolve) => setTimeout(resolve, 20))
@@ -381,9 +393,31 @@ const processTongyiStream = async (response: Response, aiMessageIndex: number) =
     }
   } catch (error) {
     console.error('❌ 读取流失败:', error)
-    safeUpdateMessage(aiMessageIndex, accumulatedText || '连接中断', false)
+    updateMessageBySession(requestSessionId, aiMessageIndex, accumulatedText || '连接中断', false)
   } finally {
     reader.releaseLock()
+  }
+}
+
+/**
+ * 根据当前会话决定是否更新消息
+ */
+const updateMessageBySession = (
+  targetSessionId: string,
+  messageIndex: number,
+  content: string,
+  isLoading: boolean,
+) => {
+  // 如果当前显示的会话就是这个请求所属的会话，直接更新
+  if (currentSessionId.value === targetSessionId) {
+    safeUpdateMessage(messageIndex, content, isLoading)
+  } else {
+    // 否则缓存起来，等切换回来时再显示
+    messageCache.set(targetSessionId, {
+      messageIndex,
+      content,
+      isLoading,
+    })
   }
 }
 
@@ -395,6 +429,7 @@ const sendMessage = async () => {
 
   const question = inputMessage.value
   const hasFile = selectedFile.value !== null
+
   // 添加用户消息
   const userMessage: ChatMessage = {
     id: Date.now(),
@@ -479,7 +514,7 @@ const sendMessage = async () => {
       const data = await response.json()
       safeUpdateMessage(aiMessageIndex, data.data?.answer || '响应格式错误', false)
     } else {
-      await processTongyiStream(response, aiMessageIndex)
+      await processTongyiStream(response, aiMessageIndex, sessionIdToUse)
     }
   } catch (error) {
     ElMessage.error('AI服务异常，请稍后重试')
