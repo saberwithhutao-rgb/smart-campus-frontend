@@ -50,6 +50,21 @@
             <el-button @click="openHistory" :loading="isLoading"> 查看往期计划 </el-button>
           </div>
 
+          <div v-if="isGenerating && waitingSeconds > 0" class="generating-card">
+            <div class="card-icon">🤖</div>
+            <div class="card-content">
+              <div class="title">AI 正在为你生成学习计划</div>
+              <div class="timer">⏱️ 已等待 {{ waitingSeconds }} 秒</div>
+              <el-progress
+                :percentage="Math.min((waitingSeconds / 15) * 100, 99)"
+                :show-text="false"
+              />
+              <div class="hint" v-if="waitingSeconds > 8">
+                💡 计划越详细，生成时间越长，请耐心等待...
+              </div>
+            </div>
+          </div>
+
           <!-- 当前计划显示 -->
           <div v-if="generatedPlan" class="generated-plan">
             <el-card class="plan-card" shadow="hover">
@@ -143,9 +158,8 @@
 
 <script setup lang="ts">
 import GlobalNavbar from '../components/GlobalNavbar.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
 import { useStudyPlanStore } from '@/stores/studyPlan'
 import { useStudyPlanDetailStore } from '@/stores/studyPlanDetail'
 import { ElMessage } from 'element-plus'
@@ -155,9 +169,12 @@ import 'highlight.js/styles/github.css'
 
 const route = useRoute()
 const router = useRouter()
-const userStore = useUserStore()
 const studyPlanStore = useStudyPlanStore()
 const studyPlanDetailStore = useStudyPlanDetailStore()
+
+// 添加计时器变量
+const waitingSeconds = ref(0)
+let timer: ReturnType<typeof setInterval> | null = null
 
 // 设置基本选项
 marked.setOptions({
@@ -193,7 +210,6 @@ marked.use({ renderer })
 
 const planId = Number(route.params.id)
 const currentPlan = computed(() => studyPlanStore.studyPlans.find((p) => p.id === planId))
-const isLoggedIn = computed(() => userStore.userState.isLoggedIn)
 const isMobile = ref(window.innerWidth <= 768)
 
 // 难度映射
@@ -272,9 +288,6 @@ onMounted(async () => {
 })
 
 const generateStudyPlan = async () => {
-  if (!isLoggedIn.value) {
-    return router.push('/login')
-  }
   if (!currentPlan.value) return
 
   const getDuration = () => {
@@ -288,6 +301,12 @@ const generateStudyPlan = async () => {
     }
   }
 
+  waitingSeconds.value = 0
+  if (timer) clearInterval(timer)
+  timer = setInterval(() => {
+    waitingSeconds.value++
+  }, 1000)
+
   const result = await studyPlanDetailStore.generatePlanDetail({
     title: currentPlan.value.title,
     studyPlanId: currentPlan.value.id,
@@ -296,9 +315,13 @@ const generateStudyPlan = async () => {
     level: currentPlan.value.difficulty,
   })
 
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+
   if (result) {
     ElMessage.success('学习计划已生成!')
-    // 重新获取历史列表（包含新生成的计划）
     await studyPlanDetailStore.fetchLatestPlan(planId)
   }
 }
@@ -344,6 +367,12 @@ const formatDateRange = (
   return `${start} 至 ${end}`
 }
 const goBack = () => router.go(-1)
+
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer)
+  }
+})
 </script>
 
 <style scoped>
