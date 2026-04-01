@@ -57,6 +57,32 @@
             </el-button>
           </div>
 
+          <div v-if="isGenerating && waitingSeconds > 0" class="generating-card">
+            <div class="card-icon">
+              <el-icon :size="32" color="var(--color-primary)"><Loading /></el-icon>
+            </div>
+            <div class="card-content">
+              <div class="title">AI 正在为你生成复习建议</div>
+              <div class="timer">⏱️ 已等待 {{ waitingSeconds }} 秒</div>
+              <el-progress
+                :percentage="Math.min((waitingSeconds / 30) * 100, 99)"
+                :show-text="false"
+              />
+              <div class="hint" v-if="waitingSeconds > 25">
+                💡 复习建议越详细，生成时间越长，请耐心等待...
+              </div>
+            </div>
+          </div>
+
+          <!-- 生成完成后的耗时显示 -->
+          <div v-if="showFinalTime && !isGenerating && finalWaitTime > 0" class="final-time-card">
+            <div class="card-icon">✅</div>
+            <div class="card-content">
+              <div class="title">复习建议生成完成</div>
+              <div class="timer">⏱️ 总耗时 {{ finalWaitTime }} 秒</div>
+            </div>
+          </div>
+
           <!-- 复习计划内容 -->
           <el-card class="plan-card" shadow="hover">
             <template #header>
@@ -223,6 +249,15 @@ import { marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
+import { Loading } from '@element-plus/icons-vue'
+
+// 添加计时器变量
+const waitingSeconds = ref(0)
+let timer: ReturnType<typeof setInterval> | null = null
+
+// 添加变量记录最终耗时
+const finalWaitTime = ref(0)
+const showFinalTime = ref(false)
 
 const route = useRoute()
 const router = useRouter()
@@ -450,6 +485,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  if (timer) {
+    clearInterval(timer)
+  }
 })
 
 // 显示确认完成对话框
@@ -500,6 +538,12 @@ const completeReview = async () => {
 const generateReviewAdvice = async () => {
   if (!taskDetail.value) return
 
+  waitingSeconds.value = 0
+  if (timer) clearInterval(timer)
+  timer = setInterval(() => {
+    waitingSeconds.value++
+  }, 1000)
+
   isGenerating.value = true
   try {
     // 调用生成接口
@@ -514,8 +558,21 @@ const generateReviewAdvice = async () => {
       taskDetail.value = updatedTask
     }
 
+    // 停止计时器
+    if (timer) {
+      clearInterval(timer)
+      timer = null
+    }
+
+    finalWaitTime.value = waitingSeconds.value
+    showFinalTime.value = true
+
     ElMessage.success('复习建议生成成功')
   } catch (error) {
+    if (timer) {
+      clearInterval(timer)
+      timer = null
+    }
     console.error('生成复习建议失败:', error)
     ElMessage.error('生成复习建议失败')
   } finally {
@@ -851,6 +908,91 @@ const goBack = () => router.go(-1)
 
   .suggestion-dialog :deep(.el-dialog) {
     margin: 2vh auto !important;
+  }
+}
+
+.generating-card {
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-bg-card) 100%);
+  border-radius: 16px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid var(--color-primary);
+  animation: fadeIn 0.3s ease;
+}
+
+.generating-card .card-icon {
+  font-size: 40px;
+}
+
+.generating-card .card-content {
+  flex: 1;
+}
+
+.generating-card .title {
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.generating-card .timer {
+  font-size: 14px;
+  color: var(--color-text-light);
+  margin-bottom: 12px;
+}
+
+.generating-card .hint {
+  font-size: 12px;
+  color: var(--color-text-light);
+  margin-top: 8px;
+}
+
+/* 生成完成卡片样式 */
+.final-time-card {
+  margin-top: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--color-success-light) 0%, var(--color-bg-card) 100%);
+  border-radius: 16px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid var(--color-success);
+  animation: fadeIn 0.3s ease;
+}
+
+.final-time-card .card-icon {
+  font-size: 40px;
+}
+
+.final-time-card .title {
+  font-weight: 600;
+  color: var(--color-success);
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.final-time-card .timer {
+  font-size: 14px;
+  color: var(--color-text-light);
+}
+
+.final-time-card .timer strong {
+  font-size: 18px;
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

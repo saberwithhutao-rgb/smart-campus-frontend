@@ -61,7 +61,7 @@
                 :percentage="Math.min((waitingSeconds / 30) * 100, 99)"
                 :show-text="false"
               />
-              <div class="hint" v-if="waitingSeconds > 8">
+              <div class="hint" v-if="waitingSeconds > 25">
                 💡 计划越详细，生成时间越长，请耐心等待...
               </div>
             </div>
