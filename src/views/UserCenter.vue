@@ -247,7 +247,7 @@ const goToStudyStats = () => {
 
 // 处理头像上传
 const handleAvatarUpload = () => {
-  ElMessage.info('头像上传功能开发中...')
+  router.push('/profile/edit')
 }
 
 // 辅助函数：格式化日期

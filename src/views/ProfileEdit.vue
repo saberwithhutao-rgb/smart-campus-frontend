@@ -476,7 +476,7 @@ const handleFileSelect = async (event: Event) => {
   try {
     isSubmitting.value = true
     const response = await api.updateUserAvatar(file)
-    if (response.code === 200) {
+    if (Array.isArray(response)) {
       ElMessage.success('头像上传成功')
       // 刷新用户资料
       await userStore.fetchUserProfile()
@@ -514,7 +514,7 @@ const handleSubmit = async () => {
       grade: form.grade,
     })
 
-    if (response.code === 200) {
+    if (Array.isArray(response)) {
       ElMessage.success('资料更新成功')
       // 刷新用户资料
       await userStore.fetchUserProfile()
