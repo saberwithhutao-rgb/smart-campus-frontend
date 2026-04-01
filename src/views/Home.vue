@@ -70,7 +70,7 @@ onMounted(() => {
       </div>
 
       <div class="hero-content">
-        <h1 class="hero-title">数字孪生 智慧校园</h1>
+        <h1 class="hero-title">智慧校园</h1>
       </div>
     </section>
 

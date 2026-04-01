@@ -4,7 +4,7 @@
     <div class="navbar-container">
       <!-- Logo区域 -->
       <div class="logo" @click="goToIndex">
-        <img src="/src/img/logo.png" alt="智慧校园" class="logo-image" />
+        <img src="/src/img/logo_xr.png" alt="智慧校园" class="logo-image" />
       </div>
 
       <!-- 导航菜单 -->

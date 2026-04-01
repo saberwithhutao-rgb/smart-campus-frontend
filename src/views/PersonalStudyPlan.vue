@@ -288,7 +288,6 @@ const deletePlan = async (planId: number) => {
     )
 
     await studyPlanStore.deletePlan(planId)
-    ElMessage.success('删除成功')
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除失败:', error)
