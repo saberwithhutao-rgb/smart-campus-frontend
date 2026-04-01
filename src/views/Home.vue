@@ -79,21 +79,21 @@ onMounted(() => {
       <div class="features-container">
         <div class="feature-card" @click="goToSmartQA">
           <div class="card-icon">📚</div>
-          <h3 class="card-title">学习模块</h3>
+          <h3 class="card-title">智能学习</h3>
           <p class="card-description">数智孪生助学</p>
           <p class="card-details">个性计划+AI高效备考</p>
         </div>
 
         <div class="feature-card" @click="goToStudyLife">
           <div class="card-icon">🏠</div>
-          <h3 class="card-title">生活模块</h3>
+          <h3 class="card-title">校园生活</h3>
           <p class="card-description">孪生校园智管</p>
           <p class="card-details">行为监测健康/图书馆服务</p>
         </div>
 
         <div class="feature-card" @click="goToCompetitionManagement">
           <div class="card-icon">🏆</div>
-          <h3 class="card-title">竞赛模块</h3>
+          <h3 class="card-title">成长决策</h3>
           <p class="card-description">数字赋能竞赛</p>
           <p class="card-details">信息匹配+科研复试</p>
         </div>
