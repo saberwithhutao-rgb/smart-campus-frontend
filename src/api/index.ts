@@ -115,15 +115,24 @@ export interface ConversationSession {
  * 会话历史记录项
  */
 export interface SessionHistoryItem {
+  id: number
+  title: string | null
+  sessionId: string
   question: string
   answer: string
-  createTime: string
+  fileId: number | null
   questionType: string
-  rating: number
   tokenUsage: number
-  fileId?: number
-  fileName?: string
-  fileType?: string
+  createdAt: string
+  rating: number
+  file?: {
+    id: number
+    fileName: string
+    originalName: string
+    fileType: string
+    fileSize: number
+    uploadTime: string
+  }
 }
 
 /**

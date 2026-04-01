@@ -112,22 +112,22 @@ const loadSessionHistory = async (sessionId: string) => {
 
       response.forEach((item: SessionHistoryItem, index: number) => {
         let userContent = item.question
-        if (item.fileName) {
-          userContent = `📎 [文件] ${item.fileName}\n\n${item.question || '请分析这个文件'}`
+        if (item.fileId !== null) {
+          userContent = `📎 [文件] ${item.file?.fileName || '未知文件名'}\n\n${item.question || '请分析这个文件'}`
         }
 
         messages.value.push({
           id: Date.now() + index * 2,
           content: userContent,
           sender: 'user',
-          timestamp: formatDateTime(item.createTime),
+          timestamp: formatDateTime(item.createdAt),
         })
 
         messages.value.push({
           id: Date.now() + index * 2 + 1,
           content: item.answer,
           sender: 'ai',
-          timestamp: formatDateTime(item.createTime),
+          timestamp: formatDateTime(item.createdAt),
         })
       })
 
