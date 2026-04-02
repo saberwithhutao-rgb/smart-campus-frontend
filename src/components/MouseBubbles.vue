@@ -1,11 +1,11 @@
 <template>
-  <div class="bubbles-container" v-if="isEnabled">
+  <div class="bubbles-container" v-show="isEnabled">
     <canvas ref="canvasRef" class="bubbles-canvas"></canvas>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -22,7 +22,7 @@ interface Bubble {
 }
 
 const bubbles = ref<Bubble[]>([])
-let animationFrame: number
+let animationFrameId: number | null = null
 let mouseX = 0
 let mouseY = 0
 let canvasWidth = 0
@@ -77,6 +77,22 @@ const applySettings = (newSettings: { enabled: boolean; maxCount: number; sizeSc
   }
   // 如果从禁用变为启用，不需要做任何事，鼠标移动时会自动创建气泡
 }
+const resize = () => {
+  const canvas = canvasRef.value
+  if (!canvas) return
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
+  canvasWidth = canvas.width
+  canvasHeight = canvas.height
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  if (!isEnabled.value) return
+  mouseX = e.clientX
+  mouseY = e.clientY
+  createBubble(mouseX, mouseY)
+}
+
 // 初始化画布
 const initCanvas = () => {
   const canvas = canvasRef.value
@@ -85,49 +101,12 @@ const initCanvas = () => {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  // 设置画布大小为窗口大小
-  const resize = () => {
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
-    canvasWidth = canvas.width
-    canvasHeight = canvas.height
-  }
-
   window.addEventListener('resize', resize)
   resize()
 
-  // 监听鼠标移动
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isEnabled.value) return // 如果禁用，不生成气泡
-
-    mouseX = e.clientX
-    mouseY = e.clientY
-    createBubble(mouseX, mouseY)
-  }
-
   window.addEventListener('mousemove', handleMouseMove)
 
-  // 动画循环
-  const animate = () => {
-    if (!canvasRef.value || !ctx) return
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // 只有在启用时才更新和绘制气泡
-    if (isEnabled.value) {
-      updateBubbles(ctx)
-    }
-
-    animationFrame = requestAnimationFrame(animate)
-  }
-
-  animate()
-
-  onUnmounted(() => {
-    window.removeEventListener('resize', resize)
-    window.removeEventListener('mousemove', handleMouseMove)
-    cancelAnimationFrame(animationFrame)
-  })
+  startAnimation()
 }
 
 // 创建气泡
@@ -245,6 +224,32 @@ const updateBubbles = (ctx: CanvasRenderingContext2D) => {
   }
 }
 
+// 启动动画循环
+const startAnimation = () => {
+  if (animationFrameId) return
+  if (!canvasRef.value) return
+
+  const animate = () => {
+    const canvas = canvasRef.value
+    if (!canvas) return
+    const ctx = canvas?.getContext('2d')
+    if (!ctx || !isEnabled.value) return
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    updateBubbles(ctx)
+    animationFrameId = requestAnimationFrame(animate)
+  }
+  animate()
+}
+
+// 停止动画循环
+const stopAnimation = () => {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+}
+
 // 监听设置变化
 const handleSettingsChange = (event: CustomEvent) => {
   const detail = event.detail
@@ -279,6 +284,16 @@ const handleBubbleSizeChange = (event: CustomEvent) => {
   settings.value.sizeScale = size / 100
 }
 
+// 监听开关变化，控制动画循环
+watch(isEnabled, (enabled) => {
+  if (enabled) {
+    startAnimation()
+  } else {
+    stopAnimation()
+    bubbles.value = []
+  }
+})
+
 onMounted(() => {
   initCanvas()
 
@@ -294,6 +309,9 @@ onUnmounted(() => {
   window.removeEventListener('bubble-effect-change', handleBubbleEffectChange as EventListener)
   window.removeEventListener('bubble-count-change', handleBubbleCountChange as EventListener)
   window.removeEventListener('bubble-size-change', handleBubbleSizeChange as EventListener)
+  window.removeEventListener('resize', resize)
+  window.removeEventListener('mousemove', handleMouseMove)
+  stopAnimation()
 })
 </script>
 

@@ -253,7 +253,6 @@ const selectMenu = (menu: string) => {
     } else {
       // 否则显示历史列表
       selectedMenu.value = 'history'
-      loadSessions() // 加载会话列表
     }
   } else {
     selectedMenu.value = menu
