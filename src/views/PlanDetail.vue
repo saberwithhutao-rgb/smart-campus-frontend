@@ -335,6 +335,10 @@ const generateStudyPlan = async () => {
     timer = null
   }
 
+  if (result?.cancelled) {
+    return
+  }
+
   finalWaitTime.value = waitingSeconds.value
   showFinalTime.value = true
 

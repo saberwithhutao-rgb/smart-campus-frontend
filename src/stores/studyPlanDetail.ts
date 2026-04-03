@@ -22,6 +22,7 @@ export interface StudyPlanDetailWithParsed {
   level: 'easy' | 'medium' | 'hard'
   plan: string
   createdAt: string
+  cancelled?: boolean
 }
 
 export interface GeneratePlanParams {
@@ -126,6 +127,7 @@ export const useStudyPlanDetailStore = defineStore('studyPlanDetail', () => {
           level: params.level as 'easy' | 'medium' | 'hard',
           plan: response.plan,
           createdAt: new Date().toISOString(),
+          cancelled: response.cancelled,
         }
 
         // 更新当前计划

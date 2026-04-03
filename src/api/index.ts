@@ -54,6 +54,7 @@ export interface ApiResponse<T = unknown> {
 export interface GeneratePlanResponse {
   plan: string
   detailId: number
+  cancelled?: boolean
 }
 
 // 新增类型定义
