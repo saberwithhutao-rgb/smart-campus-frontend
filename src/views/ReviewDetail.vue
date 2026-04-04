@@ -585,6 +585,7 @@ const generateReviewAdvice = async () => {
     return
   }
 
+  reviewDetailStore.startGenerating(taskId)
   startTimer(0)
   showFinalTime.value = false
 
@@ -607,6 +608,8 @@ const generateReviewAdvice = async () => {
     stopTimer()
     console.error('生成复习建议失败:', error)
     ElMessage.error('生成复习建议失败')
+  } finally {
+    reviewDetailStore.finishGenerating(taskId)
   }
 }
 
