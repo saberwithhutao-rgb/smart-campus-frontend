@@ -2,20 +2,87 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '@/api'
 import type { StudyTask } from './studyPlan'
+import { STORAGE_KEYS } from '@/utils/storageKeys'
+
+export interface GeneratingTask {
+  startTime: number
+}
 
 export const useReviewDetailStore = defineStore('reviewDetail', () => {
   const currentReviewPlan = ref<StudyTask | null>(null)
   const historyPlans = ref<StudyTask[]>([])
   const isLoading = ref(false)
-  const isGenerating = ref(false)
+  // 改为按 taskId 存储的生成状态
+  const isGeneratingMap = ref<Map<number, boolean>>(new Map())
+  const generatingTasks = ref<Map<number, GeneratingTask>>(new Map())
   const showHistoryDialog = ref(false)
-  const currentHistoryPlan = ref<StudyTask | null>(null) // 改为 StudyTask
+  const currentHistoryPlan = ref<StudyTask | null>(null)
+
+  // ========== 手动持久化相关方法 ==========
+  const STORAGE_KEY = STORAGE_KEYS.REVIEW_DETAIL_GENERATING_TASKS || 'reviewDetail_generatingTasks'
+
+  const saveGeneratingTasks = () => {
+    const tasks: Record<number, { startTime: number }> = {}
+    generatingTasks.value.forEach((value, key) => {
+      tasks[key] = value
+    })
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))
+  }
+
+  const restoreGeneratingTasks = () => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      try {
+        const tasks = JSON.parse(stored) as Record<number, { startTime: number }>
+        Object.entries(tasks).forEach(([key, value]) => {
+          const taskId = Number(key)
+          generatingTasks.value.set(taskId, value)
+          isGeneratingMap.value.set(taskId, true)
+        })
+        console.log('恢复复习生成任务:', Array.from(generatingTasks.value.keys()))
+      } catch (e) {
+        console.error('恢复复习生成任务失败:', e)
+      }
+    }
+  }
+
+  const clearGeneratingTask = (taskId: number) => {
+    isGeneratingMap.value.delete(taskId)
+    generatingTasks.value.delete(taskId)
+    saveGeneratingTasks()
+  }
+  // ========== 手动持久化相关方法结束 ==========
+
+  // 检查某个任务是否正在生成
+  const isGenerating = (taskId: number): boolean => {
+    return isGeneratingMap.value.get(taskId) === true
+  }
+
+  // 开始生成
+  const startGenerating = (taskId: number) => {
+    isGeneratingMap.value.set(taskId, true)
+    generatingTasks.value.set(taskId, { startTime: Date.now() })
+    saveGeneratingTasks()
+  }
+
+  // 结束生成
+  const finishGenerating = (taskId: number) => {
+    isGeneratingMap.value.delete(taskId)
+    generatingTasks.value.delete(taskId)
+    saveGeneratingTasks()
+  }
+
+  // 获取开始时间
+  const getGeneratingStartTime = (taskId: number): number | null => {
+    const task = generatingTasks.value.get(taskId)
+    return task?.startTime ?? null
+  }
 
   const fetchReviewPlanDetail = async (planId: number) => {
     isLoading.value = true
     try {
-      const task = await api.getReviewTaskDetail(planId)
-      currentReviewPlan.value = task.data // task 改为 StudyTask
+      const task = (await api.getReviewTaskDetail(planId)) as unknown as StudyTask
+      currentReviewPlan.value = task
     } catch (error) {
       console.error('获取复习计划详情失败:', error)
     } finally {
@@ -23,12 +90,11 @@ export const useReviewDetailStore = defineStore('reviewDetail', () => {
     }
   }
 
-  // 获取历史复习计划列表
   const fetchHistoryPlans = async (studyPlanId: number) => {
     isLoading.value = true
     try {
-      const response = await api.getReviewPlanHistory(studyPlanId)
-      historyPlans.value = response.data
+      const response = (await api.getReviewPlanHistory(studyPlanId)) as unknown as StudyTask[]
+      historyPlans.value = response
     } catch (error) {
       console.error('获取历史复习计划失败:', error)
     } finally {
@@ -36,44 +102,62 @@ export const useReviewDetailStore = defineStore('reviewDetail', () => {
     }
   }
 
-  // 生成复习计划（复用原有逻辑）
-  const generateReviewPlan = async (taskIds: number[]) => {
-    isGenerating.value = true
+  // 生成复习计划（改为按 taskId 管理状态）
+  const generateReviewPlan = async (taskId: number) => {
+    // 如果已经在生成中，不允许重复生成
+    if (isGenerating(taskId)) {
+      return null
+    }
+
+    startGenerating(taskId)
+
     try {
-      const response = await api.batchGenerateReviewPlans(taskIds)
+      const response = await api.batchGenerateReviewPlans([taskId])
+
+      // 生成成功后，重新获取详情以更新内容
+      const updatedTask = (await api.getReviewTaskDetail(taskId)) as unknown as StudyTask
+      if (updatedTask) {
+        currentReviewPlan.value = updatedTask
+      }
+
       return response.data
     } catch (error) {
       console.error('生成复习计划失败:', error)
       throw error
     } finally {
-      isGenerating.value = false
+      finishGenerating(taskId)
     }
   }
 
-  // 打开历史弹窗
   const openHistoryDialog = async (studyPlanId: number) => {
     showHistoryDialog.value = true
     await fetchHistoryPlans(studyPlanId)
   }
 
-  // 查看单个历史计划
   const viewHistoryPlan = (plan: StudyTask) => {
-    // 改为 StudyTask
     currentHistoryPlan.value = plan
   }
 
-  // 返回历史列表
   const backToHistoryList = () => {
     currentHistoryPlan.value = null
   }
+
+  // 初始化时恢复持久化数据
+  restoreGeneratingTasks()
 
   return {
     currentReviewPlan,
     historyPlans,
     isLoading,
-    isGenerating,
     showHistoryDialog,
     currentHistoryPlan,
+    // 生成状态相关
+    isGenerating,
+    startGenerating,
+    finishGenerating,
+    getGeneratingStartTime,
+    clearGeneratingTask,
+    // 业务方法
     fetchReviewPlanDetail,
     fetchHistoryPlans,
     generateReviewPlan,

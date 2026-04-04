@@ -12,4 +12,5 @@ export const STORAGE_KEYS = {
   ANONYMOUS_STUDY_DATA: 'anonymous_study_data',
   STUDY_REMINDER_LAST_DATE: 'study_reminder_last_date',
   STUDY_PLAN_DETAIL_GENERATING_TASKS: 'studyPlanDetail_generatingTasks',
+  REVIEW_DETAIL_GENERATING_TASKS: 'reviewDetail_generatingTasks',
 }

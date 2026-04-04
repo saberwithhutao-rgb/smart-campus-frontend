@@ -331,14 +331,14 @@ export const api = {
       url: `/study/plans/${id}`,
     }),
   getReviewPlanDetail: (planId: number) =>
-    request<ApiResponse<StudyTask>>({
+    request<StudyTask>({
       method: 'GET',
       url: `/study/review-plans/${planId}`,
     }),
 
   // 获取复习计划历史列表
   getReviewPlanHistory: (studyPlanId: number) =>
-    request<ApiResponse<StudyTask[]>>({
+    request<StudyTask[]>({
       method: 'GET',
       url: `/study/review-plans/${studyPlanId}/history`,
     }),
@@ -352,28 +352,28 @@ export const api = {
 
   // 获取已生成的复习计划列表
   getGeneratedReviewPlans: () =>
-    request<ApiResponse<StudyTask[]>>({
+    request<StudyTask[]>({
       method: 'GET',
       url: '/study/review-plans',
     }),
 
   // 获取复习任务详情（用于复习详情页）
   getReviewTaskDetail: (taskId: number) =>
-    request<ApiResponse<StudyTask>>({
+    request<StudyTask>({
       method: 'GET',
       url: `/study/tasks/review/${taskId}`,
     }),
 
   // 获取某个学习计划的历史复习任务
   getReviewTaskHistory: (planId: number) =>
-    request<ApiResponse<StudyTask[]>>({
+    request<StudyTask[]>({
       method: 'GET',
       url: `/study/tasks/plan/${planId}/history`,
     }),
 
   // 更新复习任务内容
   updateReviewTaskContent: (taskId: number, content: string) =>
-    request<ApiResponse<StudyTask>>({
+    request<StudyTask>({
       method: 'PUT',
       url: `/study/tasks/${taskId}/content`,
       data: content,

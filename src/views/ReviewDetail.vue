@@ -52,7 +52,12 @@
             <el-button @click="openHistory" :loading="isLoadingHistory">
               查看历史复习建议
             </el-button>
-            <el-button type="success" @click="generateReviewAdvice" :loading="isGenerating">
+            <el-button
+              type="success"
+              @click="generateReviewAdvice"
+              :loading="isGenerating"
+              :disabled="isGenerating"
+            >
               AI生成复习建议
             </el-button>
           </div>
@@ -250,14 +255,49 @@ import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import { Loading } from '@element-plus/icons-vue'
+import { useReviewDetailStore } from '@/stores/reviewDetail'
 
 // 添加计时器变量
+// 计时器变量
 const waitingSeconds = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
-
-// 添加变量记录最终耗时
 const finalWaitTime = ref(0)
 const showFinalTime = ref(false)
+
+// 停止计时器
+const stopTimer = () => {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+}
+
+// 启动计时器
+const startTimer = (startSeconds: number = 0) => {
+  waitingSeconds.value = startSeconds
+  stopTimer()
+  timer = setInterval(() => {
+    waitingSeconds.value++
+  }, 1000)
+}
+
+// 恢复生成状态
+const restoreGeneratingState = async () => {
+  const startTime = reviewDetailStore.getGeneratingStartTime(taskId)
+  if (startTime && reviewDetailStore.isGenerating(taskId)) {
+    const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000)
+    const maxWaitSeconds = 130
+
+    if (elapsedSeconds > maxWaitSeconds) {
+      reviewDetailStore.finishGenerating(taskId)
+      ElMessage.warning('上次生成可能已超时，请重新生成')
+      return
+    }
+
+    startTimer(elapsedSeconds)
+  }
+}
+const reviewDetailStore = useReviewDetailStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -265,7 +305,7 @@ const studyPlanStore = useStudyPlanStore()
 const taskId = Number(route.params.id)
 const taskDetail = ref<StudyTask | null>(null)
 const isLoading = ref(false)
-const isGenerating = ref(false)
+const isGenerating = computed(() => reviewDetailStore.isGenerating(taskId))
 const isCompleting = ref(false)
 const isLoadingHistory = ref(false)
 const showHistoryDialog = ref(false)
@@ -475,19 +515,22 @@ onMounted(async () => {
   try {
     const taskResponse = (await studyApi.getReviewTaskDetail(taskId)) as unknown as StudyTask
     taskDetail.value = taskResponse || null
+
+    // 恢复生成状态
+    await restoreGeneratingState()
   } catch (error) {
     console.error('获取复习详情失败:', error)
     ElMessage.error('获取复习详情失败')
   } finally {
     isLoading.value = false
   }
+
+  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  if (timer) {
-    clearInterval(timer)
-  }
+  stopTimer()
 })
 
 // 显示确认完成对话框
@@ -537,46 +580,25 @@ const completeReview = async () => {
 
 const generateReviewAdvice = async () => {
   if (!taskDetail.value) return
+  if (isGenerating.value) {
+    ElMessage.warning('正在生成中，请稍后')
+    return
+  }
 
-  waitingSeconds.value = 0
-  if (timer) clearInterval(timer)
-  timer = setInterval(() => {
-    waitingSeconds.value++
-  }, 1000)
+  startTimer(0)
+  showFinalTime.value = false
 
-  isGenerating.value = true
   try {
-    // 调用生成接口
-    await studyApi.generateReviewAdvice({
-      taskId: taskDetail.value.id,
-      title: taskDetail.value.title,
-      reviewStage: taskDetail.value.reviewStage,
-    })
+    await reviewDetailStore.generateReviewPlan(taskId)
 
-    const updatedTask = (await studyApi.getReviewTaskDetail(taskId)) as unknown as StudyTask
-    if (updatedTask) {
-      taskDetail.value = updatedTask
-    }
-
-    // 停止计时器
-    if (timer) {
-      clearInterval(timer)
-      timer = null
-    }
-
+    stopTimer()
     finalWaitTime.value = waitingSeconds.value
     showFinalTime.value = true
-
     ElMessage.success('复习建议生成成功')
   } catch (error) {
-    if (timer) {
-      clearInterval(timer)
-      timer = null
-    }
+    stopTimer()
     console.error('生成复习建议失败:', error)
     ElMessage.error('生成复习建议失败')
-  } finally {
-    isGenerating.value = false
   }
 }
 
