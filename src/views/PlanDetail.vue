@@ -191,6 +191,23 @@ let timer: ReturnType<typeof setInterval> | null = null
 const finalWaitTime = ref(0)
 const showFinalTime = ref(false)
 
+// 停止计时器
+const stopTimer = () => {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+}
+
+// 启动计时器（从指定秒数开始）
+const startTimer = (startSeconds: number = 0) => {
+  waitingSeconds.value = startSeconds
+  stopTimer()
+  timer = setInterval(() => {
+    waitingSeconds.value++
+  }, 1000)
+}
+
 // 设置基本选项
 marked.setOptions({
   breaks: true,
@@ -240,7 +257,7 @@ const getDifficultyText = (difficulty: string) => {
 }
 
 const generatedPlan = computed(() => studyPlanDetailStore.getCurrentPlanDetail(planId))
-const isGenerating = computed(() => studyPlanDetailStore.isGenerating)
+const isGenerating = computed(() => studyPlanDetailStore.isGenerating(planId))
 const isLoading = computed(() => studyPlanDetailStore.isLoading)
 const historyPlans = computed(() => studyPlanDetailStore.getHistoryPlans(planId))
 
@@ -296,6 +313,8 @@ onMounted(async () => {
     studyPlanDetailStore.fetchHistoryPlans(planId), // 获取历史列表（让按钮显示）
   ])
 
+  await restoreGeneratingState()
+
   // 监听窗口大小变化
   window.addEventListener('resize', () => {
     isMobile.value = window.innerWidth <= 768
@@ -304,6 +323,10 @@ onMounted(async () => {
 
 const generateStudyPlan = async () => {
   if (!currentPlan.value) return
+  if (isGenerating.value) {
+    ElMessage.warning('计划正在生成中，请稍后')
+    return
+  }
 
   const getDuration = () => {
     if (currentPlan.value && currentPlan.value.endDate) {
@@ -316,11 +339,8 @@ const generateStudyPlan = async () => {
     }
   }
 
-  waitingSeconds.value = 0
-  if (timer) clearInterval(timer)
-  timer = setInterval(() => {
-    waitingSeconds.value++
-  }, 1000)
+  startTimer(0)
+  showFinalTime.value = false
 
   const result = await studyPlanDetailStore.generatePlanDetail({
     title: currentPlan.value.title,
@@ -330,21 +350,33 @@ const generateStudyPlan = async () => {
     level: currentPlan.value.difficulty,
   })
 
-  if (timer) {
-    clearInterval(timer)
-    timer = null
-  }
-
-  if (result?.cancelled) {
-    return
-  }
-
-  finalWaitTime.value = waitingSeconds.value
-  showFinalTime.value = true
+  stopTimer()
 
   if (result) {
+    finalWaitTime.value = waitingSeconds.value
+    showFinalTime.value = true
     ElMessage.success('学习计划已生成!')
     await studyPlanDetailStore.fetchLatestPlan(planId)
+  }
+}
+
+// 恢复生成状态（页面重进时调用）
+const restoreGeneratingState = async () => {
+  const startTime = studyPlanDetailStore.getGeneratingStartTime(planId)
+  if (startTime && studyPlanDetailStore.isGenerating(planId)) {
+    // 计算已等待秒数
+    const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000)
+    const maxWaitSeconds = 130 // API 超时 120 秒，加一点余量
+
+    if (elapsedSeconds > maxWaitSeconds) {
+      // 超时，视为失败，清除状态
+      studyPlanDetailStore.finishGenerating(planId)
+      ElMessage.warning('上次生成可能已超时，请重新生成')
+      return
+    }
+
+    // 恢复计时器
+    startTimer(elapsedSeconds)
   }
 }
 
@@ -391,9 +423,7 @@ const formatDateRange = (
 const goBack = () => router.go(-1)
 
 onUnmounted(() => {
-  if (timer) {
-    clearInterval(timer)
-  }
+  stopTimer()
 })
 </script>
 
