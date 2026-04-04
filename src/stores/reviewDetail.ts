@@ -102,33 +102,6 @@ export const useReviewDetailStore = defineStore('reviewDetail', () => {
     }
   }
 
-  // 生成复习计划（改为按 taskId 管理状态）
-  const generateReviewPlan = async (taskId: number) => {
-    // 如果已经在生成中，不允许重复生成
-    if (isGenerating(taskId)) {
-      return null
-    }
-
-    startGenerating(taskId)
-
-    try {
-      const response = await api.batchGenerateReviewPlans([taskId])
-
-      // 生成成功后，重新获取详情以更新内容
-      const updatedTask = (await api.getReviewTaskDetail(taskId)) as unknown as StudyTask
-      if (updatedTask) {
-        currentReviewPlan.value = updatedTask
-      }
-
-      return response.data
-    } catch (error) {
-      console.error('生成复习计划失败:', error)
-      throw error
-    } finally {
-      finishGenerating(taskId)
-    }
-  }
-
   const openHistoryDialog = async (studyPlanId: number) => {
     showHistoryDialog.value = true
     await fetchHistoryPlans(studyPlanId)
@@ -160,7 +133,6 @@ export const useReviewDetailStore = defineStore('reviewDetail', () => {
     // 业务方法
     fetchReviewPlanDetail,
     fetchHistoryPlans,
-    generateReviewPlan,
     openHistoryDialog,
     viewHistoryPlan,
     backToHistoryList,

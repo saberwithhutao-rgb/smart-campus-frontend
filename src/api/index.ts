@@ -343,13 +343,6 @@ export const api = {
       url: `/study/review-plans/${studyPlanId}/history`,
     }),
 
-  batchGenerateReviewPlans: (taskIds: number[]) =>
-    request<ApiResponse<null>>({
-      method: 'POST',
-      url: '/study/tasks/batch-generate',
-      data: taskIds,
-    }),
-
   // 获取已生成的复习计划列表
   getGeneratedReviewPlans: () =>
     request<StudyTask[]>({

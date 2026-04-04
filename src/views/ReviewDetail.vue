@@ -589,7 +589,15 @@ const generateReviewAdvice = async () => {
   showFinalTime.value = false
 
   try {
-    await reviewDetailStore.generateReviewPlan(taskId)
+    await studyApi.generateReviewAdvice({
+      taskId: taskDetail.value.id,
+      title: taskDetail.value.title,
+      reviewStage: taskDetail.value.reviewStage,
+    })
+
+    // 刷新任务详情以获取新生成的建议
+    const taskResponse = (await studyApi.getReviewTaskDetail(taskId)) as unknown as StudyTask
+    taskDetail.value = taskResponse || null
 
     stopTimer()
     finalWaitTime.value = waitingSeconds.value
