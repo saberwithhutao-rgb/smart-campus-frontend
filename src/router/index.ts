@@ -184,6 +184,12 @@ const router = createRouter({
       component: () => import('../views/ForgotPassword.vue'),
       meta: { requiresAuth: false },
     },
+    {
+      path: '/function-search',
+      name: 'FunctionSearch',
+      component: () => import('../views/FunctionSearch.vue'),
+      meta: { requiresAuth: false },
+    },
     // 404路由
     {
       path: '/:pathMatch(.*)*',
