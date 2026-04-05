@@ -8,7 +8,7 @@ import { useRouter } from 'vue-router'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import { api } from '@/api'
 import ReviewReminderBanner from '@/components/ReviewReminderBanner.vue'
-import { useTheme } from '@/composables/useTheme'
+
 import {
   applyUserSettings,
   sendBrowserNotification,
@@ -23,8 +23,6 @@ let studyReminderTimer: number | null = null
 
 const settings = computed(() => settingsStore.settings)
 
-const { watchSystemTheme } = useTheme()
-
 const validateToken = async (): Promise<boolean> => {
   const token =
     localStorage.getItem(STORAGE_KEYS.TOKEN) || localStorage.getItem(STORAGE_KEYS.TOKEN_ALT)
@@ -35,11 +33,8 @@ const validateToken = async (): Promise<boolean> => {
     return true
   } catch {
     console.log('Token 无效，清除本地存储')
-    localStorage.removeItem(STORAGE_KEYS.TOKEN)
-    localStorage.removeItem(STORAGE_KEYS.TOKEN_ALT)
 
-    userStore.userState.isLoggedIn = false
-    userStore.userState.userInfo = null
+    userStore.logoutComplete(false)
 
     return false
   }
@@ -165,8 +160,6 @@ watch(
 
 onMounted(async () => {
   console.log('🚀 App.vue 挂载')
-
-  const cleanup = watchSystemTheme()
 
   const loadingInstance = ElLoading.service({
     fullscreen: true,

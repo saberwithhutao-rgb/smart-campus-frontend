@@ -15,47 +15,7 @@ import { useUserStore } from '@/stores/user'
 const userStore = useUserStore()
 
 onMounted(() => {
-  console.log('强制退出登录页面加载')
-
-  // 延迟执行退出，确保组件渲染完成
-  setTimeout(() => {
-    console.log('开始执行退出登录...')
-
-    // 1. 清除所有本地存储
-    const keysToRemove = [
-      'userToken',
-      'userInfo',
-      'refreshToken',
-      'username',
-      'userId',
-      'redirectAfterLogin',
-      'lastLoginTime',
-      'auth_token',
-      'access_token',
-    ]
-
-    keysToRemove.forEach((key) => {
-      localStorage.removeItem(key)
-      sessionStorage.removeItem(key)
-    })
-
-    // 2. 清除store状态
-    userStore.userState = {
-      isLoggedIn: false,
-      userInfo: null,
-    }
-
-    // 3. 清除所有cookie
-    document.cookie.split(';').forEach((cookie) => {
-      const name = cookie.trim().split('=')[0]
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
-    })
-
-    console.log('退出登录完成，跳转到登录页')
-
-    // 4. 使用硬跳转，确保完全退出
-    window.location.href = '/login'
-  }, 500)
+  userStore.logoutComplete(true)
 })
 </script>
 

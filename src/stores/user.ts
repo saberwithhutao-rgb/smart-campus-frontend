@@ -90,7 +90,7 @@ export const useUserStore = defineStore('user', () => {
     const tokenKeys = [
       STORAGE_KEYS.TOKEN,
       STORAGE_KEYS.TOKEN_ALT,
-      'refresh_token', // refresh token 的 key
+      'refresh_token',
       STORAGE_KEYS.USER_INFO,
       'username',
       'userId',
