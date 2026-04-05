@@ -190,7 +190,7 @@ const handleUnauthorized = async (
 
         // 清除所有凭证
         const userStore = useUserStore()
-        userStore.logoutComplete(false)
+        userStore.logout(false)
 
         ElMessage.error('登录已过期，请重新登录')
         router.push('/login')
@@ -202,7 +202,7 @@ const handleUnauthorized = async (
     processQueue(refreshError as Error, null)
 
     const userStore = useUserStore()
-    userStore.logoutComplete(false)
+    userStore.logout(false)
 
     ElMessage.error('登录已过期，请重新登录')
     router.push('/login')

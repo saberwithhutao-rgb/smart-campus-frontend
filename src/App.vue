@@ -34,7 +34,7 @@ const validateToken = async (): Promise<boolean> => {
   } catch {
     console.log('Token 无效，清除本地存储')
 
-    userStore.logoutComplete(false)
+    userStore.logout(false)
 
     return false
   }

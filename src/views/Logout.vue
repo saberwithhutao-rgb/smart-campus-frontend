@@ -15,7 +15,7 @@ import { useUserStore } from '@/stores/user'
 const userStore = useUserStore()
 
 onMounted(() => {
-  userStore.logoutComplete(true)
+  userStore.logout(true)
 })
 </script>
 

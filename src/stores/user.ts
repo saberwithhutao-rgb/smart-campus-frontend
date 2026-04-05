@@ -52,46 +52,18 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  function logout(redirectToLogin: boolean = true) {
-    console.log('执行退出登录...')
-
-    userState.value = {
-      isLoggedIn: false,
-      userInfo: null,
-    }
-
-    // ✅ 清除 refresh token
-    localStorage.removeItem('refresh_token')
-    clearStorage()
-
-    if (redirectToLogin) {
-      window.location.replace('/login')
-    }
-  }
-
-  function logoutComplete(redirectToLogin: boolean = true) {
-    console.log('执行完全退出登录...')
-
-    userState.value = {
-      isLoggedIn: false,
-      userInfo: null,
-    }
-
-    localStorage.removeItem('refresh_token')
-    clearStorage()
-    clearAutoLoginCredentials()
-
-    if (redirectToLogin) {
-      window.location.replace('/login')
-    }
-  }
-
   function clearStorage() {
-    const tokenKeys = [
+    const keysToRemove = [
+      // token 相关
       STORAGE_KEYS.TOKEN,
       STORAGE_KEYS.TOKEN_ALT,
-      'refresh_token',
       STORAGE_KEYS.USER_INFO,
+      'refresh_token',
+      // 自动登录凭证（新增）
+      STORAGE_KEYS.SAVED_USERNAME,
+      STORAGE_KEYS.SAVED_PASSWORD,
+      STORAGE_KEYS.REMEMBER_ME,
+      // 其他杂项
       'username',
       'userId',
       'sessionId',
@@ -101,15 +73,31 @@ export const useUserStore = defineStore('user', () => {
       'system_greeting_shown_expires',
     ]
 
-    tokenKeys.forEach((key) => {
+    keysToRemove.forEach((key) => {
       localStorage.removeItem(key)
       sessionStorage.removeItem(key)
     })
 
+    // 清除 cookies
     document.cookie.split(';').forEach((cookie) => {
       const name = cookie.trim().split('=')[0]
       document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
     })
+  }
+
+  function logout(redirectToLogin: boolean = true) {
+    console.log('执行退出登录...')
+
+    userState.value = {
+      isLoggedIn: false,
+      userInfo: null,
+    }
+
+    clearStorage()
+
+    if (redirectToLogin) {
+      window.location.replace('/login')
+    }
   }
 
   /**
@@ -454,7 +442,6 @@ export const useUserStore = defineStore('user', () => {
     register,
     logout,
     fetchUserProfile,
-    logoutComplete,
     setUserInfo,
     restoreFromStorage,
     clearStorage,
