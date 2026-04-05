@@ -181,7 +181,7 @@ const router = createRouter({
     {
       path: '/forgot-password',
       name: 'ForgotPassword',
-      component: () => import('@/views/ForgotPassword.vue'),
+      component: () => import('../views/ForgotPassword.vue'),
       meta: { requiresAuth: false },
     },
     // 404路由

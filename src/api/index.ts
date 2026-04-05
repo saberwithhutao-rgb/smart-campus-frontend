@@ -57,7 +57,34 @@ export interface GeneratePlanResponse {
   cancelled?: boolean
 }
 
-// 新增类型定义
+// ===== 功能搜索模块 =====
+/**
+ * 功能搜索结果数据
+ */
+export interface FunctionSearchResult {
+  title: string
+  content: string
+}
+
+/**
+ * 功能搜索响应
+ */
+export interface FunctionSearchResponse {
+  code: number
+  success: boolean
+  data?: FunctionSearchResult
+  message?: string
+}
+
+/**
+ * 功能列表项
+ */
+export interface FunctionGuideItem {
+  keywords: string[]
+  title: string
+  content: string
+}
+
 interface LoginData {
   token: string
   role: string
@@ -779,6 +806,25 @@ export const api = {
       return []
     }
   },
+  /**
+   * 搜索功能说明
+   * @param keyword 搜索关键词
+   */
+  searchFunction: (keyword: string) =>
+    request<FunctionSearchResponse>({
+      method: 'GET',
+      url: '/function-guide/search',
+      params: { q: keyword },
+    }),
+
+  /**
+   * 获取所有功能列表
+   */
+  listAllFunctions: () =>
+    request<FunctionGuideItem[]>({
+      method: 'GET',
+      url: '/function-guide/list',
+    }),
 }
 
 // 流式请求方法

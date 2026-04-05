@@ -91,6 +91,8 @@
         </div>
 
         <div class="nav-item" @click="goToExamSupport">考研支持</div>
+
+        <button class="btn-search" @click="goToFunctionSearch" title="功能搜索">🔍</button>
       </div>
 
       <!-- 右侧操作区 -->
@@ -167,6 +169,10 @@ const goToCareerDirections = () => {
 }
 const goToCareerNews = () => {
   router.push({ path: '/career/position', query: { section: 'news' } })
+}
+
+const goToFunctionSearch = () => {
+  router.push('/function-search')
 }
 
 const toggleUserCenter = () => {
@@ -570,6 +576,27 @@ onUnmounted(() => {
   color: var(--color-primary) !important;
   border-left-color: var(--color-primary);
   font-weight: 500;
+}
+
+.btn-search {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-search:hover {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  transform: scale(1.05);
 }
 
 /* 右侧主内容区 */
