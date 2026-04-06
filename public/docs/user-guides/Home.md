@@ -42,19 +42,19 @@ lastUpdated: 2026-04-06
 
 - **描述**：数智孪生助学
 - **功能**：个性计划 + AI高效备考
-- **跳转页面**：`/ai/chat`（智能问答AI助手）
+- **跳转页面**：<a href="/ai/chat" target="_blank">/ai/chat</a>（智能问答AI助手）
 
 ### 2. 校园生活 🏠
 
 - **描述**：孪生校园智管
 - **功能**：行为监测健康 / 图书馆服务
-- **跳转页面**：`/campus/library-reservation`（图书馆座位预约）
+- **跳转页面**：<a href="/campus/library-reservation" target="_blank">/campus/library-reservation</a>（图书馆座位预约）
 
 ### 3. 成长决策 🏆
 
 - **描述**：数字赋能竞赛
 - **功能**：信息匹配 + 科研复试
-- **跳转页面**：`/career/competitions`（竞赛管理）
+- **跳转页面**：<a href="/career/competitions" target="_blank">/career/competitions</a>（竞赛管理）
 
 ## 💡 使用方式
 
