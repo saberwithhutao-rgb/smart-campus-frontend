@@ -47,7 +47,7 @@
             <span class="result-icon">📘</span>
             <h2 class="result-title">{{ searchResult.title }}</h2>
           </div>
-          <div class="result-content">{{ searchResult.content }}</div>
+          <div class="result-content" v-html="searchResult.content"></div>
         </div>
 
         <div v-else class="empty-state">
