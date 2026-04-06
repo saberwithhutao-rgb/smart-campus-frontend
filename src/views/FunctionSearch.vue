@@ -78,6 +78,12 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ElMessage } from 'element-plus'
+import { marked } from 'marked'
+
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+})
 
 // 前端本地文档索引
 interface FunctionDoc {
@@ -241,13 +247,12 @@ const search = async () => {
       const markdown = await loadMarkdown(matchedDoc.path)
       if (markdown) {
         const content = extractContentFromMarkdown(markdown)
+        const htmlContent = await marked(content)
         searchResult.value = {
           title: matchedDoc.title,
-          content: content,
+          content: htmlContent,
         }
         router.replace({ query: { q: keyword.value } })
-      } else {
-        searchResult.value = null
       }
     } catch (error) {
       console.error('加载文档失败', error)
@@ -430,8 +435,104 @@ initFromUrl()
   font-size: 15px;
   line-height: 1.8;
   color: var(--color-text-secondary);
-  white-space: pre-wrap;
-  word-break: break-word;
+}
+
+/* 标题样式 */
+.result-content h1 {
+  font-size: 26px;
+  margin: 24px 0 16px;
+  color: var(--color-text);
+  border-left: 4px solid var(--color-primary);
+  padding-left: 16px;
+}
+
+.result-content h2 {
+  font-size: 22px;
+  margin: 20px 0 12px;
+  color: var(--color-text);
+}
+
+.result-content h3 {
+  font-size: 18px;
+  margin: 16px 0 10px;
+  color: var(--color-text);
+}
+
+/* 列表样式 */
+.result-content ul,
+.result-content ol {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.result-content li {
+  margin: 8px 0;
+}
+
+/* 代码块 */
+.result-content code {
+  background: var(--color-bg-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.result-content pre {
+  background: var(--color-bg-light);
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.result-content pre code {
+  background: none;
+  padding: 0;
+}
+
+/* 引用块 */
+.result-content blockquote {
+  border-left: 4px solid var(--color-primary);
+  margin: 16px 0;
+  padding-left: 16px;
+  color: var(--color-text-light);
+  font-style: italic;
+}
+
+/* 表格 */
+.result-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.result-content th,
+.result-content td {
+  border: 1px solid var(--color-border);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.result-content th {
+  background: var(--color-bg-light);
+  font-weight: 600;
+}
+
+/* 强调 */
+.result-content strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.result-content em {
+  font-style: italic;
+}
+
+/* 分割线 */
+.result-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 24px 0;
 }
 
 /* 空状态 */
