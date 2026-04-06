@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ElMessage } from 'element-plus'
@@ -85,12 +85,11 @@ marked.setOptions({
   gfm: true,
 })
 
-// 前端本地文档索引
 interface FunctionDoc {
   title: string
   keywords: string[]
   path: string
-  content?: string
+  fileName: string
 }
 
 const router = useRouter()
@@ -101,82 +100,29 @@ const loading = ref(false)
 const hasSearched = ref(false)
 const searchResult = ref<{ title: string; content: string } | null>(null)
 
-// 文档索引（从 docs/user-guides 目录生成）
-// 注意：这个索引需要和 docs/user-guides 下的文件同步
-const functionDocs: FunctionDoc[] = [
-  {
-    title: '登录功能使用指南',
-    keywords: ['登录', '登陆', '账号', '密码'],
-    path: '/docs/user-guides/Login.md',
-  },
-  {
-    title: '注册账号使用指南',
-    keywords: ['注册', '创建账号', '新用户'],
-    path: '/docs/user-guides/Register.md',
-  },
-  {
-    title: '找回密码使用指南',
-    keywords: ['忘记密码', '找回密码', '重置密码'],
-    path: '/docs/user-guides/ForgotPassword.md',
-  },
-  {
-    title: '个人学习计划使用指南',
-    keywords: ['学习计划', '计划', '任务'],
-    path: '/docs/user-guides/PersonalStudyPlan.md',
-  },
-  {
-    title: '智能复习系统使用指南',
-    keywords: ['复习', '智能复习', '记忆曲线'],
-    path: '/docs/user-guides/SmartReview.md',
-  },
-  {
-    title: '学习数据分析使用指南',
-    keywords: ['数据', '统计', '图表'],
-    path: '/docs/user-guides/StudyData.md',
-  },
-  {
-    title: '图书馆座位预约使用指南',
-    keywords: ['图书馆', '预约', '座位'],
-    path: '/docs/user-guides/LibraryReservation.md',
-  },
-  {
-    title: '体育设施预约使用指南',
-    keywords: ['体育', '运动', '场地'],
-    path: '/docs/user-guides/SportsReservation.md',
-  },
-  {
-    title: '竞赛报名使用指南',
-    keywords: ['竞赛', '比赛', '报名'],
-    path: '/docs/user-guides/CompetitionManagement.md',
-  },
-  {
-    title: '二手交易市场使用指南',
-    keywords: ['二手', '交易', '闲置'],
-    path: '/docs/user-guides/SecondHandMarket.md',
-  },
-  {
-    title: '智能问答AI助手使用指南',
-    keywords: ['问答', 'AI', '智能问答'],
-    path: '/docs/user-guides/SmartQa.md',
-  },
-  {
-    title: '个人中心使用指南',
-    keywords: ['个人中心', '我的', '资料'],
-    path: '/docs/user-guides/UserCenter.md',
-  },
-  {
-    title: '编辑个人资料使用指南',
-    keywords: ['编辑资料', '修改资料', '头像'],
-    path: '/docs/user-guides/ProfileEdit.md',
-  },
-  {
-    title: '系统设置使用指南',
-    keywords: ['设置', '主题', '通知'],
-    path: '/docs/user-guides/Settings.md',
-  },
-]
+// 文档索引（从 JSON 加载）
+const functionDocs = ref<FunctionDoc[]>([])
+const docsLoading = ref(false)
 
 const hotFunctions = ['登录', '注册', '学习计划', '复习建议', '文件上传', '学习任务', '统计']
+
+// 加载文档索引
+const loadDocsIndex = async () => {
+  docsLoading.value = true
+  try {
+    const response = await fetch('/docs-index.json')
+    if (!response.ok) {
+      throw new Error('加载索引失败')
+    }
+    functionDocs.value = await response.json()
+    console.log(`加载了 ${functionDocs.value.length} 个文档索引`)
+  } catch (error) {
+    console.error('加载文档索引失败:', error)
+    ElMessage.error('加载文档索引失败')
+  } finally {
+    docsLoading.value = false
+  }
+}
 
 // 从 URL 参数初始化搜索
 const initFromUrl = () => {
@@ -206,10 +152,8 @@ const extractContentFromMarkdown = (markdown: string): string => {
   // 移除 YAML frontmatter (--- ... ---)
   const frontmatterRegex = /^---\s*\n[\s\S]*?\n---\s*\n/
   let content = markdown.replace(frontmatterRegex, '')
-
-  // 可选：移除标题（第一行 # 开头的）
+  // 移除标题（第一行 # 开头的）
   content = content.replace(/^#\s+.*\n/, '')
-
   return content.trim()
 }
 
@@ -226,8 +170,8 @@ const search = async () => {
 
   const lowerKeyword = keyword.value.toLowerCase()
 
-  // 匹配文档（精确匹配关键词或标题包含）
-  let matchedDoc: FunctionDoc | undefined = functionDocs.find(
+  // 匹配文档
+  let matchedDoc: FunctionDoc | undefined = functionDocs.value.find(
     (doc) =>
       doc.keywords.some((k) => k.toLowerCase() === lowerKeyword) ||
       doc.title.toLowerCase().includes(lowerKeyword),
@@ -235,7 +179,7 @@ const search = async () => {
 
   // 模糊匹配
   if (!matchedDoc) {
-    matchedDoc = functionDocs.find(
+    matchedDoc = functionDocs.value.find(
       (doc) =>
         doc.keywords.some((k) => k.toLowerCase().includes(lowerKeyword)) ||
         lowerKeyword.includes(doc.keywords[0]?.toLowerCase() || ''),
@@ -272,8 +216,11 @@ const quickSearch = (hot: string) => {
   search()
 }
 
-// 页面加载时执行
-initFromUrl()
+// 页面加载
+onMounted(async () => {
+  await loadDocsIndex()
+  initFromUrl()
+})
 </script>
 
 <style scoped>
