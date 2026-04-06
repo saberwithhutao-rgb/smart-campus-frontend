@@ -131,7 +131,6 @@ import GlobalNavbar from '@/components/GlobalNavbar.vue'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { ElMessage } from 'element-plus'
 import { STORAGE_KEYS } from '@/utils/storageKeys'
 import { getUserSettings, syncPublicProfileSnapshot } from '@/utils/userSettings'
 
@@ -226,16 +225,6 @@ onUnmounted(() => {
   window.removeEventListener('storage', handleStorageChange)
 })
 
-// 刷新用户信息
-const refreshUserInfo = async () => {
-  try {
-    // 这里可以调用获取用户详情的API
-    // 暂时用store中已有的信息
-    console.log('当前用户信息:', userInfo.value)
-  } catch (error) {
-    console.error('刷新用户信息失败:', error)
-  }
-}
 // 跳转到编辑资料页面
 const goToEditProfile = () => {
   router.push('/profile/edit')
@@ -267,18 +256,6 @@ const formatDate = (dateString?: string) => {
   }
 }
 
-// 辅助函数：获取性别文本
-const getUserGenderText = (gender?: number) => {
-  switch (gender) {
-    case 1:
-      return '男'
-    case 2:
-      return '女'
-    default:
-      return '未知'
-  }
-}
-
 const getRoleText = (role?: string) => {
   switch (role) {
     case 'admin':
@@ -292,22 +269,6 @@ const getRoleText = (role?: string) => {
     default:
       return role || '用户'
   }
-}
-// 辅助函数：获取角色文本
-const getUserRoleText = (role?: string) => {
-  switch (role) {
-    case 'admin':
-      return '管理员'
-    case 'user':
-      return '普通用户'
-    default:
-      return role || '用户'
-  }
-}
-
-// 辅助函数：获取状态文本
-const getUserStatusText = (status?: number) => {
-  return status === 1 ? '正常' : '禁用'
 }
 </script>
 
