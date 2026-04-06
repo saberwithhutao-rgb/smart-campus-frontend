@@ -180,7 +180,6 @@ const saveSettings = async () => {
     }
 
     ElMessage.success('设置保存成功')
-    setTimeout(() => router.back(), 1500)
   } catch {
     ElMessage.error('保存失败')
   } finally {

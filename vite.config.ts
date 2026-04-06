@@ -6,6 +6,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  publicDir: 'public',
   plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
@@ -18,8 +19,8 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         pathRewrite: {
-          '^/api': ''
-        }
+          '^/api': '',
+        },
       },
     },
   },
