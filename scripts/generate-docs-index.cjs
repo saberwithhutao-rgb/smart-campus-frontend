@@ -1,10 +1,10 @@
-// scripts/generate-docs-index.cjs
-const fs = require('fs')
-const path = require('path')
+// scripts/generate-docs-index.mjs
+import fs from 'fs'
+import path from 'path'
 
 // 配置路径
-const docsDir = path.join(__dirname, '../public/docs/user-guides')
-const outputPath = path.join(__dirname, '../public/docs-index.json')
+const docsDir = path.join(import.meta.dirname, '../public/docs/user-guides')
+const outputPath = path.join(import.meta.dirname, '../public/docs-index.json')
 
 // 确保目录存在
 if (!fs.existsSync(docsDir)) {

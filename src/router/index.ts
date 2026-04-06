@@ -190,6 +190,11 @@ const router = createRouter({
       component: () => import('../views/FunctionSearch.vue'),
       meta: { requiresAuth: false },
     },
+    {
+      path: '/doc-detail',
+      name: 'DocDetail',
+      component: () => import('@/views/DocDetail.vue'),
+    },
     // 404路由
     {
       path: '/:pathMatch(.*)*',
