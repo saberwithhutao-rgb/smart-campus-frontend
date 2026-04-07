@@ -150,6 +150,8 @@ export const useUserStore = defineStore('user', () => {
         localStorage.setItem(STORAGE_KEYS.TOKEN_ALT, response.token)
         console.log('✅ Token 刷新成功')
         return true
+      } else {
+        console.log('⚠️ 刷新 token 失败')
       }
       return false
     } catch (error) {

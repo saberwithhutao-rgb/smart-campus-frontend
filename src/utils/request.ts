@@ -145,6 +145,9 @@ const handleUnauthorized = async (
   if (originalRequest.url?.includes('/login')) {
     return Promise.reject(error)
   }
+  if (originalRequest.url?.includes('/auth/refresh')) {
+    return Promise.reject(error)
+  }
 
   if (isRefreshing) {
     return new Promise((resolve, reject) => {
@@ -208,6 +211,7 @@ const handleUnauthorized = async (
     router.push('/login')
     return Promise.reject(error)
   } finally {
+    console.log('handleUnauthorized 执行完毕')
     isRefreshing = false
   }
 }
