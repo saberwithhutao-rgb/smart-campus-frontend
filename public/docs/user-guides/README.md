@@ -23,56 +23,56 @@ lastUpdated: 2026-04-06
 
 ### 🔐 账号管理
 
-- <a href="/docs/user-guides/Login.md" target="_blank">Login.md</a> - 登录功能使用指南
-- <a href="/docs/user-guides/Register.md" target="_blank">Register.md</a> - 注册账号使用指南
-- <a href="/docs/user-guides/ForgotPassword.md" target="_blank">ForgotPassword.md</a> - 找回密码使用指南
+- <a href="/doc/Login" target="_blank">Login.md</a> - 登录功能使用指南
+- <a href="/doc/Register" target="_blank">Register.md</a> - 注册账号使用指南
+- <a href="/doc/ForgotPassword" target="_blank">ForgotPassword.md</a> - 找回密码使用指南
 
 ### 📚 学习工具
 
-- <a href="/docs/user-guides/PersonalStudyPlan.md" target="_blank">PersonalStudyPlan.md</a> - 个人学习计划使用指南
-- <a href="/docs/user-guides/SmartReview.md" target="_blank">SmartReview.md</a> - 智能复习系统使用指南
-- <a href="/docs/user-guides/StudyData.md" target="_blank">StudyData.md</a> - 学习数据分析使用指南
+- <a href="/doc/PersonalStudyPlan" target="_blank">PersonalStudyPlan.md</a> - 个人学习计划使用指南
+- <a href="/doc/SmartReview" target="_blank">SmartReview.md</a> - 智能复习系统使用指南
+- <a href="/doc/StudyData" target="_blank">StudyData.md</a> - 学习数据分析使用指南
 
 ### 🏛️ 资源预约
 
-- <a href="/docs/user-guides/LibraryReservation.md" target="_blank">LibraryReservation.md</a> - 图书馆座位预约使用指南
-- <a href="/docs/user-guides/SportsReservation.md" target="_blank">SportsReservation.md</a> - 体育设施预约使用指南
+- <a href="/doc/LibraryReservation" target="_blank">LibraryReservation.md</a> - 图书馆座位预约使用指南
+- <a href="/doc/SportsReservation" target="_blank">SportsReservation.md</a> - 体育设施预约使用指南
 
 ### 🎯 职业发展
 
-- <a href="/docs/user-guides/CompetitionManagement.md" target="_blank">CompetitionManagement.md</a> - 竞赛报名使用指南
+- <a href="/doc/CompetitionManagement" target="_blank">CompetitionManagement.md</a> - 竞赛报名使用指南
 
 ### 💰 生活服务
 
-- <a href="/docs/user-guides/SecondHandMarket.md" target="_blank">SecondHandMarket.md</a> - 校园论坛使用指南
+- <a href="/doc/SecondHandMarket" target="_blank">SecondHandMarket.md</a> - 校园论坛使用指南
 
 ### 🤖 智能助手
 
-- <a href="/docs/user-guides/SmartQa.md" target="_blank">SmartQa.md</a> - 智能问答AI助手使用指南
+- <a href="/doc/SmartQa" target="_blank">SmartQa.md</a> - 智能问答AI助手使用指南
 
 ### 👤 个人中心
 
-- <a href="/docs/user-guides/UserCenter.md" target="_blank">UserCenter.md</a> - 个人中心使用指南
-- <a href="/docs/user-guides/ProfileEdit.md" target="_blank">ProfileEdit.md</a> - 编辑个人资料使用指南
-- <a href="/docs/user-guides/Settings.md" target="_blank">Settings.md</a> - 系统设置使用指南
+- <a href="/doc/UserCenter" target="_blank">UserCenter.md</a> - 个人中心使用指南
+- <a href="/doc/ProfileEdit" target="_blank">ProfileEdit.md</a> - 编辑个人资料使用指南
+- <a href="/doc/Settings" target="_blank">Settings.md</a> - 系统设置使用指南
 
 ## 🎯 快速开始
 
 ### 新用户入门路径
 
-1. **注册账号** → 阅读 <a href="/docs/user-guides/Register.md" target="_blank">Register.md</a>
-2. **首次登录** → 阅读 <a href="/docs/user-guides/Login.md" target="_blank">Login.md</a>
-3. **完善资料** → 阅读 <a href="/docs/user-guides/ProfileEdit.md" target="_blank">ProfileEdit.md</a>
+1. **注册账号** → 阅读 <a href="/doc/Register" target="_blank">Register.md</a>
+2. **首次登录** → 阅读 <a href="/doc/Login" target="_blank">Login.md</a>
+3. **完善资料** → 阅读 <a href="/doc/ProfileEdit" target="_blank">ProfileEdit.md</a>
 4. **探索功能** → 从首页开始，逐个了解各模块
 
 ### 常用功能速查
 
-- 📖 **想预约图书馆座位？** → <a href="/docs/user-guides/LibraryReservation.md" target="_blank">LibraryReservation.md</a>
-- 📝 **想制定学习计划？** → <a href="/docs/user-guides/PersonalStudyPlan.md" target="_blank">PersonalStudyPlan.md</a>
-- 🧠 **想高效复习？** → <a href="/docs/user-guides/SmartReview.md" target="_blank">SmartReview.md</a>
-- 🏆 **想参加竞赛？** → <a href="/docs/user-guides/CompetitionManagement.md" target="_blank">CompetitionManagement.md</a>
-- 💬 **想逛校园论坛？** → <a href="/docs/user-guides/SecondHandMarket.md" target="_blank">SecondHandMarket.md</a>
-- 🤖 **有问题想问AI？** → <a href="/docs/user-guides/SmartQa.md" target="_blank">SmartQa.md</a>
+- 📖 **想预约图书馆座位？** → <a href="/doc/LibraryReservation" target="_blank">LibraryReservation.md</a>
+- 📝 **想制定学习计划？** → <a href="/doc/PersonalStudyPlan" target="_blank">PersonalStudyPlan.md</a>
+- 🧠 **想高效复习？** → <a href="/doc/SmartReview" target="_blank">SmartReview.md</a>
+- 🏆 **想参加竞赛？** → <a href="/doc/CompetitionManagement" target="_blank">CompetitionManagement.md</a>
+- 💬 **想逛校园论坛？** → <a href="/doc/SecondHandMarket" target="_blank">SecondHandMarket.md</a>
+- 🤖 **有问题想问AI？** → <a href="/doc/SmartQa" target="_blank">SmartQa.md</a>
 
 ## 💡 使用建议
 
@@ -91,7 +91,7 @@ lastUpdated: 2026-04-06
 ### 遇到问题时
 
 1. 先查看对应的使用指南
-2. 查看“常见问题”部分
+2. 查看"常见问题"部分
 3. 如果仍无法解决，联系学校信息中心
 
 ## ❓ 常见问题
@@ -106,7 +106,7 @@ lastUpdated: 2026-04-06
 
 ### ❓ 如何快速找到我需要的功能指南？
 
-在「功能搜索」页面输入关键词（如“登录”“图书馆”），系统会直接跳转到对应指南。
+在「功能搜索」页面输入关键词（如"登录""图书馆"），系统会直接跳转到对应指南。
 
 ### ❓ 文档可以下载保存吗？
 

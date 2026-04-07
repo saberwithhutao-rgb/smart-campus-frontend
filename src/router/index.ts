@@ -195,6 +195,31 @@ const router = createRouter({
       name: 'DocDetail',
       component: () => import('@/views/DocDetail.vue'),
     },
+    {
+      path: '/doc/:docName',
+      name: 'DocShortcut',
+      redirect: (to) => {
+        const docName = to.params.docName as string
+        const titleMap: Record<string, string> = {
+          Login: '登录功能使用指南',
+          Register: '注册账号使用指南',
+          ForgotPassword: '找回密码使用指南',
+          PersonalStudyPlan: '个人学习计划使用指南',
+          SmartReview: '智能复习系统使用指南',
+          StudyData: '学习数据分析使用指南',
+          LibraryReservation: '图书馆座位预约使用指南',
+          SportsReservation: '体育设施预约使用指南',
+          CompetitionManagement: '竞赛报名使用指南',
+          SecondHandMarket: '校园论坛使用指南',
+          SmartQa: '智能问答AI助手使用指南',
+          UserCenter: '个人中心使用指南',
+          ProfileEdit: '编辑个人资料使用指南',
+          Settings: '系统设置使用指南',
+        }
+        const title = titleMap[docName] || docName
+        return `/doc-detail?path=/docs/user-guides/${docName}.md&title=${encodeURIComponent(title)}`
+      },
+    },
     // 404路由
     {
       path: '/:pathMatch(.*)*',
