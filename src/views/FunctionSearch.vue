@@ -189,23 +189,6 @@ const loadMarkdown = async (path: string): Promise<string> => {
   }
 }
 
-// 从 Markdown 提取正文和摘要
-const extractFromMarkdown = (markdown: string): { content: string; summary: string } => {
-  // 移除 frontmatter
-  let body = markdown.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '')
-  // 移除标题
-  body = body.replace(/^#\s+.*\n/, '')
-
-  // 提取纯文本用于摘要
-  const plainText = body
-    .replace(/[#*`>\[\]()|]/g, '')
-    .replace(/\n+/g, ' ')
-    .trim()
-  const summary = plainText.length > 120 ? plainText.substring(0, 120) + '...' : plainText
-
-  return { content: body, summary }
-}
-
 // 执行搜索
 const search = async () => {
   const searchKeyword = keyword.value.trim()
@@ -226,29 +209,31 @@ const search = async () => {
       const markdown = await loadMarkdown(doc.path)
       if (!markdown) continue
 
-      const { content, summary } = extractFromMarkdown(markdown)
-      const fullText = (doc.title + ' ' + content).toLowerCase()
+      // 移除 frontmatter，保留完整正文
+      const fullText = markdown
 
-      if (fullText.includes(lowerKeyword)) {
+      // 全文匹配（不删除任何字符，直接搜索）
+      if (fullText.toLowerCase().includes(lowerKeyword)) {
+        // 提取摘要：关键词前后各取50个字符
+        const index = fullText.toLowerCase().indexOf(lowerKeyword)
+        const start = Math.max(0, index - 50)
+        const end = Math.min(fullText.length, index + lowerKeyword.length + 50)
+        let summary = fullText.substring(start, end)
+        summary = summary.replace(/\n/g, ' ').trim()
+        if (start > 0) summary = '...' + summary
+        if (end < fullText.length) summary = summary + '...'
+
         results.push({
           title: doc.title,
           path: doc.path,
           summary,
-          content,
+          content: fullText, // 保存完整内容用于渲染
         })
       }
     } catch (error) {
       console.error('搜索文档失败:', doc.path, error)
     }
   }
-
-  // 按标题匹配度排序
-  results.sort((a, b) => {
-    const aTitleMatch = a.title.toLowerCase().includes(lowerKeyword) ? 1 : 0
-    const bTitleMatch = b.title.toLowerCase().includes(lowerKeyword) ? 1 : 0
-    if (aTitleMatch !== bTitleMatch) return bTitleMatch - aTitleMatch
-    return a.title.length - b.title.length
-  })
 
   searchResults.value = results
   loading.value = false
