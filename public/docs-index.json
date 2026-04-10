@@ -1,217 +1,249 @@
 [
   {
     "title": "职业导航使用指南",
-    "keywords": [
-      "职业导航使用指南",
-      "CareerNavigation"
-    ],
     "path": "/docs/user-guides/CareerNavigation.md",
-    "fileName": "CareerNavigation.md"
+    "fileName": "CareerNavigation.md",
+    "tags": [
+      "职业导航",
+      "AI咨询",
+      "职业方向",
+      "职业资讯"
+    ]
   },
   {
     "title": "竞赛详情页使用指南",
-    "keywords": [
-      "竞赛详情页使用指南",
-      "CompetitionDetail"
-    ],
     "path": "/docs/user-guides/CompetitionDetail.md",
-    "fileName": "CompetitionDetail.md"
+    "fileName": "CompetitionDetail.md",
+    "tags": [
+      "竞赛详情",
+      "竞赛规则",
+      "报名"
+    ]
   },
   {
     "title": "竞赛管理使用指南",
-    "keywords": [
-      "竞赛管理使用指南",
-      "CompetitionManagement"
-    ],
     "path": "/docs/user-guides/CompetitionManagement.md",
-    "fileName": "CompetitionManagement.md"
+    "fileName": "CompetitionManagement.md",
+    "tags": [
+      "竞赛",
+      "报名",
+      "比赛",
+      "职业导航"
+    ]
   },
   {
     "title": "找回密码使用指南",
-    "keywords": [
-      "找回密码使用指南",
-      "ForgotPassword"
-    ],
     "path": "/docs/user-guides/ForgotPassword.md",
-    "fileName": "ForgotPassword.md"
+    "fileName": "ForgotPassword.md",
+    "tags": [
+      "找回密码",
+      "密码重置",
+      "邮箱验证"
+    ]
   },
   {
     "title": "功能搜索使用指南",
-    "keywords": [
-      "功能搜索使用指南",
-      "FunctionSearch"
-    ],
     "path": "/docs/user-guides/FunctionSearch.md",
-    "fileName": "FunctionSearch.md"
+    "fileName": "FunctionSearch.md",
+    "tags": [
+      "搜索",
+      "帮助中心",
+      "使用指南"
+    ]
   },
   {
     "title": "GlobalNavbar",
-    "keywords": [
-      "GlobalNavbar"
-    ],
     "path": "/docs/user-guides/GlobalNavbar.md",
-    "fileName": "GlobalNavbar.md"
+    "fileName": "GlobalNavbar.md",
+    "tags": []
   },
   {
     "title": "智慧校园首页使用指南",
-    "keywords": [
-      "智慧校园首页使用指南",
-      "Home"
-    ],
     "path": "/docs/user-guides/Home.md",
-    "fileName": "Home.md"
+    "fileName": "Home.md",
+    "tags": [
+      "首页",
+      "导航",
+      "功能入口"
+    ]
   },
   {
     "title": "图书馆座位预约使用指南",
-    "keywords": [
-      "图书馆座位预约使用指南",
-      "LibraryReservation"
-    ],
     "path": "/docs/user-guides/LibraryReservation.md",
-    "fileName": "LibraryReservation.md"
+    "fileName": "LibraryReservation.md",
+    "tags": [
+      "图书馆",
+      "座位预约",
+      "选座",
+      "占用"
+    ]
   },
   {
     "title": "登录功能使用指南",
-    "keywords": [
-      "登录功能使用指南",
-      "Login"
-    ],
     "path": "/docs/user-guides/Login.md",
-    "fileName": "Login.md"
+    "fileName": "Login.md",
+    "tags": [
+      "登录",
+      "账号密码",
+      "验证码"
+    ]
   },
   {
     "title": "退出登录页面",
-    "keywords": [
-      "退出登录页面",
-      "Logout"
-    ],
     "path": "/docs/user-guides/Logout.md",
-    "fileName": "Logout.md"
+    "fileName": "Logout.md",
+    "tags": [
+      "退出登录",
+      "账号安全",
+      "登出"
+    ]
   },
   {
     "title": "个人学习计划使用指南",
-    "keywords": [
-      "个人学习计划使用指南",
-      "PersonalStudyPlan"
-    ],
     "path": "/docs/user-guides/PersonalStudyPlan.md",
-    "fileName": "PersonalStudyPlan.md"
+    "fileName": "PersonalStudyPlan.md",
+    "tags": [
+      "学习计划",
+      "任务管理",
+      "进度跟踪"
+    ]
   },
   {
     "title": "学习计划详情页使用指南",
-    "keywords": [
-      "学习计划详情页使用指南",
-      "PlanDetail"
-    ],
     "path": "/docs/user-guides/PlanDetail.md",
-    "fileName": "PlanDetail.md"
+    "fileName": "PlanDetail.md",
+    "tags": [
+      "学习计划",
+      "AI生成",
+      "计划详情",
+      "历史记录"
+    ]
   },
   {
     "title": "考研支持使用指南",
-    "keywords": [
-      "考研支持使用指南",
-      "PostgraduateSupport"
-    ],
     "path": "/docs/user-guides/PostgraduateSupport.md",
-    "fileName": "PostgraduateSupport.md"
+    "fileName": "PostgraduateSupport.md",
+    "tags": [
+      "考研",
+      "院校选择",
+      "学习进度",
+      "考试倒计时"
+    ]
   },
   {
     "title": "编辑个人资料使用指南",
-    "keywords": [
-      "编辑个人资料使用指南",
-      "ProfileEdit"
-    ],
     "path": "/docs/user-guides/ProfileEdit.md",
-    "fileName": "ProfileEdit.md"
+    "fileName": "ProfileEdit.md",
+    "tags": [
+      "资料编辑",
+      "头像上传",
+      "信息修改"
+    ]
   },
   {
     "title": "智慧校园平台 - 用户使用指南",
-    "keywords": [
-      "智慧校园平台 - 用户使用指南",
-      "README"
-    ],
     "path": "/docs/user-guides/README.md",
-    "fileName": "README.md"
+    "fileName": "README.md",
+    "tags": [
+      "文档索引",
+      "使用指南",
+      "帮助中心"
+    ]
   },
   {
     "title": "注册账号使用指南",
-    "keywords": [
-      "注册账号使用指南",
-      "Register"
-    ],
     "path": "/docs/user-guides/Register.md",
-    "fileName": "Register.md"
+    "fileName": "Register.md",
+    "tags": [
+      "注册",
+      "用户名",
+      "邮箱验证"
+    ]
   },
   {
     "title": "复习详情页使用指南",
-    "keywords": [
-      "复习详情页使用指南",
-      "ReviewDetail"
-    ],
     "path": "/docs/user-guides/ReviewDetail.md",
-    "fileName": "ReviewDetail.md"
+    "fileName": "ReviewDetail.md",
+    "tags": [
+      "复习详情",
+      "AI复习建议",
+      "复习任务",
+      "记忆曲线"
+    ]
   },
   {
     "title": "校园论坛使用指南",
-    "keywords": [
-      "校园论坛使用指南",
-      "SecondHandMarket"
-    ],
     "path": "/docs/user-guides/SecondHandMarket.md",
-    "fileName": "SecondHandMarket.md"
+    "fileName": "SecondHandMarket.md",
+    "tags": [
+      "校园论坛",
+      "话题讨论",
+      "二手交易",
+      "失物招领"
+    ]
   },
   {
     "title": "系统设置使用指南",
-    "keywords": [
-      "系统设置使用指南",
-      "Settings"
-    ],
     "path": "/docs/user-guides/Settings.md",
-    "fileName": "Settings.md"
+    "fileName": "Settings.md",
+    "tags": [
+      "设置",
+      "主题切换",
+      "通知",
+      "隐私",
+      "特效"
+    ]
   },
   {
     "title": "智能问答AI助手使用指南",
-    "keywords": [
-      "智能问答AI助手使用指南",
-      "SmartQa"
-    ],
     "path": "/docs/user-guides/SmartQa.md",
-    "fileName": "SmartQa.md"
+    "fileName": "SmartQa.md",
+    "tags": [
+      "AI助手",
+      "智能问答",
+      "聊天机器人",
+      "文件分析"
+    ]
   },
   {
     "title": "智能复习系统使用指南",
-    "keywords": [
-      "智能复习系统使用指南",
-      "SmartReview"
-    ],
     "path": "/docs/user-guides/SmartReview.md",
-    "fileName": "SmartReview.md"
+    "fileName": "SmartReview.md",
+    "tags": [
+      "智能复习",
+      "学习计划",
+      "复习提醒"
+    ]
   },
   {
     "title": "体育设施预约使用指南",
-    "keywords": [
-      "体育设施预约使用指南",
-      "SportsReservation"
-    ],
     "path": "/docs/user-guides/SportsReservation.md",
-    "fileName": "SportsReservation.md"
+    "fileName": "SportsReservation.md",
+    "tags": [
+      "体育",
+      "场地预约",
+      "运动"
+    ]
   },
   {
     "title": "学习数据分析使用指南",
-    "keywords": [
-      "学习数据分析使用指南",
-      "StudyData"
-    ],
     "path": "/docs/user-guides/StudyData.md",
-    "fileName": "StudyData.md"
+    "fileName": "StudyData.md",
+    "tags": [
+      "数据统计",
+      "学习分析",
+      "图表",
+      "AI建议"
+    ]
   },
   {
     "title": "个人中心使用指南",
-    "keywords": [
-      "个人中心使用指南",
-      "UserCenter"
-    ],
     "path": "/docs/user-guides/UserCenter.md",
-    "fileName": "UserCenter.md"
+    "fileName": "UserCenter.md",
+    "tags": [
+      "个人中心",
+      "信息查看",
+      "账号安全"
+    ]
   }
 ]
