@@ -108,19 +108,23 @@ const currentUserId = computed(() => {
 })
 
 // ==================== 监听器 ====================
-watch(selectedTimeSlot, (newSlotId) => {
-  const selectedSlot = timeSlots.find((slot) => slot.id === newSlotId)
-  if (selectedSlot) {
-    const startHour = parseInt(selectedSlot.start.split(':')[0])
-    const newMaxDuration = Math.min(4, 23 - startHour)
+watch(
+  selectedTimeSlot,
+  (newSlotId) => {
+    const selectedSlot = timeSlots.find((slot) => slot.id === newSlotId)
+    if (selectedSlot) {
+      const startHour = parseInt(selectedSlot.start.split(':')[0])
+      const newMaxDuration = Math.min(4, 23 - startHour)
 
-    if (reservationInfo.value.duration > newMaxDuration) {
-      reservationInfo.value.duration = newMaxDuration
-      ElMessage.info(`当前开始时间最多可预约${newMaxDuration}小时，已为您自动调整`)
+      if (reservationInfo.value.duration > newMaxDuration) {
+        reservationInfo.value.duration = newMaxDuration
+        ElMessage.info(`当前开始时间最多可预约${newMaxDuration}小时，已为您自动调整`)
+      }
+      maxDuration.value = newMaxDuration
     }
-    maxDuration.value = newMaxDuration
-  }
-})
+  },
+  { immediate: true },
+)
 
 // ==================== 计算属性 ====================
 const currentVenueCourts = computed(() => {
