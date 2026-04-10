@@ -82,7 +82,7 @@
           <div class="empty-icon">🔍</div>
           <div class="empty-title">未找到相关功能</div>
           <div class="empty-desc">
-            没有找到与「<span class="empty-keyword">{{ keyword }}</span
+            没有找到与「<span class="empty-keyword">{{ lastSearchedKeyword }}</span
             >」相关的功能说明
           </div>
           <div class="empty-suggestion">
@@ -135,6 +135,7 @@ interface DocIndex {
 }
 
 const keyword = ref('')
+const lastSearchedKeyword = ref('')
 const loading = ref(false)
 const hasSearched = ref(false)
 const searchResults = ref<SearchResult[]>([])
@@ -198,6 +199,8 @@ const search = async () => {
     ElMessage.warning('请输入要搜索的功能名称')
     return
   }
+
+  lastSearchedKeyword.value = searchKeyword
 
   loading.value = true
   hasSearched.value = true
