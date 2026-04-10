@@ -14,14 +14,38 @@ for (const file of files) {
   const filePath = path.join(docsDir, file)
   const content = fs.readFileSync(filePath, 'utf-8')
 
-  // 提取标题
+  // 提取 title
   const titleMatch = content.match(/^---\s*\ntitle:\s*(.+?)\s*\n/)
   const title = titleMatch ? titleMatch[1].trim() : file.replace('.md', '')
+
+  // 提取 tags（新增）
+  let tags = []
+  const tagsMatch = content.match(/^---\s*\ntags:\s*\n((?:[\s\S]*?))^(?=\w+:|---)/m)
+  if (tagsMatch) {
+    // 解析 YAML 数组格式：
+    // tags:
+    //   - 登录
+    //   - 注册
+    const tagLines = tagsMatch[1].match(/-\s*(.+)/g)
+    if (tagLines) {
+      tags = tagLines.map(line => line.replace(/^-\s*/, '').trim())
+    }
+  } else {
+    // 也支持单行格式：tags: [登录, 注册] 或 tags: 登录,注册
+    const singleLineMatch = content.match(/^---\s*\ntags:\s*\[?(.+?)\]?\s*\n/m)
+    if (singleLineMatch) {
+      tags = singleLineMatch[1]
+        .split(/[,，]/)
+        .map(t => t.trim().replace(/^['"]|['"]$/g, ''))
+        .filter(t => t)
+    }
+  }
 
   index.push({
     title,
     path: `/docs/user-guides/${file}`,
-    fileName: file
+    fileName: file,
+    tags  // 新增字段
   })
 }
 

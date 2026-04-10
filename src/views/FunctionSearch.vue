@@ -124,12 +124,14 @@ interface SearchResult {
   path: string
   summary: string
   content: string
+  score?: number
 }
 
 interface DocIndex {
   title: string
   path: string
   fileName: string
+  tags: string[]
 }
 
 const keyword = ref('')
@@ -202,41 +204,70 @@ const search = async () => {
   searchResults.value = []
 
   const lowerKeyword = searchKeyword.toLowerCase()
-  const results: SearchResult[] = []
+  const results: (SearchResult & { score: number })[] = []
 
   for (const doc of docIndex.value) {
     try {
       const markdown = await loadMarkdown(doc.path)
       if (!markdown) continue
 
-      // 移除 frontmatter，保留完整正文
       const fullText = markdown
+      const contentMatch = fullText.toLowerCase().includes(lowerKeyword)
 
-      // 全文匹配（不删除任何字符，直接搜索）
-      if (fullText.toLowerCase().includes(lowerKeyword)) {
-        // 提取摘要：关键词前后各取50个字符
-        const index = fullText.toLowerCase().indexOf(lowerKeyword)
-        const start = Math.max(0, index - 50)
-        const end = Math.min(fullText.length, index + lowerKeyword.length + 50)
-        let summary = fullText.substring(start, end)
-        summary = summary.replace(/\n/g, ' ').trim()
-        if (start > 0) summary = '...' + summary
-        if (end < fullText.length) summary = summary + '...'
+      if (!contentMatch) continue // 全文不匹配则跳过
 
-        results.push({
-          title: doc.title,
-          path: doc.path,
-          summary,
-          content: fullText, // 保存完整内容用于渲染
-        })
+      // ========== 计算权重分数 ==========
+      let score = 0
+
+      // 权重1：tags 匹配 - 权重 10（最高优先级）
+      if (doc.tags && doc.tags.some((tag) => tag.toLowerCase().includes(lowerKeyword))) {
+        score += 10
       }
+
+      // 权重2：title 匹配 - 权重 5
+      if (doc.title.toLowerCase().includes(lowerKeyword)) {
+        score += 5
+      }
+
+      // 权重3：正文匹配 - 权重 1（基础分）
+      if (contentMatch) {
+        score += 1
+      }
+
+      // 提取摘要（与之前相同）
+      const index = fullText.toLowerCase().indexOf(lowerKeyword)
+      const start = Math.max(0, index - 50)
+      const end = Math.min(fullText.length, index + lowerKeyword.length + 50)
+      let summary = fullText.substring(start, end)
+      summary = summary.replace(/\n/g, ' ').trim()
+      if (start > 0) summary = '...' + summary
+      if (end < fullText.length) summary = summary + '...'
+
+      results.push({
+        title: doc.title,
+        path: doc.path,
+        summary,
+        content: fullText,
+        score,
+      })
     } catch (error) {
       console.error('搜索文档失败:', doc.path, error)
     }
   }
 
+  // 按分数降序排序（分数高的排在前面）
+  results.sort((a, b) => b.score - a.score)
+
   searchResults.value = results
   loading.value = false
+
+  // 可选：打印排序结果用于调试
+  if (results.length > 0) {
+    console.log('搜索结果排序:')
+    results.forEach((r, i) => {
+      console.log(`  ${i + 1}. [score=${r.score}] ${r.title}`)
+    })
+  }
 }
 
 // 打开文档详情
