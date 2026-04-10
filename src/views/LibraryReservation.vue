@@ -436,18 +436,22 @@ const selectedTimeSlot = ref(getCurrentTimeSlotId())
 const maxDuration = ref(4) // 最大可预约时长
 
 // 监听预约时间变化，动态计算最大可预约时长
-watch(selectedTimeSlot, (newSlotId) => {
-  const selectedSlot = timeSlots.find((slot) => slot.id === newSlotId)
-  if (selectedSlot) {
-    const startHour = parseInt(selectedSlot.start!.split(':')[0]) //不合理的报错
-    const newMaxDuration = Math.min(4, 23 - startHour)
-    if (reservationInfo.value.duration > newMaxDuration) {
-      reservationInfo.value.duration = newMaxDuration
-      ElMessage.info(`当前开始时间最多可预约${newMaxDuration}小时，已为您自动调整`)
+watch(
+  selectedTimeSlot,
+  (newSlotId) => {
+    const selectedSlot = timeSlots.find((slot) => slot.id === newSlotId)
+    if (selectedSlot) {
+      const startHour = parseInt(selectedSlot.start!.split(':')[0]) //不合理的报错
+      const newMaxDuration = Math.min(4, 23 - startHour)
+      if (reservationInfo.value.duration > newMaxDuration) {
+        reservationInfo.value.duration = newMaxDuration
+        ElMessage.info(`当前开始时间最多可预约${newMaxDuration}小时，已为您自动调整`)
+      }
+      maxDuration.value = newMaxDuration
     }
-    maxDuration.value = newMaxDuration
-  }
-})
+  },
+  { immediate: true },
+)
 
 // 座位状态类型
 type SeatStatus = 'available' | 'occupied' | 'selected' | 'podium' | 'door' | 'empty' | 'reserved'
