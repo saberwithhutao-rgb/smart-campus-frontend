@@ -70,7 +70,6 @@
               <div class="result-item-summary">{{ result.summary }}</div>
               <div class="result-item-meta">
                 <span class="meta-tag">使用指南</span>
-                <span class="meta-path">{{ result.path }}</span>
               </div>
             </div>
             <div class="result-item-arrow">→</div>
@@ -209,12 +208,24 @@ const search = async () => {
   const lowerKeyword = searchKeyword.toLowerCase()
   const results: (SearchResult & { score: number })[] = []
 
+  const removeFrontmatter = (md: string): string => {
+    // 匹配开头的 --- ... --- 块
+    const match = md.match(/^---\s*\n([\s\S]*?)\n---\s*\n/)
+    if (match) {
+      return md.slice(match[0].length)
+    }
+    return md
+  }
+
   for (const doc of docIndex.value) {
     try {
       const markdown = await loadMarkdown(doc.path)
       if (!markdown) continue
 
-      const fullText = markdown
+      // 移除 frontmatter，只保留正文用于搜索和摘要
+      const bodyContent = removeFrontmatter(markdown)
+      const fullText = bodyContent
+
       const contentMatch = fullText.toLowerCase().includes(lowerKeyword)
 
       if (!contentMatch) continue // 全文不匹配则跳过
@@ -237,7 +248,7 @@ const search = async () => {
         score += 1
       }
 
-      // 提取摘要（与之前相同）
+      // 提取摘要（从移除 frontmatter 后的正文中提取）
       const index = fullText.toLowerCase().indexOf(lowerKeyword)
       const start = Math.max(0, index - 50)
       const end = Math.min(fullText.length, index + lowerKeyword.length + 50)
@@ -250,7 +261,7 @@ const search = async () => {
         title: doc.title,
         path: doc.path,
         summary,
-        content: fullText,
+        content: markdown, // 存储原始 markdown，详情页自己处理渲染
         score,
       })
     } catch (error) {
@@ -575,12 +586,6 @@ onMounted(async () => {
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.3px;
-}
-
-.meta-path {
-  font-size: 11px;
-  color: var(--color-text-light);
-  font-family: monospace;
 }
 
 .result-item-arrow {
